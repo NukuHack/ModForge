@@ -1,6 +1,7 @@
 package modforge.backend.service;
 
 import modforge.backend.AttributeFactory;
+import modforge.backend.ModData;
 import modforge.backend.model.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -17,14 +18,14 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
-public final class XmlAdapter implements IModItemAdapter {
-	private static final Logger log = Logger.getLogger(XmlAdapter.class.getName());
+public final class ItemAdapter {
+	private static final Logger log = Logger.getLogger(ItemAdapter.class.getName());
 	private static final Set<String> BLACKLIST = Set.of("44c61b30-c20e-4267-ab01-a1e39342731e");
 
-	private final UserConfigurationService configService;
+	private final UserService configService;
 	private final ModItemBuilder builder;
 
-	public XmlAdapter(UserConfigurationService configService, ModItemBuilder builder) {
+	public ItemAdapter(UserService configService, ModItemBuilder builder) {
 		this.configService = configService;
 		this.builder = builder;
 	}
@@ -33,8 +34,11 @@ public final class XmlAdapter implements IModItemAdapter {
 	// READ
 	// ------------------------------------------------------------------
 
-	@Override
-	public List<IModItem> readModItems(IDataPoint dp) {
+	public List<IModItem> readModItems(List<IDataPoint> dp) {
+		return dp.stream().map(this::readModItem).flatMap(Collection::stream).toList();
+	}
+
+	public List<IModItem> readModItem(IDataPoint dp) {
 		var result = new ArrayList<IModItem>();
 		String typeName = dp.type().getSimpleName().toLowerCase(Locale.ROOT);
 		File pakFile = new File(dp.path());
@@ -85,15 +89,15 @@ public final class XmlAdapter implements IModItemAdapter {
 	// WRITE
 	// ------------------------------------------------------------------
 
-	@Override
-	public void writeModItems(String modId, Iterable<IModItem> items) {
-		items.forEach(item -> writeModItem(modId, item));
+	public void writeModItems(ModData modData) {
+		if (modData.items.isEmpty()) return;
+		final var gameDir = configService.getCurrent().gameDirectory;
+		modData.items.forEach(item -> writeModItem(gameDir, modData.id, item));
 	}
 
-	private void writeModItem(String modId, IModItem item) {
+	private void writeModItem(String gameDir, String modId, IModItem item) {
 		try {
 			String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-			String gameDir = configService.getCurrent().gameDirectory;
 			String itemPath = item.getPath() == null ? "" : item.getPath();
 			int lastSlash = itemPath.lastIndexOf('/');
 			String dirSuffix = lastSlash >= 0 ? itemPath.substring(0, lastSlash) : "";
@@ -172,8 +176,7 @@ public final class XmlAdapter implements IModItemAdapter {
 	/**
 	 * Build a DOM Element from an IModItem's attribute list.
 	 */
-	private static Element buildXmlElement(Document doc,
-										   String elementName, IModItem item) {
+	private static Element buildXmlElement(Document doc, String elementName, IModItem item) {
 		Element el = doc.createElement(elementName);
 		for (var attr : item.getAttributes()) {
 			el.setAttribute(attr.getName(), serializeValue(attr));
@@ -196,8 +199,7 @@ public final class XmlAdapter implements IModItemAdapter {
 		}
 		if (v instanceof Double d) {
 			// Prefer "5" over "5.0" for whole numbers
-			return d == Math.floor(d) && !Double.isInfinite(d)
-					? String.valueOf(d.longValue()) : d.toString();
+			return d == Math.floor(d) && !Double.isInfinite(d) ? String.valueOf(d.longValue()) : d.toString();
 		}
 		return v.toString();
 	}

@@ -3,7 +3,7 @@ package modforge.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import modforge.Singleton;
-import modforge.backend.ModDescription;
+import modforge.backend.ModData;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public final class UserConfigurationService {
-	private static final Logger log = Logger.getLogger(UserConfigurationService.class.getName());
+public final class UserService {
+	private static final Logger log = Logger.getLogger(UserService.class.getName());
 
 	private final Path configFile;
 	private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 	private UserConfiguration current;
 
-	public UserConfigurationService() {
+	public UserService() {
 		configFile = Singleton.INSTANCE.getUserConfig();
 		load();
 	}
@@ -57,7 +57,7 @@ public final class UserConfigurationService {
 	/**
 	 * Write mod-load order file (mirrors C# WriteLoadout).
 	 */
-	public void writeLoadout(List<ModDescription> orderedMods) {
+	public void writeLoadout(List<ModData> orderedMods) {
 		String dir = current.gameDirectory;
 		if (dir == null || dir.isBlank()) return;
 		Path loadOrder = Path.of(dir, "Mods", "mod_order.txt");

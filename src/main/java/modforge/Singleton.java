@@ -1,6 +1,8 @@
 package modforge;
 
+import modforge.backend.ModData;
 import modforge.backend.service.ServiceRegistry;
+import org.w3c.dom.NodeList;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,11 +15,21 @@ public enum Singleton {
 	private ServiceRegistry registry;
 	private final Path userConfigDir;
 	private final Path userConfigFile;
+	private final ModData game = ModData.BASE_GAME;
 
 	Singleton() {
 		this.userConfigDir = getPlatformConfigDir();
 		this.userConfigFile = userConfigDir.resolve("userconfig.json");
 		ensureConfigDirExists();
+
+		game.name = "Kingdom Come Deliverance 2";
+		game.description = "The game itself : Kingdom Come Deliverance II";
+		game.author = "warhorse studios";
+		game.modVersion = "1.*";
+		game.createdOn = "2025";
+		game.id = "kdc2";
+		game.modifiesLevel = true;
+		game.supportsGameVersions.add("*");
 	}
 
 	private Path getPlatformConfigDir() {
@@ -68,5 +80,9 @@ public enum Singleton {
 
 	public Path getUserConfig() {
 		return userConfigFile;
+	}
+
+	public ModData game() {
+		return game;
 	}
 }

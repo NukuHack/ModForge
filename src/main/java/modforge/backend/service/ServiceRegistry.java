@@ -5,15 +5,12 @@ package modforge.backend.service;
  * Use as the single entry-point for bootstrapping the application.
  */
 public final class ServiceRegistry {
-	public final UserConfigurationService userConfig;
-	public final LocalizationAdapter localizationAdapter;
+	public final UserService userConfig;
 	public final LocalizationService localizationService;
 	public final ModItemBuilder builder;
-	public final XmlAdapter xmlAdapter;
 	public final JsonAdapter jsonAdapter;
-	public final XmlService xmlService;
+	public final ItemService itemService;
 	public final IconService iconService;
-	public final NavigationService navigationService;
 	public final ModService modService;
 
 	public ServiceRegistry() {
@@ -21,18 +18,17 @@ public final class ServiceRegistry {
 	}
 
 	public ServiceRegistry(String initialUri) {
-		userConfig = new UserConfigurationService();
-		localizationAdapter = new LocalizationAdapter();
+		userConfig = new UserService();
+		var localizationAdapter = new LocalizationAdapter();
 		localizationService = new LocalizationService(localizationAdapter, userConfig);
 
 		builder = ModItemBuilder.createDefault();
-		xmlAdapter = new XmlAdapter(userConfig, builder);
+		var itemAdapter = new ItemAdapter(userConfig, builder);
 		jsonAdapter = new JsonAdapter(resolveAppDataDir());
 
-		xmlService = new XmlService(xmlAdapter, localizationService, userConfig);
+		itemService = new ItemService(itemAdapter, userConfig);
 		iconService = new IconService(userConfig);
-		navigationService = new NavigationService(initialUri);
-		modService = new ModService(xmlAdapter, userConfig, localizationService);
+		modService = new ModService(itemService, userConfig, localizationService);
 	}
 
 	/**
@@ -45,16 +41,8 @@ public final class ServiceRegistry {
 			config.gameDirectory = path;
 		userConfig.save();
 		localizationService.init();
-		xmlService.tryReadXmlFiles();
+		itemService.tryReadXmlFiles();
 		modService.initiateModCollections();
-
-		System.out.printf(
-				"Loaded: %d perks, %d buffs, %d weapons, %d armors%n",
-				xmlService.perks.size(),
-				xmlService.buffs.size(),
-				xmlService.weapons.size(),
-				xmlService.armors.size()
-		);
 	}
 
 	private static String resolveAppDataDir() {

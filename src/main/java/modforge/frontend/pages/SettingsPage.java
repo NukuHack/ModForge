@@ -1,7 +1,7 @@
 package modforge.frontend.pages;
 
 import modforge.backend.service.UserConfiguration;
-import modforge.backend.service.UserConfigurationService;
+import modforge.backend.service.UserService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 import modforge.frontend.Util;
@@ -18,7 +18,7 @@ public class SettingsPage extends BasePage {
 	private final JTextField userName = styledField("Your name (used as mod author)");
 	private final JComboBox<String> langBox = new JComboBox<>(
 new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Español", "it – Italiano", "pl – Polski", "ru – Русский", "cs – Čeština"});
-	private final UserConfigurationService configService;
+	private final UserService configService;
 
 	public SettingsPage(MainWindow w) {
 		super(w);

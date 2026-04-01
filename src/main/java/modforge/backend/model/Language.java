@@ -42,7 +42,7 @@ public enum Language {
 		return Arrays.stream(values())
 				.filter(lang -> lang.displayName.equals(displayName))
 				.findFirst()
-				.orElseThrow(() -> new IllegalArgumentException("Unknown language: " + displayName));
+				.orElse(null);
 	}
 
 	/**
@@ -52,7 +52,7 @@ public enum Language {
 		return Arrays.stream(values())
 				.filter(lang -> lang.isoCode.equalsIgnoreCase(isoCode))
 				.findFirst()
-				.orElseThrow(() -> new IllegalArgumentException("Unknown ISO code: " + isoCode));
+				.orElse(null);
 	}
 
 	/**
@@ -81,16 +81,4 @@ public enum Language {
 				.collect(Collectors.toSet());
 	}
 
-	/**
-	 * Get a map of display name -> ISO code (like the original LANG_MAP)
-	 */
-	public static Map<String, String> asMap() {
-		return Arrays.stream(values())
-				.collect(Collectors.toMap(
-						Language::getDisplayName,
-						Language::getIsoCode,
-						(a, b) -> a,
-						LinkedHashMap::new
-				));
-	}
 }

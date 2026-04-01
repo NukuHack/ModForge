@@ -1,7 +1,7 @@
 // ModsPage.java
 package modforge.frontend.pages;
 
-import modforge.backend.ModDescription;
+import modforge.backend.ModData;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
@@ -11,13 +11,15 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import static modforge.backend.service.ModService.parseModDescription;
+
 // =============================================================================
 //  MODS PAGE  (ModCollection list with real data)
 // =============================================================================
 public class ModsPage extends BasePage {
 
-	private final JList<ModDescription> modList;
-	private final DefaultListModel<ModDescription> listModel;
+	private final JList<ModData> modList;
+	private final DefaultListModel<ModData> listModel;
 
 	public ModsPage(MainWindow w) {
 		super(w);
@@ -50,7 +52,7 @@ public class ModsPage extends BasePage {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2) {
-					final ModDescription selected = modList.getSelectedValue();
+					final ModData selected = modList.getSelectedValue();
 					if (selected != null) {
 						editMod(selected);
 					}
@@ -74,12 +76,12 @@ public class ModsPage extends BasePage {
 		ModService modService = window.getRegistry().modService;
 
 		// Add user-created mods
-		for (ModDescription mod : modService.modCollection) {
+		for (ModData mod : modService.modCollection) {
 			listModel.addElement(mod);
 		}
 
 		// Add external mods (read-only)
-		for (ModDescription mod : modService.externalModCollection) {
+		for (ModData mod : modService.externalModCollection) {
 			listModel.addElement(mod);
 		}
 
@@ -91,7 +93,7 @@ public class ModsPage extends BasePage {
 		String timestamp = String.valueOf(System.currentTimeMillis());
 		String defaultId = "new_mod_" + timestamp.substring(timestamp.length() - 6);
 
-		final ModDescription newMod = window.getRegistry().modService.createNewMod(
+		final ModData newMod = window.getRegistry().modService.createNewMod(
 				"New Mod",
 				"Your mod description",
 				window.getRegistry().userConfig.getCurrent().userName,
@@ -110,7 +112,7 @@ public class ModsPage extends BasePage {
 		}
 	}
 
-	private void editMod(ModDescription mod) {
+	private void editMod(ModData mod) {
 		window.getRegistry().modService.setCurrentMod(mod);
 		window.navigate(MainWindow.Page.MOD_EDIT);
 	}
@@ -150,30 +152,8 @@ public class ModsPage extends BasePage {
 		}
 	}
 
-	private ModDescription parseModDescription(org.w3c.dom.Document doc) {
-		var m = new ModDescription();
-		m.name = textOf(doc, "name");
-		m.description = textOf(doc, "description");
-		m.author = textOf(doc, "author");
-		m.modVersion = textOf(doc, "version");
-		m.createdOn = textOf(doc, "created_on");
-		m.id = textOf(doc, "modid");
-		m.modifiesLevel = "true".equalsIgnoreCase(textOf(doc, "modifies_level"));
-
-		var versions = doc.getElementsByTagName("kcd_version");
-		for (int i = 0; i < versions.getLength(); i++)
-			m.supportsGameVersions.add(versions.item(i).getTextContent().trim());
-
-		return m;
-	}
-
-	private String textOf(org.w3c.dom.Document doc, String tag) {
-		var nl = doc.getElementsByTagName(tag);
-		return nl.getLength() > 0 ? nl.item(0).getTextContent().trim() : "";
-	}
-
 	// Custom cell renderer for mod list items
-	private class ModListCellRenderer extends JPanel implements ListCellRenderer<ModDescription> {
+	private class ModListCellRenderer extends JPanel implements ListCellRenderer<ModData> {
 		private final JLabel nameLabel = new JLabel();
 		private final JLabel versionLabel = new JLabel();
 		private final JLabel authorLabel = new JLabel();
@@ -211,8 +191,8 @@ public class ModsPage extends BasePage {
 		}
 
 		@Override
-		public Component getListCellRendererComponent(JList<? extends ModDescription> list,
-													  ModDescription mod, int index,
+		public Component getListCellRendererComponent(JList<? extends ModData> list,
+													  ModData mod, int index,
 													  boolean isSelected, boolean cellHasFocus) {
 			nameLabel.setText(mod.name != null && !mod.name.isBlank() ? mod.name : mod.id);
 			versionLabel.setText("v" + (mod.modVersion != null ? mod.modVersion : "?"));

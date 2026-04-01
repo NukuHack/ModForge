@@ -47,7 +47,7 @@ public final class JsonAdapter {
 
 	public void writeAsJson(List<IModItem> items) {
 		if (items == null || items.isEmpty()) return;
-		String filename = items.get(0).getClass().getSimpleName()
+		String filename = items.getFirst().getClass().getSimpleName()
 				.toLowerCase(Locale.ROOT) + "s.json";
 		Path target = baseDir.resolve(filename);
 		try {

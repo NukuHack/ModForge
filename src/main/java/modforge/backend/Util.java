@@ -4,12 +4,16 @@ package modforge.backend;
 // EXTENSIONS UTILITY  (mirrors C# Extensions static class)
 // =============================================================================
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import java.util.*;
+import java.io.*;
+import java.nio.file.*;
+import java.util.function.Predicate;
+import java.util.logging.*;
+import java.util.zip.*;
 
 public final class Util {
+	private static final Logger log = Logger.getLogger(Util.class.getName());
 	private Util() {
 	}
 
@@ -68,5 +72,76 @@ public final class Util {
 				.replace(">", "&gt;")
 				.replace("\"", "&quot;")
 				.replace("'", "&#39;");
+	}
+
+
+	/**
+	 * Pack a source folder into a destination PAK file.
+	 * The PAK will contain the contents of the source folder as the root,
+	 * maintaining the relative directory structure.
+	 *
+	 * @param sourceFolder   The folder to pack (its contents become the PAK root)
+	 * @param destPakFile    The output PAK file path
+	 * @param fileFilter     Optional filter to exclude certain files (can be null to include all)
+	 * @return true if packing succeeded, false otherwise
+	 */
+	public static boolean packFolder(Path sourceFolder, Path destPakFile, Predicate<Path> fileFilter) {
+		if (!Files.exists(sourceFolder) || !Files.isDirectory(sourceFolder)) {
+			log.warning("Source folder does not exist: " + sourceFolder);
+			return false;
+		}
+
+		try {
+			Files.createDirectories(destPakFile.getParent());
+			Files.deleteIfExists(destPakFile);
+
+			try (var fos = new FileOutputStream(destPakFile.toFile());
+				 var zout = new ZipOutputStream(fos)) {
+
+				Files.walk(sourceFolder)
+						.filter(Files::isRegularFile)
+						.filter(path -> fileFilter == null || fileFilter.test(path))
+						.forEach(file -> {
+							try {
+								// Get the path relative to the source folder
+								// This ensures the PAK structure matches expectations
+								String relPath = sourceFolder.relativize(file)
+										.toString()
+										.replace('\\', '/');
+
+								zout.putNextEntry(new ZipEntry(relPath));
+								Files.copy(file, zout);
+								zout.closeEntry();
+
+								log.fine("Added to PAK: " + relPath);
+							} catch (IOException e) {
+								log.warning("Cannot add to pak: " + file + " - " + e.getMessage());
+							}
+						});
+			}
+
+			log.info("PAK created: " + destPakFile);
+			return true;
+
+		} catch (IOException e) {
+			log.severe("PAK creation failed: " + e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Pack a source folder into a destination PAK file.
+	 * Convenience method with no file filter.
+	 */
+	public static boolean packFolder(Path sourceFolder, Path destPakFile) {
+		return packFolder(sourceFolder, destPakFile, null);
+	}
+
+	/**
+	 * Pack a source folder into a destination PAK file, excluding the PAK file itself.
+	 * Useful when packing from a folder that might contain the target PAK.
+	 */
+	public static boolean packFolderExcludingSelf(Path sourceFolder, Path destPakFile) {
+		return packFolder(sourceFolder, destPakFile, path -> !path.equals(destPakFile));
 	}
 }

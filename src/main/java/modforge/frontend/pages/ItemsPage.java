@@ -11,7 +11,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static modforge.backend.Util.escapeHtml;
 
@@ -31,7 +30,7 @@ public class ItemsPage extends BasePage {
 
 	// Services
 	private final ServiceRegistry registry;
-	private final XmlService xmlService;
+	private final ItemService itemService;
 
 	// Detail panel components
 	private JLabel detailLabel;
@@ -44,7 +43,7 @@ public class ItemsPage extends BasePage {
 
 		// Get services from registry
 		this.registry = w.getRegistry();
-		this.xmlService = registry.xmlService;
+		this.itemService = registry.itemService;
 
 		// Setup the list selection listener
 		setupListSelectionListener();
@@ -241,19 +240,7 @@ public class ItemsPage extends BasePage {
 	private void refreshUnderlyingList() {
 		underlyingItems.clear();
 
-		// Load all items from XmlService
-		final List<IModItem> allItems = Stream.of(
-				xmlService.perks.stream(),
-				xmlService.buffs.stream(),
-				xmlService.weapons.stream(),
-				xmlService.armors.stream(),
-				xmlService.consumables.stream(),
-				xmlService.craftingMaterials.stream(),
-				xmlService.miscItems.stream(),
-				xmlService.weaponClasses.stream()
-		).flatMap(s -> s).toList();
-
-		underlyingItems.addAll(allItems);
+		underlyingItems.addAll(itemService.items);
 
 		// Sort by ID for consistent display
 		underlyingItems.sort(Comparator.comparing(IModItem::getId, String.CASE_INSENSITIVE_ORDER));

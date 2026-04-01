@@ -2,6 +2,7 @@
 package modforge.frontend.pages;
 
 import modforge.backend.*;
+import modforge.backend.service.ModService;
 import modforge.frontend.*;
 
 import javax.swing.*;
@@ -14,7 +15,7 @@ import java.util.List;
 // =============================================================================
 public class ModEditPage extends BasePage {
 
-	private ModDescription currentDesc;
+	private ModData currentDesc;
 
 	private JTextField idField;
 	private JTextField nameField;
@@ -53,7 +54,7 @@ public class ModEditPage extends BasePage {
 		// This ensures the form fields are properly populated
 		currentDesc = window.getRegistry().modService.getCurrentMod();
 		if (currentDesc == null) {
-			currentDesc = new ModDescription();
+			currentDesc = new ModData();
 		}
 		refreshFieldData();
 	}
@@ -307,7 +308,8 @@ public class ModEditPage extends BasePage {
 		}
 
 		// Write manifest
-		boolean success = window.getRegistry().modService.writeModManifest(currentDesc);
+		final String gameDir = window.getRegistry().userConfig.getCurrent().gameDirectory;
+		boolean success = ModService.writeModAsXml(gameDir, currentDesc);
 
 		if (success) {
 			window.snackbar.show("Manifest saved for " + currentDesc.name, BarManager.Type.SUCCESS);
@@ -317,7 +319,7 @@ public class ModEditPage extends BasePage {
 	}
 
 	private void exportMod() {
-		if (window.getRegistry().modService.writeModManifest(currentDesc)) {
+		if (ModService.writeModAsXml(window.getRegistry().userConfig.getCurrent().gameDirectory, currentDesc)) {
 			window.getRegistry().modService.exportMod(currentDesc);
 			window.snackbar.show("Mod exported to PAK: " + currentDesc.id + ".pak", BarManager.Type.SUCCESS);
 		} else {

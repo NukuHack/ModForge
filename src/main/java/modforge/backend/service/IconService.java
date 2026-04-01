@@ -11,9 +11,9 @@ import java.util.zip.ZipFile;
 public final class IconService {
 	private static final Logger log = Logger.getLogger(IconService.class.getName());
 
-	private final UserConfigurationService configService;
+	private final UserService configService;
 
-	public IconService(UserConfigurationService configService) {
+	public IconService(UserService configService) {
 		this.configService = configService;
 	}
 
@@ -83,8 +83,7 @@ public final class IconService {
 				return DdsConverter.toBase64DataUri(is);
 			}
 		} catch (UnsupportedOperationException uoe) {
-			log.warning("DDS conversion not available (add DDSReader library): "
-					+ uoe.getMessage());
+			log.warning("DDS conversion not available (add DDSReader library): " + uoe.getMessage());
 			return null;
 		} catch (Exception ex) {
 			log.severe("Icon load error (" + iconId + "): " + ex.getMessage());
