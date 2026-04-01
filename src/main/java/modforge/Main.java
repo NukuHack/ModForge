@@ -45,13 +45,6 @@ public class Main {
 					System.out.println("SpecifiedUsage:  java -cp . modforge.Main <path-to-KCD2-installation>");
 					registry.setGameDirectory(dir);
 				}
-				System.out.printf(
-					"Loaded: %d perks, %d buffs, %d weapons, %d armors%n",
-					registry.xmlService.perks.size(),
-					registry.xmlService.buffs.size(),
-					registry.xmlService.weapons.size(),
-					registry.xmlService.armors.size()
-				);
 
 				try {
 					Thread.sleep(1200);
