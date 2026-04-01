@@ -1,6 +1,7 @@
 // ModsPage.java
 package modforge.frontend.pages;
 
+import modforge.Singleton;
 import modforge.backend.ModData;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
@@ -12,6 +13,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import static modforge.backend.service.ModService.parseModDescription;
+import static modforge.backend.service.ModService.textOf;
 
 // =============================================================================
 //  MODS PAGE  (ModCollection list with real data)
@@ -80,11 +82,6 @@ public class ModsPage extends BasePage {
 			listModel.addElement(mod);
 		}
 
-		// Add external mods (read-only)
-		for (ModData mod : modService.externalModCollection) {
-			listModel.addElement(mod);
-		}
-
 		window.snackbar.show("Loaded " + listModel.size() + " mods", BarManager.Type.SUCCESS);
 	}
 
@@ -134,9 +131,8 @@ public class ModsPage extends BasePage {
 					var mod = parseModDescription(doc);
 
 					// Check if already exists
-					if (window.getRegistry().modService.modCollection.getMod(mod.id) == null &&
-							window.getRegistry().modService.externalModCollection.getMod(mod.id) == null) {
-						window.getRegistry().modService.modCollection.addMod(mod);
+					if (!window.getRegistry().modService.modCollection.contains(mod)) {
+						window.getRegistry().modService.modCollection.add(mod);
 						refreshMods();
 						window.snackbar.show("Imported mod: " + mod.name, BarManager.Type.SUCCESS);
 					} else {
@@ -153,7 +149,7 @@ public class ModsPage extends BasePage {
 	}
 
 	// Custom cell renderer for mod list items
-	private class ModListCellRenderer extends JPanel implements ListCellRenderer<ModData> {
+	private static class ModListCellRenderer extends JPanel implements ListCellRenderer<ModData> {
 		private final JLabel nameLabel = new JLabel();
 		private final JLabel versionLabel = new JLabel();
 		private final JLabel authorLabel = new JLabel();
@@ -197,13 +193,13 @@ public class ModsPage extends BasePage {
 			authorLabel.setText(mod.author != null ? mod.author : "Unknown");
 
 			// Check if mod is external (read-only)
-			boolean isExternal = window.getRegistry().modService.externalModCollection.contains(mod);
+			boolean isExternal = mod.author.isBlank() || !mod.author.equals(Singleton.INSTANCE.getRegistry().userConfig.getCurrent().userName);
 			if (isExternal) {
 				statusLabel.setText("📥 External");
-				statusLabel.setForeground(new Color(0xf9e2af));
+				statusLabel.setForeground(Color.YELLOW);
 			} else {
 				statusLabel.setText("✏️ Editable");
-				statusLabel.setForeground(MainWindow.SUCCESS);
+				statusLabel.setForeground(Color.GREEN);
 			}
 
 			if (isSelected) {

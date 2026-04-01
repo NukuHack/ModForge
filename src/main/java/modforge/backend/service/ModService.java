@@ -2,12 +2,12 @@ package modforge.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import modforge.backend.DataPointFactory;
-import modforge.backend.ModCollection;
-import modforge.backend.ModData;
-import modforge.backend.Util;
+import modforge.Singleton;
+import modforge.backend.*;
 import modforge.backend.model.IModItem;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -16,31 +16,37 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+import java.util.zip.ZipFile;
 
 import static modforge.backend.Util.normalizeXml;
+import static modforge.backend.service.ItemService.parseXml;
 
 public final class ModService {
 	private static final Logger log = Logger.getLogger(ModService.class.getName());
 
-	private final UserService configService;
+	private final UserService userConfig;
 	private final LocalizationService localizationService;
 	private final ItemService itemService;
+	public final ModItemBuilder builder;
+	private final ConfigService configService;
 	private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
 	private ModData currentMod = new ModData();
 
-	public ModCollection modCollection = new ModCollection();
-	public ModCollection externalModCollection = new ModCollection();
+	public List<ModData> modCollection = new ArrayList<>();
 
-	public ModService(ItemService itemService, UserService configService, LocalizationService localizationService) {
-		this.itemService = itemService;
-		this.configService = configService;
-		this.localizationService = localizationService;
+	public ModService(ServiceRegistry registry) {
+		this.itemService = registry.itemService;
+		this.userConfig = registry.userConfig;
+		this.localizationService = registry.localizationService;
+		this.builder = registry.builder;
+		this.configService = registry.configService;
 		initiateModCollections();
 	}
 
@@ -57,7 +63,7 @@ public final class ModService {
 	// ------------------------------------------------------------------
 
 	public void initiateModCollections() {
-		final String gameDir = configService.getCurrent().gameDirectory;
+		final String gameDir = userConfig.getCurrent().gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warning("Game directory not configured - skipping mod collection scan.");
 			return;
@@ -72,7 +78,6 @@ public final class ModService {
 		}
 
 		modCollection.clear();
-		externalModCollection.clear();
 
 		try (var stream = Files.list(modsFolder)) {
 			stream.filter(Files::isDirectory).forEach(modPath -> {
@@ -101,18 +106,10 @@ public final class ModService {
 
 		loadModItemsForMod(mod);
 		loadModLocalizationsForMod(mod);
+		loadModConfigForMod(mod);
 
-		if (isCreatedByUser(xmlDoc)) {
-			if (modCollection.getMod(mod.id) == null) modCollection.addMod(mod);
-		} else {
-			if (externalModCollection.getMod(mod.id) == null)
-				externalModCollection.addMod(mod);
-		}
-	}
-
-	private boolean isCreatedByUser(org.w3c.dom.Document doc) {
-		final String author = textOf(doc, "author");
-		return !author.isBlank() && author.equals(configService.getCurrent().userName);
+		if (!modCollection.contains(mod))
+			modCollection.add(mod);
 	}
 
 	// ------------------------------------------------------------------
@@ -120,11 +117,11 @@ public final class ModService {
 	// ------------------------------------------------------------------
 
 	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel, List<String> supportedVersions) {
-		if (name == null || name.isBlank() || modId == null || modId.isBlank() || version == null || version.isBlank()) {
+		if (name.isBlank() || modId.isBlank()) {
 			log.warning("createNewMod: required fields missing.");
 			return new ModData();
 		}
-		if (modCollection.getMod(modId) != null) {
+		if (modCollection.stream().anyMatch(mod -> mod.id.equals(modId))) {
 			log.warning("createNewMod: mod ID '" + modId + "' already exists.");
 			return new ModData();
 		}
@@ -137,7 +134,7 @@ public final class ModService {
 		m.createdOn = createdOn;
 		m.modifiesLevel = modifiesLevel;
 		m.supportsGameVersions = new ArrayList<>(supportedVersions);
-		modCollection.addMod(m);
+		modCollection.add(m);
 		log.info("Mod '" + name + "' [" + modId + "] created.");
 		return m;
 	}
@@ -150,10 +147,9 @@ public final class ModService {
 	}
 
 	public boolean tryGetModFromCollection(String modId) {
-		var m = modCollection.getMod(modId);
-		if (m == null) m = externalModCollection.getMod(modId);
-		if (m == null) return false;
-		this.currentMod = m;
+		var m = modCollection.stream().filter(mod -> mod.id.equals(modId)).findAny();
+		if (m.isEmpty()) return false;
+		this.currentMod = m.get();
 		return true;
 	}
 
@@ -166,14 +162,14 @@ public final class ModService {
 	 * This matches the extraction logic (one language folder -> one PAK).
 	 */
 	public void exportMod(ModData mod) {
-		final String gameDir = configService.getCurrent().gameDirectory;
+		final String gameDir = userConfig.getCurrent().gameDirectory;
 
-		// Write items to XML files
-		itemService.writeModItems(mod);
+		// Write items to XML files; returns the set of PAK stems that were written
+		Set<String> pakNames = itemService.writeModItems(mod);
 		// Write localization XML files
 		localizationService.writeModLocalization(mod);
-		// Create Data PAK
-		createModPak(gameDir, mod);
+		// Create one Data PAK per origin PAK stem
+		createModPaks(gameDir, mod, pakNames);
 		// Create Localization PAKs (one per language)
 		packLocalization(gameDir, mod);
 
@@ -181,31 +177,51 @@ public final class ModService {
 	}
 
 	/**
-	 * Pack everything inside Mods/<modId>/Data/ into Mods/<modId>/Data/<modId>.pak.
-	 * Uses the generic PakPacker utility.
+	 * Pack each staging folder into its own PAK file and then delete the staging dir.
+	 *
+	 * Layout written by ItemService.writeModItems:
+	 *   Mods/<modId>/Data/_stage/<pakStem>/<inner-dir-structure>/
+	 *
+	 * Each <pakStem> becomes:
+	 *   Mods/<modId>/Data/<pakStem>.pak
+	 *
+	 * The _stage folder is removed on success.
 	 */
-	private void createModPak(String gameDir, ModData mod) {
-		final String dataFolder = PathFactory.modData(gameDir, mod.id);
-		final String pakFilePath = PathFactory.join(dataFolder, mod.id + ".pak");
-
-		final Path dataPath = Path.of(dataFolder);
-		final Path pakPath = Path.of(pakFilePath);
-
+	private void createModPaks(String gameDir, ModData mod, Set<String> pakNames) {
 		if (mod.items.isEmpty()) {
-			log.info("No Data found for mod " + mod.id + " - skipping PAK creation.");
+			log.info("No items for mod " + mod.id + " – skipping PAK creation.");
 			return;
 		}
 
-		if (!Files.exists(dataPath)) {
-			log.info("No Data folder found for mod " + mod.id + " - skipping PAK creation.");
+		final Path stageRoot = Path.of(gameDir, "Mods", mod.id, "Data", "_stage");
+		if (!Files.exists(stageRoot)) {
+			log.warning("Staging folder not found for mod " + mod.id + " – skipping PAK creation.");
 			return;
 		}
 
-		boolean success = Util.packFolderExcludingSelf(dataPath, pakPath);
-		if (success) {
-			log.info("PAK created for mod " + mod.id + ": " + pakFilePath);
-		} else {
-			log.warning("PAK creation failed for mod " + mod.id);
+		boolean allOk = true;
+		for (String pakStem : pakNames) {
+			Path stageDir = stageRoot.resolve(pakStem);
+			if (!Files.exists(stageDir)) {
+				log.fine("Staging dir missing for PAK stem '" + pakStem + "' – skipping.");
+				continue;
+			}
+
+			Path destPak = Path.of(gameDir, "Mods", mod.id, "Data", pakStem + ".pak");
+			boolean ok = Util.packFolderExcludingSelf(stageDir, destPak);
+			if (ok) {
+				log.info("PAK created: " + destPak.getFileName());
+			} else {
+				log.warning("PAK creation failed for stem '" + pakStem + "'.");
+				allOk = false;
+			}
+		}
+
+		// Clean up the staging tree regardless of individual failures
+		Util.deleteRecursively(stageRoot);
+
+		if (allOk) {
+			log.info("All PAKs created for mod " + mod.id + " (" + pakNames.size() + " PAK(s)).");
 		}
 	}
 
@@ -216,12 +232,11 @@ public final class ModService {
 	 *
 	 * @param gameDir The game directory path
 	 * @param mod     The mod data containing localizations
-	 * @return true if all languages were packed successfully
 	 */
-	private boolean packLocalization(String gameDir, ModData mod) {
-		if (mod.localizations == null || mod.localizations.isEmpty()) {
+	private void packLocalization(String gameDir, ModData mod) {
+		if (mod.localizations.isEmpty()) {
 			log.fine("No localizations to pack for mod " + mod.id);
-			return true;
+			return;
 		}
 
 		AtomicBoolean allSuccess = new AtomicBoolean(true);
@@ -229,13 +244,13 @@ public final class ModService {
 
 		if (!Files.exists(modLocalizationRoot)) {
 			log.warning("Localization folder not found for mod " + mod.id);
-			return false;
+			return;
 		}
 
 		try (var stream = Files.list(modLocalizationRoot)) {
 			stream.filter(Files::isDirectory)
 					.forEach(langFolder -> {
-						String folderName = langFolder.getFileName().toString();
+						final String folderName = langFolder.getFileName().toString();
 						// Expected format: "German_xml", "English_xml", etc.
 						if (!folderName.endsWith("_xml")) {
 							log.fine("Skipping non-localization folder: " + folderName);
@@ -243,11 +258,12 @@ public final class ModService {
 						}
 
 						// The PAK should be named like "German_xml.pak" and placed in the game root
-						Path destPak = Path.of(gameDir, folderName + ".pak");
+						final Path destPak = Path.of(langFolder + ".pak");
 						boolean success = Util.packFolder(langFolder, destPak);
 
 						if (success) {
 							log.info("Localization packed: " + folderName + ".pak");
+							Util.deleteRecursively(langFolder);
 						} else {
 							log.warning("Failed to pack localization: " + folderName);
 							allSuccess.set(false);
@@ -255,10 +271,10 @@ public final class ModService {
 					});
 		} catch (IOException e) {
 			log.severe("Failed to list localization folders: " + e.getMessage());
-			return false;
+			return;
 		}
 
-		return allSuccess.get();
+		allSuccess.get();
 	}
 
 	// ------------------------------------------------------------------
@@ -282,22 +298,98 @@ public final class ModService {
 		return m;
 	}
 
+	/**
+	 * Load mod items from all PAK files in the mod's Data folder.
+	 * Supports multiple PAK files (e.g., Weapons.pak, Armor.pak, etc.).
+	 */
 	public void loadModItemsForMod(ModData mod) {
-		final String gameDir = configService.getCurrent().gameDirectory;
-		final String pakFile = PathFactory.modData(gameDir, mod.id) + "/" + mod.id + ".pak";
+		log.info("Loading mod data for mod: " + mod.id);
+		final String gameDir = userConfig.getCurrent().gameDirectory;
+		final Path dataFolder = Path.of(PathFactory.modData(gameDir, mod.id));
 
-		if (!new File(pakFile).exists()) {
-			log.fine("No pak found for mod " + mod.id);
+		if (!Files.exists(dataFolder)) {
+			log.fine("No Data folder found for mod " + mod.id);
 			return;
 		}
 
-		ItemType.endpoints().forEach((type, eps) -> {
-			String key = eps.keySet().iterator().next();
-			int idx = key.indexOf('_');
-			String epKey = idx >= 0 ? key.substring(0, idx) : key;
-			var dp = DataPointFactory.create(pakFile, epKey, type);
-			mod.items.addAll(itemService.readModItem(dp));
-		});
+		List<IModItem> allItems = new ArrayList<>();
+
+		try (var stream = Files.list(dataFolder)) {
+			// Find all .pak files in the Data folder
+			List<Path> pakFiles = stream
+					.filter(Files::isRegularFile)
+					.filter(p -> p.toString().toLowerCase().endsWith(".pak"))
+					.toList();
+
+			if (pakFiles.isEmpty()) {
+				log.fine("No PAK files found in Data folder for mod " + mod.id);
+				return;
+			}
+
+			log.info("Found " + pakFiles.size() + " PAK file(s) for mod " + mod.id);
+
+			// Process each PAK file
+			for (Path pakFile : pakFiles) {
+				log.fine("Processing PAK: " + pakFile.getFileName());
+
+				try (var zf = new ZipFile(pakFile.toFile())) {
+					var entries = zf.entries();
+					while (entries.hasMoreElements()) {
+						var entry = entries.nextElement();
+						String entryName = entry.getName().replace('\\', '/');
+
+						// Only process XML files
+						if (!entryName.toLowerCase().endsWith(".xml")) {
+							continue;
+						}
+
+						try (var is = zf.getInputStream(entry)) {
+							Document doc = parseXml(is);
+							Element root = doc.getDocumentElement();
+							AttributeFactory.discoverTypes(root);
+
+							// Process all child elements
+							NodeList children = root.getChildNodes();
+							for (int i = 0; i < children.getLength(); i++) {
+								var node = children.item(i);
+								if (node.getNodeType() != Node.ELEMENT_NODE) continue;
+
+								Element tableElement = (Element) node;
+								String tableName = tableElement.getLocalName();
+
+								// Find all item elements within this table
+								NodeList items = tableElement.getChildNodes();
+								for (int j = 0; j < items.getLength(); j++) {
+									var itemNode = items.item(j);
+									if (itemNode.getNodeType() != Node.ELEMENT_NODE) continue;
+
+									Element itemElement = (Element) itemNode;
+									IModItem item = builder.build(itemElement);
+
+									if (item != null && item.getId() != null) {
+										// Add source PAK info to help with debugging
+										item.setPath(pakFile.getFileName() + ":" + entryName);
+										allItems.add(item);
+									}
+								}
+							}
+						} catch (Exception ex) {
+							log.warning("Parse error in " + entryName + " from " +
+									pakFile.getFileName() + ": " + ex.getMessage());
+						}
+					}
+				} catch (IOException e) {
+					log.severe("Cannot open PAK file: " + pakFile + " - " + e.getMessage());
+				}
+			}
+
+			mod.items = allItems;
+			log.info(String.format("Loaded %d items from %d PAK file(s) for mod %s",
+					allItems.size(), pakFiles.size(), mod.id));
+
+		} catch (IOException e) {
+			log.severe("Failed to list Data folder for mod " + mod.id + ": " + e.getMessage());
+		}
 	}
 
 	/**
@@ -308,22 +400,23 @@ public final class ModService {
 	 * @param mod The mod data to populate with localization entries
 	 */
 	public void loadModLocalizationsForMod(ModData mod) {
-		final String gameDir = configService.getCurrent().gameDirectory;
-		if (gameDir == null || gameDir.isBlank()) {
-			log.warning("Game directory not configured - cannot load mod localizations.");
-			return;
-		}
+		final String gameDir = userConfig.getCurrent().gameDirectory;
+		final Path modLang = Path.of(gameDir, "Mods", mod.id);
 
-		final Path modLocalizationRoot = Path.of(gameDir, "Mods", mod.id);
-
-		if (!Files.exists(modLocalizationRoot)) {
+		if (!Files.exists(modLang)) {
 			log.fine("No Localization folder found for mod " + mod.id);
 			return;
 		}
-
-		mod.localizations = localizationService.readLocalizationFromXml(String.valueOf(modLocalizationRoot));
+		mod.localizations = localizationService.readLocalizationFromXml(String.valueOf(modLang), true);
 	}
 
+	/**
+	 * Load config for a mod (mod.cfg) and store in ModData.
+	 */
+	public void loadModConfigForMod(ModData mod) {
+		if (mod == null || mod.id == null || mod.id.isBlank()) return;
+		mod.config = configService.loadModConfig(mod.id);
+	}
 
 	public static String textOf(org.w3c.dom.Document doc, String tag) {
 		var nl = doc.getElementsByTagName(tag);

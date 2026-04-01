@@ -30,7 +30,6 @@ public final class LocalizationService {
 	);
 
 	private final UserService configService;
-	private Map<Language, Map<String, String>> cachedLocalizations = new EnumMap<>(Language.class);
 
 	public LocalizationService(UserService configService) {
 		this.configService = configService;
@@ -48,10 +47,10 @@ public final class LocalizationService {
 		final String dir = configService.getCurrent().gameDirectory;
 		if (dir != null && !dir.isBlank()) {
 			try {
-				cachedLocalizations = readLocalizationFromXml(dir);
+				Singleton.INSTANCE.game().localizations = readLocalizationFromXml(dir, false);
 			} catch (Exception ex) {
 				log.severe("Localisation read failed: " + ex.getMessage());
-				cachedLocalizations = new EnumMap<>(Language.class);
+				Singleton.INSTANCE.game().localizations = new EnumMap<>(Language.class);
 			}
 		}
 	}
@@ -90,7 +89,7 @@ public final class LocalizationService {
 	 * Read all localisation paks from the game directory.
 	 * Returns: Language enum -> (string-key -> localised-value)
 	 */
-	public Map<Language, Map<String, String>> readLocalizationFromXml(String root) {
+	public Map<Language, Map<String, String>> readLocalizationFromXml(String root, boolean isMod) {
 		final var result = new EnumMap<Language, Map<String, String>>(Language.class);
 
 		for (final String pakPath : PathFactory.allLocPaths(root)) {
@@ -104,9 +103,9 @@ public final class LocalizationService {
 			try (final var zf = new ZipFile(f)) {
 				final var it = zf.entries();
 				while (it.hasMoreElements()) {
-					var entry = it.nextElement();
-					String name = new File(entry.getName()).getName().toLowerCase(Locale.ROOT);
-					if (!RELEVANT_FILES.contains(name)) continue;
+					final var entry = it.nextElement();
+					final String name = new File(entry.getName()).getName().toLowerCase(Locale.ROOT);
+					if (!isMod && !RELEVANT_FILES.contains(name)) continue;
 
 					try (var is = zf.getInputStream(entry)) {
 						var parsed = parseLocalizationXml(is);
@@ -208,7 +207,7 @@ public final class LocalizationService {
 
 	private String resolve(IModItem item, String... candidates) {
 		final Language lang = Language.fromIsoCode(configService.getCurrent().language);
-		final var langMap = cachedLocalizations.get(lang);
+		final var langMap = Singleton.INSTANCE.game().localizations.get(lang);
 
 		for (String candidate : candidates) {
 			String clo = candidate.toLowerCase(Locale.ROOT);

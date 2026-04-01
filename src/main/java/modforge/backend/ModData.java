@@ -3,10 +3,7 @@ package modforge.backend;
 import modforge.backend.model.IModItem;
 import modforge.backend.model.Language;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class ModData {
 	public String id = "";
@@ -18,11 +15,12 @@ public final class ModData {
 	public boolean modifiesLevel = false;
 	public List<String> supportsGameVersions = new ArrayList<>();
 	public List<IModItem> items = new ArrayList<>();
+	public Map<String, String> config = new HashMap<>();
 
 	/**
 	 * lang-code -> (string-key -> localised-value)
 	 */
-	public Map<Language, Map<String, String>> localizations = new EnumMap<Language, Map<String, String>>(Language.class);
+	public Map<Language, Map<String, String>> localizations = new HashMap<>();
 
 	@Override
 	public String toString() {

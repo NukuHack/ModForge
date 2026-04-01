@@ -2,6 +2,8 @@
 package modforge.frontend.pages;
 
 import modforge.backend.*;
+import modforge.backend.service.ConfigService;
+import modforge.backend.service.ModItemBuilder;
 import modforge.backend.service.ModService;
 import modforge.frontend.*;
 
@@ -9,6 +11,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 // =============================================================================
 //  MOD EDIT PAGE  (create / edit a mod with full manifest editing)
@@ -56,7 +60,6 @@ public class ModEditPage extends BasePage {
 		if (currentMod == null) {
 			currentMod = new ModData();
 		}
-		refreshFieldData();
 	}
 
 	private JPanel buildForm() {
@@ -279,6 +282,7 @@ public class ModEditPage extends BasePage {
 		}
 
 		// Update mod object
+		currentMod.id = idField.getText();
 		currentMod.name = nameField.getText();
 		currentMod.description = descriptionArea.getText();
 		currentMod.author = authorField.getText();
@@ -298,6 +302,7 @@ public class ModEditPage extends BasePage {
 		// Write manifest
 		final String gameDir = window.getRegistry().userConfig.getCurrent().gameDirectory;
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
+		ConfigService.saveModConfigFromMod(gameDir, currentMod);
 
 		if (success) {
 			window.snackbar.show("Manifest saved for " + currentMod.name, BarManager.Type.SUCCESS);
@@ -307,11 +312,14 @@ public class ModEditPage extends BasePage {
 	}
 
 	private void exportMod() {
-		if (ModService.writeModAsXml(window.getRegistry().userConfig.getCurrent().gameDirectory, currentMod)) {
+		try {
+			saveManifest();
 			window.getRegistry().modService.exportMod(currentMod);
 			window.snackbar.show("Mod exported to PAK: " + currentMod.id + ".pak", BarManager.Type.SUCCESS);
-		} else {
+		} catch (final Exception ex) {
 			window.snackbar.show("Failed to export mod", BarManager.Type.ERROR);
+			Logger log = Logger.getLogger(ModEditPage.class.getName());
+			log.warning("error while exporting: "+ ex);
 		}
 	}
 
@@ -334,7 +342,7 @@ public class ModEditPage extends BasePage {
 					window.snackbar.show("Mod deleted: " + currentMod.name, BarManager.Type.SUCCESS);
 				}
 
-				window.getRegistry().modService.modCollection.removeMod(currentMod);
+				window.getRegistry().modService.modCollection.remove(currentMod);
 				window.navigate(MainWindow.Page.MODS);
 			} catch (Exception e) {
 				window.snackbar.show("Failed to delete mod: " + e.getMessage(), BarManager.Type.ERROR);

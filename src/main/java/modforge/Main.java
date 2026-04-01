@@ -29,18 +29,7 @@ public class Main {
 
 			// Boot services off the EDT
 			CompletableFuture.runAsync(() -> {
-				final ServiceRegistry registry = new ServiceRegistry();
-
-				final String dir = args.length > 0 ? args[0] : System.getProperty("user.home");
-				if (args.length == 0) {
-					System.out.println("No game directory specified, using config or : " + dir);
-					System.out.println("SpecifiedUsage:  java -cp . modforge.Main <path-to-KCD2-installation>");
-				} else {
-					System.out.println("Using game directory: " + dir);
-				}
-				registry.init(dir);
-				Singleton.INSTANCE.setRegistry(registry);
-
+				Singleton.INSTANCE.setRegistry(new ServiceRegistry());
 			}).whenComplete((v, ex) -> SwingUtilities.invokeLater(() -> {
 				splash.dispose();
 				if (ex != null) {

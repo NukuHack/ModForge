@@ -5,6 +5,7 @@ package modforge.backend;
 // =============================================================================
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.io.*;
 import java.nio.file.*;
@@ -83,14 +84,15 @@ public final class Util {
 	 * @param sourceFolder   The folder to pack (its contents become the PAK root)
 	 * @param destPakFile    The output PAK file path
 	 * @param fileFilter     Optional filter to exclude certain files (can be null to include all)
+	 * @param stripMetadata  If true, removes timestamps and other metadata from ZIP entries
 	 * @return true if packing succeeded, false otherwise
 	 */
-	public static boolean packFolder(Path sourceFolder, Path destPakFile, Predicate<Path> fileFilter) {
+	public static boolean packFolder(Path sourceFolder, Path destPakFile, Predicate<Path> fileFilter, boolean stripMetadata) {
 		if (!Files.exists(sourceFolder) || !Files.isDirectory(sourceFolder)) {
 			log.warning("Source folder does not exist: " + sourceFolder);
 			return false;
 		}
-
+		final FileTime ft = FileTime.fromMillis(0);
 		try {
 			Files.createDirectories(destPakFile.getParent());
 			Files.deleteIfExists(destPakFile);
@@ -98,18 +100,39 @@ public final class Util {
 			try (var fos = new FileOutputStream(destPakFile.toFile());
 				 var zout = new ZipOutputStream(fos)) {
 
+				// Optionally set the ZipOutputStream comment to empty or fixed
+				if (stripMetadata) {
+					zout.setComment(""); // Remove any comments
+				}
+
 				Files.walk(sourceFolder)
 						.filter(Files::isRegularFile)
 						.filter(path -> fileFilter == null || fileFilter.test(path))
 						.forEach(file -> {
 							try {
 								// Get the path relative to the source folder
-								// This ensures the PAK structure matches expectations
 								String relPath = sourceFolder.relativize(file)
 										.toString()
 										.replace('\\', '/');
 
-								zout.putNextEntry(new ZipEntry(relPath));
+								// Create ZipEntry with a fixed timestamp to strip metadata
+								ZipEntry entry = new ZipEntry(relPath);
+
+								if (stripMetadata) {
+									// Set a fixed timestamp (Unix epoch, or any constant value)
+									// This prevents storing the actual file modification time
+									entry.setTime(0L); // Jan 1 1970 00:00:00 UTC
+
+									// Set other metadata to fixed/default values
+									entry.setCreationTime(ft);
+									entry.setLastAccessTime(ft);
+									entry.setLastModifiedTime(ft);
+
+									// Optionally set compression method and level
+									entry.setMethod(ZipEntry.DEFLATED);
+								}
+
+								zout.putNextEntry(entry);
 								Files.copy(file, zout);
 								zout.closeEntry();
 
@@ -134,7 +157,7 @@ public final class Util {
 	 * Convenience method with no file filter.
 	 */
 	public static boolean packFolder(Path sourceFolder, Path destPakFile) {
-		return packFolder(sourceFolder, destPakFile, null);
+		return packFolder(sourceFolder, destPakFile, null, true);
 	}
 
 	/**
@@ -142,6 +165,21 @@ public final class Util {
 	 * Useful when packing from a folder that might contain the target PAK.
 	 */
 	public static boolean packFolderExcludingSelf(Path sourceFolder, Path destPakFile) {
-		return packFolder(sourceFolder, destPakFile, path -> !path.equals(destPakFile));
+		return packFolder(sourceFolder, destPakFile, path -> !path.equals(destPakFile), true);
+	}
+
+	public static void deleteRecursively(Path path) {
+		if (Files.exists(path)) {
+			try {
+				Files.walk(path)
+						.sorted(Comparator.reverseOrder())
+						.forEach(p -> {
+							try { Files.deleteIfExists(p); }
+							catch (IOException e) { throw new RuntimeException(e); }
+						});
+			} catch (IOException ex) {
+				log.info("Could not delete file/folder " + path + " : " + ex);
+			}
+		}
 	}
 }
