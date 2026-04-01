@@ -26,9 +26,19 @@ public final class ModData {
 
 	@Override
 	public String toString() {
-		return "Mod[" + id + "]";
+		return "ModData{" +
+				"id='" + id + '\'' +
+				", name='" + name + '\'' +
+				", description='" + description + '\'' +
+				", author='" + author + '\'' +
+				", modVersion='" + modVersion + '\'' +
+				", createdOn='" + createdOn + '\'' +
+				", modifiesLevel=" + modifiesLevel +
+				", supportsGameVersions=" + supportsGameVersions +
+				", item_size=" + items.size() +
+				", lang_size=" + localizations.size() +
+				'}';
 	}
-
 
 	public static final ModData BASE_GAME = new ModData();
 }

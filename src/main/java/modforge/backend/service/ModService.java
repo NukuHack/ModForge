@@ -90,22 +90,23 @@ public final class ModService {
 	private void fillCollection(Path modPath) throws Exception {
 		Optional<Path> manifest;
 		try (var fs = Files.list(modPath)) {
-			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest"))
-					.findFirst();
+			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest")).findFirst();
 		}
 		if (manifest.isEmpty()) return;
 
 		var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 		var xmlDoc = docBuilder.parse(manifest.get().toFile());
 
-		var modDesc = parseModDescription(xmlDoc);
-		loadModItemsForMod(modDesc);
+		final var mod = parseModDescription(xmlDoc);
+
+		loadModItemsForMod(mod);
+		loadModLocalizationsForMod(mod);
 
 		if (isCreatedByUser(xmlDoc)) {
-			if (modCollection.getMod(modDesc.id) == null) modCollection.addMod(modDesc);
+			if (modCollection.getMod(mod.id) == null) modCollection.addMod(mod);
 		} else {
-			if (externalModCollection.getMod(modDesc.id) == null)
-				externalModCollection.addMod(modDesc);
+			if (externalModCollection.getMod(mod.id) == null)
+				externalModCollection.addMod(mod);
 		}
 	}
 
@@ -119,9 +120,7 @@ public final class ModService {
 	// ------------------------------------------------------------------
 
 	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel, List<String> supportedVersions) {
-		if (name == null || name.isBlank() ||
-				modId == null || modId.isBlank() ||
-				version == null || version.isBlank()) {
+		if (name == null || name.isBlank() || modId == null || modId.isBlank() || version == null || version.isBlank()) {
 			log.warning("createNewMod: required fields missing.");
 			return new ModData();
 		}
@@ -283,12 +282,12 @@ public final class ModService {
 		return m;
 	}
 
-	public void loadModItemsForMod(ModData modDesc) {
-		String gameDir = configService.getCurrent().gameDirectory;
-		String pakFile = PathFactory.modData(gameDir, modDesc.id) + "/" + modDesc.id + ".pak";
+	public void loadModItemsForMod(ModData mod) {
+		final String gameDir = configService.getCurrent().gameDirectory;
+		final String pakFile = PathFactory.modData(gameDir, mod.id) + "/" + mod.id + ".pak";
 
 		if (!new File(pakFile).exists()) {
-			log.fine("No pak found for mod " + modDesc.id);
+			log.fine("No pak found for mod " + mod.id);
 			return;
 		}
 
@@ -297,9 +296,34 @@ public final class ModService {
 			int idx = key.indexOf('_');
 			String epKey = idx >= 0 ? key.substring(0, idx) : key;
 			var dp = DataPointFactory.create(pakFile, epKey, type);
-			modDesc.items.addAll(itemService.readModItem(dp));
+			mod.items.addAll(itemService.readModItem(dp));
 		});
 	}
+
+	/**
+	 * Load localization data for a mod from its Localization folder structure.
+	 * The mod's localization files are stored in:
+	 * Mods/<modId>/Localization/<Lang>_xml/text__<modId>.xml
+	 *
+	 * @param mod The mod data to populate with localization entries
+	 */
+	public void loadModLocalizationsForMod(ModData mod) {
+		final String gameDir = configService.getCurrent().gameDirectory;
+		if (gameDir == null || gameDir.isBlank()) {
+			log.warning("Game directory not configured - cannot load mod localizations.");
+			return;
+		}
+
+		final Path modLocalizationRoot = Path.of(gameDir, "Mods", mod.id);
+
+		if (!Files.exists(modLocalizationRoot)) {
+			log.fine("No Localization folder found for mod " + mod.id);
+			return;
+		}
+
+		mod.localizations = localizationService.readLocalizationFromXml(String.valueOf(modLocalizationRoot));
+	}
+
 
 	public static String textOf(org.w3c.dom.Document doc, String tag) {
 		var nl = doc.getElementsByTagName(tag);

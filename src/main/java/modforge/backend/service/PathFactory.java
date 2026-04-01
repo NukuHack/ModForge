@@ -45,7 +45,7 @@ final class PathFactory {
 	}
 
 	public static List<String> allLocPaths(String root) {
-		return LANGUAGES.stream().map(l -> locImport(root, l)).collect(Collectors.toList());
+		return LANGUAGES.stream().map(l -> locImport(root, l)).toList();
 	}
 
 	/**

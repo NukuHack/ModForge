@@ -15,7 +15,7 @@ import java.util.List;
 // =============================================================================
 public class ModEditPage extends BasePage {
 
-	private ModData currentDesc;
+	private ModData currentMod;
 
 	private JTextField idField;
 	private JTextField nameField;
@@ -50,11 +50,11 @@ public class ModEditPage extends BasePage {
 		bottomBar.add(primaryBtn("Back", e -> window.navigate(MainWindow.Page.MODS)));
 		add(bottomBar, BorderLayout.SOUTH);
 
-		// Initialize currentDesc from registry AFTER building the form
+		// Initialize currentMod from registry AFTER building the form
 		// This ensures the form fields are properly populated
-		currentDesc = window.getRegistry().modService.getCurrentMod();
-		if (currentDesc == null) {
-			currentDesc = new ModData();
+		currentMod = window.getRegistry().modService.getCurrentMod();
+		if (currentMod == null) {
+			currentMod = new ModData();
 		}
 		refreshFieldData();
 	}
@@ -69,7 +69,7 @@ public class ModEditPage extends BasePage {
 		gc.insets = new Insets(8, 12, 8, 12);
 		gc.fill = GridBagConstraints.HORIZONTAL;
 
-		addFormRow(form, gc, "Mod ID", idField = createReadOnlyField(), 0);
+		addFormRow(form, gc, "Mod ID", idField = styledField(""), 0);
 		addFormRow(form, gc, "Name *", nameField = styledField(""), 1);
 		addFormRow(form, gc, "Author", authorField = styledField(""), 2);
 		addFormRow(form, gc, "Version *", versionField = styledField(""), 3);
@@ -176,19 +176,6 @@ public class ModEditPage extends BasePage {
 		panel.add(field, gc);
 	}
 
-	private JTextField createReadOnlyField() {
-		JTextField field = new JTextField();
-		field.setBackground(new Color(0x2a2a3a));
-		field.setForeground(MainWindow.MUTED);
-		field.setEditable(false);
-		field.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(0x45475a), 1),
-				BorderFactory.createEmptyBorder(6, 10, 6, 10)
-		));
-		field.setFont(new Font("Roboto", Font.PLAIN, 13));
-		return field;
-	}
-
 	private void refreshVersionFields() {
 		// Clear all version fields except the add button
 		while (versionsPanel.getComponentCount() > 1) {
@@ -200,7 +187,7 @@ public class ModEditPage extends BasePage {
 		versionFields.clear();
 
 		// Add version fields for each supported version
-		for (String version : currentDesc.supportsGameVersions) {
+		for (String version : currentMod.supportsGameVersions) {
 			addVersionField(version);
 		}
 
@@ -219,18 +206,19 @@ public class ModEditPage extends BasePage {
 	}
 
 	public void refreshFieldData() {
-		// Ensure currentDesc is up to date
-		currentDesc = window.getRegistry().modService.getCurrentMod();
-		if (currentDesc == null) return;
+		// Ensure currentMod is up to date
+		currentMod = window.getRegistry().modService.getCurrentMod();
+		if (currentMod == null) return;
+		System.out.println(currentMod);
 
 		// Update text fields
-		idField.setText(currentDesc.id);
-		nameField.setText(currentDesc.name != null ? currentDesc.name : "");
-		descriptionArea.setText(currentDesc.description != null ? currentDesc.description : "");
-		authorField.setText(currentDesc.author != null ? currentDesc.author : "");
-		versionField.setText(currentDesc.modVersion != null ? currentDesc.modVersion : "");
-		createdOnField.setText(currentDesc.createdOn != null ? currentDesc.createdOn : "");
-		modifiesLevelCheck.setSelected(currentDesc.modifiesLevel);
+		idField.setText(currentMod.id);
+		nameField.setText(currentMod.name != null ? currentMod.name : "");
+		descriptionArea.setText(currentMod.description != null ? currentMod.description : "");
+		authorField.setText(currentMod.author != null ? currentMod.author : "");
+		versionField.setText(currentMod.modVersion != null ? currentMod.modVersion : "");
+		createdOnField.setText(currentMod.createdOn != null ? currentMod.createdOn : "");
+		modifiesLevelCheck.setSelected(currentMod.modifiesLevel);
 
 		// Refresh the versions panel with current supported versions
 		refreshVersionFields();
@@ -291,37 +279,37 @@ public class ModEditPage extends BasePage {
 		}
 
 		// Update mod object
-		currentDesc.name = nameField.getText();
-		currentDesc.description = descriptionArea.getText();
-		currentDesc.author = authorField.getText();
-		currentDesc.modVersion = versionField.getText();
-		currentDesc.createdOn = createdOnField.getText();
-		currentDesc.modifiesLevel = modifiesLevelCheck.isSelected();
+		currentMod.name = nameField.getText();
+		currentMod.description = descriptionArea.getText();
+		currentMod.author = authorField.getText();
+		currentMod.modVersion = versionField.getText();
+		currentMod.createdOn = createdOnField.getText();
+		currentMod.modifiesLevel = modifiesLevelCheck.isSelected();
 
 		// Update supported versions
-		currentDesc.supportsGameVersions.clear();
+		currentMod.supportsGameVersions.clear();
 		for (JTextField field : versionFields) {
 			String version = field.getText().trim();
 			if (!version.isBlank()) {
-				currentDesc.supportsGameVersions.add(version);
+				currentMod.supportsGameVersions.add(version);
 			}
 		}
 
 		// Write manifest
 		final String gameDir = window.getRegistry().userConfig.getCurrent().gameDirectory;
-		boolean success = ModService.writeModAsXml(gameDir, currentDesc);
+		boolean success = ModService.writeModAsXml(gameDir, currentMod);
 
 		if (success) {
-			window.snackbar.show("Manifest saved for " + currentDesc.name, BarManager.Type.SUCCESS);
+			window.snackbar.show("Manifest saved for " + currentMod.name, BarManager.Type.SUCCESS);
 		} else {
 			window.snackbar.show("Failed to save manifest", BarManager.Type.ERROR);
 		}
 	}
 
 	private void exportMod() {
-		if (ModService.writeModAsXml(window.getRegistry().userConfig.getCurrent().gameDirectory, currentDesc)) {
-			window.getRegistry().modService.exportMod(currentDesc);
-			window.snackbar.show("Mod exported to PAK: " + currentDesc.id + ".pak", BarManager.Type.SUCCESS);
+		if (ModService.writeModAsXml(window.getRegistry().userConfig.getCurrent().gameDirectory, currentMod)) {
+			window.getRegistry().modService.exportMod(currentMod);
+			window.snackbar.show("Mod exported to PAK: " + currentMod.id + ".pak", BarManager.Type.SUCCESS);
 		} else {
 			window.snackbar.show("Failed to export mod", BarManager.Type.ERROR);
 		}
@@ -330,7 +318,7 @@ public class ModEditPage extends BasePage {
 	private void deleteMod() {
 		int confirm = JOptionPane.showConfirmDialog(
 				this,
-				"Are you sure you want to delete mod '" + currentDesc.name + "'?\nThis will remove the mod folder from your game directory.",
+				"Are you sure you want to delete mod '" + currentMod.name + "'?\nThis will remove the mod folder from your game directory.",
 				"Confirm Delete",
 				JOptionPane.YES_NO_OPTION,
 				JOptionPane.WARNING_MESSAGE
@@ -338,15 +326,15 @@ public class ModEditPage extends BasePage {
 
 		if (confirm == JOptionPane.YES_OPTION) {
 			String gameDir = window.getRegistry().userConfig.getCurrent().gameDirectory;
-			java.nio.file.Path modPath = java.nio.file.Path.of(gameDir, "Mods", currentDesc.id);
+			java.nio.file.Path modPath = java.nio.file.Path.of(gameDir, "Mods", currentMod.id);
 
 			try {
 				if (java.nio.file.Files.exists(modPath)) {
 					deleteRecursively(modPath.toFile());
-					window.snackbar.show("Mod deleted: " + currentDesc.name, BarManager.Type.SUCCESS);
+					window.snackbar.show("Mod deleted: " + currentMod.name, BarManager.Type.SUCCESS);
 				}
 
-				window.getRegistry().modService.modCollection.removeMod(currentDesc);
+				window.getRegistry().modService.modCollection.removeMod(currentMod);
 				window.navigate(MainWindow.Page.MODS);
 			} catch (Exception e) {
 				window.snackbar.show("Failed to delete mod: " + e.getMessage(), BarManager.Type.ERROR);

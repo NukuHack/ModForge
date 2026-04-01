@@ -19,21 +19,16 @@ public final class ServiceRegistry {
 
 	public ServiceRegistry(String initialUri) {
 		userConfig = new UserService();
-		var localizationAdapter = new LocalizationAdapter();
-		localizationService = new LocalizationService(localizationAdapter, userConfig);
-
+		localizationService = new LocalizationService(userConfig);
 		builder = ModItemBuilder.createDefault();
-		var itemAdapter = new ItemAdapter(userConfig, builder);
 		jsonAdapter = new JsonAdapter(resolveAppDataDir());
-
-		itemService = new ItemService(itemAdapter, userConfig);
+		itemService = new ItemService(userConfig, builder);
 		iconService = new IconService(userConfig);
 		modService = new ModService(itemService, userConfig, localizationService);
 	}
 
 	/**
 	 * Convenience method: set the game directory and reload everything.
-	 * Equivalent to the user browsing to their game folder in the UI.
 	 */
 	public void init(String path) {
 		var config = userConfig.getCurrent();

@@ -191,9 +191,7 @@ public class ModsPage extends BasePage {
 		}
 
 		@Override
-		public Component getListCellRendererComponent(JList<? extends ModData> list,
-													  ModData mod, int index,
-													  boolean isSelected, boolean cellHasFocus) {
+		public Component getListCellRendererComponent(JList<? extends ModData> list, ModData mod, int index, boolean isSelected, boolean cellHasFocus) {
 			nameLabel.setText(mod.name != null && !mod.name.isBlank() ? mod.name : mod.id);
 			versionLabel.setText("v" + (mod.modVersion != null ? mod.modVersion : "?"));
 			authorLabel.setText(mod.author != null ? mod.author : "Unknown");

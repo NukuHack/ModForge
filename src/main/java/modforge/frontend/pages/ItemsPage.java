@@ -1,5 +1,6 @@
 package modforge.frontend.pages;
 
+import modforge.Singleton;
 import modforge.backend.model.IModItem;
 import modforge.backend.model.item.*;
 import modforge.backend.service.*;
@@ -240,7 +241,7 @@ public class ItemsPage extends BasePage {
 	private void refreshUnderlyingList() {
 		underlyingItems.clear();
 
-		underlyingItems.addAll(itemService.items);
+		underlyingItems.addAll(Singleton.INSTANCE.game().items);
 
 		// Sort by ID for consistent display
 		underlyingItems.sort(Comparator.comparing(IModItem::getId, String.CASE_INSENSITIVE_ORDER));
