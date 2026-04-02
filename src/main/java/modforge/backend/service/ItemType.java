@@ -1,6 +1,7 @@
 package modforge.backend.service;
 
-import modforge.backend.model.IModItem;
+import modforge.backend.model.ModItem;
+import modforge.backend.model.item.PerkBuff;
 import modforge.backend.model.item.*;
 
 import java.util.*;
@@ -16,18 +17,19 @@ public enum ItemType {
 	PERK(Perk.class),
 	BUFF(Buff.class),
 	STORM(Storm.class),
+	PERKBUFF(PerkBuff.class),
 	ALL_ITEM(MeleeWeapon.class, MissileWeapon.class, Ammo.class, Hood.class, Armor.class, Helmet.class, Food.class, Poison.class, Herb.class, CraftingMaterial.class,
 			NPCTool.class, MiscItem.class, GameDocument.class, Die.class, ItemAlias.class, QuickSlotContainer.class, DiceBadge.class, PickableItem.class, Key.class, Money.class, KeyRing.class,
 			Perk.class, Buff.class, Storm.class);
 
-	private final Set<Class<? extends IModItem>> itemClasses;
+	private final Set<Class<? extends ModItem>> itemClasses;
 
 	@SafeVarargs
-	ItemType(Class<? extends IModItem>... classes) {
+	ItemType(Class<? extends ModItem>... classes) {
 		this.itemClasses = Set.of(classes);
 	}
 
-	public Set<Class<? extends IModItem>> get() {
+	public Set<Class<? extends ModItem>> get() {
 		return itemClasses;
 	}
 
@@ -92,6 +94,27 @@ public enum ItemType {
 		}
 
 		return Collections.unmodifiableMap(map);
+	}
+
+
+	public static Class<? extends ModItem> determineItemClassFromTableName(String tableName) {
+		return switch (tableName.toLowerCase(Locale.ROOT)) {
+			case "perks", "perk" -> Perk.class;
+			case "buffs", "buff" -> Buff.class;
+			case "weapons", "weapon" -> MeleeWeapon.class;
+			case "armors", "armor" -> Armor.class;
+			case "helmets", "helmet" -> Helmet.class;
+			case "hoods", "hood" -> Hood.class;
+			case "foods", "food" -> Food.class;
+			case "poisons", "poison" -> Poison.class;
+			case "herbs", "herb" -> Herb.class;
+			case "craftingmaterials", "crafting_materials", "craftingmaterial", "crafting_material" -> CraftingMaterial.class;
+			case "misctems", "miscitem", "misc" -> MiscItem.class;
+			case "keys", "key" -> Key.class;
+			case "money" -> Money.class;
+			case "keyrings", "keyring" -> KeyRing.class;
+			default -> null;
+		};
 	}
 
 	private static Map<String, String> itemEndpoints() {

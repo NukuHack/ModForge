@@ -1,7 +1,7 @@
 package modforge.backend.service;
 
 import modforge.backend.DdsConverter;
-import modforge.backend.model.IModItem;
+import modforge.backend.model.ModItem;
 
 import java.io.File;
 import java.util.Locale;
@@ -20,7 +20,7 @@ public final class IconService {
 	/**
 	 * Return a base64 data-URI for the icon of the given mod item.
 	 */
-	public String getIcon(IModItem item) {
+	public String getIcon(ModItem item) {
 		if (item == null || item.getAttributes() == null) return null;
 
 		var iconAttr = item.getAttributes().stream()
@@ -49,7 +49,7 @@ public final class IconService {
 	 * @return base64 data-URI string, or null on failure.
 	 */
 	public String getBase64Icon(String iconId, String matchingFolder) {
-		String dir = configService.getCurrent().gameDirectory;
+		String dir = configService.current.gameDirectory;
 		if (dir == null || dir.isBlank()) {
 			log.warning("Game directory not set.");
 			return null;

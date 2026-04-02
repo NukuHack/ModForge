@@ -1,71 +1,99 @@
 package modforge.backend.model.item;
 
-import modforge.backend.model.IAttribute;
-import modforge.backend.model.IModItem;
+import modforge.backend.model.*;
+import modforge.backend.model.attributes.IAttribute;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
-public abstract class BaseModItem implements IModItem {
+public abstract class BaseModItem implements ModItem {
+	// TODO change the ID from string to a nicer object
 	private String id;
 	private String idKey = "Id";
 	private String path;
-	private List<IAttribute> attributes = new ArrayList<>();
+	private final List<IAttribute> attributes = new ArrayList<>();
 	private final List<String> linkedIds = new ArrayList<>();
 
 	@Override
 	public String getId() {
-		return id;
+		return this.id;
 	}
-
 	@Override
-	public void setId(String v) {
-		this.id = v;
+	public void setId(final String id) {
+		this.id = id;
 	}
 
 	@Override
 	public String getIdKey() {
-		return idKey;
+		return this.idKey;
+	}
+	@Override
+	public void setIdKey(final String key) {
+		this.idKey = key;
 	}
 
-	@Override
-	public void setIdKey(String v) {
-		this.idKey = v;
+	public void setKey(final String id, final String key) {
+		this.id = id; this.idKey = key;
 	}
 
 	@Override
 	public String getPath() {
-		return path;
+		return this.path;
 	}
-
 	@Override
-	public void setPath(String v) {
+	public void setPath(final String v) {
 		this.path = v;
 	}
 
 	@Override
 	public List<IAttribute> getAttributes() {
-		return attributes;
+		return this.attributes;
 	}
-
 	@Override
-	public void setAttributes(List<IAttribute> v) {
-		this.attributes = v;
+	public void setAttribute(final Collection<IAttribute> attr) {
+		if (this.attributes.isEmpty()) {
+			this.attributes.addAll(attr);
+		} else {
+			this.attributes.clear();
+			this.attributes.addAll(attr);
+		}
+	}
+	@Override
+	public void addAttribute(final IAttribute attr) {
+		this.attributes.add(attr);
+	}
+	@Override
+	public void addAttribute(final Collection<IAttribute> attr) {
+		this.attributes.addAll(attr);
 	}
 
 	@Override
 	public List<String> getLinkedIds() {
-		return linkedIds;
+		return this.linkedIds;
+	}
+	@Override
+	public void setLinkedId(final Collection<String> linkedIds) {
+		if (this.linkedIds.isEmpty()) {
+			this.linkedIds.addAll(linkedIds);
+		} else {
+			this.linkedIds.clear();
+			this.linkedIds.addAll(linkedIds);
+		}
+	}
+	@Override
+	public void addLinkedId(final String linkedId) {
+		this.linkedIds.add(linkedId);
+	}
+	@Override
+	public void addLinkedId(final Collection<String> linkedId) {
+		this.linkedIds.addAll(linkedId);
 	}
 
 	/**
 	 * Helper: find the first attribute whose name (case-insensitive) contains the candidate.
 	 */
-	public Optional<IAttribute> findAttr(String candidate) {
-		String lo = candidate.toLowerCase(Locale.ROOT);
-		return attributes.stream()
+	public Optional<IAttribute> findAttr(final String candidate) {
+		final String lo = candidate.toLowerCase(Locale.ROOT);
+		return this.attributes.stream()
 				.filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo))
 				.findFirst();
 	}

@@ -38,7 +38,7 @@ public final class ConfigService {
 	 * @return Map of config keys to their values
 	 */
 	public Map<String, String> loadGameConfig() {
-		String gameDir = userService.getCurrent().gameDirectory;
+		String gameDir = userService.current.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warning("Game directory not configured - cannot load game config.");
 			return new HashMap<>();
@@ -75,7 +75,7 @@ public final class ConfigService {
 	 * @return true if successful
 	 */
 	public boolean saveGameConfig(Map<String, String> config) {
-		String gameDir = userService.getCurrent().gameDirectory;
+		String gameDir = userService.current.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warning("Game directory not configured - cannot save game config.");
 			return false;
@@ -96,7 +96,7 @@ public final class ConfigService {
 	 * @return Map of config keys to their values
 	 */
 	public Map<String, String> loadModConfig(String modId) {
-		String gameDir = userService.getCurrent().gameDirectory;
+		String gameDir = userService.current.gameDirectory;
 		if (gameDir == null || gameDir.isBlank() || modId == null || modId.isBlank()) {
 			return new HashMap<>();
 		}

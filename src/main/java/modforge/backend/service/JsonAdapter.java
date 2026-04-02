@@ -1,6 +1,6 @@
 package modforge.backend.service;
 
-import modforge.backend.model.IModItem;
+import modforge.backend.model.ModItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -32,20 +32,20 @@ public final class JsonAdapter {
 				);
 	}
 
-	public List<IModItem> readFromJson(String filePath) {
+	public List<ModItem> readFromJson(String filePath) {
 		File f = new File(filePath);
 		if (!f.exists()) return new ArrayList<>();
 		try {
 			return mapper.readValue(f,
 					mapper.getTypeFactory()
-							.constructCollectionType(List.class, IModItem.class));
+							.constructCollectionType(List.class, ModItem.class));
 		} catch (IOException e) {
 			log.warning("JSON read failed (" + filePath + "): " + e.getMessage());
 			return new ArrayList<>();
 		}
 	}
 
-	public void writeAsJson(List<IModItem> items) {
+	public void writeAsJson(List<ModItem> items) {
 		if (items == null || items.isEmpty()) return;
 		String filename = items.getFirst().getClass().getSimpleName()
 				.toLowerCase(Locale.ROOT) + "s.json";

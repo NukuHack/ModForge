@@ -4,16 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 // Simple value object for buff parameters (stat_key op value)
-public final class BuffParam {
-	public final String key;
-	public final MathOperation operation;
-	public final double value;
-
-	public BuffParam(String key, MathOperation operation, double value) {
-		this.key = key;
-		this.operation = operation;
-		this.value = value;
-	}
+public record BuffParam(String key, MathOperation operation, double value) {
 
 	/**
 	 * Serialize back to the game's attribute-string format, e.g. "Strength+5,Agility-2"

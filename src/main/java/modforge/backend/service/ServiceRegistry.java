@@ -36,7 +36,7 @@ public final class ServiceRegistry {
 	 * Convenience method: set the game directory and reload everything.
 	 */
 	public void init(String path) {
-		var config = userConfig.getCurrent();
+		var config = userConfig.current;
 		if (config.gameDirectory.isBlank())
 			config.gameDirectory = Objects.requireNonNull(path);
 		userConfig.save();

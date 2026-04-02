@@ -17,11 +17,11 @@ public class StormPage extends BasePage {
 		JPanel card = card("Rule Browser");
 
 		JTextArea area = new JTextArea(
-				"// STORM rule viewer\n" +
-						"// Connect StormService.getStormDtos() here.\n\n" +
-						"// Example:\n" +
-						"//   List<StormDto> dtos = stormService.getStormDtos();\n" +
-						"//   dtos.forEach(dto -> tree.addNode(dto.getId(), dto.getCategory()));\n"
+			"// STORM rule viewer\n" +
+			"// Connect StormService.getStormDtos() here.\n\n" +
+			"// Example:\n" +
+			"//   List<StormDto> dtos = stormService.getStormDtos();\n" +
+			"//   dtos.forEach(dto -> tree.addNode(dto.getId(), dto.getCategory()));\n"
 		);
 		area.setBackground(new Color(0x11111b));
 		area.setForeground(new Color(0xa6e3a1));

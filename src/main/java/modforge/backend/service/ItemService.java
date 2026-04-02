@@ -3,11 +3,12 @@ package modforge.backend.service;
 import modforge.*;
 import modforge.backend.*;
 import modforge.backend.model.*;
-import modforge.backend.model.item.*;
+import modforge.backend.model.attributes.IAttribute;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -15,6 +16,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -45,7 +47,7 @@ public final class ItemService {
 	 * Returns false if the game directory is not configured.
 	 */
 	public void init() {
-		final String gameDir = configService.getCurrent().gameDirectory;
+		final String gameDir = configService.current.gameDirectory;
 		if (gameDir != null && !gameDir.isBlank()) {
 			try {
 				Singleton.INSTANCE.game().items = readAllItemFromXml(gameDir, false);
@@ -59,7 +61,7 @@ public final class ItemService {
 	/**
 	 * Look up a mod item by ID across all loaded collections.
 	 */
-	public Optional<IModItem> getModItem(String id) {
+	public Optional<ModItem> getModItem(String id) {
 		final var items = Singleton.INSTANCE.game().items;
 		return Stream.of(items)
 				.flatMap(Collection::stream)
@@ -67,10 +69,10 @@ public final class ItemService {
 				.findFirst();
 	}
 
-	public List<IModItem> readModItem(IDataPoint dp) {
-		var result = new ArrayList<IModItem>();
-		String typeName = dp.type().getSimpleName().toLowerCase(Locale.ROOT);
-		File pakFile = new File(dp.path());
+	public List<ModItem> readModItem(DataPoint dp) {
+		final var result = new ArrayList<ModItem>();
+		final String typeName = dp.type().getSimpleName().toLowerCase(Locale.ROOT);
+		final File pakFile = new File(dp.path());
 
 		if (!pakFile.exists()) {
 			log.warning("Pak file not found: " + dp.path());
@@ -80,24 +82,25 @@ public final class ItemService {
 		try (var zf = new ZipFile(pakFile)) {
 			var it = zf.entries();
 			while (it.hasMoreElements()) {
-				var entry = it.nextElement();
-				String ename = entry.getName().replace('\\', '/');
+				final var entry = it.nextElement();
+				final String ename = entry.getName().replace('\\', '/');
 
-				if (ename.endsWith(".tbl")) continue;
+				// Skip non-XML files
+				if (!ename.toLowerCase().endsWith(".xml")) continue;  // Only XML files
 				if (!ename.contains(dp.endpoint())) continue;
 
 				try (var is = zf.getInputStream(entry)) {
-					Document doc = parseXml(is);
+					final Document doc = parseXml(is);
 					AttributeFactory.discoverTypes(doc.getDocumentElement());
 
-					var nodes = doc.getElementsByTagName("*");
+					final var nodes = doc.getElementsByTagName("*");
 					for (int i = 0; i < nodes.getLength(); i++) {
 						if (!(nodes.item(i) instanceof Element el)) continue;
 						if (!el.getLocalName().equalsIgnoreCase(typeName)) continue;
 
-						IModItem item = builder.build(el);
+						final ModItem item = builder.build(el);
 						if (item == null) {
-							log.warning("Builder returned null for <" + el.getLocalName() + ">");
+							log.fine("Builder returned null for <" + el.getLocalName() + ">");
 							continue;
 						}
 						if (item.getId() == null || BLACKLIST.contains(item.getId())) continue;
@@ -105,7 +108,7 @@ public final class ItemService {
 						result.add(item);
 					}
 				} catch (Exception ex) {
-					log.warning("Parse error in " + ename + ": " + ex.getMessage());
+					log.fine("Parse error in " + ename + ": " + ex.getMessage());
 				}
 			}
 		} catch (IOException e) {
@@ -132,9 +135,9 @@ public final class ItemService {
 	 */
 	public Set<String> writeModItems(ModData modData) {
 		if (modData.items.isEmpty()) return Set.of();
-		final String gameDir = configService.getCurrent().gameDirectory;
+		final String gameDir = configService.current.gameDirectory;
 		final Set<String> pakNames = new LinkedHashSet<>();
-		for (IModItem item : modData.items) {
+		for (ModItem item : modData.items) {
 			String pak = writeModItem(gameDir, modData.id, item);
 			if (pak != null) pakNames.add(pak);
 		}
@@ -150,10 +153,10 @@ public final class ItemService {
 	 *   b) plain filesystem path               – came from loose XML scan
 	 *   c) null / blank                        – newly created item
 	 */
-	private String writeModItem(String gameDir, String modId, IModItem item) {
+	private String writeModItem(String gameDir, String modId, ModItem item) {
 		try {
-			String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-			String rawPath  = item.getPath() == null ? "" : item.getPath();
+			final String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+			final String rawPath  = item.getPath() == null ? "" : item.getPath();
 
 			// ---- Resolve PAK stem & inner directory suffix ----
 			String pakStem;   // e.g. "Weapons"  or  modId
@@ -199,9 +202,9 @@ public final class ItemService {
 					doc.getDocumentElement().appendChild(group);
 				}
 
-				Element newEl  = buildXmlElement(doc, typeName, item);
-				String  idKey  = item.getIdKey();
-				String  idVal  = newEl.getAttribute(idKey);
+				final Element newEl  = buildXmlElement(doc, typeName, item);
+				final String idKey  = item.getIdKey();
+				final String idVal  = newEl.getAttribute(idKey);
 
 				if (idKey != null && !idKey.isBlank() && !idVal.isBlank()) {
 					NodeList existing  = group.getElementsByTagName(typeName);
@@ -221,11 +224,9 @@ public final class ItemService {
 			} else {
 				doc = docBuilder.newDocument();
 				Element root = doc.createElement("database");
-				root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi",
-						"http://www.w3.org/2001/XMLSchema-instance");
+				root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 				root.setAttribute("name", "barbora");
-				root.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance",
-						"xsi:noNamespaceSchemaLocation", "../database.xsd");
+				root.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
 				doc.appendChild(root);
 
 				group = doc.createElement(groupName);
@@ -243,8 +244,7 @@ public final class ItemService {
 			return pakStem;
 
 		} catch (Exception e) {
-			log.severe("writeModItem failed for " + item.getClass().getSimpleName()
-					+ ": " + e.getMessage());
+			log.severe("writeModItem failed for " + item.getClass().getSimpleName() + ": " + e.getMessage());
 			return null;
 		}
 	}
@@ -260,55 +260,54 @@ public final class ItemService {
 	// ==================================================================
 
 	// Add this method to ItemService.java
-	private List<IModItem> readModItemsFromXml(String modFolder) {
-		var result = new ArrayList<IModItem>();
-		Path modPath = Path.of(modFolder);
+	private List<ModItem> readModItemsFromXml(String modFolder) {
+		final var result = new ArrayList<ModItem>();
+		final Path modPath = Path.of(modFolder);
 
-		if (!Files.exists(modPath)) {
+		if (!Files.exists(modPath))
 			return result;
-		}
 
 		try (var walk = Files.walk(modPath)) {
 			walk.filter(Files::isRegularFile)
-					.filter(path -> path.toString().endsWith(".xml"))
-					.forEach(xmlFile -> {
-						try {
-							// Parse the XML file
-							Document doc = parseXml(Files.newInputStream(xmlFile));
-							Element root = doc.getDocumentElement();
+				.filter(path -> path.toString().endsWith(".xml"))
+				.forEach(xmlFile -> {
+					try {
+						// Parse the XML file
+						final Document doc = parseXml(Files.newInputStream(xmlFile));
+						final Element root = doc.getDocumentElement();
 
-							// Check each child element to find the actual table type
-							NodeList children = root.getChildNodes();
-							for (int i = 0; i < children.getLength(); i++) {
-								var node = children.item(i);
-								if (node.getNodeType() != Node.ELEMENT_NODE) continue;
-								Element tableElement = (Element) node;
-								String tableName = tableElement.getLocalName();
+						// Check each child element to find the actual table type
+						NodeList children = root.getChildNodes();
+						for (int i = 0; i < children.getLength(); i++) {
+							var node = children.item(i);
+							if (node.getNodeType() != Node.ELEMENT_NODE) continue;
+							final Element tableElement = (Element) node;
+							final String tableName = tableElement.getLocalName();
 
-								// Determine the item type from the table name
-								Class<? extends IModItem> itemClass = determineItemClassFromTableName(tableName);
-								if (itemClass == null) continue;
-								// Parse all items in this table
-								NodeList items = tableElement.getElementsByTagName("*");
-								for (int j = 0; j < items.getLength(); j++) {
-									if (items.item(j) instanceof Element itemElement) {
-										// Skip the table wrapper element itself
-										if (itemElement == tableElement) continue;
+							// Determine the item type from the table name
+							final Class<? extends ModItem> itemClass = ItemType.determineItemClassFromTableName(tableName);
+							if (itemClass == null) continue;
+							// Parse all items in this table
+							final NodeList items = tableElement.getElementsByTagName("*");
+							for (int j = 0; j < items.getLength(); j++) {
+								if (items.item(j) instanceof Element itemElement) {
+									// Skip the table wrapper element itself
+									if (itemElement == tableElement) continue;
 
-										AttributeFactory.discoverTypes(itemElement);
-										IModItem item = builder.build(itemElement);
-										if (item != null && item.getId() != null && !BLACKLIST.contains(item.getId())) {
-											item.setPath(xmlFile.toString());
-											result.add(item);
-										}
+									AttributeFactory.discoverTypes(itemElement);
+									final ModItem item = builder.build(itemElement);
+									if (item != null && item.getId() != null && !BLACKLIST.contains(item.getId())) {
+										item.setPath(xmlFile.toString());
+										result.add(item);
 									}
 								}
-
 							}
-						} catch (Exception ex) {
-							log.warning("Parse error in " + xmlFile + ": " + ex.getMessage());
+
 						}
-					});
+					} catch (Exception ex) {
+						log.warning("Parse error in " + xmlFile + ": " + ex.getMessage());
+					}
+				});
 		} catch (IOException e) {
 			log.severe("Cannot walk mod folder: " + modFolder + " - " + e.getMessage());
 		}
@@ -316,29 +315,8 @@ public final class ItemService {
 		return result;
 	}
 
-	// Add this helper method to determine item class from table name
-	private Class<? extends IModItem> determineItemClassFromTableName(String tableName) {
-		return switch (tableName.toLowerCase(Locale.ROOT)) {
-			case "perks", "perk" -> Perk.class;
-			case "buffs", "buff" -> Buff.class;
-			case "weapons", "weapon" -> MeleeWeapon.class;
-			case "armors", "armor" -> Armor.class;
-			case "helmets", "helmet" -> Helmet.class;
-			case "hoods", "hood" -> Hood.class;
-			case "foods", "food" -> Food.class;
-			case "poisons", "poison" -> Poison.class;
-			case "herbs", "herb" -> Herb.class;
-			case "craftingmaterials", "crafting_materials", "craftingmaterial", "crafting_material" -> CraftingMaterial.class;
-			case "misctems", "miscitem", "misc" -> MiscItem.class;
-			case "keys", "key" -> Key.class;
-			case "money" -> Money.class;
-			case "keyrings", "keyring" -> KeyRing.class;
-			default -> null;
-		};
-	}
-
 	// Modify the existing readAllItemFromXml method
-	public List<IModItem> readAllItemFromXml(String gameDir, boolean isMod) {
+	public List<ModItem> readAllItemFromXml(String gameDir, boolean isMod) {
 		long start = System.currentTimeMillis();
 
 		if (isMod) {
@@ -348,7 +326,7 @@ public final class ItemService {
 			return result;
 		} else {
 			// For game data, use the original method with known endpoints
-			final var allPoints = new ArrayList<IDataPoint>(30);
+			final var allPoints = new ArrayList<DataPoint>(30);
 
 			ItemType.endpoints().forEach((type, eps) ->
 					eps.forEach((key, pak) ->
@@ -367,7 +345,7 @@ public final class ItemService {
 		}
 	}
 
-	private static Element buildXmlElement(Document doc, String elementName, IModItem item) {
+	private static Element buildXmlElement(Document doc, String elementName, ModItem item) {
 		Element el = doc.createElement(elementName);
 		for (var attr : item.getAttributes()) {
 			el.setAttribute(attr.getName(), serializeValue(attr));
@@ -393,6 +371,14 @@ public final class ItemService {
 	static Document parseXml(InputStream is) throws Exception {
 		var f = DocumentBuilderFactory.newInstance();
 		f.setNamespaceAware(true);
-		return f.newDocumentBuilder().parse(is);
+		f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		f.setFeature("http://xml.org/sax/features/validation", false);
+		f.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+		// Use a proper encoding-aware reader
+		try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+			return f.newDocumentBuilder().parse(new InputSource(reader));
+		}
 	}
 }

@@ -1,6 +1,6 @@
 package modforge.backend;
 
-import modforge.backend.model.IModItem;
+import modforge.backend.model.ModItem;
 import modforge.backend.model.Language;
 
 import java.util.*;
@@ -14,7 +14,7 @@ public final class ModData {
 	public String createdOn = "";
 	public boolean modifiesLevel = false;
 	public List<String> supportsGameVersions = new ArrayList<>();
-	public List<IModItem> items = new ArrayList<>();
+	public List<ModItem> items = new ArrayList<>();
 	public Map<String, String> config = new HashMap<>();
 
 	/**

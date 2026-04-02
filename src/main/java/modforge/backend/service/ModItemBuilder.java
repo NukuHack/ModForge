@@ -1,11 +1,14 @@
 package modforge.backend.service;
 
+import modforge.backend.AttributeFactory;
 import modforge.backend.GenericBuildHandler;
 import modforge.backend.model.IBuildHandler;
-import modforge.backend.model.IModItem;
+import modforge.backend.model.ModItem;
+import modforge.backend.model.attributes.IAttribute;
 import modforge.backend.model.item.*;
 import org.w3c.dom.Element;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.*;
 
@@ -17,7 +20,7 @@ public final class ModItemBuilder {
 		this.handlers = List.copyOf(handlers);
 	}
 
-	public IModItem build(Element element) {
+	public ModItem build(Element element) {
 		for (var h : handlers) {
 			if (h.isResponsible(element)) return h.handle(element);
 		}
@@ -32,6 +35,8 @@ public final class ModItemBuilder {
 		return new ModItemBuilder(List.of(
 				new GenericBuildHandler<>(Perk.class, "perk_id"),
 				new GenericBuildHandler<>(Buff.class, "buff_id"),
+				new GenericBuildHandler<>(Storm.class, "id"),
+				new GenericBuildHandler<>(PerkBuff.class, "perk_id"),
 				new GenericBuildHandler<>(MeleeWeapon.class, "Id"),
 				new GenericBuildHandler<>(MissileWeapon.class, "Id"),
 				new GenericBuildHandler<>(Ammo.class, "Id"),
@@ -56,5 +61,18 @@ public final class ModItemBuilder {
 				new GenericBuildHandler<>(Money.class, "Id"),
 				new GenericBuildHandler<>(KeyRing.class, "Id")
 		));
+	}
+
+
+	public static ModItem create(Element el, ModItem item) {
+
+		var xmlAttrs = el.getAttributes();
+		var list = new ArrayList<IAttribute>(xmlAttrs.getLength());
+		for (int i = 0; i < xmlAttrs.getLength(); i++) {
+			var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
+			list.add(AttributeFactory.create(a.getLocalName(), a.getValue()));
+		}
+		item.setAttribute(list);
+		return item;
 	}
 }

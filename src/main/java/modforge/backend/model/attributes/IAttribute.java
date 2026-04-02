@@ -1,4 +1,4 @@
-package modforge.backend.model;
+package modforge.backend.model.attributes;
 
 public interface IAttribute {
 	String getName();

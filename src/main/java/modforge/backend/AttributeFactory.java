@@ -1,8 +1,7 @@
 package modforge.backend;
 
-import modforge.backend.model.Attribute;
+import modforge.backend.model.attributes.*;
 import modforge.backend.model.BuffParam;
-import modforge.backend.model.IAttribute;
 import modforge.backend.model.MathOperation;
 import org.w3c.dom.Element;
 
@@ -86,28 +85,57 @@ public final class AttributeFactory {
 	 * Create a typed IAttribute from a raw XML name/value pair.
 	 * Falls back to String if the type is not yet discovered.
 	 */
-	public static IAttribute create(String name, String rawValue) {
-		Class<?> type = TYPE_MAP.getOrDefault(name, String.class);
-		Object value;
+	public static IAttribute create2(String name, String value) {
+		if (value == null) value = "";
+
+		// Handle space-separated lists that should be arrays
+		if (value.contains(" ") && (name.contains("class") || name.contains("type"))) {
+			final String[] parts = value.split("\\s+");
+			if (parts.length > 1) {
+				// Store as string for now - proper array handling would need attribute type
+				return new StringAttribute(name, value);
+			}
+		}
+
+		// Try to parse as integer
+		try {
+			return new IntAttribute(name, Integer.parseInt(value));
+		} catch (NumberFormatException ignored) {}
+
+		// Try as double
+		try {
+			return new DoubleAttribute(name, Double.parseDouble(value));
+		} catch (NumberFormatException ignored) {}
+
+		// Try as boolean
+		if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+			return new BooleanAttribute(name, Boolean.parseBoolean(value));
+		}
+
+		// Default to string
+		return new StringAttribute(name, value);
+	}
+	public static IAttribute create(final String name, String value) {
+		if (value == null) value = "";
+		final Class<?> type = TYPE_MAP.getOrDefault(name, String.class);
 
 		try {
 			if (type == List.class) {
-				value = parseBuffParams(rawValue == null ? "" : rawValue);
+				final List<BuffParam> valueNew = parseBuffParams(value);
+				return new ListAttribute<>(name, valueNew);
 			} else if (type == Boolean.class) {
-				value = rawValue == null || rawValue.isBlank()
-						? Boolean.FALSE : Boolean.parseBoolean(rawValue);
+				final Boolean valueNew = value.isBlank() ? Boolean.FALSE : Boolean.parseBoolean(value);
+				return new BooleanAttribute(name, valueNew);
 			} else if (type == Double.class) {
-				value = rawValue == null || rawValue.isBlank()
-						? 0.0 : Double.parseDouble(rawValue);
+				final Double valueNew =  value.isBlank() ? 0.0 : Double.parseDouble(value);
+				return new DoubleAttribute(name, valueNew);
 			} else {
-				value = rawValue == null ? "" : rawValue;
+				return new StringAttribute(name, value);
 			}
 		} catch (Exception ex) {
-			log.warning("Cannot parse attribute '" + name + "'='" + rawValue + "': " + ex.getMessage());
-			value = rawValue == null ? "" : rawValue;
+			log.warning("Cannot parse attribute '" + name + "'='" + value + "': " + ex.getMessage());
+			return new StringAttribute(name, value);
 		}
-
-		return new Attribute<>(name, value);
 	}
 
 	/**

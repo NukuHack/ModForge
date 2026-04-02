@@ -18,30 +18,31 @@ public final class UserService {
 
 	private final Path configFile;
 	private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-	private UserConfiguration current;
+	public final UserConfiguration current;
+
+	public static final class UserConfiguration {
+		public String gameDirectory = "";
+		public String userName = "";
+		public String language = "en";
+	}
 
 	public UserService() {
 		configFile = Singleton.INSTANCE.getUserConfig();
-		load();
-	}
 
-	public UserConfiguration getCurrent() {
-		return current;
-	}
-
-	private void load() {
+		UserConfiguration temp;
 		try {
 			if (Files.exists(configFile)) {
-				current = mapper.readValue(configFile.toFile(), UserConfiguration.class);
+				temp = mapper.readValue(configFile.toFile(), UserConfiguration.class);
 				log.info("User configuration loaded from " + configFile);
 			} else {
-				current = new UserConfiguration();
+				temp = new UserConfiguration();
 				log.info("No config file found - using defaults.");
 			}
 		} catch (Exception e) {
 			log.severe("Config load error: " + e.getMessage());
-			current = new UserConfiguration();
+			temp = new UserConfiguration();
 		}
+		current = temp;
 	}
 
 	public void save() {

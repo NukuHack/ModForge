@@ -1,10 +1,8 @@
 package modforge.backend;
 
-import modforge.backend.model.IDataPoint;
+import java.util.*;
 
-import java.util.Objects;
-
-public record DataPoint(String path, String endpoint, Class<?> type) implements IDataPoint {
+public record DataPoint(String path, String endpoint, Class<?> type) {
 	public DataPoint(String path, String endpoint, Class<?> type) {
 		this.path = Objects.requireNonNull(path, "path");
 		this.endpoint = Objects.requireNonNull(endpoint, "endpoint");

@@ -1,6 +1,5 @@
 package modforge.frontend.pages;
 
-import modforge.backend.service.UserConfiguration;
 import modforge.backend.service.UserService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
@@ -14,7 +13,7 @@ import java.awt.*;
 // =============================================================================
 public class SettingsPage extends BasePage {
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");
-	private final JPanel card = card("Application Settings");
+	private final JPanel card = card(null);
 	private final JTextField userName = styledField("Your name (used as mod author)");
 	private final JComboBox<String> langBox = new JComboBox<>(
 new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Español", "it – Italiano", "pl – Polski", "ru – Русский", "cs – Čeština"});
@@ -41,9 +40,12 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 		gc.insets = new Insets(8, 6, 8, 6);
 		gc.fill = GridBagConstraints.HORIZONTAL;
 
+		// Reset gridwidth and increment gridy for the next row
+		gc.gridwidth = 1;
+		gc.gridy = 1;
+
 		// Game directory row
 		gc.gridx = 0;
-		gc.gridy = 0;
 		gc.weightx = 0.15;
 		card.add(label("Game Directory"), gc);
 		gc.gridx = 1;
@@ -56,16 +58,16 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 			Util.pickFolderAsync().thenAccept(path -> {
 				if (path != null) SwingUtilities.invokeLater(() -> {
 					gameDir.setText(path);
-					configService.getCurrent().gameDirectory = path;
+					configService.current.gameDirectory = path;
 					configService.save();
 					w.snackbar.show("Game directory set", BarManager.Type.SUCCESS);
 				});
 			});
 		}), gc);
 
-		// Username row
+		// Username row (gridy = 2)
 		gc.gridx = 0;
-		gc.gridy = 1;
+		gc.gridy = 2;
 		gc.weightx = 0.15;
 		card.add(label("Author Name"), gc);
 		gc.gridx = 1;
@@ -74,9 +76,9 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 		userName.setForeground(MainWindow.TEXT);
 		card.add(userName, gc);
 
-		// Language row
+		// Language row (gridy = 3)
 		gc.gridx = 0;
-		gc.gridy = 2;
+		gc.gridy = 3;
 		gc.weightx = 0.15;
 		gc.gridwidth = 1;
 		card.add(label("Language"), gc);
@@ -88,14 +90,14 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 		langBox.setFont(new Font("Roboto", Font.PLAIN, 13));
 		card.add(langBox, gc);
 
-		// Save button
+		// Save button (gridy = 4)
 		gc.gridx = 1;
-		gc.gridy = 3;
+		gc.gridy = 4;
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("Save Settings", e -> {
-			configService.getCurrent().userName = userName.getText();
-			configService.getCurrent().language = langCode();
+			configService.current.userName = userName.getText();
+			configService.current.language = langCode();
 			configService.save();
 			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
 		}), gc);
@@ -104,7 +106,7 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 	}
 
 	private void loadSettings() {
-		UserConfiguration config = configService.getCurrent();
+		final var config = configService.current;
 
 		// Load game directory if exists
 		if (config.gameDirectory != null && !config.gameDirectory.isEmpty()) {

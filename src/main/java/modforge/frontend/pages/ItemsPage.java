@@ -1,7 +1,7 @@
 package modforge.frontend.pages;
 
 import modforge.Singleton;
-import modforge.backend.model.IModItem;
+import modforge.backend.model.ModItem;
 import modforge.backend.model.item.*;
 import modforge.backend.service.*;
 import modforge.frontend.*;
@@ -17,7 +17,7 @@ import static modforge.backend.Util.escapeHtml;
 
 public class ItemsPage extends BasePage {
 	// UNDERLYING DATA - the source of truth
-	private final List<IModItem> underlyingItems = new ArrayList<>();
+	private final List<ModItem> underlyingItems = new ArrayList<>();
 
 	// DISPLAY MODEL - filtered view of underlying items
 	private final DefaultListModel<String> displayModel = new DefaultListModel<>();
@@ -36,7 +36,7 @@ public class ItemsPage extends BasePage {
 	// Detail panel components
 	private JLabel detailLabel;
 	private JPanel detailPanel;
-	private IModItem currentSelectedItem;
+	private ModItem currentSelectedItem;
 
 	public ItemsPage(final MainWindow w) {
 		super(w);
@@ -210,7 +210,7 @@ public class ItemsPage extends BasePage {
 	/**
 	 * Get all item details as plain text for copying
 	 */
-	private String getAllItemDetailsAsText(IModItem item) {
+	private String getAllItemDetailsAsText(ModItem item) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("ID: ").append(item.getId()).append("\n");
 		sb.append("Class: ").append(item.getClass().getSimpleName()).append("\n");
@@ -244,7 +244,7 @@ public class ItemsPage extends BasePage {
 		underlyingItems.addAll(Singleton.INSTANCE.game().items);
 
 		// Sort by ID for consistent display
-		underlyingItems.sort(Comparator.comparing(IModItem::getId, String.CASE_INSENSITIVE_ORDER));
+		underlyingItems.sort(Comparator.comparing(ModItem::getId, String.CASE_INSENSITIVE_ORDER));
 	}
 
 	/**
@@ -267,7 +267,7 @@ public class ItemsPage extends BasePage {
 			int underlyingIndex = displayToUnderlyingIndex.get(displayIndex);
 
 			// Get the actual item from underlying list
-			IModItem underlyingItem = underlyingItems.get(underlyingIndex);
+			ModItem underlyingItem = underlyingItems.get(underlyingIndex);
 			currentSelectedItem = underlyingItem;
 
 			// Update detail panel
@@ -280,7 +280,7 @@ public class ItemsPage extends BasePage {
 	/**
 	 * Update the detail panel with the selected item's information
 	 */
-	private void updateDetailPanel(IModItem item) {
+	private void updateDetailPanel(ModItem item) {
 		// Build detailed information about the item
 		StringBuilder details = new StringBuilder();
 		details.append("<html><div style='font-family: monospace;'>");
@@ -322,7 +322,7 @@ public class ItemsPage extends BasePage {
 	/**
 	 * Get the display string for an item
 	 */
-	private String getItemDisplayString(IModItem item) {
+	private String getItemDisplayString(ModItem item) {
 		String icon = getIconForItem(item);
 		String id = item.getId();
 
@@ -337,7 +337,7 @@ public class ItemsPage extends BasePage {
 	/**
 	 * Get appropriate icon based on item type
 	 */
-	private String getIconForItem(IModItem item) {
+	private String getIconForItem(ModItem item) {
 		if (item instanceof MeleeWeapon) return "⚔️";
 		if (item instanceof MissileWeapon) return "🏹";
 		if (item instanceof Ammo) return "🎯";
@@ -376,7 +376,7 @@ public class ItemsPage extends BasePage {
 		try {
 			// Filter the underlying list by iterating through indices
 			for (int i = 0; i < underlyingItems.size(); i++) {
-				IModItem item = underlyingItems.get(i);
+				ModItem item = underlyingItems.get(i);
 				String itemId = item.getId();
 
 				// Check item type filter
@@ -402,7 +402,7 @@ public class ItemsPage extends BasePage {
 	/**
 	 * Check if an item matches the selected item type
 	 */
-	private boolean matchesItemType(IModItem item, String selectedType) {
+	private boolean matchesItemType(ModItem item, String selectedType) {
 		if (selectedType == null || selectedType.equals("All Types"))
 			return true;
 

@@ -2,9 +2,8 @@ package modforge.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import modforge.Singleton;
 import modforge.backend.*;
-import modforge.backend.model.IModItem;
+import modforge.backend.model.ModItem;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -16,7 +15,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
-import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
@@ -63,7 +61,7 @@ public final class ModService {
 	// ------------------------------------------------------------------
 
 	public void initiateModCollections() {
-		final String gameDir = userConfig.getCurrent().gameDirectory;
+		final String gameDir = userConfig.current.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warning("Game directory not configured - skipping mod collection scan.");
 			return;
@@ -139,7 +137,7 @@ public final class ModService {
 		return m;
 	}
 
-	public boolean addModItem(IModItem item) {
+	public boolean addModItem(ModItem item) {
 		if (item == null || currentMod == null) return false;
 		currentMod.items.removeIf(x -> item.getId() != null && item.getId().equals(x.getId()));
 		currentMod.items.add(item);
@@ -162,7 +160,7 @@ public final class ModService {
 	 * This matches the extraction logic (one language folder -> one PAK).
 	 */
 	public void exportMod(ModData mod) {
-		final String gameDir = userConfig.getCurrent().gameDirectory;
+		final String gameDir = userConfig.current.gameDirectory;
 
 		// Write items to XML files; returns the set of PAK stems that were written
 		Set<String> pakNames = itemService.writeModItems(mod);
@@ -303,8 +301,7 @@ public final class ModService {
 	 * Supports multiple PAK files (e.g., Weapons.pak, Armor.pak, etc.).
 	 */
 	public void loadModItemsForMod(ModData mod) {
-		log.info("Loading mod data for mod: " + mod.id);
-		final String gameDir = userConfig.getCurrent().gameDirectory;
+		final String gameDir = userConfig.current.gameDirectory;
 		final Path dataFolder = Path.of(PathFactory.modData(gameDir, mod.id));
 
 		if (!Files.exists(dataFolder)) {
@@ -312,7 +309,7 @@ public final class ModService {
 			return;
 		}
 
-		List<IModItem> allItems = new ArrayList<>();
+		List<ModItem> allItems = new ArrayList<>();
 
 		try (var stream = Files.list(dataFolder)) {
 			// Find all .pak files in the Data folder
@@ -326,12 +323,8 @@ public final class ModService {
 				return;
 			}
 
-			log.info("Found " + pakFiles.size() + " PAK file(s) for mod " + mod.id);
-
 			// Process each PAK file
 			for (Path pakFile : pakFiles) {
-				log.fine("Processing PAK: " + pakFile.getFileName());
-
 				try (var zf = new ZipFile(pakFile.toFile())) {
 					var entries = zf.entries();
 					while (entries.hasMoreElements()) {
@@ -364,7 +357,7 @@ public final class ModService {
 									if (itemNode.getNodeType() != Node.ELEMENT_NODE) continue;
 
 									Element itemElement = (Element) itemNode;
-									IModItem item = builder.build(itemElement);
+									ModItem item = builder.build(itemElement);
 
 									if (item != null && item.getId() != null) {
 										// Add source PAK info to help with debugging
@@ -400,7 +393,7 @@ public final class ModService {
 	 * @param mod The mod data to populate with localization entries
 	 */
 	public void loadModLocalizationsForMod(ModData mod) {
-		final String gameDir = userConfig.getCurrent().gameDirectory;
+		final String gameDir = userConfig.current.gameDirectory;
 		final Path modLang = Path.of(gameDir, "Mods", mod.id);
 
 		if (!Files.exists(modLang)) {
