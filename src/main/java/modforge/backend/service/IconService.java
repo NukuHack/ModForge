@@ -136,26 +136,18 @@ public final class IconService implements Closeable {
 		final String key = iconId.toLowerCase(Locale.ROOT);
 		var game = Singleton.INSTANCE.game();
 
-		// 1. Mod's own PNG cache (free lookup)
+		// 1. Mod's raw DDS index
 		if (mod != game) {
-			final String cached = mod.getPng().get(key);
-			if (cached != null) return cached;
-
-			// 2. Mod's raw DDS index
 			final byte[] modDds = mod.getIcon().get(key);
 			if (modDds != null) {
-				return convertAndCache(key, modDds, mod);
+				return convert(key, modDds);
 			}
 		}
 
-		// 3. Base-game PNG cache
-		final String baseCached = game.getPng().get(key);
-		if (baseCached != null) return baseCached;
-
-		// 4. Base-game raw DDS index
+		// 2. Base-game raw DDS index
 		final byte[] baseDds = game.getIcon().get(key);
 		if (baseDds != null) {
-			return convertAndCache(key, baseDds, game);
+			return convert(key, baseDds);
 		}
 
 		log.fine("Icon not found in any index: " + iconId);
@@ -230,12 +222,10 @@ public final class IconService implements Closeable {
 	 * Convert raw DDS bytes to a PNG data-URI, store in {@code cache}, and return it.
 	 * Returns {@code null} if conversion fails.
 	 */
-	private String convertAndCache(String key, byte[] ddsBytes, ModData mod) {
+	private String convert(String key, byte[] ddsBytes) {
 		try {
 			final byte[] pngData = DdsConverter.convertToPng(ddsBytes);
-			final String dataUri = "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(pngData);
-			mod.addPng(key, dataUri);
-			return dataUri;
+			return "data:image/png;base64," + Base64.getEncoder().encodeToString(pngData);
 		} catch (Exception ex) {
 			log.warning("DDS→PNG conversion failed for '" + key + "': " + ex.getMessage());
 			return null;

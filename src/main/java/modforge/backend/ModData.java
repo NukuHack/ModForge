@@ -31,12 +31,6 @@ public final class ModData {
 	 */
 	private final Map<String, byte[]> iconIndex = new HashMap<>();
 
-	/**
-	 * Lazy PNG cache for this mod: icon stem -> "data:image/png;base64,…" string.
-	 * Populated on first access via IconService.getBase64Icon(iconId, mod).
-	 */
-	private final Map<String, String> pngCache = new HashMap<>();
-
 	@Override
 	public String toString() {
 		return "ModData{" +
@@ -83,25 +77,9 @@ public final class ModData {
 
 	public void setIcon(Map<String, byte[]> input) {
 		iconIndex.clear();
-		pngCache.clear();
 		iconIndex.putAll(input);
 	}
 	public Map<String, byte[]> getIcon() {
 		return Collections.unmodifiableMap(iconIndex);
 	}
-
-	public void setPng(Map<String, String> input) {
-		pngCache.clear();
-		pngCache.putAll(input);
-	}
-	public void clearPng() {
-		pngCache.clear();
-	}
-	public void addPng(String key, String dataUri) {
-		pngCache.put(key, dataUri);
-	}
-	public Map<String, String> getPng() {
-		return Collections.unmodifiableMap(pngCache);
-	}
-
 }
