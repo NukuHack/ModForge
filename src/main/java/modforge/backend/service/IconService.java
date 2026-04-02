@@ -1,7 +1,6 @@
 package modforge.backend.service;
 
 import modforge.Util;
-import modforge.backend.DataPoint;
 import modforge.backend.model.ModItem;
 
 import java.io.*;
@@ -63,7 +62,7 @@ public final class IconService implements Closeable {
 		final long start = System.currentTimeMillis();
 		if (gameDir == null || gameDir.isBlank()) return;
 
-		final String pakPath = Util.join(gameDir, ItemType.TABLES);
+		final String pakPath = Util.join(gameDir, ItemType.GAMEDATA);
 		final File   pakFile = new File(pakPath);
 		if (!pakFile.exists()) {
 			log.warning("IPL_GameData.pak not found – icon index empty: " + pakPath);
