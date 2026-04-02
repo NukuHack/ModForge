@@ -14,6 +14,11 @@ import java.awt.event.*;
 // =============================================================================
 public class ModsPage extends BasePage {
 
+	@Override
+	public void refresh(Object... input) {
+		this.refreshMods();
+	}
+
 	private final JList<ModData> modList;
 	private final DefaultListModel<ModData> listModel;
 
@@ -47,12 +52,12 @@ public class ModsPage extends BasePage {
 		modList.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (e.getClickCount() == 2) {
-					final ModData selected = modList.getSelectedValue();
-					if (selected != null) {
-						editMod(selected);
-					}
+			if (e.getClickCount() == 2) {
+				final ModData selected = modList.getSelectedValue();
+				if (selected != null) {
+					window.navigate(MainWindow.Page.MOD_EDIT, selected);
 				}
+			}
 			}
 		});
 
@@ -67,12 +72,10 @@ public class ModsPage extends BasePage {
 		add(card, BorderLayout.CENTER);
 	}
 
-	private void refreshMods() {
+	public void refreshMods() {
 		listModel.clear();
-		ModService modService = window.getRegistry().modService;
-
 		// Add user-created mods
-		for (ModData mod : modService.modCollection) {
+		for (final ModData mod : window.getRegistry().modService.modCollection) {
 			listModel.addElement(mod);
 		}
 
@@ -95,13 +98,7 @@ public class ModsPage extends BasePage {
 				java.util.List.of("1.0", "1.1", "1.2")
 		);
 
-		editMod(newMod);
-	}
-
-	private void editMod(ModData selectedMod) {
-		final ModEditPage modEditPage = (ModEditPage) window.getPage(MainWindow.Page.MOD_EDIT);
-		modEditPage.refreshFieldData(selectedMod);
-		window.navigate(MainWindow.Page.MOD_EDIT);
+		window.navigate(MainWindow.Page.MOD_EDIT, newMod);
 	}
 
 	private void importMod() {

@@ -8,11 +8,13 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 // =============================================================================
 //  MAIN WINDOW
 // =============================================================================
 public class MainWindow extends JFrame {
+	private static final Logger log = Logger.getLogger(MainWindow.class.getName());
 
 	// ── palette ──────────────────────────────────────────────────────────────
 	public static final Color BG = new Color(0x1e1e2e);
@@ -63,9 +65,6 @@ public class MainWindow extends JFrame {
 	private final CardLayout cardLayout = new CardLayout();
 	private final JPanel pageHolder = new JPanel(cardLayout);
 	public final BarManager snackbar;
-
-	// Store pages by enum
-	private final Map<Page, BasePage> pages = new EnumMap<>(Page.class);
 
 	// backend ---------------
 	private final ServiceRegistry registry;
@@ -121,11 +120,10 @@ public class MainWindow extends JFrame {
 						.getDeclaredConstructor(MainWindow.class)
 						.newInstance(this);
 				page.setInstance(pageInstance);
-				pages.put(page, pageInstance);
 				pageHolder.add(pageInstance, page.name());
 			} catch (Exception e) {
-				System.err.println("Failed to create page: " + page.name());
-				e.printStackTrace();
+				log.warning("Failed to create page: " + page.name());
+				log.warning("Ex : " +e);
 			}
 		}
 	}
@@ -228,9 +226,11 @@ public class MainWindow extends JFrame {
 		return pageHolder;
 	}
 
-	public void navigate(Page page) {
+	public void navigate(Page page, Object... input) {
 		// Show the page
 		cardLayout.show(pageHolder, page.name());
+
+		page.instance.refresh(input);
 
 		// Update active nav button styling
 		// (You might want to implement this to highlight the current page in sidebar)
@@ -238,23 +238,19 @@ public class MainWindow extends JFrame {
 		snackbar.show("Navigated to " + page.getDisplayName(), BarManager.Type.INFO);
 	}
 
-	public BasePage getPage(Page page) {
-		return pages.get(page);
-	}
-
 	// ── zoom-block (mirrors js/functions.js) ──────────────────────────────────
 	private void installZoomBlock() {
 		KeyboardFocusManager.getCurrentKeyboardFocusManager()
-				.addKeyEventDispatcher(e -> {
-					if (e.getID() == KeyEvent.KEY_PRESSED && e.isControlDown()) {
-						int k = e.getKeyCode();
-						if (k == KeyEvent.VK_PLUS || k == KeyEvent.VK_MINUS ||
-								k == KeyEvent.VK_EQUALS || k == KeyEvent.VK_0) {
-							e.consume();
-							return true;
-						}
+			.addKeyEventDispatcher(e -> {
+				if (e.getID() == KeyEvent.KEY_PRESSED && e.isControlDown()) {
+					int k = e.getKeyCode();
+					if (k == KeyEvent.VK_PLUS || k == KeyEvent.VK_MINUS ||
+							k == KeyEvent.VK_EQUALS || k == KeyEvent.VK_0) {
+						e.consume();
+						return true;
 					}
-					return false;
-				});
+				}
+				return false;
+			});
 	}
 }

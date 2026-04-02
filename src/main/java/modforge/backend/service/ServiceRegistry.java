@@ -2,7 +2,6 @@ package modforge.backend.service;
 
 import modforge.Singleton;
 
-import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -14,7 +13,7 @@ public final class ServiceRegistry {
 
 	public final UserService userConfig;
 	public final ConfigService configService;
-	public final LocalizationService localizationService;
+	public final LocalService localService;
 	public final ModItemBuilder builder;
 	public final JsonAdapter jsonAdapter;
 	public final ItemService itemService;
@@ -24,7 +23,7 @@ public final class ServiceRegistry {
 	public ServiceRegistry() {
 		userConfig = new UserService();
 		configService = new ConfigService(userConfig);
-		localizationService = new LocalizationService(userConfig);
+		localService = new LocalService(userConfig);
 		builder = ModItemBuilder.createDefault();
 		jsonAdapter = new JsonAdapter(resolveDataDir());
 		itemService = new ItemService(userConfig, builder);
@@ -38,18 +37,18 @@ public final class ServiceRegistry {
 	public void init() {
 		userConfig.save();
 		//configService
-		localizationService.init();
+		localService.init();
 		//builder
 		jsonAdapter.setBaseDir(userConfig.gameDirectory);
 		itemService.init();
 		iconService.init();
 		modService.init();
 		// Load game config after game directory is set
-		Singleton.INSTANCE.game().config = configService.loadGameConfig();
+		Singleton.INSTANCE.game().setConfig(configService.loadGameConfig());
 	}
 
 	private static String resolveDataDir() {
-		String appData = System.getenv("APPDATA");
+		final String appData = System.getenv("APPDATA");
 		return (appData != null && !appData.isBlank())
 				? appData
 				: System.getProperty("user.home") + "/AppData/Roaming";

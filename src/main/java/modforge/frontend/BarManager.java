@@ -11,8 +11,10 @@ import java.util.List;
 // =============================================================================
 public class BarManager {
 	public enum Type {
-		INFO(Color.LIGHT_GRAY), SUCCESS(Color.GREEN),
-		WARNING(Color.YELLOW), ERROR(Color.RED);
+		INFO(Color.LIGHT_GRAY),
+		SUCCESS(Color.GREEN),
+		WARNING(Color.YELLOW),
+		ERROR(Color.RED);
 		public final Color c;
 		Type(Color c) {this.c=c;}
 	}

@@ -10,6 +10,12 @@ import java.awt.*;
 //  HOME PAGE
 // =============================================================================
 public class HomePage extends BasePage {
+
+	@Override
+	public void refresh(Object... input) {
+
+	}
+
 	public HomePage(MainWindow w) {
 		super(w);
 		final String gameDir = w.getRegistry().userConfig.gameDirectory;

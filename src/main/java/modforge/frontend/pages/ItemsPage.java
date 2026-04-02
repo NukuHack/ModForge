@@ -17,6 +17,12 @@ import java.util.List;
 import static modforge.Util.escapeHtml;
 
 public class ItemsPage extends BasePage {
+
+	@Override
+	public void refresh(Object... input) {
+		this.refreshAllItems();
+	}
+
 	// UNDERLYING DATA - the source of truth
 	private final List<ModItem> underlyingItems = new ArrayList<>();
 
@@ -29,6 +35,10 @@ public class ItemsPage extends BasePage {
 
 	private final JTextField search = styledField("Search items…");
 	private final JComboBox<String> itemTypeSelector = new JComboBox<>();
+	private final JComboBox<String> modSourceSelector = new JComboBox<>();
+
+	/** The ModData whose items are currently displayed; null means Base Game. */
+	private modforge.backend.ModData activeSource = null;
 
 	// Detail panel components
 	private JLabel detailLabel;
@@ -40,9 +50,6 @@ public class ItemsPage extends BasePage {
 
 		// Setup the list selection listener
 		setupListSelectionListener();
-
-		// Populate the underlying list with all items from services
-		refreshUnderlyingList();
 
 		// Build top panel with type selector and search
 		JPanel top = new JPanel(new BorderLayout(12, 0));
@@ -57,7 +64,16 @@ public class ItemsPage extends BasePage {
 
 		// Add item type selector for filtering by specific item class
 		setupItemTypeSelector();
-		filterPanel.add(itemTypeSelector, BorderLayout.WEST);
+
+		// Add mod source selector (Base Game + loaded mods)
+		setupModSourceSelector();
+
+		JPanel selectorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		selectorPanel.setOpaque(false);
+		selectorPanel.add(modSourceSelector);
+		selectorPanel.add(itemTypeSelector);
+
+		filterPanel.add(selectorPanel, BorderLayout.WEST);
 		filterPanel.add(search, BorderLayout.CENTER);
 
 		top.add(leftPanel, BorderLayout.WEST);
@@ -75,6 +91,33 @@ public class ItemsPage extends BasePage {
 
 		add(top, BorderLayout.NORTH);
 		add(mainContent, BorderLayout.CENTER);
+	}
+
+	/**
+	 * Build and populate the mod source dropdown.
+	 * First entry is always "Base Game"; subsequent entries are loaded mods.
+	 */
+	private void setupModSourceSelector() {
+		modSourceSelector.setFont(new Font("Roboto", Font.PLAIN, 12));
+		modSourceSelector.setBackground(MainWindow.SURFACE);
+		modSourceSelector.setForeground(MainWindow.TEXT);
+		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(new Color(0x2a2a3a)),
+				BorderFactory.createEmptyBorder(4, 8, 4, 8)
+		));
+
+		modSourceSelector.addActionListener(e -> {
+			int idx = modSourceSelector.getSelectedIndex();
+			if (idx <= 0) {
+				activeSource = null; // Base Game
+			} else {
+				// idx - 1 because index 0 is "Base Game"
+				var mods2 = window.getRegistry().modService.modCollection;
+				activeSource = (idx - 1 < mods2.size()) ? mods2.get(idx - 1) : null;
+			}
+			refreshUnderlyingList();
+			refreshDisplay(false);
+		});
 	}
 
 	/**
@@ -190,9 +233,7 @@ public class ItemsPage extends BasePage {
 		final JMenuItem editItemMenuItem = new JMenuItem("Edit Item");
 		editItemMenuItem.addActionListener(e -> {
 			if (selectedItem != null) {
-				ItemEdit itemEditPage = (ItemEdit) window.getPage(MainWindow.Page.ITEM_EDIT);
-				itemEditPage.setItem(selectedItem);
-				window.navigate(MainWindow.Page.ITEM_EDIT);
+				window.navigate(MainWindow.Page.ITEM_EDIT, selectedItem);
 			}
 		});
 		popupMenu.add(editItemMenuItem);
@@ -265,7 +306,7 @@ public class ItemsPage extends BasePage {
 						.findFirst()
 						.ifPresent(mod -> {
 							copy.setPath(modId + ".pak:" + copy.getClass().getSimpleName().toLowerCase() + "s/" + copy.getId() + ".xml");
-							mod.items.add(copy);
+							mod.addItem(copy);
 							window.snackbar.show("Added to mod: " + mod.name, BarManager.Type.SUCCESS);
 							dialog.dispose();
 						});
@@ -285,12 +326,19 @@ public class ItemsPage extends BasePage {
 
 
 	/**
-	 * Refresh the underlying list from services
+	 * Refresh the underlying list from the currently selected source
+	 * (Base Game or a specific mod).
 	 */
 	private void refreshUnderlyingList() {
 		underlyingItems.clear();
 
-		underlyingItems.addAll(Singleton.INSTANCE.game().items);
+		if (activeSource == null) {
+			// Base Game
+			underlyingItems.addAll(Singleton.INSTANCE.game().getItems());
+		} else {
+			// Specific mod
+			underlyingItems.addAll(activeSource.getItems());
+		}
 
 		// Sort by ID for consistent display
 		underlyingItems.sort(Comparator.comparing(ModItem::getId, String.CASE_INSENSITIVE_ORDER));
@@ -385,9 +433,16 @@ public class ItemsPage extends BasePage {
 
 
 	/**
-	 * Refresh all items (call this after mod changes)
+	 * Refresh all items (call this after mod changes).
+	 * Also re-syncs the mod source dropdown in case mods were added or removed.
 	 */
 	public void refreshAllItems() {
+		modSourceSelector.removeAllItems();
+		modSourceSelector.addItem("🎮  Base Game");
+		for (var mod : window.getRegistry().modService.modCollection) {
+			modSourceSelector.addItem("📦  " + mod.name);
+		}
+
 		refreshUnderlyingList();
 		refreshDisplay(true);
 		repaint();

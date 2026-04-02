@@ -25,7 +25,7 @@ public final class ModService {
 
 	public final UserService userConfig;
 	public final ConfigService configService;
-	public final LocalizationService localizationService;
+	public final LocalService localService;
 	public final ModItemBuilder builder;
 	public final JsonAdapter jsonAdapter;
 	public final ItemService itemService;
@@ -38,7 +38,7 @@ public final class ModService {
 		this.iconService = registry.iconService;
 		this.userConfig = registry.userConfig;
 		this.jsonAdapter = registry.jsonAdapter;
-		this.localizationService = registry.localizationService;
+		this.localService = registry.localService;
 		this.builder = registry.builder;
 		this.configService = registry.configService;
 		init();
@@ -79,7 +79,7 @@ public final class ModService {
 	}
 
 	private void fillCollection(Path modPath) throws Exception {
-		Optional<Path> manifest;
+		final Optional<Path> manifest;
 		try (var fs = Files.list(modPath)) {
 			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest")).findFirst();
 		}
@@ -125,13 +125,6 @@ public final class ModService {
 		return m;
 	}
 
-	public boolean addModItem(ModData mod, ModItem item) {
-		if (item == null || mod == null) return false;
-		mod.items.removeIf(x -> item.getId() != null && item.getId().equals(x.getId()));
-		mod.items.add(item);
-		return true;
-	}
-
 	// ------------------------------------------------------------------
 	// Export
 	// ------------------------------------------------------------------
@@ -146,7 +139,7 @@ public final class ModService {
 		// Write items to XML files; returns the set of PAK stems that were written
 		Set<String> pakNames = itemService.writeModItems(mod);
 		// Write localization XML files
-		localizationService.writeModLocalization(mod);
+		localService.writeModLocalization(mod);
 		// Create one Data PAK per origin PAK stem
 		createModPaks(gameDir, mod, pakNames);
 		// Create Localization PAKs (one per language)
@@ -167,7 +160,7 @@ public final class ModService {
 	 * The _stage folder is removed on success.
 	 */
 	private void createModPaks(String gameDir, ModData mod, Set<String> pakNames) {
-		if (mod.items.isEmpty()) {
+		if (mod.getItems().isEmpty()) {
 			log.info("No items for mod " + mod.id + " – skipping PAK creation.");
 			return;
 		}
@@ -213,7 +206,7 @@ public final class ModService {
 	 * @param mod     The mod data containing localizations
 	 */
 	private void packLocalization(String gameDir, ModData mod) {
-		if (mod.localizations.isEmpty()) {
+		if (mod.getLocal().isEmpty()) {
 			log.fine("No localizations to pack for mod " + mod.id);
 			return;
 		}
@@ -348,7 +341,7 @@ public final class ModService {
 					log.severe("Cannot open PAK file: " + pakFile + " - " + e.getMessage());
 				}
 			}
-			mod.items = Collections.unmodifiableList(allItems);
+			mod.setItems(Collections.unmodifiableList(allItems));
 			log.info(String.format("Loaded %d items from %d PAK file(s) for mod %s", allItems.size(), pakFiles.size(), mod.id));
 
 		} catch (final IOException e) {
@@ -371,7 +364,7 @@ public final class ModService {
 			log.fine("No Localization folder found for mod " + mod.id);
 			return;
 		}
-		mod.localizations = localizationService.readLocalizationFromXml(String.valueOf(modLang), true);
+		mod.setLocal(localService.readLocalizationFromXml(String.valueOf(modLang), true));
 	}
 
 	/**
@@ -379,7 +372,7 @@ public final class ModService {
 	 */
 	public void loadModConfigForMod(ModData mod) {
 		if (mod == null || mod.id == null || mod.id.isBlank()) return;
-		mod.config = configService.loadModConfig(mod.id);
+		mod.setConfig(configService.loadModConfig(mod.id));
 	}
 
 	public static String textOf(Document doc, String tag) {

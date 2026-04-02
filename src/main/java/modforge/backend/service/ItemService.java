@@ -50,10 +50,9 @@ public final class ItemService {
 		final String gameDir = configService.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) return;
 		try {
-			Singleton.INSTANCE.game().items = readAllItemFromXml(gameDir, false);
+			Singleton.INSTANCE.game().setItems(readAllItemFromXml(gameDir, false));
 		} catch (Exception ex) {
 			log.severe("Game Data read failed: " + ex.getMessage());
-			Singleton.INSTANCE.game().items = new ArrayList<>();
 		}
 	}
 
@@ -61,7 +60,7 @@ public final class ItemService {
 	 * Look up a mod item by ID across all loaded collections.
 	 */
 	public Optional<ModItem> getModItem(String id) {
-		final var items = Singleton.INSTANCE.game().items;
+		final var items = Singleton.INSTANCE.game().getItems();
 		return Stream.of(items)
 				.flatMap(Collection::stream)
 				.filter(x -> id.equals(x.getId()))
@@ -133,10 +132,11 @@ public final class ItemService {
 	 * so the caller knows which staging dirs to pack.
 	 */
 	public Set<String> writeModItems(ModData modData) {
-		if (modData.items.isEmpty()) return Set.of();
+		final var items = modData.getItems();
+		if (items.isEmpty()) return Set.of();
 		final String gameDir = configService.gameDirectory;
 		final Set<String> pakNames = new LinkedHashSet<>();
-		for (ModItem item : modData.items) {
+		for (ModItem item : items) {
 			String pak = writeModItem(gameDir, modData.id, item);
 			if (pak != null) pakNames.add(pak);
 		}

@@ -15,6 +15,11 @@ import java.util.logging.*;
 // =============================================================================
 public class ModEditPage extends BasePage {
 
+	@Override
+	public void refresh(Object... input) {
+		this.refreshFieldData((ModData) input[0]);
+	}
+
 	private ModData currentMod;
 
 	private JTextField idField;

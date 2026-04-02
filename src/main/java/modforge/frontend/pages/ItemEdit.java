@@ -23,6 +23,11 @@ import static modforge.Util.escapeHtml;
 // =============================================================================
 public class ItemEdit extends BasePage {
 
+	@Override
+	public void refresh(Object... input) {
+		this.setItem((ModItem) input[0]);
+	}
+
 	private ModItem currentItem;
 	private final Map<String, JComponent> attributeComponents = new LinkedHashMap<>();
 
@@ -204,10 +209,10 @@ public class ItemEdit extends BasePage {
 	private void navigateBack() {
 		if (hasChanges) {
 			int choice = JOptionPane.showConfirmDialog(this,
-				"You have unsaved changes. Discard them?",
-				"Unsaved Changes",
-				JOptionPane.YES_NO_OPTION,
-				JOptionPane.WARNING_MESSAGE);
+					"You have unsaved changes. Discard them?",
+					"Unsaved Changes",
+					JOptionPane.YES_NO_OPTION,
+					JOptionPane.WARNING_MESSAGE);
 			if (choice != JOptionPane.YES_OPTION) return;
 		}
 		hasChanges = false;
@@ -222,9 +227,34 @@ public class ItemEdit extends BasePage {
 		this.currentItem = item;
 		this.hasChanges  = false;
 
+		refreshModSelector();
 		buildAttributeEditor();
 		updatePreview();
 		updateStatus();
+	}
+
+	/**
+	 * Repopulate the mod selector from the live modCollection.
+	 * Keeps the previously selected mod when refreshing (e.g. after save).
+	 */
+	private void refreshModSelector() {
+		String previousSelection = (String) modSelector.getSelectedItem();
+
+		DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) modSelector.getModel();
+		model.removeAllElements();
+
+		var mods = window.getRegistry().modService.modCollection;
+		if (mods.isEmpty()) {
+			model.addElement("— no mods found —");
+		} else {
+			for (var mod : mods) {
+				model.addElement(mod.id + " | " + mod.name);
+			}
+			// Restore previous selection if it still exists
+			if (previousSelection != null) {
+				model.setSelectedItem(previousSelection);
+			}
+		}
 	}
 
 	// ── Mod Selector ──────────────────────────────────────────────────────────
@@ -260,8 +290,8 @@ public class ItemEdit extends BasePage {
 			name = name.replace(".xml", "__" + mod.id + ".xml");
 		}
 		final ModItem copy = ModItemFactory.deepCopy(currentItem, path + name);
-		mod.items.add(copy);
-		window.snackbar.show("Added to mod: " + mod.name + " (" + mod.items.size() + " items)", BarManager.Type.SUCCESS);
+		mod.addItem(copy);
+		window.snackbar.show("Added to mod: " + mod.name + " (" + mod.getItems().size() + " items)", BarManager.Type.SUCCESS);
 	}
 
 	// ── Attribute Editor ──────────────────────────────────────────────────────
@@ -357,19 +387,16 @@ public class ItemEdit extends BasePage {
 		return gc;
 	}
 
-	/** Editor column: fills remaining width */
 	private GridBagConstraints editorGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.gridx    = 1;
 		gc.gridy    = row;
 		gc.weightx  = 1.0;
-		gc.fill     = GridBagConstraints.HORIZONTAL;
 		gc.anchor   = GridBagConstraints.NORTHWEST;
 		gc.insets   = new Insets(5, 0, 5, 4);
 		return gc;
 	}
 
-	/** Full-width separator row */
 	private GridBagConstraints separatorGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.gridx    = 0;

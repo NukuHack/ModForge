@@ -12,6 +12,12 @@ import java.awt.*;
 //  SETTINGS PAGE
 // =============================================================================
 public class SettingsPage extends BasePage {
+
+	@Override
+	public void refresh(Object... input) {
+		loadSettings();
+	}
+
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");
 	private final JPanel card = card(null);
 	private final JTextField userName = styledField("Your name (used as mod author)");
@@ -30,9 +36,6 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 		// Create UI components
 		JPanel cardWithComponents = createSettingsCard(w);
 		add(cardWithComponents, BorderLayout.CENTER);
-
-		// Load saved settings into UI
-		loadSettings();
 	}
 
 	private JPanel createSettingsCard(MainWindow w) {

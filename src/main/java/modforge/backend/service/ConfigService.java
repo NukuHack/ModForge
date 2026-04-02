@@ -137,7 +137,7 @@ public final class ConfigService {
 			return false;
 		}
 
-		return saveConfigFile(modCfg, mod.config);
+		return saveConfigFile(modCfg, mod.getConfig());
 	}
 
 	/**
@@ -147,7 +147,7 @@ public final class ConfigService {
 	 */
 	public void loadModConfigIntoMod(ModData mod) {
 		if (mod == null || mod.id == null || mod.id.isBlank()) return;
-		mod.config = loadModConfig(mod.id);
+		mod.setConfig(loadModConfig(mod.id));
 	}
 
 	/**
@@ -157,7 +157,7 @@ public final class ConfigService {
 	 */
 	public static void saveModConfigFromMod(String gameDirectory, ModData mod) {
 		if (mod == null || mod.id == null || mod.id.isBlank()) return;
-		if (mod.config == null || mod.config.isEmpty()) return;
+		if (mod.getConfig().isEmpty()) return;
 		saveModConfig(gameDirectory, mod);
 	}
 

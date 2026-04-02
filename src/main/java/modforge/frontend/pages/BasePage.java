@@ -118,4 +118,7 @@ public abstract class BasePage extends JPanel {
 		});
 		return f;
 	}
+
+	public abstract void refresh(Object... input);
+
 }

@@ -14,7 +14,7 @@ public enum Singleton {
 	private MainWindow mainWindow;
 	private final Path userConfigDir;
 	private final Path userConfigFile;
-	private final ModData game = ModData.BASE_GAME;
+	private final ModData game = new ModData();
 
 	Singleton() {
 		this.userConfigDir = getPlatformConfigDir();

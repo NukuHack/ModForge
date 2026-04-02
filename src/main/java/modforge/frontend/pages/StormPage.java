@@ -9,6 +9,12 @@ import java.awt.*;
 //  STORM PAGE  (STORM rule viewer stub)
 // =============================================================================
 public class StormPage extends BasePage {
+
+	@Override
+	public void refresh(Object... input) {
+
+	}
+
 	public StormPage(MainWindow w) {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
