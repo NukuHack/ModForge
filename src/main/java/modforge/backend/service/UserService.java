@@ -1,7 +1,5 @@
 package modforge.backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import modforge.Singleton;
 import modforge.backend.ModData;
 
@@ -17,38 +15,50 @@ public final class UserService {
 	private static final Logger log = Logger.getLogger(UserService.class.getName());
 
 	private final Path configFile;
-	private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-	public final UserConfiguration current;
 
-	public static final class UserConfiguration {
-		public String gameDirectory = "";
-		public String userName = "";
-		public String language = "en";
+	public String gameDirectory = "";
+	public String userName = "";
+	public String language = "en";
+
+	// Convert to JsonValue
+	private JsonAdapter.JsonObject toJsonObject() {
+		final JsonAdapter.JsonObject obj = new JsonAdapter.JsonObject();
+		obj.put("gameDirectory", new JsonAdapter.JsonString(gameDirectory));
+		obj.put("userName", new JsonAdapter.JsonString(userName));
+		obj.put("language", new JsonAdapter.JsonString(language));
+		return obj;
+	}
+
+	// Create from JsonValue
+	private void fromJson(JsonAdapter.JsonValue value) {
+		if (value instanceof JsonAdapter.JsonObject obj) {
+			if (obj.get("gameDirectory") instanceof JsonAdapter.JsonString string) {
+				gameDirectory = string.getValue();
+			}
+			if (obj.get("userName") instanceof JsonAdapter.JsonString string) {
+				userName = string.getValue();
+			}
+			if (obj.get("language") instanceof JsonAdapter.JsonString string) {
+				language = string.getValue();
+			}
+		}
 	}
 
 	public UserService() {
 		configFile = Singleton.INSTANCE.getUserConfig();
 
-		UserConfiguration temp;
 		try {
-			if (Files.exists(configFile)) {
-				temp = mapper.readValue(configFile.toFile(), UserConfiguration.class);
-				log.info("User configuration loaded from " + configFile);
-			} else {
-				temp = new UserConfiguration();
-				log.info("No config file found - using defaults.");
-			}
+			final var parsed = JsonAdapter.read(configFile);
+			fromJson(parsed);
+			log.info("User configuration loaded from " + configFile);
 		} catch (Exception e) {
 			log.severe("Config load error: " + e.getMessage());
-			temp = new UserConfiguration();
 		}
-		current = temp;
 	}
 
 	public void save() {
 		try {
-			Files.createDirectories(configFile.getParent());
-			mapper.writeValue(configFile.toFile(), current);
+			JsonAdapter.write(configFile, toJsonObject());
 			log.info("User configuration saved.");
 		} catch (IOException e) {
 			log.severe("Config save error: " + e.getMessage());
@@ -58,10 +68,10 @@ public final class UserService {
 	/**
 	 * Write mod-load order file (mirrors C# WriteLoadout).
 	 */
+	// idk why this is and how to use it so left it alone ...
 	public void writeLoadout(List<ModData> orderedMods) {
-		String dir = current.gameDirectory;
-		if (dir == null || dir.isBlank()) return;
-		Path loadOrder = Path.of(dir, "Mods", "mod_order.txt");
+		if (gameDirectory == null || gameDirectory.isBlank()) return;
+		Path loadOrder = Path.of(gameDirectory, "Mods", "mod_order.txt");
 		try {
 			Files.deleteIfExists(loadOrder);
 			var ids = orderedMods.stream()

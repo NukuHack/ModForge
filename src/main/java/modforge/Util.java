@@ -4,6 +4,8 @@ package modforge;
 // EXTENSIONS UTILITY  (mirrors C# Extensions static class)
 // =============================================================================
 
+import modforge.backend.model.Language;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
@@ -13,6 +15,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.io.*;
 import java.nio.file.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.*;
 import java.util.logging.*;
@@ -37,6 +40,50 @@ public final class Util {
 		if (s == null) return "";
 		return String.join("_",
 				s.trim().toLowerCase(Locale.ROOT).split("\\s+"));
+	}
+
+
+	public static String tables(String root) {
+		return join(root, "Data", "Tables.pak");
+	}
+
+	public static String scripts(String root) {
+		return join(root, "Data", "Scripts.pak");
+	}
+
+	public static String gameData(String root) {
+		return join(root, "Data", "IPL_GameData.pak");
+	}
+
+	public static String locImport(String root, String lang) {
+		return join(root, "Localization", lang + "_xml.pak");
+	}
+
+	public static String locExport(String root, String lang, String modId) {
+		return join(root, "Mods", modId, "Localization", lang + "_xml", "text__" + modId + ".xml");
+	}
+
+	public static String modFolder(String root, String modId) {
+		return join(root, "Mods", modId);
+	}
+
+	public static String modData(String root, String modId) {
+		return join(root, "Mods", modId, "Data");
+	}
+
+	public static String stormDir(String root, String modId) {
+		return join(root, "Mods", modId, "Data", "Libs", "Storm");
+	}
+
+	public static List<String> allLocPaths(String root) {
+		return Language.getAllDisplayNames().stream().map(l -> locImport(root, l)).toList();
+	}
+
+	/**
+	 * Join path segments using forward slashes (cross-platform safe).
+	 */
+	public static String join(String... parts) {
+		return String.join("/", parts);
 	}
 
 	/**
@@ -87,7 +134,7 @@ public final class Util {
 	}
 
 	/**
-	 * @return selected path, or null if cancelled
+	 * @return selected path, or null if canceled
 	 */
 	public static CompletableFuture<String> pickFolderAsync() {
 		CompletableFuture<String> future = new CompletableFuture<>();

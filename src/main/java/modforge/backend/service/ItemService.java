@@ -47,7 +47,7 @@ public final class ItemService {
 	 * Returns false if the game directory is not configured.
 	 */
 	public void init() {
-		final String gameDir = configService.current.gameDirectory;
+		final String gameDir = configService.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) return;
 		try {
 			Singleton.INSTANCE.game().items = readAllItemFromXml(gameDir, false);
@@ -90,7 +90,7 @@ public final class ItemService {
 
 				try (var is = zf.getInputStream(entry)) {
 					final Document doc = parseXml(is);
-					AttributeFactory.discoverTypes(doc.getDocumentElement());
+					AttributeFactory.traverseElement(doc.getDocumentElement());
 
 					final var nodes = doc.getElementsByTagName("*");
 					for (int i = 0; i < nodes.getLength(); i++) {
@@ -134,7 +134,7 @@ public final class ItemService {
 	 */
 	public Set<String> writeModItems(ModData modData) {
 		if (modData.items.isEmpty()) return Set.of();
-		final String gameDir = configService.current.gameDirectory;
+		final String gameDir = configService.gameDirectory;
 		final Set<String> pakNames = new LinkedHashSet<>();
 		for (ModItem item : modData.items) {
 			String pak = writeModItem(gameDir, modData.id, item);
@@ -178,9 +178,9 @@ public final class ItemService {
 
 			// ---- Build target paths inside the staging area ----
 			// Structure:  Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/
-			String stageRoot  = PathFactory.join(gameDir, "Mods", modId, "Data", "_stage", pakStem);
-			String targetDir  = dirSuffix.isEmpty() ? stageRoot : PathFactory.join(stageRoot, dirSuffix);
-			String targetFile = PathFactory.join(targetDir, typeName + "__" + modId + ".xml");
+			final String stageRoot  = Util.join(gameDir, "Mods", modId, "Data", "_stage", pakStem);
+			final String targetDir  = dirSuffix.isEmpty() ? stageRoot : Util.join(stageRoot, dirSuffix);
+			final String targetFile = Util.join(targetDir, typeName + "__" + modId + ".xml");
 
 			Files.createDirectories(Path.of(targetDir));
 
@@ -293,7 +293,7 @@ public final class ItemService {
 									// Skip the table wrapper element itself
 									if (itemElement == tableElement) continue;
 
-									AttributeFactory.discoverTypes(itemElement);
+									AttributeFactory.traverseElement(itemElement);
 									final ModItem item = builder.build(itemElement);
 									if (item != null && item.getId() != null && !BLACKLIST.contains(item.getId())) {
 										item.setPath(xmlFile.toString());

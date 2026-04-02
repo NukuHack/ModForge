@@ -285,7 +285,7 @@ public class ModEditPage extends BasePage {
 		}
 
 		// Write manifest
-		final String gameDir = window.getRegistry().userConfig.current.gameDirectory;
+		final String gameDir = window.getRegistry().userConfig.gameDirectory;
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
 		ConfigService.saveModConfigFromMod(gameDir, currentMod);
 
@@ -318,7 +318,7 @@ public class ModEditPage extends BasePage {
 		);
 
 		if (confirm == JOptionPane.YES_OPTION) {
-			String gameDir = window.getRegistry().userConfig.current.gameDirectory;
+			String gameDir = window.getRegistry().userConfig.gameDirectory;
 			java.nio.file.Path modPath = java.nio.file.Path.of(gameDir, "Mods", currentMod.id);
 
 			try {

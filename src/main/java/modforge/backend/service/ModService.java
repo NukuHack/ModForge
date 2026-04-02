@@ -1,6 +1,5 @@
 package modforge.backend.service;
 
-import com.fasterxml.jackson.databind.*;
 import modforge.*;
 import modforge.backend.*;
 import modforge.backend.model.ModItem;
@@ -24,30 +23,33 @@ import static modforge.backend.service.ItemService.parseXml;
 public final class ModService {
 	private static final Logger log = Logger.getLogger(ModService.class.getName());
 
-	private final UserService userConfig;
-	private final LocalizationService localizationService;
-	private final ItemService itemService;
+	public final UserService userConfig;
+	public final ConfigService configService;
+	public final LocalizationService localizationService;
 	public final ModItemBuilder builder;
-	private final ConfigService configService;
-	private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+	public final JsonAdapter jsonAdapter;
+	public final ItemService itemService;
+	public final IconService iconService;
 
 	public List<ModData> modCollection = new ArrayList<>();
 
 	public ModService(ServiceRegistry registry) {
 		this.itemService = registry.itemService;
+		this.iconService = registry.iconService;
 		this.userConfig = registry.userConfig;
+		this.jsonAdapter = registry.jsonAdapter;
 		this.localizationService = registry.localizationService;
 		this.builder = registry.builder;
 		this.configService = registry.configService;
-		initiateModCollections();
+		init();
 	}
 
 	// ------------------------------------------------------------------
 	// Collection management
 	// ------------------------------------------------------------------
 
-	public void initiateModCollections() {
-		final String gameDir = userConfig.current.gameDirectory;
+	public void init() {
+		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warning("Game directory not configured - skipping mod collection scan.");
 			return;
@@ -139,7 +141,7 @@ public final class ModService {
 	 * This matches the extraction logic (one language folder -> one PAK).
 	 */
 	public void exportMod(ModData mod) {
-		final String gameDir = userConfig.current.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 
 		// Write items to XML files; returns the set of PAK stems that were written
 		Set<String> pakNames = itemService.writeModItems(mod);
@@ -258,7 +260,7 @@ public final class ModService {
 	// Helpers
 	// ------------------------------------------------------------------
 
-	public static ModData parseModDescription(org.w3c.dom.Document doc) {
+	public static ModData parseModDescription(Document doc) {
 		final var m = new ModData();
 		m.name = textOf(doc, "name");
 		m.description = textOf(doc, "description");
@@ -280,22 +282,20 @@ public final class ModService {
 	 * Supports multiple PAK files (e.g., Weapons.pak, Armor.pak, etc.).
 	 */
 	public void loadModItemsForMod(ModData mod) {
-		final String gameDir = userConfig.current.gameDirectory;
-		final Path dataFolder = Path.of(PathFactory.modData(gameDir, mod.id));
+		final String gameDir = userConfig.gameDirectory;
+		final Path dataFolder = Path.of(Util.modData(gameDir, mod.id));
 
 		if (!Files.exists(dataFolder)) {
 			log.fine("No Data folder found for mod " + mod.id);
 			return;
 		}
 
-		List<ModItem> allItems = new ArrayList<>();
+		List<ModItem> allItems = new ArrayList<>(100);
 
 		try (var stream = Files.list(dataFolder)) {
 			// Find all .pak files in the Data folder
-			List<Path> pakFiles = stream
-					.filter(Files::isRegularFile)
-					.filter(p -> p.toString().toLowerCase().endsWith(".pak"))
-					.toList();
+			List<Path> pakFiles = stream.filter(Files::isRegularFile)
+					.filter(p -> p.toString().toLowerCase().endsWith(".pak")).toList();
 
 			if (pakFiles.isEmpty()) {
 				log.fine("No PAK files found in Data folder for mod " + mod.id);
@@ -307,59 +307,51 @@ public final class ModService {
 				try (var zf = new ZipFile(pakFile.toFile())) {
 					var entries = zf.entries();
 					while (entries.hasMoreElements()) {
-						var entry = entries.nextElement();
-						String entryName = entry.getName().replace('\\', '/');
+						final var entry = entries.nextElement();
+						final String entryName = entry.getName().replace('\\', '/');
 
 						// Only process XML files
-						if (!entryName.toLowerCase().endsWith(".xml")) {
-							continue;
-						}
+						if (!entryName.toLowerCase().endsWith(".xml")) continue;
 
 						try (var is = zf.getInputStream(entry)) {
-							Document doc = parseXml(is);
-							Element root = doc.getDocumentElement();
-							AttributeFactory.discoverTypes(root);
+							final Document doc = parseXml(is);
+							final Element root = doc.getDocumentElement();
+							AttributeFactory.traverseElement(root);
 
 							// Process all child elements
-							NodeList children = root.getChildNodes();
+							final NodeList children = root.getChildNodes();
+							// theoretically this should be a single iteration, since one table exist for one file ...
 							for (int i = 0; i < children.getLength(); i++) {
-								var node = children.item(i);
+								final var node = children.item(i);
 								if (node.getNodeType() != Node.ELEMENT_NODE) continue;
 
-								Element tableElement = (Element) node;
-								String tableName = tableElement.getLocalName();
-
 								// Find all item elements within this table
-								NodeList items = tableElement.getChildNodes();
+								final NodeList items = node.getChildNodes();
 								for (int j = 0; j < items.getLength(); j++) {
 									var itemNode = items.item(j);
 									if (itemNode.getNodeType() != Node.ELEMENT_NODE) continue;
 
-									Element itemElement = (Element) itemNode;
-									ModItem item = builder.build(itemElement);
+									final ModItem item = builder.build((Element) itemNode);
 
-									if (item != null && item.getId() != null) {
-										// Add source PAK info to help with debugging
-										item.setPath(pakFile.getFileName() + ":" + entryName);
-										allItems.add(item);
-									}
+									if (item == null || item.getId() == null) continue;
+
+									// Add source PAK info to help with debugging
+									item.setPath(pakFile.getFileName() + ":" + entryName);
+									allItems.add(item);
 								}
 							}
-						} catch (Exception ex) {
-							log.warning("Parse error in " + entryName + " from " +
-									pakFile.getFileName() + ": " + ex.getMessage());
+						} catch (final Exception ex) {
+							log.warning("Parse error in " + entryName + " from " + pakFile.getFileName() + ": " + ex.getMessage());
 						}
 					}
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					log.severe("Cannot open PAK file: " + pakFile + " - " + e.getMessage());
 				}
 			}
+			mod.items = Collections.unmodifiableList(allItems);
+			log.info(String.format("Loaded %d items from %d PAK file(s) for mod %s", allItems.size(), pakFiles.size(), mod.id));
 
-			mod.items = allItems;
-			log.info(String.format("Loaded %d items from %d PAK file(s) for mod %s",
-					allItems.size(), pakFiles.size(), mod.id));
-
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			log.severe("Failed to list Data folder for mod " + mod.id + ": " + e.getMessage());
 		}
 	}
@@ -372,7 +364,7 @@ public final class ModService {
 	 * @param mod The mod data to populate with localization entries
 	 */
 	public void loadModLocalizationsForMod(ModData mod) {
-		final String gameDir = userConfig.current.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 		final Path modLang = Path.of(gameDir, "Mods", mod.id);
 
 		if (!Files.exists(modLang)) {
@@ -390,13 +382,13 @@ public final class ModService {
 		mod.config = configService.loadModConfig(mod.id);
 	}
 
-	public static String textOf(org.w3c.dom.Document doc, String tag) {
+	public static String textOf(Document doc, String tag) {
 		var nl = doc.getElementsByTagName(tag);
 		return nl.getLength() > 0 ? nl.item(0).getTextContent().trim() : "";
 	}
 
 
-	private static void appendText(org.w3c.dom.Document doc, Element parent, String tag, String text) {
+	private static void appendText(Document doc, Element parent, String tag, String text) {
 		var el = doc.createElement(tag);
 		el.setTextContent(text == null ? "" : text);
 		parent.appendChild(el);
@@ -407,7 +399,7 @@ public final class ModService {
 	 * @return boolean - succeed
 	 */
 	public static boolean writeModAsXml(String gameDirectory, ModData mod) {
-		final String rootPath = PathFactory.modFolder(gameDirectory, mod.id);
+		final String rootPath = Util.modFolder(gameDirectory, mod.id);
 		final String manifest = rootPath + "/mod.manifest";
 		try {
 			Files.createDirectories(Path.of(rootPath + "/Data"));

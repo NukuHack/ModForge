@@ -123,9 +123,6 @@ public enum ItemType {
 		// Add BUFF endpoints
 		addEndpointsForType(BUFF, endpoints, createBuffEndpoints());
 
-		// Add STORM endpoints
-		addEndpointsForType(STORM, endpoints, orderedMapOf("storm.xml", GAMEDATA));
-
 		// Add WEAPON_CLASS endpoints
 		addEndpointsForType(WEAPON_CLASS, endpoints, orderedMapOf("weapon_class", TABLES));
 

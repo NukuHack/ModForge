@@ -27,13 +27,6 @@
             <version>3.4</version>
         </dependency>
 
-        <!-- JSON Processing -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.17.0</version>
-        </dependency>
-
         <!-- XML Processing (included in JDK, but ensure you have JAXB if needed) -->
         <!-- For Java 11+, you may need: -->
         <dependency>

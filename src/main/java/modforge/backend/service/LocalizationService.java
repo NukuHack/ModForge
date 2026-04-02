@@ -1,6 +1,7 @@
 package modforge.backend.service;
 
 import modforge.Singleton;
+import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.Language;
@@ -43,7 +44,7 @@ public final class LocalizationService {
 	 * (Re-)load from disk. Call after the user sets a new game directory.
 	 */
 	public void init() {
-		final String dir = configService.current.gameDirectory;
+		final String dir = configService.gameDirectory;
 		if (dir != null && !dir.isBlank()) {
 			try {
 				Singleton.INSTANCE.game().localizations = readLocalizationFromXml(dir, false);
@@ -71,7 +72,7 @@ public final class LocalizationService {
 	 * Each language gets: Localization/<Lang>_xml/text__<modId>.xml
 	 */
 	public void writeModLocalization(ModData mod) {
-		final var gameDir = configService.current.gameDirectory;
+		final var gameDir = configService.gameDirectory;
 		boolean ok = writeModLocalizationFiles(gameDir, mod.id, mod.localizations);
 		if (ok) {
 			log.info("Localization written for mod: " + mod.id);
@@ -91,7 +92,7 @@ public final class LocalizationService {
 	public Map<Language, Map<String, String>> readLocalizationFromXml(String root, boolean isMod) {
 		final var result = new EnumMap<Language, Map<String, String>>(Language.class);
 
-		for (final String pakPath : PathFactory.allLocPaths(root)) {
+		for (final String pakPath : Util.allLocPaths(root)) {
 			File f = new File(pakPath);
 			if (!f.exists()) continue;
 
@@ -151,7 +152,7 @@ public final class LocalizationService {
 			Map<String, String> translations = entry.getValue();
 			if (translations.isEmpty()) continue;
 
-			String locFilePath = PathFactory.locExport(gameDirectory, language.getDisplayName(), modId);
+			String locFilePath = Util.locExport(gameDirectory, language.getDisplayName(), modId);
 			Path locPath = Path.of(locFilePath);
 
 			try {
@@ -205,7 +206,7 @@ public final class LocalizationService {
 	// ==================================================================
 
 	private String resolve(ModItem item, String... candidates) {
-		final Language lang = Language.fromIsoCode(configService.current.language);
+		final Language lang = Language.fromIsoCode(configService.language);
 		final var langMap = Singleton.INSTANCE.game().localizations.get(lang);
 
 		for (String candidate : candidates) {

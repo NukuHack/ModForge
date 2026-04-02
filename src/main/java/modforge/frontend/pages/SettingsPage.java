@@ -1,5 +1,6 @@
 package modforge.frontend.pages;
 
+import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.service.UserService;
 import modforge.frontend.*;
@@ -57,7 +58,7 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 			Util.pickFolderAsync().thenAccept(path -> {
 				if (path != null) SwingUtilities.invokeLater(() -> {
 					gameDir.setText(path);
-					configService.current.gameDirectory = path;
+					configService.gameDirectory = path;
 					configService.save();
 					w.snackbar.show("Game directory set", BarManager.Type.SUCCESS);
 				});
@@ -95,9 +96,9 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("Save Settings", e -> {
-			configService.current.userName = userName.getText();
-			configService.current.language = langCode();
-			configService.save();
+			configService.userName = userName.getText();
+			configService.language = langCode();
+			Singleton.INSTANCE.getRegistry().init();
 			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
 		}), gc);
 
@@ -105,7 +106,7 @@ new String[]{"en – English", "de – Deutsch", "fr – Français", "es – Esp
 	}
 
 	private void loadSettings() {
-		final var config = configService.current;
+		final var config = configService;
 
 		// Load game directory if exists
 		if (config.gameDirectory != null && !config.gameDirectory.isEmpty()) {

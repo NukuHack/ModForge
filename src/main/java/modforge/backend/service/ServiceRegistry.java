@@ -26,7 +26,7 @@ public final class ServiceRegistry {
 		configService = new ConfigService(userConfig);
 		localizationService = new LocalizationService(userConfig);
 		builder = ModItemBuilder.createDefault();
-		jsonAdapter = new JsonAdapter(resolveAppDataDir());
+		jsonAdapter = new JsonAdapter(resolveDataDir());
 		itemService = new ItemService(userConfig, builder);
 		iconService = new IconService(userConfig);
 		modService = new ModService(this);
@@ -35,18 +35,20 @@ public final class ServiceRegistry {
 	/**
 	 * Convenience method: set the game directory and reload everything.
 	 */
-	public void init(String path) {
-		var config = userConfig.current;
-		if (config.gameDirectory.isBlank())
-			config.gameDirectory = Objects.requireNonNull(path);
+	public void init() {
 		userConfig.save();
+		//configService
 		localizationService.init();
+		//builder
+		jsonAdapter.setBaseDir(userConfig.gameDirectory);
 		itemService.init();
+		iconService.init();
+		modService.init();
 		// Load game config after game directory is set
 		Singleton.INSTANCE.game().config = configService.loadGameConfig();
 	}
 
-	private static String resolveAppDataDir() {
+	private static String resolveDataDir() {
 		String appData = System.getenv("APPDATA");
 		return (appData != null && !appData.isBlank())
 				? appData

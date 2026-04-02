@@ -87,7 +87,7 @@ public class ModsPage extends BasePage {
 		final ModData newMod = window.getRegistry().modService.createNewMod(
 				"New Mod",
 				"Your mod description",
-				window.getRegistry().userConfig.current.userName,
+				window.getRegistry().userConfig.userName,
 				"1.0",
 				java.time.LocalDate.now().toString(),
 				defaultId,
@@ -183,7 +183,7 @@ public class ModsPage extends BasePage {
 			authorLabel.setText(mod.author != null ? mod.author : "Unknown");
 
 			// Check if mod is external (read-only)
-			boolean isExternal = mod.author.isBlank() || !mod.author.equals(Singleton.INSTANCE.getRegistry().userConfig.current.userName);
+			boolean isExternal = mod.author.isBlank() || !mod.author.equals(Singleton.INSTANCE.getRegistry().userConfig.userName);
 			if (isExternal) {
 				statusLabel.setText("📥 External");
 				statusLabel.setForeground(Color.YELLOW);

@@ -12,7 +12,7 @@ import java.awt.*;
 public class HomePage extends BasePage {
 	public HomePage(MainWindow w) {
 		super(w);
-		final String gameDir = w.getRegistry().userConfig.current.gameDirectory;
+		final String gameDir = w.getRegistry().userConfig.gameDirectory;
 
 		// Use GridBagLayout for perfect centering
 		setLayout(new GridBagLayout());
