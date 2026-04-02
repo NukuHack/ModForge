@@ -48,13 +48,12 @@ public final class ItemService {
 	 */
 	public void init() {
 		final String gameDir = configService.current.gameDirectory;
-		if (gameDir != null && !gameDir.isBlank()) {
-			try {
-				Singleton.INSTANCE.game().items = readAllItemFromXml(gameDir, false);
-			} catch (Exception ex) {
-				log.severe("Game Data read failed: " + ex.getMessage());
-				Singleton.INSTANCE.game().items = new ArrayList<>();
-			}
+		if (gameDir == null || gameDir.isBlank()) return;
+		try {
+			Singleton.INSTANCE.game().items = readAllItemFromXml(gameDir, false);
+		} catch (Exception ex) {
+			log.severe("Game Data read failed: " + ex.getMessage());
+			Singleton.INSTANCE.game().items = new ArrayList<>();
 		}
 	}
 
@@ -285,7 +284,7 @@ public final class ItemService {
 							final String tableName = tableElement.getLocalName();
 
 							// Determine the item type from the table name
-							final Class<? extends ModItem> itemClass = ItemType.determineItemClassFromTableName(tableName);
+							final Class<? extends ModItem> itemClass = ItemType.TABLE_TO_CLASS.get(tableName.toLowerCase(Locale.ROOT));
 							if (itemClass == null) continue;
 							// Parse all items in this table
 							final NodeList items = tableElement.getElementsByTagName("*");
@@ -315,7 +314,6 @@ public final class ItemService {
 		return result;
 	}
 
-	// Modify the existing readAllItemFromXml method
 	public List<ModItem> readAllItemFromXml(String gameDir, boolean isMod) {
 		long start = System.currentTimeMillis();
 

@@ -14,7 +14,7 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
+import java.util.function.*;
 import java.util.logging.*;
 import java.util.zip.*;
 
@@ -102,6 +102,56 @@ public final class Util {
 			future.complete(selectedPath);
 		});
 		return future;
+	}
+
+
+	public static void openGameDirectory(JPanel w, String gameDirPath) {
+		if (gameDirPath == null || gameDirPath.trim().isEmpty()) {
+			JOptionPane.showMessageDialog(w,
+					"Game directory not set. Please configure it in Settings.",
+					"Directory Not Set",
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
+		File gameDir = new File(gameDirPath);
+		if (!gameDir.exists() || !gameDir.isDirectory()) {
+			JOptionPane.showMessageDialog(w,
+					"Game directory does not exist or is invalid:\n" + gameDirPath,
+					"Invalid Directory",
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		try {
+			// Cross-platform directory opening
+			if (Desktop.isDesktopSupported()) {
+				Desktop.getDesktop().open(gameDir);
+			} else {
+				// Fallback for systems without Desktop support
+				String os = System.getProperty("os.name").toLowerCase();
+				Runtime runtime = Runtime.getRuntime();
+
+				if (os.contains("win")) {
+					runtime.exec(new String[]{"explorer", gameDirPath});
+				} else if (os.contains("mac")) {
+					runtime.exec(new String[]{"open", gameDirPath});
+				} else if (os.contains("nix") || os.contains("nux")) {
+					runtime.exec(new String[]{"xdg-open", gameDirPath});
+				} else {
+					JOptionPane.showMessageDialog(w,
+							"Cannot open directory on this operating system.",
+							"Unsupported OS",
+							JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		} catch (IOException ex) {
+			JOptionPane.showMessageDialog(w,
+					"Failed to open game directory:\n" + ex.getMessage(),
+					"Error",
+					JOptionPane.ERROR_MESSAGE);
+			ex.printStackTrace();
+		}
 	}
 
 	/**

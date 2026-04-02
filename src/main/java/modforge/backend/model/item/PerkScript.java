@@ -1,4 +1,4 @@
 package modforge.backend.model.item;
 
-public class Armor extends BaseModItem {
+public class PerkScript extends BaseModItem {
 }

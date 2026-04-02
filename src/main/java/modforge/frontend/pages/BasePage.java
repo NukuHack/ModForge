@@ -5,9 +5,7 @@ import modforge.frontend.MainWindow;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 
 // =============================================================================
@@ -65,6 +63,18 @@ public abstract class BasePage extends JPanel {
 	}
 
 	protected static JButton primaryBtn(String text, ActionListener action) {
+		JButton b = new JButton(text);
+		b.setBackground(MainWindow.ACCENT);
+		b.setForeground(new Color(0x1e1e2e));
+		b.setFocusPainted(false);
+		b.setBorderPainted(false);
+		b.setFont(new Font("Roboto", Font.BOLD, 13));
+		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		b.addActionListener(action);
+		return b;
+	}
+
+	protected JButton secondaryBtn(String text, ActionListener action) {
 		JButton b = new JButton(text);
 		b.setBackground(MainWindow.ACCENT);
 		b.setForeground(new Color(0x1e1e2e));

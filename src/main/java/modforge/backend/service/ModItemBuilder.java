@@ -1,8 +1,8 @@
 package modforge.backend.service;
 
 import modforge.backend.AttributeFactory;
+import modforge.backend.BuildHandler;
 import modforge.backend.GenericBuildHandler;
-import modforge.backend.model.IBuildHandler;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.IAttribute;
 import modforge.backend.model.item.*;
@@ -14,9 +14,9 @@ import java.util.logging.*;
 
 public final class ModItemBuilder {
 	private static final Logger log = Logger.getLogger(ModItemBuilder.class.getName());
-	private final List<IBuildHandler> handlers;
+	private final List<BuildHandler> handlers;
 
-	public ModItemBuilder(List<IBuildHandler> handlers) {
+	public ModItemBuilder(List<BuildHandler> handlers) {
 		this.handlers = List.copyOf(handlers);
 	}
 
@@ -37,6 +37,7 @@ public final class ModItemBuilder {
 				new GenericBuildHandler<>(Buff.class, "buff_id"),
 				new GenericBuildHandler<>(Storm.class, "id"),
 				new GenericBuildHandler<>(PerkBuff.class, "perk_id"),
+				new GenericBuildHandler<>(PerkScript.class, "perk_id"),
 				new GenericBuildHandler<>(MeleeWeapon.class, "Id"),
 				new GenericBuildHandler<>(MissileWeapon.class, "Id"),
 				new GenericBuildHandler<>(Ammo.class, "Id"),

@@ -1,5 +1,6 @@
 package modforge.backend.service;
 
+import modforge.backend.DataPoint;
 import modforge.backend.model.ModItem;
 
 import java.io.*;
@@ -46,17 +47,27 @@ public final class IconService implements Closeable {
 		iconIndex.clear();
 		pngCache.clear();
 
-		final String dir = configService.current.gameDirectory;
-		if (dir == null || dir.isBlank()) return;
+		final String gameDir = configService.current.gameDirectory;
+		if (gameDir == null || gameDir.isBlank()) return;
+		readAllIconFromDDS(gameDir, false);
+	}
 
-		final String pakPath = PathFactory.join(dir, "Data", "IPL_GameData.pak");
+	// =====================================================================
+	// Public API
+	// =====================================================================
+
+
+	public void readAllIconFromDDS(String gameDir, boolean isMod) {
+
+		final long start = System.currentTimeMillis();
+		if (gameDir == null || gameDir.isBlank()) return;
+
+		final String pakPath = PathFactory.join(gameDir, ItemType.TABLES);
 		final File   pakFile = new File(pakPath);
 		if (!pakFile.exists()) {
 			log.warning("IPL_GameData.pak not found – icon index empty: " + pakPath);
 			return;
 		}
-
-		final long start = System.currentTimeMillis();
 		int indexed = 0;
 
 		try (var zf = new ZipFile(pakFile)) {
@@ -87,10 +98,6 @@ public final class IconService implements Closeable {
 		log.info(String.format("Icon index built in %d ms | entries=%d",
 				System.currentTimeMillis() - start, indexed));
 	}
-
-	// =====================================================================
-	// Public API
-	// =====================================================================
 
 	/**
 	 * Return true if an icon with this id is present in the index.

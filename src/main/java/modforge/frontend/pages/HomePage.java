@@ -1,6 +1,7 @@
 package modforge.frontend.pages;
 
-import modforge.frontend.MainWindow;
+import modforge.*;
+import modforge.frontend.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,6 +12,7 @@ import java.awt.*;
 public class HomePage extends BasePage {
 	public HomePage(MainWindow w) {
 		super(w);
+		final String gameDir = w.getRegistry().userConfig.current.gameDirectory;
 
 		// Use GridBagLayout for perfect centering
 		setLayout(new GridBagLayout());
@@ -24,7 +26,7 @@ public class HomePage extends BasePage {
 		gbc.anchor = GridBagConstraints.CENTER;
 
 		JPanel card = card(null);
-		card.setPreferredSize(new Dimension(480, 260));
+		card.setPreferredSize(new Dimension(480, 320)); // Increased height for new button
 
 		// Use GridBagLayout for the card content as well
 		card.setLayout(new GridBagLayout());
@@ -56,11 +58,18 @@ public class HomePage extends BasePage {
 		btns.add(primaryBtn("Settings", e -> w.navigate(MainWindow.Page.SETTINGS)));
 		btns.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+		// New button to open game directory
+		JButton openGameDirBtn = secondaryBtn("Open Game Directory", e -> Util.openGameDirectory(this, gameDir));
+		openGameDirBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+		// Add some spacing before the new button
 		contentPanel.add(logo);
 		contentPanel.add(Box.createVerticalStrut(8));
 		contentPanel.add(sub);
 		contentPanel.add(Box.createVerticalStrut(24));
 		contentPanel.add(btns);
+		contentPanel.add(Box.createVerticalStrut(16)); // Spacing between button groups
+		contentPanel.add(openGameDirBtn);
 
 		card.add(contentPanel, cardGbc);
 		add(card, gbc);

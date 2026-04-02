@@ -81,7 +81,7 @@ public class ItemsPage extends BasePage {
 	 * Setup item type selector for filtering by specific class
 	 */
 	private void setupItemTypeSelector() {
-		for (String type : ItemType.getAllType()) {
+		for (String type : ItemType.getAllTypes()) {
 			itemTypeSelector.addItem(type);
 		}
 
@@ -330,7 +330,7 @@ public class ItemsPage extends BasePage {
 	 * Get the display string for an item
 	 */
 	private String getItemDisplayString(ModItem item) {
-		String icon = ItemType.getIconForItem(item);
+		String icon = ItemType.ITEM_ICONS.getOrDefault(item.getClass(), "📄");
 		String id = item.getId();
 
 		// Truncate long IDs for better display

@@ -1,20 +1,17 @@
 package modforge.backend;
 
-import modforge.backend.model.attributes.IAttribute;
-import modforge.backend.model.IBuildHandler;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.item.BaseModItem;
 import modforge.backend.service.ModItemBuilder;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
  * Generic build handler: recognizes elements whose local name matches the
  * simple class name (case-insensitive) and populates a configurable ID attribute.
  */
-public final class GenericBuildHandler<M extends BaseModItem> implements IBuildHandler {
+public final class GenericBuildHandler<M extends BaseModItem> implements BuildHandler {
 	private final Class<M> type;
 	private final String idAttrKey;
 
