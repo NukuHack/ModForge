@@ -5,5 +5,7 @@ public interface IAttribute {
 
 	Object getValue();
 
-	IAttribute deepClone();
+	void setValue(Object value);
+
+	<R extends IAttribute> R deepClone();
 }

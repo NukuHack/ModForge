@@ -1,18 +1,17 @@
 package modforge;
 
-import modforge.backend.ModData;
+import modforge.backend.*;
+import modforge.frontend.*;
 import modforge.backend.service.ServiceRegistry;
-import org.w3c.dom.NodeList;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
+import java.nio.file.*;
 import java.io.IOException;
 
 public enum Singleton {
 	INSTANCE;
 
 	private ServiceRegistry registry;
+	private MainWindow mainWindow;
 	private final Path userConfigDir;
 	private final Path userConfigFile;
 	private final ModData game = ModData.BASE_GAME;
@@ -76,6 +75,14 @@ public enum Singleton {
 
 	public ServiceRegistry getRegistry() {
 		return registry;
+	}
+
+	public MainWindow getMainWindow() {
+		return mainWindow;
+	}
+
+	public void setMainWindow(MainWindow mainWindow) {
+		this.mainWindow = mainWindow;
 	}
 
 	public Path getUserConfig() {

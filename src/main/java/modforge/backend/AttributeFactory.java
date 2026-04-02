@@ -1,8 +1,7 @@
 package modforge.backend;
 
 import modforge.backend.model.attributes.*;
-import modforge.backend.model.BuffParam;
-import modforge.backend.model.MathOperation;
+import modforge.backend.model.*;
 import org.w3c.dom.Element;
 
 import java.util.*;
@@ -85,36 +84,6 @@ public final class AttributeFactory {
 	 * Create a typed IAttribute from a raw XML name/value pair.
 	 * Falls back to String if the type is not yet discovered.
 	 */
-	public static IAttribute create2(String name, String value) {
-		if (value == null) value = "";
-
-		// Handle space-separated lists that should be arrays
-		if (value.contains(" ") && (name.contains("class") || name.contains("type"))) {
-			final String[] parts = value.split("\\s+");
-			if (parts.length > 1) {
-				// Store as string for now - proper array handling would need attribute type
-				return new StringAttribute(name, value);
-			}
-		}
-
-		// Try to parse as integer
-		try {
-			return new IntAttribute(name, Integer.parseInt(value));
-		} catch (NumberFormatException ignored) {}
-
-		// Try as double
-		try {
-			return new DoubleAttribute(name, Double.parseDouble(value));
-		} catch (NumberFormatException ignored) {}
-
-		// Try as boolean
-		if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
-			return new BooleanAttribute(name, Boolean.parseBoolean(value));
-		}
-
-		// Default to string
-		return new StringAttribute(name, value);
-	}
 	public static IAttribute create(final String name, String value) {
 		if (value == null) value = "";
 		final Class<?> type = TYPE_MAP.getOrDefault(name, String.class);

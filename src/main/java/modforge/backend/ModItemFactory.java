@@ -1,14 +1,13 @@
 package modforge.backend;
 
 import modforge.backend.model.attributes.IAttribute;
-import modforge.backend.model.ModItem;
-import modforge.backend.service.ModItemBuilder;
+import modforge.backend.model.*;
+import modforge.backend.service.*;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.*;
 
-final class ModItemFactory {
+public final class ModItemFactory {
 	private ModItemFactory() {
 	}
 
@@ -31,17 +30,19 @@ final class ModItemFactory {
 	 */
 	public static ModItem deepCopy(ModItem src, String newPath) {
 		try {
-			var copy = src.getClass().getDeclaredConstructor().newInstance();
+			final var copy = src.getClass().getDeclaredConstructor().newInstance();
 			copy.setId(src.getId());
 			copy.setIdKey(src.getIdKey());
 			copy.setPath(newPath);
-			var cloned = src.getAttributes().stream()
-					.map(IAttribute::deepClone)
-					.collect(Collectors.toCollection(ArrayList::new));
+			final List<IAttribute> cloned = src.getAttributes().stream()
+					.map(a -> (IAttribute) a.deepClone()).toList();
 			copy.setAttribute(cloned);
 			return copy;
 		} catch (Exception e) {
 			throw new RuntimeException("Deep copy failed for " + src.getClass().getSimpleName(), e);
 		}
+	}
+	public static ModItem deepCopy(ModItem src) {
+		return deepCopy(src, src.getPath());
 	}
 }

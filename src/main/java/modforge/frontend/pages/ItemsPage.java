@@ -1,19 +1,20 @@
 package modforge.frontend.pages;
 
-import modforge.Singleton;
-import modforge.backend.model.ModItem;
-import modforge.backend.model.item.*;
+import modforge.*;
+import modforge.backend.*;
+import modforge.backend.model.*;
 import modforge.backend.service.*;
 import modforge.frontend.*;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
-import static modforge.backend.Util.escapeHtml;
+import static modforge.Util.escapeHtml;
 
 public class ItemsPage extends BasePage {
 	// UNDERLYING DATA - the source of truth
@@ -29,22 +30,13 @@ public class ItemsPage extends BasePage {
 	private final JTextField search = styledField("Search items…");
 	private final JComboBox<String> itemTypeSelector = new JComboBox<>();
 
-	// Services
-	private final ServiceRegistry registry;
-	private final ItemService itemService;
-
 	// Detail panel components
 	private JLabel detailLabel;
-	private JPanel detailPanel;
-	private ModItem currentSelectedItem;
+	private ModItem selectedItem;
 
 	public ItemsPage(final MainWindow w) {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-
-		// Get services from registry
-		this.registry = w.getRegistry();
-		this.itemService = registry.itemService;
 
 		// Setup the list selection listener
 		setupListSelectionListener();
@@ -73,9 +65,9 @@ public class ItemsPage extends BasePage {
 
 		// Setup search filter
 		search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-			public void insertUpdate(DocumentEvent e) { refreshDisplay(); }
-			public void removeUpdate(DocumentEvent e) { refreshDisplay(); }
-			public void changedUpdate(DocumentEvent e) { refreshDisplay(); }
+			public void insertUpdate(DocumentEvent e) { refreshDisplay(false); }
+			public void removeUpdate(DocumentEvent e) { refreshDisplay(false); }
+			public void changedUpdate(DocumentEvent e) { refreshDisplay(false); }
 		});
 
 		// Build main content panel (list + detail)
@@ -89,27 +81,7 @@ public class ItemsPage extends BasePage {
 	 * Setup item type selector for filtering by specific class
 	 */
 	private void setupItemTypeSelector() {
-		String[] itemTypes = {
-				"All Types",
-				"Melee Weapons",
-				"Missile Weapons",
-				"Ammo",
-				"Armor",
-				"Helmet",
-				"Hood",
-				"Food",
-				"Poison",
-				"Herb",
-				"Crafting Material",
-				"Misc Item",
-				"Key",
-				"Money",
-				"KeyRing",
-				"Perk",
-				"Buff"
-		};
-
-		for (String type : itemTypes) {
+		for (String type : ItemType.getAllType()) {
 			itemTypeSelector.addItem(type);
 		}
 
@@ -121,7 +93,7 @@ public class ItemsPage extends BasePage {
 				BorderFactory.createEmptyBorder(4, 8, 4, 8)
 		));
 
-		itemTypeSelector.addActionListener(e -> refreshDisplay());
+		itemTypeSelector.addActionListener(e -> refreshDisplay(true));
 	}
 
 	/**
@@ -145,7 +117,7 @@ public class ItemsPage extends BasePage {
 		itemList.setFixedCellHeight(28);
 
 		// Create detail panel
-		detailPanel = new JPanel(new BorderLayout());
+		JPanel detailPanel = new JPanel(new BorderLayout());
 		detailPanel.setBackground(new Color(0x181825));
 		detailPanel.setPreferredSize(new Dimension(400, 0));
 		detailPanel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
@@ -164,9 +136,9 @@ public class ItemsPage extends BasePage {
 				// We need to detect if the click coordinates are within the ID area
 				// For simplicity, we'll check if the click is in the top portion of the label
 				// where the ID is displayed (first 40 pixels or so)
-				if (currentSelectedItem != null && e.getY() < 40) {
+				if (selectedItem != null && e.getY() < 40) {
 					// Auto-copy ID when clicking on the blue ID text
-					String id = currentSelectedItem.getId();
+					String id = selectedItem.getId();
 					Util.copyText(id);
 					window.snackbar.show("ID copied to clipboard: " + id, BarManager.Type.INFO);
 				}
@@ -174,25 +146,7 @@ public class ItemsPage extends BasePage {
 		});
 
 		// Add right-click menu for copying all text
-		JPopupMenu popupMenu = new JPopupMenu();
-		JMenuItem copyAllMenuItem = new JMenuItem("Copy All Details");
-		copyAllMenuItem.addActionListener(e -> {
-			if (currentSelectedItem != null) {
-				String allDetails = getAllItemDetailsAsText(currentSelectedItem);
-				Util.copyText(allDetails);
-				window.snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
-			}
-		});
-		popupMenu.add(copyAllMenuItem);
-
-		JMenuItem copyIdMenuItem = new JMenuItem("Copy ID");
-		copyIdMenuItem.addActionListener(e -> {
-			if (currentSelectedItem != null) {
-				Util.copyText(currentSelectedItem.getId());
-				window.snackbar.show("ID copied to clipboard: " + currentSelectedItem.getId(), BarManager.Type.INFO);
-			}
-		});
-		popupMenu.add(copyIdMenuItem);
+		final JPopupMenu popupMenu = getPopupMenu();
 
 		detailLabel.setComponentPopupMenu(popupMenu);
 		detailPanel.add(detailLabel, BorderLayout.NORTH);
@@ -207,33 +161,128 @@ public class ItemsPage extends BasePage {
 		return mainPanel;
 	}
 
-	/**
-	 * Get all item details as plain text for copying
-	 */
-	private String getAllItemDetailsAsText(ModItem item) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("ID: ").append(item.getId()).append("\n");
-		sb.append("Class: ").append(item.getClass().getSimpleName()).append("\n");
-		sb.append("Path: ").append(item.getPath()).append("\n");
-
-		// Show attributes if any
-		if (!item.getAttributes().isEmpty()) {
-			sb.append("\nAttributes:\n");
-			for (var attr : item.getAttributes()) {
-				sb.append("  • ").append(attr.getName()).append(": ").append(attr.getValue()).append("\n");
+	public static void addCopyToPopupMenu(JPopupMenu popupMenu, ModItem selectedItem) {
+		final JMenuItem copyAllMenuItem = new JMenuItem("Copy All Details");
+		copyAllMenuItem.addActionListener(e -> {
+			if (selectedItem != null) {
+				final String allDetails = selectedItem.details();
+				Util.copyText(allDetails);
+				Singleton.INSTANCE.getMainWindow().snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
 			}
-		}
+		});
+		popupMenu.add(copyAllMenuItem);
 
-		// Show linked IDs if any
-		if (!item.getLinkedIds().isEmpty()) {
-			sb.append("\nLinked Items:\n");
-			for (String linkedId : item.getLinkedIds()) {
-				sb.append("  • ").append(linkedId).append("\n");
+		final JMenuItem copyIdMenuItem = new JMenuItem("Copy ID");
+		copyIdMenuItem.addActionListener(e -> {
+			if (selectedItem != null) {
+				Util.copyText(selectedItem.getId());
+				Singleton.INSTANCE.getMainWindow().snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
 			}
-		}
-
-		return sb.toString();
+		});
+		popupMenu.add(copyIdMenuItem);
 	}
+
+	private JPopupMenu getPopupMenu() {
+		JPopupMenu popupMenu = new JPopupMenu();
+
+		addCopyToPopupMenu(popupMenu, selectedItem);
+
+		final JMenuItem editItemMenuItem = new JMenuItem("Edit Item");
+		editItemMenuItem.addActionListener(e -> {
+			if (selectedItem != null) {
+				ItemEdit itemEditPage = (ItemEdit) window.getPage(MainWindow.Page.ITEM_EDIT);
+				itemEditPage.setItem(selectedItem);
+				window.navigate(MainWindow.Page.ITEM_EDIT);
+			}
+		});
+		popupMenu.add(editItemMenuItem);
+
+		final JMenuItem addModMenuItem = new JMenuItem("Add to mod");
+		addModMenuItem.addActionListener(e -> {
+			if (selectedItem != null) {
+				showAddToModDialog(selectedItem);
+			}
+		});
+		popupMenu.add(addModMenuItem);
+		return popupMenu;
+	}
+
+	/**
+	 * Show dialog to add item to a mod
+	 */
+	private void showAddToModDialog(ModItem item) {
+		// Create a copy for the mod
+		ModItem copy = ModItemFactory.deepCopy(item);
+
+		JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add to Mod", true);
+		dialog.setSize(400, 300);
+		dialog.setLocationRelativeTo(this);
+		dialog.setLayout(new BorderLayout());
+
+		JPanel mainPanel = new JPanel(new BorderLayout(8, 8));
+		mainPanel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+		mainPanel.setBackground(MainWindow.BG);
+
+		JLabel titleLabel = new JLabel("Add item to mod:");
+		titleLabel.setForeground(MainWindow.TEXT);
+		titleLabel.setFont(new Font("Roboto", Font.BOLD, 14));
+		mainPanel.add(titleLabel, BorderLayout.NORTH);
+
+		DefaultListModel<String> modListModel = new DefaultListModel<>();
+		JList<String> modJList = new JList<>(modListModel);
+		modJList.setBackground(MainWindow.SURFACE);
+		modJList.setForeground(MainWindow.TEXT);
+		modJList.setSelectionBackground(new Color(0x313244));
+
+		ModService modService = window.getRegistry().modService;
+		for (ModData mod : modService.modCollection) {
+			modListModel.addElement(mod.id + " | " + mod.name);
+		}
+
+		JScrollPane scrollPane = new JScrollPane(modJList);
+		scrollPane.setBorder(BorderFactory.createTitledBorder(
+				BorderFactory.createLineBorder(new Color(0x313244)),
+				"Select Mod",
+				TitledBorder.LEFT,
+				TitledBorder.TOP,
+				new Font("Roboto", Font.PLAIN, 11),
+				MainWindow.MUTED
+		));
+		mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		buttonPanel.setOpaque(false);
+
+		JButton addBtn = new JButton("Add");
+		addBtn.setBackground(MainWindow.ACCENT);
+		addBtn.setForeground(new Color(0x1e1e2e));
+		addBtn.addActionListener(e -> {
+			String selected = modJList.getSelectedValue();
+			if (selected != null) {
+				String modId = selected.split(" \\| ")[0];
+				modService.modCollection.stream()
+						.filter(m -> m.id.equals(modId))
+						.findFirst()
+						.ifPresent(mod -> {
+							copy.setPath(modId + ".pak:" + copy.getClass().getSimpleName().toLowerCase() + "s/" + copy.getId() + ".xml");
+							mod.items.add(copy);
+							window.snackbar.show("Added to mod: " + mod.name, BarManager.Type.SUCCESS);
+							dialog.dispose();
+						});
+			}
+		});
+
+		JButton cancelBtn = new JButton("Cancel");
+		cancelBtn.addActionListener(e -> dialog.dispose());
+
+		buttonPanel.add(addBtn);
+		buttonPanel.add(cancelBtn);
+		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+		dialog.add(mainPanel);
+		dialog.setVisible(true);
+	}
+
 
 	/**
 	 * Refresh the underlying list from services
@@ -268,62 +317,20 @@ public class ItemsPage extends BasePage {
 
 			// Get the actual item from underlying list
 			ModItem underlyingItem = underlyingItems.get(underlyingIndex);
-			currentSelectedItem = underlyingItem;
+			selectedItem = underlyingItem;
 
 			// Update detail panel
-			updateDetailPanel(underlyingItem);
+			detailLabel.setText(underlyingItem.detailPanel());
 
 			// NO AUTO COPY HERE - removed the automatic copy on selection
 		});
 	}
 
 	/**
-	 * Update the detail panel with the selected item's information
-	 */
-	private void updateDetailPanel(ModItem item) {
-		// Build detailed information about the item
-		StringBuilder details = new StringBuilder();
-		details.append("<html><div style='font-family: monospace;'>");
-
-		// Make ID clickable with a special style
-		details.append("<div style='cursor: pointer; display: inline-block;' onclick='copyId()'>");
-		details.append("<b style='color:#89b4fa; font-size:14px; text-decoration: underline; text-decoration-color: #89b4fa;'>")
-				.append(escapeHtml(item.getId()))
-				.append("</b>");
-		details.append("</div>");
-		details.append("<span style='color:#6c6f85; font-size: 10px; margin-left: 8px;'>(click to copy)</span>");
-		details.append("<br/><br/>");
-		details.append("<span style='color:#6c6f85'>");
-
-		details.append("Class: ").append(item.getClass().getSimpleName()).append("<br/>");
-		details.append("Path: ").append(escapeHtml(item.getPath())).append("<br/>");
-
-		// Show attributes if any
-		if (!item.getAttributes().isEmpty()) {
-			details.append("<br/><b>Attributes:</b><br/>");
-			for (var attr : item.getAttributes()) {
-				details.append("• ").append(escapeHtml(attr.getName())).append(": ")
-						.append(escapeHtml(String.valueOf(attr.getValue()))).append("<br/>");
-			}
-		}
-
-		// Show linked IDs if any
-		if (!item.getLinkedIds().isEmpty()) {
-			details.append("<br/><b>Linked Items:</b><br/>");
-			for (String linkedId : item.getLinkedIds()) {
-				details.append("• ").append(escapeHtml(linkedId)).append("<br/>");
-			}
-		}
-
-		details.append("</span></div></html>");
-		detailLabel.setText(details.toString());
-	}
-
-	/**
 	 * Get the display string for an item
 	 */
 	private String getItemDisplayString(ModItem item) {
-		String icon = getIconForItem(item);
+		String icon = ItemType.getIconForItem(item);
 		String id = item.getId();
 
 		// Truncate long IDs for better display
@@ -335,32 +342,9 @@ public class ItemsPage extends BasePage {
 	}
 
 	/**
-	 * Get appropriate icon based on item type
-	 */
-	private String getIconForItem(ModItem item) {
-		if (item instanceof MeleeWeapon) return "⚔️";
-		if (item instanceof MissileWeapon) return "🏹";
-		if (item instanceof Ammo) return "🎯";
-		if (item instanceof Armor) return "🛡️";
-		if (item instanceof Helmet) return "⛑️";
-		if (item instanceof Hood) return "🧢";
-		if (item instanceof Food) return "🍎";
-		if (item instanceof Poison) return "☠️";
-		if (item instanceof Herb) return "🌿";
-		if (item instanceof CraftingMaterial) return "🔧";
-		if (item instanceof MiscItem) return "📦";
-		if (item instanceof Key) return "🔑";
-		if (item instanceof Money) return "💰";
-		if (item instanceof KeyRing) return "🔗";
-		if (item instanceof Perk) return "⭐";
-		if (item instanceof Buff) return "✨";
-		return "📄";
-	}
-
-	/**
 	 * Refresh the display model based on current filters
 	 */
-	private void refreshDisplay() {
+	private void refreshDisplay(boolean tellUser) {
 		final String filterText = search.getText().toLowerCase().trim();
 
 		// Get selected item type filter
@@ -380,10 +364,10 @@ public class ItemsPage extends BasePage {
 				String itemId = item.getId();
 
 				// Check item type filter
-				boolean typeMatch = matchesItemType(item, selectedType);
+				boolean typeMatch = ItemType.matchesItemType(item, selectedType);
 
 				// Check text filter
-				boolean textMatch = filterText.isEmpty() || filterText.equals("search items…") || itemId.toLowerCase().contains(filterText);
+				boolean textMatch = filterText.equals("search items…") || itemId.toLowerCase().contains(filterText);
 
 				if (typeMatch && textMatch) {
 					// Add to display model and store the underlying index
@@ -395,44 +379,17 @@ public class ItemsPage extends BasePage {
 			itemList.setValueIsAdjusting(false);
 		}
 
-		// Update status
-		window.snackbar.show("Showing " + displayModel.size() + " items", BarManager.Type.INFO);
+		if (tellUser)
+			window.snackbar.show("Showing " + displayModel.size() + " items", BarManager.Type.INFO);
 	}
 
-	/**
-	 * Check if an item matches the selected item type
-	 */
-	private boolean matchesItemType(ModItem item, String selectedType) {
-		if (selectedType == null || selectedType.equals("All Types"))
-			return true;
-
-		return switch (selectedType) {
-			case "Melee Weapons" -> item instanceof MeleeWeapon;
-			case "Missile Weapons" -> item instanceof MissileWeapon;
-			case "Ammo" -> item instanceof Ammo;
-			case "Armor" -> item instanceof Armor;
-			case "Helmet" -> item instanceof Helmet;
-			case "Hood" -> item instanceof Hood;
-			case "Food" -> item instanceof Food;
-			case "Poison" -> item instanceof Poison;
-			case "Herb" -> item instanceof Herb;
-			case "Crafting Material" -> item instanceof CraftingMaterial;
-			case "Misc Item" -> item instanceof MiscItem;
-			case "Key" -> item instanceof Key;
-			case "Money" -> item instanceof Money;
-			case "KeyRing" -> item instanceof KeyRing;
-			case "Perk" -> item instanceof Perk;
-			case "Buff" -> item instanceof Buff;
-			default -> true;
-		};
-	}
 
 	/**
 	 * Refresh all items (call this after mod changes)
 	 */
 	public void refreshAllItems() {
 		refreshUnderlyingList();
-		refreshDisplay();
+		refreshDisplay(true);
 		repaint();
 	}
 }

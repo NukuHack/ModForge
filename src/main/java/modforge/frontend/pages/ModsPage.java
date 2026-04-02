@@ -1,19 +1,13 @@
-// ModsPage.java
 package modforge.frontend.pages;
 
 import modforge.Singleton;
-import modforge.backend.ModData;
+import modforge.backend.*;
 import modforge.backend.service.ModService;
-import modforge.frontend.BarManager;
-import modforge.frontend.MainWindow;
+import modforge.frontend.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-
-import static modforge.backend.service.ModService.parseModDescription;
-import static modforge.backend.service.ModService.textOf;
+import java.awt.event.*;
 
 // =============================================================================
 //  MODS PAGE  (ModCollection list with real data)
@@ -101,16 +95,12 @@ public class ModsPage extends BasePage {
 				java.util.List.of("1.0", "1.1", "1.2")
 		);
 
-		if (newMod.id != null && !newMod.id.isBlank()) {
-			window.getRegistry().modService.setCurrentMod(newMod);
-			window.navigate(MainWindow.Page.MOD_EDIT);
-		} else {
-			window.snackbar.show("Failed to create mod", BarManager.Type.ERROR);
-		}
+		editMod(newMod);
 	}
 
-	private void editMod(ModData mod) {
-		window.getRegistry().modService.setCurrentMod(mod);
+	private void editMod(ModData selectedMod) {
+		final ModEditPage modEditPage = (ModEditPage) window.getPage(MainWindow.Page.MOD_EDIT);
+		modEditPage.refreshFieldData(selectedMod);
 		window.navigate(MainWindow.Page.MOD_EDIT);
 	}
 
@@ -128,7 +118,7 @@ public class ModsPage extends BasePage {
 
 				if (java.nio.file.Files.exists(manifestPath)) {
 					var doc = docBuilder.parse(manifestPath.toFile());
-					var mod = parseModDescription(doc);
+					var mod = ModService.parseModDescription(doc);
 
 					// Check if already exists
 					if (!window.getRegistry().modService.modCollection.contains(mod)) {

@@ -7,8 +7,7 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.*;
 
 // =============================================================================
 //  MAIN WINDOW
@@ -23,7 +22,6 @@ public class MainWindow extends JFrame {
 	public static final Color TEXT = new Color(0xcdd6f4);
 	public static final Color MUTED = new Color(0x6c6f85);
 	public static final Color DANGER = new Color(0xf38ba8);
-	public static final Color SUCCESS = new Color(0xa6e3a1);
 
 	// ── navigation enum ──────────────────────────────────────────────────────
 	public enum Page {
@@ -32,6 +30,7 @@ public class MainWindow extends JFrame {
 		MOD_EDIT("✏️ Edit Mod", ModEditPage.class),
 		ITEMS("🗡 Items", ItemsPage.class),
 		STORM("⚡ Storm", StormPage.class),
+		ITEM_EDIT(" Item Edit", ItemEdit.class),
 		SETTINGS("⚙ Settings", SettingsPage.class);
 
 		private final String displayName;
@@ -64,8 +63,6 @@ public class MainWindow extends JFrame {
 	private final CardLayout cardLayout = new CardLayout();
 	private final JPanel pageHolder = new JPanel(cardLayout);
 	public final BarManager snackbar;
-	private JButton activeNavBtn;
-	private Page currentPage;
 
 	// Store pages by enum
 	private final Map<Page, BasePage> pages = new EnumMap<>(Page.class);
@@ -173,13 +170,10 @@ public class MainWindow extends JFrame {
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		b.addActionListener(action);
 		b.addMouseListener(new java.awt.event.MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent e) {
+			@Override public void mouseEntered(MouseEvent e) {
 				b.setBackground(new Color(0x313244));
 			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
+			@Override public void mouseExited(MouseEvent e) {
 				b.setBackground(TITLEBAR);
 			}
 		});
@@ -196,10 +190,8 @@ public class MainWindow extends JFrame {
 
 		side.add(Box.createVerticalStrut(8));
 
-		for (Page page : Page.values()) {
-			if (page != Page.MOD_EDIT && page != Page.SETTINGS) {
-				side.add(navBtn(page.getDisplayName(), page));
-			}
+		for (Page page : new Page[] {Page.HOME, Page.MODS, Page.ITEMS, Page.STORM}) {
+			side.add(navBtn(page.getDisplayName(), page));
 		}
 
 		side.add(Box.createVerticalGlue());
@@ -209,7 +201,7 @@ public class MainWindow extends JFrame {
 	}
 
 	private JButton navBtn(String text, Page page) {
-		JButton b = new JButton(text);
+		final JButton b = new JButton(text);
 		b.setAlignmentX(Component.LEFT_ALIGNMENT);
 		b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
 		b.setHorizontalAlignment(SwingConstants.LEFT);
@@ -222,14 +214,9 @@ public class MainWindow extends JFrame {
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		b.addActionListener(e -> navigate(page));
 		b.addMouseListener(new java.awt.event.MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				if (b != activeNavBtn) b.setBackground(new Color(0x313244));
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				if (b != activeNavBtn) b.setBackground(SURFACE);
+			@Override public void mouseEntered(MouseEvent e) { b.setBackground(new Color(0x313244)); }
+			@Override public void mouseExited(MouseEvent e) {
+				b.setBackground(SURFACE);
 			}
 		});
 		return b;
@@ -242,37 +229,13 @@ public class MainWindow extends JFrame {
 	}
 
 	public void navigate(Page page) {
-		// Handle any pre-navigation logic
-		if (page == Page.MOD_EDIT) {
-			// Refresh the mod edit page with current mod data when navigating to it
-			final ModEditPage modEditPage = (ModEditPage) pages.get(Page.MOD_EDIT);
-			if (modEditPage != null) {
-				modEditPage.refreshFieldData();
-			}
-		}
-
 		// Show the page
 		cardLayout.show(pageHolder, page.name());
-		currentPage = page;
 
 		// Update active nav button styling
 		// (You might want to implement this to highlight the current page in sidebar)
 
 		snackbar.show("Navigated to " + page.getDisplayName(), BarManager.Type.INFO);
-	}
-
-	// Convenience method for backward compatibility
-	public void navigate(String pageName) {
-		try {
-			Page page = Page.valueOf(pageName);
-			navigate(page);
-		} catch (IllegalArgumentException e) {
-			System.err.println("Unknown page: " + pageName);
-		}
-	}
-
-	public Page getCurrentPage() {
-		return currentPage;
 	}
 
 	public BasePage getPage(Page page) {

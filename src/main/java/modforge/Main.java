@@ -1,8 +1,7 @@
 package modforge;
 
 import modforge.backend.service.ServiceRegistry;
-import modforge.frontend.LoadingScreen;
-import modforge.frontend.MainWindow;
+import modforge.frontend.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,13 +32,12 @@ public class Main {
 			}).whenComplete((v, ex) -> SwingUtilities.invokeLater(() -> {
 				splash.dispose();
 				if (ex != null) {
-					JOptionPane.showMessageDialog(null,
-							"Startup error:\n" + ex.getMessage(),
-							"ModForge – Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Startup error:\n" + ex.getMessage(), "ModForge – Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				var registry = Singleton.INSTANCE.getRegistry();
-				MainWindow window = new MainWindow(registry);
+				final MainWindow window = new MainWindow(registry);
+				Singleton.INSTANCE.setMainWindow(window);
 				window.setVisible(true);
 			}));
 		});

@@ -18,7 +18,6 @@ public class BarManager {
 	}
 
 	private static final int VISIBLE_MS = 3000;
-	private static final int SLIDE_MS = 300;
 	private static final int BAR_HEIGHT = 44;
 	private static final int BAR_WIDTH = 320;
 	private static final int PAD = 12;

@@ -1,7 +1,6 @@
 package modforge.backend.service;
 
-import modforge.backend.model.ModItem;
-import modforge.backend.model.item.PerkBuff;
+import modforge.backend.model.*;
 import modforge.backend.model.item.*;
 
 import java.util.*;
@@ -96,6 +95,78 @@ public enum ItemType {
 		return Collections.unmodifiableMap(map);
 	}
 
+	/**
+	 * Get appropriate icon based on item type
+	 */
+	public static String getIconForItem(ModItem item) {
+		if (item instanceof MeleeWeapon) return "⚔️";
+		if (item instanceof MissileWeapon) return "🏹";
+		if (item instanceof Ammo) return "🎯";
+		if (item instanceof Armor) return "🛡️";
+		if (item instanceof Helmet) return "⛑️";
+		if (item instanceof Hood) return "🧢";
+		if (item instanceof Food) return "🍎";
+		if (item instanceof Poison) return "☠️";
+		if (item instanceof Herb) return "🌿";
+		if (item instanceof CraftingMaterial) return "🔧";
+		if (item instanceof MiscItem) return "📦";
+		if (item instanceof Key) return "🔑";
+		if (item instanceof Money) return "💰";
+		if (item instanceof KeyRing) return "🔗";
+		if (item instanceof Perk) return "⭐";
+		if (item instanceof Buff) return "✨";
+		return "📄";
+	}
+
+	public static String[] getAllType() {
+		return new String[]{
+			"All Types",
+			"Melee Weapons",
+			"Missile Weapons",
+			"Ammo",
+			"Armor",
+			"Helmet",
+			"Hood",
+			"Food",
+			"Poison",
+			"Herb",
+			"Crafting Material",
+			"Misc Item",
+			"Key",
+			"Money",
+			"KeyRing",
+			"Perk",
+			"Buff"
+		};
+	}
+
+	/**
+	 * Check if an item matches the selected item type
+	 */
+	public static boolean matchesItemType(ModItem item, String selectedType) {
+		if (selectedType == null || selectedType.equals("All Types"))
+			return true;
+
+		return switch (selectedType) {
+			case "Melee Weapons" -> item instanceof MeleeWeapon;
+			case "Missile Weapons" -> item instanceof MissileWeapon;
+			case "Ammo" -> item instanceof Ammo;
+			case "Armor" -> item instanceof Armor;
+			case "Helmet" -> item instanceof Helmet;
+			case "Hood" -> item instanceof Hood;
+			case "Food" -> item instanceof Food;
+			case "Poison" -> item instanceof Poison;
+			case "Herb" -> item instanceof Herb;
+			case "Crafting Material" -> item instanceof CraftingMaterial;
+			case "Misc Item" -> item instanceof MiscItem;
+			case "Key" -> item instanceof Key;
+			case "Money" -> item instanceof Money;
+			case "KeyRing" -> item instanceof KeyRing;
+			case "Perk" -> item instanceof Perk;
+			case "Buff" -> item instanceof Buff;
+			default -> true;
+		};
+	}
 
 	public static Class<? extends ModItem> determineItemClassFromTableName(String tableName) {
 		return switch (tableName.toLowerCase(Locale.ROOT)) {

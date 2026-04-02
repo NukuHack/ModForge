@@ -1,7 +1,6 @@
 package modforge.backend.model.attributes;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Attribute<T> implements IAttribute {
 	private final String name;
@@ -22,18 +21,15 @@ public class Attribute<T> implements IAttribute {
 		return value;
 	}
 
-	public void setValue(T v) {
-		this.value = v;
+	@Override
+	@SuppressWarnings("unchecked")
+	public void setValue(Object value) {
+		this.value = (T) value;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public IAttribute deepClone() {
-		// For mutable values (List<BuffParam>), clone the list too
-		if (value instanceof List<?> list) {
-			var copy = new ArrayList<>(list);
-			return new Attribute<>(name, (T) copy);
-		}
+	public Attribute<T> deepClone() {
 		return new Attribute<>(name, value);
 	}
 

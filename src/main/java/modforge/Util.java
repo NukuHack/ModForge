@@ -1,14 +1,19 @@
-package modforge.backend;
+package modforge;
 
 // =============================================================================
 // EXTENSIONS UTILITY  (mirrors C# Extensions static class)
 // =============================================================================
 
+import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.io.*;
 import java.nio.file.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.logging.*;
 import java.util.zip.*;
@@ -75,6 +80,29 @@ public final class Util {
 				.replace("'", "&#39;");
 	}
 
+
+	public static void copyText(String text) {
+		Toolkit.getDefaultToolkit().getSystemClipboard()
+				.setContents(new StringSelection(text), null);
+	}
+
+	/**
+	 * @return selected path, or null if cancelled
+	 */
+	public static CompletableFuture<String> pickFolderAsync() {
+		CompletableFuture<String> future = new CompletableFuture<>();
+		SwingUtilities.invokeLater(() -> {
+			JFileChooser chooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			chooser.setDialogTitle("Select target folder");
+			chooser.setAcceptAllFileFilterUsed(false);
+			int result = chooser.showOpenDialog(null);
+			String selectedPath = result == JFileChooser.APPROVE_OPTION ? chooser.getSelectedFile().getAbsolutePath() : null;
+
+			future.complete(selectedPath);
+		});
+		return future;
+	}
 
 	/**
 	 * Pack a source folder into a destination PAK file.

@@ -64,12 +64,11 @@ public final class ModItemBuilder {
 	}
 
 
-	public static ModItem create(Element el, ModItem item) {
-
-		var xmlAttrs = el.getAttributes();
-		var list = new ArrayList<IAttribute>(xmlAttrs.getLength());
+	public static ModItem create(final Element el, final ModItem item) {
+		final var xmlAttrs = el.getAttributes();
+		final var list = new ArrayList<IAttribute>(xmlAttrs.getLength());
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
-			var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
+			final var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
 			list.add(AttributeFactory.create(a.getLocalName(), a.getValue()));
 		}
 		item.setAttribute(list);

@@ -1,28 +1,24 @@
 package modforge.backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.*;
+import modforge.*;
 import modforge.backend.*;
 import modforge.backend.model.ModItem;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
-import static modforge.backend.Util.normalizeXml;
+import static modforge.Util.normalizeXml;
 import static modforge.backend.service.ItemService.parseXml;
 
 public final class ModService {
@@ -35,8 +31,6 @@ public final class ModService {
 	private final ConfigService configService;
 	private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-	private ModData currentMod = new ModData();
-
 	public List<ModData> modCollection = new ArrayList<>();
 
 	public ModService(ServiceRegistry registry) {
@@ -46,14 +40,6 @@ public final class ModService {
 		this.builder = registry.builder;
 		this.configService = registry.configService;
 		initiateModCollections();
-	}
-
-	public ModData getCurrentMod() {
-		return currentMod;
-	}
-
-	public void setCurrentMod(ModData m) {
-		if (m != null) currentMod = m;
 	}
 
 	// ------------------------------------------------------------------
@@ -137,17 +123,10 @@ public final class ModService {
 		return m;
 	}
 
-	public boolean addModItem(ModItem item) {
-		if (item == null || currentMod == null) return false;
-		currentMod.items.removeIf(x -> item.getId() != null && item.getId().equals(x.getId()));
-		currentMod.items.add(item);
-		return true;
-	}
-
-	public boolean tryGetModFromCollection(String modId) {
-		var m = modCollection.stream().filter(mod -> mod.id.equals(modId)).findAny();
-		if (m.isEmpty()) return false;
-		this.currentMod = m.get();
+	public boolean addModItem(ModData mod, ModItem item) {
+		if (item == null || mod == null) return false;
+		mod.items.removeIf(x -> item.getId() != null && item.getId().equals(x.getId()));
+		mod.items.add(item);
 		return true;
 	}
 

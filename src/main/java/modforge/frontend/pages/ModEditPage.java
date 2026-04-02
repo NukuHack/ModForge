@@ -1,18 +1,14 @@
-// ModEditPage.java
 package modforge.frontend.pages;
 
 import modforge.backend.*;
-import modforge.backend.service.ConfigService;
-import modforge.backend.service.ModItemBuilder;
-import modforge.backend.service.ModService;
+import modforge.backend.service.*;
 import modforge.frontend.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 // =============================================================================
 //  MOD EDIT PAGE  (create / edit a mod with full manifest editing)
@@ -53,13 +49,6 @@ public class ModEditPage extends BasePage {
 		bottomBar.add(primaryBtn("Delete Mod", e -> deleteMod()));
 		bottomBar.add(primaryBtn("Back", e -> window.navigate(MainWindow.Page.MODS)));
 		add(bottomBar, BorderLayout.SOUTH);
-
-		// Initialize currentMod from registry AFTER building the form
-		// This ensures the form fields are properly populated
-		currentMod = window.getRegistry().modService.getCurrentMod();
-		if (currentMod == null) {
-			currentMod = new ModData();
-		}
 	}
 
 	private JPanel buildForm() {
@@ -208,12 +197,8 @@ public class ModEditPage extends BasePage {
 		versionsPanel.repaint();
 	}
 
-	public void refreshFieldData() {
-		// Ensure currentMod is up to date
-		currentMod = window.getRegistry().modService.getCurrentMod();
-		if (currentMod == null) return;
-		System.out.println(currentMod);
-
+	public void refreshFieldData(ModData currentMod) {
+		this.currentMod = currentMod;
 		// Update text fields
 		idField.setText(currentMod.id);
 		nameField.setText(currentMod.name != null ? currentMod.name : "");
