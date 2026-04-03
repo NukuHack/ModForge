@@ -1,11 +1,11 @@
 package modforge.backend;
 
+import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.IAttribute;
-import modforge.backend.model.*;
-import modforge.backend.service.*;
+import modforge.backend.service.ModItemBuilder;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.List;
 
 public final class ModItemFactory {
 	private ModItemFactory() {

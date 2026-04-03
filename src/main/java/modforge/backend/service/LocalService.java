@@ -3,8 +3,8 @@ package modforge.backend.service;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
-import modforge.backend.model.ModItem;
 import modforge.backend.model.Language;
+import modforge.backend.model.ModItem;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -12,9 +12,11 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
@@ -110,15 +112,15 @@ public final class LocalService {
 	public String resolve(String key, ModData mod) {
 		if (key == null || key.isBlank()) return null;
 		final Language lang = currentLanguage();
-
+		final var game = Singleton.INSTANCE.game();
 		// 1. Mod's own strings
-		if (mod != Singleton.INSTANCE.game()) {
+		if (mod != game) {
 			final var modMap = mod.getLocal().get(lang);
 			if (modMap != null && modMap.containsKey(key)) return modMap.get(key);
 		}
 
 		// 2. Base-game strings
-		final var baseMap = Singleton.INSTANCE.game().getLocal().get(lang);
+		final var baseMap = game.getLocal().get(lang);
 		if (baseMap != null && baseMap.containsKey(key)) return baseMap.get(key);
 
 		return null;
@@ -282,10 +284,10 @@ public final class LocalService {
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {
 		final Language lang = currentLanguage();
-
 		// Pull the two lang maps once – either may be null if never populated.
-		final Map<String, String> modMap = (mod != Singleton.INSTANCE.game()) ? mod.getLocal().get(lang) : null;
-		final Map<String, String> baseMap = Singleton.INSTANCE.game().getLocal().get(lang);
+		final var game = Singleton.INSTANCE.game();
+		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(lang) : new HashMap<>();
+		final Map<String, String> baseMap = game.getLocal().get(lang);
 
 		for (String candidate : candidates) {
 			final String clo = candidate.toLowerCase(Locale.ROOT);
@@ -298,10 +300,10 @@ public final class LocalService {
 			final String key = String.valueOf(attr.getValue());
 
 			// 1. Mod-local strings
-			if (modMap != null && modMap.containsKey(key)) return modMap.get(key);
+			if (modMap.containsKey(key)) return modMap.get(key);
 
 			// 2. Base-game strings
-			if (baseMap != null && baseMap.containsKey(key)) return baseMap.get(key);
+			if (baseMap.containsKey(key)) return baseMap.get(key);
 
 			// 3. Raw value (the key itself) – better than null for display purposes
 			return key;

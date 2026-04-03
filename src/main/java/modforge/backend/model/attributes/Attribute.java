@@ -1,7 +1,5 @@
 package modforge.backend.model.attributes;
 
-import java.util.*;
-
 public class Attribute<T> implements IAttribute {
 	private final String name;
 	private T value;

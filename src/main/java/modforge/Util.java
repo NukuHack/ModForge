@@ -10,16 +10,22 @@ import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.*;
-import java.io.*;
-import java.nio.file.*;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.*;
-import java.util.logging.*;
-import java.util.zip.*;
+import java.util.function.Predicate;
+import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public final class Util {
 	private static final Logger log = Logger.getLogger(Util.class.getName());
@@ -38,8 +44,7 @@ public final class Util {
 
 	public static String replaceWhiteSpace(String s) {
 		if (s == null) return "";
-		return String.join("_",
-				s.trim().toLowerCase(Locale.ROOT).split("\\s+"));
+		return String.join("_", s.trim().toLowerCase(Locale.ROOT).split("\\s+"));
 	}
 
 

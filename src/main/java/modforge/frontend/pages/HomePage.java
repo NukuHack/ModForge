@@ -1,7 +1,7 @@
 package modforge.frontend.pages;
 
-import modforge.*;
-import modforge.frontend.*;
+import modforge.Util;
+import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;

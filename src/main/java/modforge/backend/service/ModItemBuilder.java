@@ -9,7 +9,7 @@ import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.*;
+import java.util.logging.Logger;
 
 public final class ModItemBuilder {
 	private static final Logger log = Logger.getLogger(ModItemBuilder.class.getName());

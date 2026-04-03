@@ -1,26 +1,37 @@
 package modforge.backend.service;
 
-import modforge.*;
-import modforge.backend.*;
-import modforge.backend.model.*;
+import modforge.Singleton;
+import modforge.Util;
+import modforge.backend.AttributeFactory;
+import modforge.backend.DataPoint;
+import modforge.backend.ItemType;
+import modforge.backend.ModData;
+import modforge.backend.model.BuffParam;
+import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.IAttribute;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 // (LinkedHashSet is in java.util.*)
@@ -67,8 +78,8 @@ public final class ItemService {
 				.findFirst();
 	}
 
-	public List<ModItem> readModItem(DataPoint dp) {
-		final var result = new ArrayList<ModItem>();
+	public Set<ModItem> readModItem(DataPoint dp) {
+		final var result = new HashSet<ModItem>();
 		final String typeName = dp.type().getSimpleName().toLowerCase(Locale.ROOT);
 		final File pakFile = new File(dp.path());
 
@@ -88,7 +99,7 @@ public final class ItemService {
 				if (!ename.contains(dp.endpoint())) continue;
 
 				try (var is = zf.getInputStream(entry)) {
-					final Document doc = parseXml(is);
+					final var doc = parseXml(is);
 					AttributeFactory.traverseElement(doc.getDocumentElement());
 
 					final var nodes = doc.getElementsByTagName("*");
@@ -257,89 +268,206 @@ public final class ItemService {
 	// ==================================================================
 	// PRIVATE HELPERS
 	// ==================================================================
-
-	// Add this method to ItemService.java
-	private List<ModItem> readModItemsFromXml(String modFolder) {
-		final var result = new ArrayList<ModItem>();
+	/**
+	 * Load mod items from all PAK files in the mod's Data folder.
+	 * Processes PAK files and their XML entries in parallel for maximum throughput.
+	 */
+	public Set<ModItem> loadModItemsForMod(String modFolder) {
 		final Path modPath = Path.of(modFolder);
 
-		if (!Files.exists(modPath))
+		if (!Files.exists(modPath)) return Set.of();
+
+		try (var stream = Files.list(modPath)) {
+			final List<Path> pakFiles = stream
+					.filter(Files::isRegularFile)
+					.filter(p -> p.toString().toLowerCase().endsWith(".pak"))
+					.toList();
+
+			if (pakFiles.isEmpty()) {
+				log.fine("No PAK files found in: " + modFolder);
+				return Set.of();
+			}
+
+			final Set<ModItem> result = pakFiles.parallelStream()
+					// TODO : make this kind of data either load or ... idk
+					.filter(e -> !e.getFileName().toString().equalsIgnoreCase("Scripts.pak"))
+					.filter(e -> !e.getFileName().toString().equalsIgnoreCase("Animations.pak"))
+					.filter(e -> !e.getFileName().toString().equalsIgnoreCase("Heads.pak"))
+					.flatMap(this::extractItemsFromPak).collect(Collectors.toSet());
+
+			log.info("Loaded %d items from %d PAK file(s)".formatted(result.size(), pakFiles.size()));
 			return result;
 
-		try (var walk = Files.walk(modPath)) {
-			walk.filter(Files::isRegularFile)
-				.filter(path -> path.toString().endsWith(".xml"))
-				.forEach(xmlFile -> {
-					try {
-						// Parse the XML file
-						final Document doc = parseXml(Files.newInputStream(xmlFile));
-						final Element root = doc.getDocumentElement();
-
-						// Check each child element to find the actual table type
-						NodeList children = root.getChildNodes();
-						for (int i = 0; i < children.getLength(); i++) {
-							var node = children.item(i);
-							if (node.getNodeType() != Node.ELEMENT_NODE) continue;
-							final Element tableElement = (Element) node;
-							final String tableName = tableElement.getLocalName();
-
-							// Determine the item type from the table name
-							final Class<? extends ModItem> itemClass = ItemType.TABLE_TO_CLASS.get(tableName.toLowerCase(Locale.ROOT));
-							if (itemClass == null) continue;
-							// Parse all items in this table
-							final NodeList items = tableElement.getElementsByTagName("*");
-							for (int j = 0; j < items.getLength(); j++) {
-								if (items.item(j) instanceof Element itemElement) {
-									// Skip the table wrapper element itself
-									if (itemElement == tableElement) continue;
-
-									AttributeFactory.traverseElement(itemElement);
-									final ModItem item = builder.build(itemElement);
-									if (item != null && item.getId() != null && !BLACKLIST.contains(item.getId())) {
-										item.setPath(xmlFile.toString());
-										result.add(item);
-									}
-								}
-							}
-
-						}
-					} catch (Exception ex) {
-						log.warning("Parse error in " + xmlFile + ": " + ex.getMessage());
-					}
-				});
 		} catch (IOException e) {
-			log.severe("Cannot walk mod folder: " + modFolder + " - " + e.getMessage());
+			log.severe("Failed to list mod folder: " + modFolder + " - " + e.getMessage());
+			return Set.of();
 		}
+	}
 
+	private Stream<ModItem> extractItemsFromPak(Path pakFile) {
+		final Set<ModItem> items = new HashSet<>();
+		try (var zf = new ZipFile(pakFile.toFile())) {
+			final List<? extends ZipEntry> xmlEntries = zf.stream()
+					.filter(e -> !e.isDirectory())
+					.filter(e -> e.getName().toLowerCase().endsWith(".xml"))
+					.toList();
+
+			for (ZipEntry entry : xmlEntries) {
+				final String entryName = entry.getName().replace('\\', '/');
+				try (var is = zf.getInputStream(entry)) {
+					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
+				} catch (Exception ex) {
+					log.warning("Parse error in %s from %s: %s".formatted(entryName, pakFile.getFileName(), ex.getMessage()));
+				}
+			}
+		} catch (IOException e) {
+			log.severe("Cannot open PAK file: %s - %s".formatted(pakFile, e.getMessage()));
+		}
+		return items.stream();
+	}
+
+	private void readItemsFromXml(final InputStream is, final String sourcePath, Set<ModItem> sink) throws Exception {
+		final var doc = parseXml(is);
+		final var root = doc.getDocumentElement();
+		AttributeFactory.traverseElement(root);
+		// Walk direct children of <database> (or whatever root element)
+		final NodeList children = root.getChildNodes();
+
+		for (int i = 0; i < children.getLength(); i++) {
+			if (!(children.item(i) instanceof Element tableEl)) continue;
+			if (tableEl.getNodeType() != Node.ELEMENT_NODE) continue;
+
+			final String tableName = tableEl.getLocalName().toLowerCase(Locale.ROOT);
+			final Class<? extends ModItem> clazz = ItemType.getClassFromTableName(tableName);
+
+			if (clazz == null) {
+				log.fine("No class mapping for table <" + tableName + "> in " + sourcePath);
+				continue;
+			}
+
+			final var items = tableEl.getElementsByTagName("*");
+			for (int j = 0; j < items.getLength(); j++) {
+				if (!(items.item(j) instanceof Element itemElement) || itemElement == tableEl) continue;
+
+				AttributeFactory.traverseElement(itemElement);
+				final ModItem item = builder.build(itemElement);
+				if (item == null || item.getId() == null || BLACKLIST.contains(item.getId())) continue;
+
+				item.setPath(sourcePath);
+				sink.add(item);
+			}
+		}
+	}
+
+	/**
+	 * Exclude PAKs that don't contain item/table data.
+	 */
+	private Predicate<Path> excludeNonDataPaks() {
+		return p -> {
+			String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+			return !name.equals("scripts.pak") &&
+					!name.equals("animations.pak") &&
+					!name.equals("heads.pak") &&
+					!name.equals("sounds.pak") &&
+					!name.equals("shaders.pak");
+		};
+	}
+
+	public Set<ModItem> readAllItemFromXml(final String gameDir, final boolean isMod) {
+		long start = System.currentTimeMillis();
+
+		final Set<ModItem> result;
+		if (isMod) {
+			// For mods, use the new method that scans all XML files
+			result = loadModItemsForMod(gameDir);
+			log.info(String.format("XML MOD !!!!!! read done in %d ms | items=%d", System.currentTimeMillis() - start, result.size()));
+		} else {
+			result = new HashSet<>();
+			final Path path = Path.of(gameDir, "Data");
+			// For game data, use the original method with known endpoints
+			if (true) {
+				final Set<DataPoint> points = new HashSet<>();
+
+				ItemType.endpoints().forEach((type, eps) ->
+					eps.forEach((key, pak) ->
+						points.add(new DataPoint(Path.of(gameDir, pak).toString(), key, type))
+					)
+				);
+
+				final var temp = points.stream()
+					.map(this::readModItem)
+					.flatMap(Collection::stream)
+					.collect(Collectors.toSet());
+				result.addAll(temp);
+				// INFO: XML read done in 6543 ms | items=6640
+			} else if (true) {
+				// INFO: XML GAME read done in 3144 ms | items=1873
+				final var temp = readAllItemFromXmlSame(path.toString());
+				result.addAll(temp);
+			} else {
+				// INFO: XML read done in 3266 ms | items=1873
+				final var temp = loadModItemsForMod(path.toString());
+				result.addAll(temp);
+			}
+			log.info(String.format("XML read done in %d ms | items=%d", System.currentTimeMillis() - start, result.size()));
+		}
 		return result;
 	}
 
-	public List<ModItem> readAllItemFromXml(String gameDir, boolean isMod) {
+	/**
+	 * Load all mod items from XML data, dispatching to the appropriate
+	 * loader based on whether the path points to a mod or the base game.
+	 *
+	 * For mods  : scans all .pak files directly under {@code rootPath}.
+	 * For game  : scans all non-data .pak files under {@code rootPath/Data},
+	 *             processing their XML entries in parallel.
+	 */
+	public Set<ModItem> readAllItemFromXmlSame(String rootPath) {
 		long start = System.currentTimeMillis();
+		final var result = collectItemsFromPakDir(Path.of(rootPath));
+		log.info(String.format("XML read done in %d ms | items=%d", System.currentTimeMillis() - start, result.size()));
+		return result;
+	}
 
-		if (isMod) {
-			// For mods, use the new method that scans all XML files
-			var result = readModItemsFromXml(gameDir);
-			log.info(String.format("XML MOD !!!!!! read done in %d ms | items=%d", System.currentTimeMillis() - start, result.size()));
-			return result;
-		} else {
-			// For game data, use the original method with known endpoints
-			final var allPoints = new ArrayList<DataPoint>(30);
+	/**
+	 * Core PAK scanner: lists every .pak file in {@code pakDir}, filters out
+	 * known non-data paks, then processes the remainder in parallel.
+	 * Each PAK is handed to {@link #extractItemsFromPak(Path)} which streams
+	 * back all items found inside it.
+	 *
+	 * Correctness is preferred over speed: the parallel stream is bounded to
+	 * the JVM's common pool, and any PAK that fails to open is logged and
+	 * skipped rather than aborting the whole load.
+	 */
+	private Set<ModItem> collectItemsFromPakDir(Path pakDir) {
+		if (!Files.exists(pakDir)) {
+			log.warning("PAK directory does not exist: " + pakDir);
+			return Set.of();
+		}
 
-			ItemType.endpoints().forEach((type, eps) ->
-					eps.forEach((key, pak) ->
-							allPoints.add(new DataPoint(gameDir + "/" + pak, key, type))
-					)
-			);
-
-			var temp = allPoints.stream()
-					.map(this::readModItem)
-					.flatMap(Collection::stream)
+		try (var stream = Files.list(pakDir)) {
+			List<Path> pakFiles = stream
+					.filter(Files::isRegularFile)
+					.filter(p -> p.toString().toLowerCase().endsWith(".pak"))
+					.filter(excludeNonDataPaks())
 					.toList();
 
-			log.info(String.format("XML read done in %d ms | items=%d",
-					System.currentTimeMillis() - start, temp.size()));
-			return temp;
+			if (pakFiles.isEmpty()) {
+				log.fine("No PAK files found in: " + pakDir);
+				return Set.of();
+			}
+
+			Set<ModItem> result = pakFiles.parallelStream()
+					.flatMap(this::extractItemsFromPak)
+					.collect(Collectors.toSet());
+
+			log.info("Loaded %d item(s) from %d PAK file(s) in %s"
+					.formatted(result.size(), pakFiles.size(), pakDir));
+			return result;
+
+		} catch (IOException e) {
+			log.severe("Failed to list PAK directory: " + pakDir + " — " + e.getMessage());
+			return Set.of();
 		}
 	}
 
@@ -366,7 +494,7 @@ public final class ItemService {
 		};
 	}
 
-	static Document parseXml(InputStream is) throws Exception {
+	static Document parseXml(InputStream is) throws ParserConfigurationException, IOException, SAXException {
 		var f = DocumentBuilderFactory.newInstance();
 		f.setNamespaceAware(true);
 		f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);

@@ -1,7 +1,7 @@
 package modforge.backend;
 
-import modforge.backend.model.ModItem;
 import modforge.backend.model.Language;
+import modforge.backend.model.ModItem;
 
 import java.util.*;
 

@@ -1,12 +1,14 @@
 package modforge;
 
 import modforge.backend.service.ServiceRegistry;
-import modforge.frontend.*;
+import modforge.frontend.LoadingScreen;
+import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class Main {

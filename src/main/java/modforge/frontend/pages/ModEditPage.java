@@ -1,14 +1,16 @@
 package modforge.frontend.pages;
 
-import modforge.backend.*;
-import modforge.backend.service.*;
-import modforge.frontend.*;
+import modforge.backend.ModData;
+import modforge.backend.service.ConfigService;
+import modforge.backend.service.ModService;
+import modforge.frontend.BarManager;
+import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.*;
+import java.util.logging.Logger;
 
 // =============================================================================
 //  MOD EDIT PAGE  (create / edit a mod with full manifest editing)
@@ -17,7 +19,10 @@ public class ModEditPage extends BasePage {
 
 	@Override
 	public void refresh(Object... input) {
-		this.refreshFieldData((ModData) input[0]);
+		if (input.length > 0 && input[0] instanceof ModData mod)
+			this.refreshFieldData(mod);
+		else
+			window.navigate(MainWindow.Page.HOME);
 	}
 
 	private ModData currentMod;

@@ -1,24 +1,25 @@
 package modforge.backend.service;
 
-import modforge.*;
-import modforge.backend.*;
-import modforge.backend.model.ModItem;
-import org.w3c.dom.*;
+import modforge.Util;
+import modforge.backend.ModData;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.io.*;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
-import java.util.zip.ZipFile;
 
 import static modforge.Util.normalizeXml;
-import static modforge.backend.service.ItemService.parseXml;
 
 public final class ModService {
 	private static final Logger log = Logger.getLogger(ModService.class.getName());
@@ -26,7 +27,7 @@ public final class ModService {
 	public final UserService userConfig;
 	public final ConfigService configService;
 	public final LocalService localService;
-	public final ModItemBuilder builder;
+	//public final ModItemBuilder builder;
 	public final JsonAdapter jsonAdapter;
 	public final ItemService itemService;
 	public final IconService iconService;
@@ -39,7 +40,7 @@ public final class ModService {
 		this.userConfig = registry.userConfig;
 		this.jsonAdapter = registry.jsonAdapter;
 		this.localService = registry.localService;
-		this.builder = registry.builder;
+		//this.builder = registry.builder;
 		this.configService = registry.configService;
 		init();
 	}
@@ -90,7 +91,8 @@ public final class ModService {
 
 		final var mod = parseModDescription(xmlDoc);
 
-		loadModItemsForMod(mod);
+		final String gameDir = userConfig.gameDirectory;
+		mod.setItems(itemService.readAllItemFromXml(Util.modData(gameDir, mod.id), true));
 		loadModLocalizationsForMod(mod);
 		loadModConfigForMod(mod);
 
@@ -268,85 +270,6 @@ public final class ModService {
 			m.supportsGameVersions.add(versions.item(i).getTextContent().trim());
 
 		return m;
-	}
-
-	/**
-	 * Load mod items from all PAK files in the mod's Data folder.
-	 * Supports multiple PAK files (e.g., Weapons.pak, Armor.pak, etc.).
-	 */
-	public void loadModItemsForMod(ModData mod) {
-		final String gameDir = userConfig.gameDirectory;
-		final Path dataFolder = Path.of(Util.modData(gameDir, mod.id));
-
-		if (!Files.exists(dataFolder)) {
-			log.fine("No Data folder found for mod " + mod.id);
-			return;
-		}
-
-		List<ModItem> allItems = new ArrayList<>(100);
-
-		try (var stream = Files.list(dataFolder)) {
-			// Find all .pak files in the Data folder
-			List<Path> pakFiles = stream.filter(Files::isRegularFile)
-					.filter(p -> p.toString().toLowerCase().endsWith(".pak")).toList();
-
-			if (pakFiles.isEmpty()) {
-				log.fine("No PAK files found in Data folder for mod " + mod.id);
-				return;
-			}
-
-			// Process each PAK file
-			for (Path pakFile : pakFiles) {
-				try (var zf = new ZipFile(pakFile.toFile())) {
-					var entries = zf.entries();
-					while (entries.hasMoreElements()) {
-						final var entry = entries.nextElement();
-						final String entryName = entry.getName().replace('\\', '/');
-
-						// Only process XML files
-						if (!entryName.toLowerCase().endsWith(".xml")) continue;
-
-						try (var is = zf.getInputStream(entry)) {
-							final Document doc = parseXml(is);
-							final Element root = doc.getDocumentElement();
-							AttributeFactory.traverseElement(root);
-
-							// Process all child elements
-							final NodeList children = root.getChildNodes();
-							// theoretically this should be a single iteration, since one table exist for one file ...
-							for (int i = 0; i < children.getLength(); i++) {
-								final var node = children.item(i);
-								if (node.getNodeType() != Node.ELEMENT_NODE) continue;
-
-								// Find all item elements within this table
-								final NodeList items = node.getChildNodes();
-								for (int j = 0; j < items.getLength(); j++) {
-									var itemNode = items.item(j);
-									if (itemNode.getNodeType() != Node.ELEMENT_NODE) continue;
-
-									final ModItem item = builder.build((Element) itemNode);
-
-									if (item == null || item.getId() == null) continue;
-
-									// Add source PAK info to help with debugging
-									item.setPath(pakFile.getFileName() + ":" + entryName);
-									allItems.add(item);
-								}
-							}
-						} catch (final Exception ex) {
-							log.warning("Parse error in " + entryName + " from " + pakFile.getFileName() + ": " + ex.getMessage());
-						}
-					}
-				} catch (final IOException e) {
-					log.severe("Cannot open PAK file: " + pakFile + " - " + e.getMessage());
-				}
-			}
-			mod.setItems(Collections.unmodifiableList(allItems));
-			log.info(String.format("Loaded %d items from %d PAK file(s) for mod %s", allItems.size(), pakFiles.size(), mod.id));
-
-		} catch (final IOException e) {
-			log.severe("Failed to list Data folder for mod " + mod.id + ": " + e.getMessage());
-		}
 	}
 
 	/**

@@ -1,6 +1,5 @@
 package modforge.backend.service;
 
-import modforge.Singleton;
 import modforge.backend.model.ModItem;
 
 import java.io.IOException;
@@ -9,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.regex.*;
 
 public final class JsonAdapter {
 	private static final Logger log = Logger.getLogger(JsonAdapter.class.getName());

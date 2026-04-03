@@ -1,13 +1,15 @@
 package modforge.frontend.pages;
 
 import modforge.Singleton;
-import modforge.backend.*;
+import modforge.backend.ModData;
 import modforge.backend.service.ModService;
-import modforge.frontend.*;
+import modforge.frontend.BarManager;
+import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 // =============================================================================
 //  MODS PAGE  (ModCollection list with real data)

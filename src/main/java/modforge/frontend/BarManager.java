@@ -1,9 +1,8 @@
 package modforge.frontend;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
 
 // =============================================================================

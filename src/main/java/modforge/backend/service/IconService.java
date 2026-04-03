@@ -1,17 +1,23 @@
 package modforge.backend.service;
 
-import modforge.*;
-import modforge.backend.*;
-import modforge.backend.model.*;
+import modforge.Singleton;
+import modforge.Util;
+import modforge.backend.ItemType;
+import modforge.backend.ModData;
+import modforge.backend.model.ModItem;
 
-import java.io.*;
-import java.nio.*;
-import java.nio.file.*;
-import java.util.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Logger;
-import java.util.zip.*;
+import java.util.zip.ZipFile;
 
-public final class IconService implements Closeable {
+public final class IconService {
 	private static final Logger log = Logger.getLogger(IconService.class.getName());
 
 	private static final String TEXTURES_ROOT = "Libs/UI/Textures";
@@ -35,7 +41,16 @@ public final class IconService implements Closeable {
 	 * Only populates the base-game index; mod icons are loaded per-mod.
 	 */
 	public void init() {
-		var game = Singleton.INSTANCE.game();
+		final var game = Singleton.INSTANCE.game();
+
+
+		// DISABLING since it uses up over 3gigs of memory, so i will rework it
+		// TODO : rework
+		if (1 == 1) {
+			return;
+		}
+		// to not get unreachable compile time exception
+
 
 		final String gameDir = configService.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) return;
@@ -94,9 +109,9 @@ public final class IconService implements Closeable {
 	 *
 	 * @param item The mod item whose icon_id / IconId attribute is used.
 	 * @param mod  The mod that owns the item (may be {@code Singleton.INSTANCE.game()}).
-	 * @return data-URI string, or {@code null} if no icon is found.
+	 * @return the image.
 	 */
-	public String getIcon(ModItem item, ModData mod) {
+	public BufferedImage getIcon(ModItem item, ModData mod) {
 		if (item == null || item.getAttributes() == null) return null;
 
 		final var iconAttr = item.getAttributes().stream()
@@ -115,50 +130,37 @@ public final class IconService implements Closeable {
 	/**
 	 * Convenience overload for base-game items (no per-mod index to check).
 	 */
-	public String getIcon(ModItem item) {
+	public BufferedImage getIcon(ModItem item) {
 		return getIcon(item, Singleton.INSTANCE.game());
 	}
 
 	/**
 	 * Return a base64 data-URI for a named icon.
-	 * Resolution order:
-	 *   1. mod.pngCache  (already converted this session)
-	 *   2. mod.iconIndex  (raw DDS bytes in the mod's own PAKs)
-	 *   3. basePngCache   (already converted base-game icon)
-	 *   4. baseIconIndex  (raw DDS bytes from IPL_GameData.pak)
-	 *
 	 * @param iconId Icon filename without extension.
 	 * @param mod    The owning mod; pass {@code Singleton.INSTANCE.game()} for game items.
-	 * @return data-URI, or {@code null} if the icon is not found anywhere.
+	 * @return the image.
 	 */
-	public String getBase64Icon(String iconId, ModData mod) {
+	private BufferedImage getBase64Icon(String iconId, ModData mod) {
 		if (iconId == null || iconId.isBlank()) return null;
 		final String key = iconId.toLowerCase(Locale.ROOT);
-		var game = Singleton.INSTANCE.game();
 
 		// 1. Mod's raw DDS index
-		if (mod != game) {
-			final byte[] modDds = mod.getIcon().get(key);
-			if (modDds != null) {
-				return convert(key, modDds);
-			}
+		final byte[] modDds = mod.getIcon().get(key);
+		if (modDds != null) {
+			return convert(key, modDds);
 		}
 
 		// 2. Base-game raw DDS index
-		final byte[] baseDds = game.getIcon().get(key);
-		if (baseDds != null) {
-			return convert(key, baseDds);
+		final var game = Singleton.INSTANCE.game();
+		if (mod != game) {
+			final byte[] baseDds = game.getIcon().get(key);
+			if (baseDds != null) {
+				return convert(key, baseDds);
+			}
 		}
 
 		log.fine("Icon not found in any index: " + iconId);
 		return null;
-	}
-
-	/**
-	 * Convenience overload when no per-mod index is needed.
-	 */
-	public String getBase64Icon(String iconId) {
-		return getBase64Icon(iconId, Singleton.INSTANCE.game());
 	}
 
 	/**
@@ -169,14 +171,6 @@ public final class IconService implements Closeable {
 		final String key = iconId.toLowerCase(Locale.ROOT);
 		return (mod != Singleton.INSTANCE.game() && mod.getIcon().containsKey(key));
 	}
-
-	/** Return true if the named icon exists in the base-game index. */
-	public boolean hasIcon(String iconId) {
-		return hasIcon(iconId, Singleton.INSTANCE.game());
-	}
-
-	@Override
-	public void close() { /* stateless file handles – nothing to release */ }
 
 	// =====================================================================
 	// Private helpers
@@ -222,11 +216,10 @@ public final class IconService implements Closeable {
 	 * Convert raw DDS bytes to a PNG data-URI, store in {@code cache}, and return it.
 	 * Returns {@code null} if conversion fails.
 	 */
-	private String convert(String key, byte[] ddsBytes) {
+	private BufferedImage convert(String key, byte[] ddsBytes) {
 		try {
-			final byte[] pngData = DdsConverter.convertToPng(ddsBytes);
-			return "data:image/png;base64," + Base64.getEncoder().encodeToString(pngData);
-		} catch (Exception ex) {
+			return convertToImage(ddsBytes);
+		} catch (IOException ex) {
 			log.warning("DDS→PNG conversion failed for '" + key + "': " + ex.getMessage());
 			return null;
 		}
@@ -240,60 +233,9 @@ public final class IconService implements Closeable {
 		return (dot > 0 ? filename.substring(0, dot) : filename).toLowerCase(Locale.ROOT);
 	}
 
-	private static final class DdsConverter {
-
-		static byte[] convertToPng(byte[] ddsBytes) throws IOException {
-			final DDSUtil.DDSImage ddsImage = DDSUtil.decodeWithInfo(ddsBytes);
-			if (ddsImage == null) throw new IOException("Failed to decode DDS image");
-			return encodeAsPNG(ddsImage);
-		}
-
-		private static byte[] encodeAsPNG(DDSUtil.DDSImage img) throws IOException {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			baos.writeBytes("\u0089PNG\r\n\u001A\n".getBytes());
-			writeChunk(baos, "IHDR", ihdr(img.width, img.height));
-			writeChunk(baos, "IDAT", idat(img.pixels, img.width, img.height));
-			writeChunk(baos, "IEND", new byte[0]);
-			return baos.toByteArray();
-		}
-
-		private static byte[] ihdr(int w, int h) {
-			return ByteBuffer.allocate(13)
-				.order(ByteOrder.BIG_ENDIAN)
-				.putInt(w).putInt(h)
-				.put((byte) 8)   // bit depth
-				.put((byte) 6)   // RGBA
-				.put((byte) 0).put((byte) 0).put((byte) 0)
-				.array();
-		}
-
-		private static byte[] idat(byte[] pixels, int w, int h) {
-			int bytesPerRow = w * 4;
-			byte[] raw = new byte[h * (bytesPerRow + 1)];
-			for (int y = 0; y < h; y++) {
-				raw[y * (bytesPerRow + 1)] = 0;
-				System.arraycopy(pixels, y * bytesPerRow, raw, y * (bytesPerRow + 1) + 1, bytesPerRow);
-			}
-			Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-			deflater.setInput(raw);
-			deflater.finish();
-			byte[] compressed = new byte[raw.length];
-			int size = deflater.deflate(compressed);
-			deflater.end();
-			return Arrays.copyOf(compressed, size);
-		}
-
-		private static void writeChunk(ByteArrayOutputStream baos, String type, byte[] data) throws IOException {
-			ByteBuffer chunk = ByteBuffer.allocate(4 + 4 + data.length + 4)
-				.order(ByteOrder.BIG_ENDIAN)
-				.putInt(data.length)
-				.put(type.getBytes())
-				.put(data);
-			var crc = new CRC32();
-			crc.update(type.getBytes());
-			crc.update(data);
-			chunk.putInt((int) crc.getValue());
-			baos.write(chunk.array());
-		}
+	static BufferedImage convertToImage(byte[] ddsBytes) throws IOException {
+		final DDSUtil.DDSImage ddsImage = DDSUtil.decodeWithInfo(ddsBytes);
+		if (ddsImage == null) throw new IOException("Failed to decode DDS image");
+		return ddsImage.toBufferedImage();
 	}
 }

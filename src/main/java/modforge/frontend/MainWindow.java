@@ -6,8 +6,10 @@ import modforge.frontend.pages.*;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.net.URL;
 import java.util.logging.Logger;
 
 // =============================================================================
@@ -27,13 +29,13 @@ public class MainWindow extends JFrame {
 
 	// ── navigation enum ──────────────────────────────────────────────────────
 	public enum Page {
-		HOME("🏠 Home", HomePage.class),
-		MODS("📦 Mods", ModsPage.class),
-		MOD_EDIT("✏️ Edit Mod", ModEditPage.class),
-		ITEMS("🗡 Items", ItemsPage.class),
-		STORM("⚡ Storm", StormPage.class),
-		ITEM_EDIT(" Item Edit", ItemEdit.class),
-		SETTINGS("⚙ Settings", SettingsPage.class);
+		HOME("Home", HomePage.class),
+		MODS("Mods", ModsPage.class),
+		MOD_EDIT("Edit Mod", ModEditPage.class),
+		ITEMS("Items", ItemsPage.class),
+		STORM("Storm", StormPage.class),
+		ITEM_EDIT("Item Edit", ItemEdit.class),
+		SETTINGS("Settings", SettingsPage.class);
 
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;
@@ -79,6 +81,9 @@ public class MainWindow extends JFrame {
 		//backend ---
 		this.registry = registry;
 
+		// Load window icon before setting up the UI
+		setWindowIcon();
+
 		// basic properties
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(1280, 800);
@@ -113,12 +118,34 @@ public class MainWindow extends JFrame {
 		navigate(Page.HOME);
 	}
 
+	/**
+	 * Loads the window icon from resources/images/Icons/modforge.png or .ico
+	 * Falls back to default Java icon if not found
+	 */
+	private void setWindowIcon() {
+		// Try PNG first (better cross-platform support)
+		URL iconUrl = getClass().getResource("/resources/images/Icons/modforge.png");
+
+		// If PNG not found, try ICO
+		if (iconUrl == null) {
+			iconUrl = getClass().getResource("/resources/images/Icons/modforge.ico");
+		}
+
+		if (iconUrl != null) {
+			ImageIcon icon = new ImageIcon(iconUrl);
+			setIconImage(icon.getImage());
+			log.info("Window icon loaded successfully from: " + iconUrl.getPath());
+		} else {
+			log.warning("Window icon not found at /resources/images/Icons/modforge.png or .ico");
+		}
+	}
+
 	private void initializePages() {
 		for (Page page : Page.values()) {
 			try {
 				BasePage pageInstance = page.getPageClass()
-						.getDeclaredConstructor(MainWindow.class)
-						.newInstance(this);
+					.getDeclaredConstructor(MainWindow.class)
+					.newInstance(this);
 				page.setInstance(pageInstance);
 				pageHolder.add(pageInstance, page.name());
 			} catch (Exception e) {
@@ -137,7 +164,7 @@ public class MainWindow extends JFrame {
 		bar.addMouseListener(drag);
 		bar.addMouseMotionListener(drag);
 
-		JLabel title = new JLabel("⚒  ModForge");
+		final JLabel title = new JLabel("ModForge");
 		title.setForeground(ACCENT);
 		title.setFont(new Font("Roboto", Font.BOLD, 14));
 
@@ -188,7 +215,7 @@ public class MainWindow extends JFrame {
 
 		side.add(Box.createVerticalStrut(8));
 
-		for (Page page : new Page[] {Page.HOME, Page.MODS, Page.ITEMS, Page.STORM}) {
+		for (Page page : new Page[] {Page.HOME, Page.MODS, Page.ITEMS}) {
 			side.add(navBtn(page.getDisplayName(), page));
 		}
 

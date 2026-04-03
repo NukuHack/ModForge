@@ -1,6 +1,6 @@
 package modforge.backend.model.item;
 
-import modforge.backend.model.*;
+import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.IAttribute;
 
 import java.util.*;
@@ -86,6 +86,18 @@ public abstract class BaseModItem implements ModItem {
 	@Override
 	public void addLinkedId(final Collection<String> linkedId) {
 		this.linkedIds.addAll(linkedId);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) return false;
+		BaseModItem that = (BaseModItem) o;
+		return Objects.equals(id, that.id) && Objects.equals(idKey, that.idKey) && Objects.equals(path, that.path);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, idKey, path);
 	}
 
 	/**

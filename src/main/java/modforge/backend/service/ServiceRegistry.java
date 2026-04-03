@@ -18,6 +18,7 @@ public final class ServiceRegistry {
 	public final JsonAdapter jsonAdapter;
 	public final ItemService itemService;
 	public final IconService iconService;
+	public final StormService stormService;
 	public final ModService modService;
 
 	public ServiceRegistry() {
@@ -28,6 +29,7 @@ public final class ServiceRegistry {
 		jsonAdapter = new JsonAdapter(resolveDataDir());
 		itemService = new ItemService(userConfig, builder);
 		iconService = new IconService(userConfig);
+		stormService = new StormService(userConfig);
 		modService = new ModService(this);
 	}
 
@@ -36,21 +38,17 @@ public final class ServiceRegistry {
 	 */
 	public void init() {
 		userConfig.save();
-		//configService
 		localService.init();
-		//builder
 		jsonAdapter.setBaseDir(userConfig.gameDirectory);
 		itemService.init();
 		iconService.init();
+		stormService.init();
 		modService.init();
-		// Load game config after game directory is set
 		Singleton.INSTANCE.game().setConfig(configService.loadGameConfig());
 	}
 
 	private static String resolveDataDir() {
 		final String appData = System.getenv("APPDATA");
-		return (appData != null && !appData.isBlank())
-				? appData
-				: System.getProperty("user.home") + "/AppData/Roaming";
+		return (appData != null && !appData.isBlank()) ? appData : System.getProperty("user.home") + "/AppData/Roaming";
 	}
 }

@@ -2,21 +2,24 @@
 package modforge.frontend.pages;
 
 import modforge.Util;
-import modforge.backend.*;
-import modforge.backend.model.*;
+import modforge.backend.ModData;
+import modforge.backend.ModItemFactory;
+import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.*;
-import modforge.frontend.*;
+import modforge.frontend.BarManager;
+import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.nio.file.Path;
-import java.util.*;
-
-import static modforge.Util.escapeHtml;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 
 // =============================================================================
 //  ITEM EDIT PAGE
@@ -25,7 +28,10 @@ public class ItemEdit extends BasePage {
 
 	@Override
 	public void refresh(Object... input) {
-		this.setItem((ModItem) input[0]);
+		if (input.length > 0 && input[0] instanceof ModItem item)
+			this.setItem(item);
+		else
+			window.navigate(MainWindow.Page.HOME);
 	}
 
 	private ModItem currentItem;
@@ -214,8 +220,8 @@ public class ItemEdit extends BasePage {
 					JOptionPane.YES_NO_OPTION,
 					JOptionPane.WARNING_MESSAGE);
 			if (choice != JOptionPane.YES_OPTION) return;
+			hasChanges = false;
 		}
-		hasChanges = false;
 		updateStatus();
 		window.navigate(MainWindow.Page.ITEMS);
 	}

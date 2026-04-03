@@ -3,7 +3,8 @@ package modforge.frontend.pages;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.service.UserService;
-import modforge.frontend.*;
+import modforge.frontend.BarManager;
+import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;

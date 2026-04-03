@@ -2,10 +2,11 @@ package modforge.backend.service;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.*;
-import java.util.*;
-import java.util.function.*;
-import java.util.logging.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.function.BiConsumer;
+import java.util.logging.Logger;
 
 /**
  * Minimal DDS decoder - no dependencies, no caching, just static methods.

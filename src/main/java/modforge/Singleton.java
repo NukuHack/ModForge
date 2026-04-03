@@ -1,14 +1,18 @@
 package modforge;
 
-import modforge.backend.*;
-import modforge.frontend.*;
+import modforge.backend.ModData;
 import modforge.backend.service.ServiceRegistry;
+import modforge.frontend.MainWindow;
 
-import java.nio.file.*;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public enum Singleton {
 	INSTANCE;
+
+	public static final String APP_NAME = "ModForge";
 
 	private ServiceRegistry registry;
 	private MainWindow mainWindow;
@@ -35,26 +39,26 @@ public enum Singleton {
 		String os = System.getProperty("os.name").toLowerCase();
 
 		if (os.contains("win")) {
-			// Windows: %APPDATA%\ModForge
+			// Windows: %APPDATA%\ {APP_NAME}
 			String appData = System.getenv("APPDATA");
 			if (appData == null || appData.isBlank()) {
 				appData = System.getProperty("user.home") + "\\AppData\\Roaming";
 			}
-			return Paths.get(appData, "ModForge");
+			return Paths.get(appData, APP_NAME);
 
 		} else if (os.contains("mac")) {
-			// macOS: ~/Library/Application Support/ModForge
+			// macOS: ~/Library/Application Support/ {APP_NAME}
 			return Paths.get(System.getProperty("user.home"),
-					"Library", "Application Support", "ModForge");
+					"Library", "Application Support", APP_NAME);
 
 		} else {
-			// Linux/Unix: ~/.config/modforge (XDG Base Directory Specification)
+			// Linux/Unix: ~/.config/ {APP_NAME} (XDG Base Directory Specification)
 			String xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
 			if (xdgConfigHome != null && !xdgConfigHome.isBlank()) {
-				return Paths.get(xdgConfigHome, "modforge");
+				return Paths.get(xdgConfigHome, APP_NAME.toLowerCase());
 			}
-			// Fallback to ~/.config/modforge
-			return Paths.get(System.getProperty("user.home"), ".config", "modforge");
+			// Fallback to ~/.config/ {APP_NAME}
+			return Paths.get(System.getProperty("user.home"), ".config", APP_NAME.toLowerCase());
 		}
 	}
 
@@ -64,7 +68,7 @@ public enum Singleton {
 				Files.createDirectories(userConfigDir);
 				System.out.println("Created config directory: " + userConfigDir);
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new RuntimeException("Failed to create config directory: " + userConfigDir, e);
 		}
 	}

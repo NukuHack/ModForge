@@ -1,6 +1,7 @@
 package modforge.backend.model.attributes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ListAttribute<M> extends Attribute<List<M>> {
 	public ListAttribute(String name, List<M> value) {

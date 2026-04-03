@@ -1,20 +1,25 @@
 package modforge.frontend.pages;
 
-import modforge.*;
-import modforge.backend.*;
-import modforge.backend.model.*;
-import modforge.backend.service.*;
-import modforge.frontend.*;
+import modforge.Singleton;
+import modforge.Util;
+import modforge.backend.ItemType;
+import modforge.backend.ModData;
+import modforge.backend.ModItemFactory;
+import modforge.backend.model.ModItem;
+import modforge.backend.service.ModService;
+import modforge.frontend.BarManager;
+import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-
-import static modforge.Util.escapeHtml;
 
 public class ItemsPage extends BasePage {
 
@@ -206,11 +211,12 @@ public class ItemsPage extends BasePage {
 
 	public static void addCopyToPopupMenu(JPopupMenu popupMenu, ModItem selectedItem) {
 		final JMenuItem copyAllMenuItem = new JMenuItem("Copy All Details");
+		final var window = Singleton.INSTANCE.getMainWindow();
 		copyAllMenuItem.addActionListener(e -> {
 			if (selectedItem != null) {
 				final String allDetails = selectedItem.details();
 				Util.copyText(allDetails);
-				Singleton.INSTANCE.getMainWindow().snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
+				window.snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
 			}
 		});
 		popupMenu.add(copyAllMenuItem);
@@ -219,7 +225,7 @@ public class ItemsPage extends BasePage {
 		copyIdMenuItem.addActionListener(e -> {
 			if (selectedItem != null) {
 				Util.copyText(selectedItem.getId());
-				Singleton.INSTANCE.getMainWindow().snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
+				window.snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
 			}
 		});
 		popupMenu.add(copyIdMenuItem);
@@ -232,7 +238,11 @@ public class ItemsPage extends BasePage {
 
 		final JMenuItem editItemMenuItem = new JMenuItem("Edit Item");
 		editItemMenuItem.addActionListener(e -> {
-			if (selectedItem != null) {
+			if (selectedItem == null) return;
+			if (selectedItem instanceof modforge.backend.model.item.Storm stormItem) {
+				// Storm items get their own dedicated editor
+				window.navigate(MainWindow.Page.STORM, stormItem);
+			} else {
 				window.navigate(MainWindow.Page.ITEM_EDIT, selectedItem);
 			}
 		});
@@ -378,7 +388,7 @@ public class ItemsPage extends BasePage {
 	 * Get the display string for an item
 	 */
 	private String getItemDisplayString(ModItem item) {
-		String icon = ItemType.ITEM_ICONS.getOrDefault(item.getClass(), "📄");
+		String icon = ItemType.getIconForClass(item.getClass());
 		String id = item.getId();
 
 		// Truncate long IDs for better display

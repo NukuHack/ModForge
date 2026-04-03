@@ -1,7 +1,8 @@
 package modforge.backend;
 
+import modforge.backend.model.BuffParam;
+import modforge.backend.model.MathOperation;
 import modforge.backend.model.attributes.*;
-import modforge.backend.model.*;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 

@@ -1,6 +1,6 @@
 package modforge.backend;
 
-import java.util.*;
+import java.util.Objects;
 
 public record DataPoint(String path, String endpoint, Class<?> type) {
 	public DataPoint(String path, String endpoint, Class<?> type) {
