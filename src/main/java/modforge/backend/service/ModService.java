@@ -16,7 +16,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -164,7 +166,7 @@ public final class ModService {
 			return;
 		}
 		
-		final Path modsFolder = Path.of(gameDir, "Mods");
+		final Path modsFolder = Util.modFolder(gameDir);
 		try {
 			Files.createDirectories(modsFolder);
 		} catch (IOException e) {
@@ -188,20 +190,22 @@ public final class ModService {
 	}
 	
 	private void fillCollection(Path modPath) throws Exception {
-		final Optional<Path> manifest;
+		final Path manifest;
 		try (var fs = Files.list(modPath)) {
-			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest")).findFirst();
+			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest")).findFirst().orElse(null);
 		}
-		if (manifest.isEmpty())
+		if (manifest == null)
 			return;
 		
-		var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		var xmlDoc = docBuilder.parse(manifest.get().toFile());
+		final var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		final var xmlDoc = docBuilder.parse(manifest.toFile());
 		
 		final var mod = parseModDescription(xmlDoc);
 		
 		final String gameDir = userConfig.gameDirectory;
-		mod.setItems(itemService.readAllItemFromXml(Util.modData(gameDir, mod.id), true));
+		final var items = itemService.loadModItems(Path.of(Util.modData(gameDir, mod.id)));
+		mod.setItems(items);
+		log.info(String.format("XML read done items=%d", items.size()));
 		loadModLocalizationsForMod(mod);
 		loadModConfigForMod(mod);
 		

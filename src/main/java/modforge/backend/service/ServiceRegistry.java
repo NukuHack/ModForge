@@ -14,7 +14,6 @@ public final class ServiceRegistry {
 	public final UserService userConfig;
 	public final ConfigService configService;
 	public final LocalService localService;
-	public final ModItemBuilder builder;
 	public final ItemService itemService;
 	public final IconService iconService;
 	public final StormService stormService;
@@ -24,8 +23,7 @@ public final class ServiceRegistry {
 		userConfig = new UserService();
 		configService = new ConfigService(userConfig);
 		localService = new LocalService(userConfig);
-		builder = ModItemBuilder.createDefault();
-		itemService = new ItemService(userConfig, builder);
+		itemService = new ItemService(userConfig);
 		iconService = new IconService(userConfig);
 		stormService = new StormService(userConfig);
 		modService = new ModService(this);

@@ -35,14 +35,11 @@ import java.util.zip.ZipFile;
 
 public final class ItemService {
 	private static final Logger log = Logger.getLogger(ItemService.class.getName());
-	private static final Set<String> BLACKLIST = Set.of("44c61b30-c20e-4267-ab01-a1e39342731e");
 	
 	private final UserService configService;
-	private final ModItemBuilder builder;
 	
-	public ItemService(UserService configService, ModItemBuilder builder) {
+	public ItemService(UserService configService) {
 		this.configService = configService;
-		this.builder = builder;
 		init();
 	}
 	
@@ -196,26 +193,19 @@ public final class ItemService {
 	 */
 	public void init() {
 		final String gameDir = configService.gameDirectory;
+		final var game = Singleton.INSTANCE.game();
 		if (gameDir == null || gameDir.isBlank())
 			return;
 		try {
-			Singleton.INSTANCE.game().setItems(readAllItemFromXml(gameDir, false));
+			game.setItems(loadModItems(Path.of(gameDir, "Data")));
+			log.info(String.format("XML read done items=%d", game.getItems().size()));
 		} catch (Exception ex) {
 			log.severe("Game Data read failed: " + ex.getMessage());
 		}
 	}
 	
-	/**
-	 * Look up a mod item by ID across all loaded collections.
-	 */
-	public Optional<ModItem> getModItem(String id) {
-		final var items = Singleton.INSTANCE.game().getItems();
-		return Stream.of(items).flatMap(Collection::stream).filter(x -> id.equals(x.getId())).findFirst();
-	}
-	
-	public Set<ModItem> readModItems(DataPoint dp) {
+	public Set<ModItem> readModItems(final DataPoint dp) {
 		final var result = new HashSet<ModItem>();
-		final String typeName = dp.type().getSimpleName().toLowerCase(Locale.ROOT);
 		final File pakFile = new File(dp.path());
 		
 		if (! pakFile.exists()) {
@@ -227,37 +217,20 @@ public final class ItemService {
 			var it = zf.entries();
 			while (it.hasMoreElements()) {
 				final var entry = it.nextElement();
-				final String name = entry.getName().replace('\\', '/');
+				final String path = entry.getName().replace('\\', '/');
+				final var fileName = Path.of(entry.getName()).getFileName().toString();
 				
 				// Skip non-XML files
-				if (! name.toLowerCase().endsWith(".xml"))
+				if (! fileName.endsWith("xml"))
 					continue;
-				if (! name.contains(dp.endpoint()))
+				if (! fileName.startsWith(dp.endpoint()))
 					continue;
 				
 				try (var is = zf.getInputStream(entry)) {
-					final var doc = parseXml(is);
-					AttributeFactory.traverseElement(doc.getDocumentElement());
 					
-					final var nodes = doc.getElementsByTagName("*");
-					for (int i = 0; i < nodes.getLength(); i++) {
-						if (! (nodes.item(i) instanceof Element el))
-							continue;
-						if (! el.getLocalName().equalsIgnoreCase(typeName))
-							continue;
-						
-						final ModItem item = builder.build(el);
-						if (item == null) {
-							log.fine("Builder returned null for <" + el.getLocalName() + ">");
-							continue;
-						}
-						if (item.getId() == null || BLACKLIST.contains(item.getId()))
-							continue;
-						item.setPath(name);
-						result.add(item);
-					}
+					readItemsFromXml(is, pakFile.toString(), result);
 				} catch (Exception ex) {
-					log.fine("Parse error in " + name + ": " + ex.getMessage());
+					log.fine("Parse error in " + path + ": " + ex.getMessage());
 				}
 			}
 		} catch (IOException e) {
@@ -316,38 +289,41 @@ public final class ItemService {
 	 * Load mod items from all PAK files in the mod's Data folder.
 	 * Processes PAK files and their XML entries in parallel for maximum throughput.
 	 */
-	public Set<ModItem> loadModItemsForMod(String modFolder) {
-		final Path modPath = Path.of(modFolder);
-		
-		if (! Files.exists(modPath))
+	public Set<ModItem> loadModItems(Path modPath) {
+		if (! Files.exists(modPath)) {
+			log.warning("PAK directory does not exist: " + modPath);
 			return Set.of();
+		}
 		
 		try (var stream = Files.list(modPath)) {
-			final List<Path> pakFiles = stream.filter(Files::isRegularFile).filter(p -> p.toString().toLowerCase().endsWith(".pak")).toList();
+			final var pakFiles = stream
+					.filter(Files::isRegularFile)
+					.filter(p -> p.toString().toLowerCase().endsWith(".pak"))
+					.filter(excludeNonDataPaks())
+					.collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
-				log.fine("No PAK files found in: " + modFolder);
+				log.fine("No PAK files found in: " + modPath);
 				return Set.of();
 			}
 			
-			// TODO : make this kind of data either load or ... idk
-			final Set<ModItem> result = pakFiles.parallelStream().filter(e -> ! e.getFileName().toString().equalsIgnoreCase("Scripts.pak")).filter(e -> ! e.getFileName().toString().equalsIgnoreCase("Animations.pak")).filter(e -> ! e.getFileName().toString().equalsIgnoreCase("Heads.pak")).flatMap(this::extractItemsFromPak).collect(Collectors.toSet());
+			final Set<ModItem> result = pakFiles.parallelStream()
+					.flatMap(ItemService::extractItemsFromPak)
+					.collect(Collectors.toSet());
 			
 			log.info("Loaded %d items from %d PAK file(s)".formatted(result.size(), pakFiles.size()));
 			return result;
 			
-		} catch (IOException e) {
-			log.severe("Failed to list mod folder: " + modFolder + " - " + e.getMessage());
+		} catch (final IOException e) {
+			log.severe("Failed to list PAK folder: " + modPath + " - " + e.getMessage());
 			return Set.of();
 		}
 	}
 	
-	private Stream<ModItem> extractItemsFromPak(Path pakFile) {
+	private static Stream<ModItem> extractItemsFromPak(Path pakFile) {
 		final Set<ModItem> items = new HashSet<>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
-			final List<? extends ZipEntry> xmlEntries = zf.stream().filter(e -> ! e.isDirectory()).filter(e -> e.getName().toLowerCase().endsWith(".xml")).toList();
-			
-			for (ZipEntry entry : xmlEntries) {
+			for (final var entry : zf.stream().filter(excludeNonEndpoints()).toList()) {
 				final String entryName = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
@@ -361,26 +337,13 @@ public final class ItemService {
 		return items.stream();
 	}
 	
-	private void readItemsFromXml(final InputStream is, final String sourcePath, Set<ModItem> sink) throws Exception {
+	private static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) throws Exception {
 		final var doc = parseXml(is);
-		final var root = doc.getDocumentElement();
-		AttributeFactory.traverseElement(root);
-		// Walk direct children of <database> (or whatever root element)
-		final NodeList children = root.getChildNodes();
 		
-		for (int i = 0; i < children.getLength(); i++) {
-			if (! (children.item(i) instanceof Element tableEl))
+		final var nodes = doc.getElementsByTagName("*");
+		for (int i = 0; i < nodes.getLength(); i++) {
+			if (! (nodes.item(i) instanceof Element tableEl) || tableEl.getNodeType() != Node.ELEMENT_NODE)
 				continue;
-			if (tableEl.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-			
-			final String tableName = tableEl.getLocalName();
-			final Class<? extends ModItem> clazz = ItemType.getClassFromTableName(tableName);
-			
-			if (clazz == null) {
-				log.fine("No class mapping for table <" + tableName + "> in " + sourcePath);
-				continue;
-			}
 			
 			final var items = tableEl.getElementsByTagName("*");
 			for (int j = 0; j < items.getLength(); j++) {
@@ -388,8 +351,8 @@ public final class ItemService {
 					continue;
 				
 				AttributeFactory.traverseElement(itemElement);
-				final ModItem item = builder.build(itemElement);
-				if (item == null || item.getId() == null || BLACKLIST.contains(item.getId()))
+				final ModItem item = ModItemBuilder.build(itemElement);
+				if (item == null || item.getId() == null)
 					continue;
 				
 				item.setPath(sourcePath);
@@ -401,94 +364,29 @@ public final class ItemService {
 	/**
 	 * Exclude PAKs that don't contain item/table data.
 	 */
-	private Predicate<Path> excludeNonDataPaks() {
+	private static Predicate<Path> excludeNonDataPaks() {
+		// TODO : make this kind of data either load or ... idk
 		return p -> {
 			String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
 			return ! name.equals("scripts.pak") && ! name.equals("animations.pak") && ! name.equals("heads.pak") && ! name.equals("sounds.pak") && ! name.equals("shaders.pak");
 		};
 	}
 	
-	public Set<ModItem> readAllItemFromXml(final String gameDir, final boolean isMod) {
-		long start = System.currentTimeMillis();
-		
-		final Set<ModItem> result;
-		if (isMod) {
-			// For mods, use the new method that scans all XML files
-			result = loadModItemsForMod(gameDir);
-			log.info(String.format("XML MOD !!!!!! read done in %d ms | items=%d", System.currentTimeMillis() - start, result.size()));
-		} else {
-			result = new HashSet<>();
-			final Path path = Path.of(gameDir, "Data");
-			// For game data, use the original method with known endpoints
-			if (true) {
-				final Set<DataPoint> points = new HashSet<>();
-				
-				ItemType.endpoints().forEach((type, eps) -> eps.forEach((key, pak) -> points.add(new DataPoint(Path.of(gameDir, pak).toString(), key, type))));
-				
-				final var temp = points.stream().map(this::readModItems).flatMap(Collection::stream).collect(Collectors.toSet());
-				result.addAll(temp);
-				// INFO: XML read done in 6543 ms | items=6640
-			} else if (true) {
-				// INFO: XML GAME read done in 3144 ms | items=1873
-				final var temp = readAllItemFromXmlSame(path.toString());
-				result.addAll(temp);
-			} else {
-				// INFO: XML read done in 3266 ms | items=1873
-				final var temp = loadModItemsForMod(path.toString());
-				result.addAll(temp);
-			}
-			log.info(String.format("XML read done in %d ms | items=%d", System.currentTimeMillis() - start, result.size()));
-		}
-		return result;
-	}
-	
-	/**
-	 * Load all mod items from XML data, dispatching to the appropriate
-	 * loader based on whether the path points to a mod or the base game.
-	 * <p>
-	 * For mods  : scans all .pak files directly under {@code rootPath}.
-	 * For game  : scans all non-data .pak files under {@code rootPath/Data},
-	 * processing their XML entries in parallel.
-	 */
-	public Set<ModItem> readAllItemFromXmlSame(String rootPath) {
-		long start = System.currentTimeMillis();
-		final var result = collectItemsFromPakDir(Path.of(rootPath));
-		log.info(String.format("XML read done in %d ms | items=%d", System.currentTimeMillis() - start, result.size()));
-		return result;
-	}
-	
-	/**
-	 * Core PAK scanner: lists every .pak file in {@code pakDir}, filters out
-	 * known non-data paks, then processes the remainder in parallel.
-	 * Each PAK is handed to {@link #extractItemsFromPak(Path)} which streams
-	 * back all items found inside it.
-	 * <p>
-	 * Correctness is preferred over speed: the parallel stream is bounded to
-	 * the JVM's common pool, and any PAK that fails to open is logged and
-	 * skipped rather than aborting the whole load.
-	 */
-	private Set<ModItem> collectItemsFromPakDir(Path pakDir) {
-		if (! Files.exists(pakDir)) {
-			log.warning("PAK directory does not exist: " + pakDir);
-			return Set.of();
-		}
-		
-		try (var stream = Files.list(pakDir)) {
-			List<Path> pakFiles = stream.filter(Files::isRegularFile).filter(p -> p.toString().toLowerCase().endsWith(".pak")).filter(excludeNonDataPaks()).toList();
-			
-			if (pakFiles.isEmpty()) {
-				log.fine("No PAK files found in: " + pakDir);
-				return Set.of();
-			}
-			
-			Set<ModItem> result = pakFiles.parallelStream().flatMap(this::extractItemsFromPak).collect(Collectors.toSet());
-			
-			log.info("Loaded %d item(s) from %d PAK file(s) in %s".formatted(result.size(), pakFiles.size(), pakDir));
-			return result;
-			
-		} catch (IOException e) {
-			log.severe("Failed to list PAK directory: " + pakDir + " — " + e.getMessage());
-			return Set.of();
-		}
+	private static Predicate<ZipEntry> excludeNonEndpoints() {
+		// TODO : make this kind of data either load or ... idk
+		return p -> {
+			final String name = p.getName().toLowerCase(Locale.ROOT);
+			if (! name.endsWith(".xml"))
+				return false;
+			final Path path = Path.of(name);
+			final String fileName = path.getFileName().toString();
+			final int delimiter = fileName.indexOf("__");
+			final String shortName;
+			if (delimiter != -1)
+				shortName = fileName.substring(0, fileName.indexOf("__"));
+			else
+				shortName = fileName.substring(0, fileName.lastIndexOf("."));
+			return ItemType.endpointSet().contains(shortName);
+		};
 	}
 }

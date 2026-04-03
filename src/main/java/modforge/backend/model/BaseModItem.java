@@ -89,7 +89,7 @@ public abstract class BaseModItem implements ModItem {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(getId(), getIdKey(), getPath());
+		return Objects.hash(getId(), getIdKey(), getPath(), getClass());
 	}
 	
 	/**

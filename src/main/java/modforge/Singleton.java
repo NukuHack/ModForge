@@ -7,7 +7,6 @@ import modforge.frontend.MainWindow;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public enum Singleton {
 	INSTANCE;

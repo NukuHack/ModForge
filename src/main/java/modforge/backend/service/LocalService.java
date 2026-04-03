@@ -8,16 +8,8 @@ import modforge.backend.model.ModItem;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Logger;
@@ -106,10 +98,9 @@ public final class LocalService {
 	 * Look up a raw localization key in the mod's strings, then the base game.
 	 * Returns {@code null} if not found in either.
 	 */
-	public String resolve(String key, ModData mod) {
+	public String resolve(final String key, final ModData mod, final Language lang) {
 		if (key == null || key.isBlank())
 			return null;
-		final Language lang = currentLanguage();
 		final var game = Singleton.INSTANCE.game();
 		// 1. Mod's own strings
 		if (mod != game) {
@@ -124,6 +115,10 @@ public final class LocalService {
 			return baseMap.get(key);
 		
 		return null;
+	}
+	
+	public String resolve(String key, ModData mod) {
+		return resolve(key, mod, currentLanguage());
 	}
 	
 	/**

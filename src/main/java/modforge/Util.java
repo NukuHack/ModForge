@@ -72,6 +72,10 @@ public final class Util {
 		return join(root, "Mods", modId);
 	}
 	
+	public static Path modFolder(String root) {
+		return Path.of(join(root, "Mods"));
+	}
+	
 	public static String modData(String root, String modId) {
 		return join(root, "Mods", modId, "Data");
 	}

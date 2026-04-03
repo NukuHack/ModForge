@@ -1,7 +1,6 @@
 package modforge.backend.service;
 
 import modforge.backend.AttributeFactory;
-import modforge.backend.BuildHandler;
 import modforge.backend.ItemType;
 import modforge.backend.model.BaseModItem;
 import modforge.backend.model.ModItem;
@@ -9,25 +8,31 @@ import modforge.backend.model.attributes.Attribute;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public final class ModItemBuilder {
 	private static final Logger log = Logger.getLogger(ModItemBuilder.class.getName());
-	private final List<BuildHandler> handlers;
 	
-	public ModItemBuilder(List<BuildHandler> handlers) {
-		this.handlers = List.copyOf(handlers);
+	// O(1) lookup map - element name to handler
+	private static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
+	
+	static {
+		// Build the handler map once at class initialization
+		for (var spec : ItemType.getHandlerSpecs()) {
+			BuildHandler handler = new GBuildHandler<>(
+					(Class<? extends BaseModItem>) spec.clazz(),
+					spec.idKey()
+			);
+			// Index by the element name this handler is responsible for
+			String elementName = spec.clazz().getSimpleName().toLowerCase(Locale.ROOT);
+			HANDLER_MAP.put(elementName, handler);
+		}
 	}
 	
-	/**
-	 * Builds the handler list from ItemType's single source of truth.
-	 * Adding or reordering item types only requires a change in ItemType.
-	 */
-	@SuppressWarnings("unchecked")
-	public static ModItemBuilder createDefault() {
-		var handlers = ItemType.getHandlerSpecs().stream().map(spec -> (BuildHandler) new GBuildHandler<>((Class<BaseModItem>) spec.clazz(), spec.idKey())).toList();
-		return new ModItemBuilder(handlers);
+	private ModItemBuilder() {
 	}
 	
 	public static ModItem create(final Element el, final ModItem item) {
@@ -41,11 +46,15 @@ public final class ModItemBuilder {
 		return item;
 	}
 	
-	public ModItem build(Element element) {
-		for (var h : handlers) {
-			if (h.isResponsible(element))
-				return h.handle(element);
+	public static ModItem build(Element element) {
+		// glue it together yet again, barely works
+		final String elementName = element.getLocalName().toLowerCase(Locale.ROOT).replace("_", "");
+		final var handler = HANDLER_MAP.get(elementName);
+		
+		if (handler != null) {
+			return handler.handle(element);
 		}
+		
 		log.fine("No handler matched element <" + element.getLocalName() + ">");
 		return null;
 	}
@@ -65,11 +74,6 @@ public final class ModItemBuilder {
 		}
 		
 		@Override
-		public boolean isResponsible(Element el) {
-			return el.getLocalName().equalsIgnoreCase(type.getSimpleName());
-		}
-		
-		@Override
 		public ModItem handle(final Element element) {
 			try {
 				final M item = type.getDeclaredConstructor().newInstance();
@@ -83,5 +87,9 @@ public final class ModItemBuilder {
 				return null;
 			}
 		}
+	}
+	
+	protected interface BuildHandler {
+		ModItem handle(final Element element);
 	}
 }

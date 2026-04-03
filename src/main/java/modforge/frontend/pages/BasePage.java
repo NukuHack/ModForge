@@ -118,6 +118,18 @@ public abstract class BasePage extends JPanel {
 		return b;
 	}
 	
+	static JButton getDangerButton(String text, ActionListener action) {
+		JButton b = new JButton(text);
+		b.setBackground(MainWindow.DANGER);
+		b.setForeground(new Color(0x1e1e2e));
+		b.setFocusPainted(false);
+		b.setBorderPainted(false);
+		b.setFont(new Font("Roboto", Font.BOLD, 13));
+		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		b.addActionListener(action);
+		return b;
+	}
+	
 	public abstract void refresh(Object... input);
 	
 }

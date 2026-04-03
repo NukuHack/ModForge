@@ -77,8 +77,7 @@ public class ItemEdit extends BasePage {
 		JPanel top = new JPanel(new BorderLayout(12, 0));
 		top.setOpaque(false);
 		
-		// Left: breadcrumb label acting as the page header
-		// Top bar
+		// Left: breadcrumb
 		JLabel breadcrumb = new JLabel("Items  ›  Edit Item");
 		breadcrumb.setForeground(MainWindow.TEXT);
 		breadcrumb.setFont(new Font("Roboto", Font.BOLD, 22));
@@ -202,7 +201,7 @@ public class ItemEdit extends BasePage {
 		buttons.setOpaque(false);
 		
 		JButton saveBtn = primaryBtn("Save Changes", e -> saveChanges());
-		JButton cancelBtn = dangerBtn("← Back to Items", e -> navigateBack());
+		JButton cancelBtn = getDangerButton("← Back to Items", e -> navigateBack());
 		
 		buttons.add(saveBtn);
 		buttons.add(cancelBtn);
@@ -500,18 +499,6 @@ public class ItemEdit extends BasePage {
 		return b;
 	}
 	
-	private JButton dangerBtn(String text, java.awt.event.ActionListener action) {
-		JButton b = new JButton(text);
-		b.setBackground(MainWindow.DANGER);
-		b.setForeground(new Color(0x1e1e2e));
-		b.setFocusPainted(false);
-		b.setBorderPainted(false);
-		b.setFont(new Font("Roboto", Font.BOLD, 13));
-		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		b.addActionListener(action);
-		return b;
-	}
-	
 	// ── Change Tracking ───────────────────────────────────────────────────────
 	
 	private void addChangeListeners(Document doc) {
@@ -582,7 +569,6 @@ public class ItemEdit extends BasePage {
 		updatePreview();
 		updateStatus();
 		
-		// Update the breadcrumb in case ID changed
 		setItem(currentItem);
 		
 		window.snackbar.show("Item changes saved", BarManager.Type.SUCCESS);

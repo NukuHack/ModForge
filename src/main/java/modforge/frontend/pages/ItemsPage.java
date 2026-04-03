@@ -6,6 +6,7 @@ import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.ModItemFactory;
 import modforge.backend.model.ModItem;
+import modforge.backend.model.item.Storm;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
@@ -150,7 +151,7 @@ public class ItemsPage extends BasePage {
 	 * Setup item type selector for filtering by specific class
 	 */
 	private void setupItemTypeSelector() {
-		for (String type : ItemType.getAllTypes()) {
+		for (final String type : ItemType.getAllTypes()) {
 			itemTypeSelector.addItem(type);
 		}
 		
@@ -235,7 +236,7 @@ public class ItemsPage extends BasePage {
 		editItemMenuItem.addActionListener(e -> {
 			if (selectedItem == null)
 				return;
-			if (selectedItem instanceof modforge.backend.model.item.Storm stormItem) {
+			if (selectedItem instanceof Storm stormItem) {
 				// Storm items get their own dedicated editor
 				window.navigate(MainWindow.Page.STORM, stormItem);
 			} else {
@@ -243,6 +244,13 @@ public class ItemsPage extends BasePage {
 			}
 		});
 		popupMenu.add(editItemMenuItem);
+		
+		final JMenuItem editLangMenuItem = new JMenuItem("Edit Lang");
+		editLangMenuItem.addActionListener(e -> {
+			if (selectedItem != null)
+				window.navigate(MainWindow.Page.LANG_EDIT, selectedItem);
+		});
+		popupMenu.add(editLangMenuItem);
 		
 		final JMenuItem addModMenuItem = new JMenuItem("Add to mod");
 		addModMenuItem.addActionListener(e -> {
@@ -403,19 +411,19 @@ public class ItemsPage extends BasePage {
 		// Don't trigger selection events while rebuilding
 		itemList.setValueIsAdjusting(true);
 		
+		final var typeMatch = ItemType.matchesItemType(selectedType);
+		final boolean globalMach = filterText.equals("search items…");
 		try {
 			// Filter the underlying list by iterating through indices
 			for (int i = 0; i < underlyingItems.size(); i++) {
-				ModItem item = underlyingItems.get(i);
-				String itemId = item.getId();
+				final ModItem item = underlyingItems.get(i);
+				final String itemId = item.getId();
 				
 				// Check item type filter
-				boolean typeMatch = ItemType.matchesItemType(item, selectedType);
+				final boolean mach = typeMatch == null || typeMatch.test(item);
+				final boolean textMach = globalMach || itemId.toLowerCase().contains(filterText);
 				
-				// Check text filter
-				boolean textMatch = filterText.equals("search items…") || itemId.toLowerCase().contains(filterText);
-				
-				if (typeMatch && textMatch) {
+				if (mach && textMach) {
 					// Add to display model and store the underlying index
 					displayModel.addElement(getItemDisplayString(item));
 					displayToUnderlyingIndex.add(i);

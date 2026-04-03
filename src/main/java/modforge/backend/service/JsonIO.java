@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static modforge.Util.escapeJson;
-import static modforge.Util.pickFolderAsync;
 
 public final class JsonIO {
 	private static final Logger log = Logger.getLogger(JsonIO.class.getName());

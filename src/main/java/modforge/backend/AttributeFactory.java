@@ -32,32 +32,32 @@ public final class AttributeFactory {
 	 * Walk the entire document tree and record the best-guess Java type for
 	 * every XML attribute name encountered. Idempotent – safe to call many times.
 	 */
-	public static void traverseElement(Element el) {
-		var attrs = el.getAttributes();
+	public static void traverseElement(final Element el) {
+		final var attrs = el.getAttributes();
 		for (int i = 0; i < attrs.getLength(); i++) {
 			final var a = (Attr) attrs.item(i);
 			String name = a.getLocalName();
 			final String value = a.getValue();
-			if (name == null || (name = name.trim()).isEmpty())
+			if (name == null)
 				continue;
 			TYPE_MAP.computeIfAbsent(name, n -> inferType(n, value == null ? "" : value.trim()));
 		}
-		var children = el.getChildNodes();
-		for (int i = 0; i < children.getLength(); i++) {
+		final var children = el.getChildNodes();
+		final int len = children.getLength();
+		if (len == 0)
+			return;
+		for (int i = 0; i < len; i++) {
 			if (children.item(i) instanceof Element child)
 				traverseElement(child);
 		}
 	}
 	
-	private static Class<?> inferType(String name, String value) {
-		if (TYPE_MAP.containsKey(name))
-			return TYPE_MAP.get(name);
-		
-		final String lo = name.toLowerCase(Locale.ROOT);
+	private static Class<?> inferType(final String name, final String value) {
+		final String lo = name.toLowerCase();
 		if (lo.endsWith("id") || lo.endsWith("class"))
 			return String.class;
 		
-		if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value))
+		if ("true".equals(value) || "false".equals(value))
 			return Boolean.class;
 		
 		// Check for space-separated values

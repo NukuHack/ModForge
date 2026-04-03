@@ -1,21 +1,39 @@
 package modforge.backend;
 
+import modforge.Singleton;
+import modforge.Util;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.item.*;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public enum ItemType {
 	// Define enum constants with their associated classes
-	WEAPON_CLASS(MeleeWeaponClass.class, MissileWeaponClass.class), WEAPON_TYPE(MeleeWeapon.class, MissileWeapon.class, Ammo.class), ARMOR_TYPE(Hood.class, Armor.class, Helmet.class), CONSUMABLE_TYPE(Food.class, Poison.class), CRAFTING_TYPE(Herb.class, CraftingMaterial.class), MISC_TYPE(NPCTool.class, MiscItem.class, GameDocument.class, Die.class, ItemAlias.class, QuickSlotContainer.class, DiceBadge.class, PickableItem.class, Key.class, Money.class, KeyRing.class), PERK(Perk.class), BUFF(Buff.class), STORM(Storm.class), PERK_BUFF(PerkBuff.class), PERK_SCRIPT(PerkScript.class), ALL_ITEM(MeleeWeapon.class, MissileWeapon.class, Ammo.class, Hood.class, Armor.class, Helmet.class, Food.class, Poison.class, Herb.class, CraftingMaterial.class, NPCTool.class, MiscItem.class, GameDocument.class, Die.class, ItemAlias.class, QuickSlotContainer.class, DiceBadge.class, PickableItem.class, Key.class, Money.class, KeyRing.class, Perk.class, Buff.class, Storm.class);
+	WEAPON_CLASS(MeleeWeaponClass.class, MissileWeaponClass.class),
+	WEAPON_TYPE(MeleeWeapon.class, MissileWeapon.class, Ammo.class),
+	ARMOR_TYPE(Hood.class, Armor.class, Helmet.class),
+	CONSUMABLE_TYPE(Food.class, Poison.class),
+	CRAFTING_TYPE(Herb.class, CraftingMaterial.class),
+	MISC_TYPE(NPCTool.class, MiscItem.class, GameDocument.class, Die.class, ItemAlias.class, QuickSlotContainer.class,
+			DiceBadge.class, PickableItem.class, Key.class, Money.class, KeyRing.class), PERK(Perk.class),
+	BUFF(Buff.class),
+	STORM(Storm.class),
+	PERK_BUFF(PerkBuff.class),
+	PERK_SCRIPT(PerkScript.class),
+	ALL_ITEM(MeleeWeapon.class, MissileWeapon.class, Ammo.class, Hood.class, Armor.class, Helmet.class, Food.class, Poison.class, Herb.class,
+			CraftingMaterial.class, NPCTool.class, MiscItem.class, GameDocument.class, Die.class, ItemAlias.class, QuickSlotContainer.class,
+			DiceBadge.class, PickableItem.class, Key.class, Money.class, KeyRing.class, Perk.class, Buff.class, Storm.class);
 	
 	// Constants
 	public static final String TABLES = "Data/Tables.pak";
 	public static final String GAMEDATA = "Data/IPL_GameData.pak";
-	// SINGLE SOURCE OF TRUTH - The Giant Master Map
+	
+	// Static master data instance
 	private static final MasterData MASTER_DATA = new MasterData();
+	
 	// Instance fields
 	private final Set<Class<? extends ModItem>> itemClasses;
 	
@@ -24,23 +42,18 @@ public enum ItemType {
 		this.itemClasses = Set.of(classes);
 	}
 	
-	// Only used to know what files should we look at inside the saved game data
-	public static Map<Class<?>, Map<String, String>> endpoints() {
-		return MASTER_DATA.getEndpoints();
-	}
-	
 	public static Set<String> endpointSet() {
 		return MASTER_DATA.endpointSet();
 	}
 	
 	// Item selector dropdown inside Item page (frontend)
-	public static String[] getAllTypes() {
+	public static Set<String> getAllTypes() {
 		return MASTER_DATA.getAllTypes();
 	}
 	
 	// Item selector dropdown filter for Item page (frontend)
-	public static boolean matchesItemType(ModItem item, String selectedType) {
-		return MASTER_DATA.matchesItemType(item, selectedType);
+	public static Predicate<ModItem> matchesItemType(String selectedType) {
+		return MASTER_DATA.matchesItemType(selectedType);
 	}
 	
 	// Item page - Item display frontend
@@ -48,7 +61,7 @@ public enum ItemType {
 		return MASTER_DATA.getIconForClass(clazz);
 	}
 	
-	// first check for items inside xml data
+	// first check for items inside XML data
 	public static Class<? extends ModItem> getClassFromTableName(final String tableName) {
 		return MASTER_DATA.getClassFromTableName(tableName.toLowerCase(Locale.ROOT).trim().replace(" ", "").replace("_", ""));
 	}
@@ -68,6 +81,15 @@ public enum ItemType {
 		return MASTER_DATA.getHandlerSpecs();
 	}
 	
+	// Only used to know what files should we look at inside the saved game data
+	public static Set<DataPoint> dataPoints(final String gameDir) {
+		final Set<DataPoint> points = new HashSet<>();
+		MASTER_DATA.getEndpoints().forEach((type, e) ->
+			points.add(new DataPoint(Util.join(gameDir, e.getValue()), e.getKey(), type))
+		);
+		return points;
+	}
+	
 	private Set<Class<? extends ModItem>> get() {
 		return itemClasses;
 	}
@@ -82,68 +104,149 @@ public enum ItemType {
 	private static class MasterData {
 		
 		// The giant master maps
-		private static final Map<Class<? extends ModItem>, String> itemIcons = new HashMap<>();
-		private static final Set<Class<? extends ModItem>> exclude = Set.of(MeleeWeaponClass.class, MissileWeaponClass.class, PerkBuff.class, PerkScript.class, Storm.class);
-		private final Map<String, Class<? extends ModItem>> tableToClass = new HashMap<>();
-		private final Map<Class<?>, Map<String, String>> endpoints = new LinkedHashMap<>();
-		private final List<ITDisplay> itemDisplays = new ArrayList<>();
-		/**
-		 * Class → XML id-attribute name; drives both icon lookup and builder handler list.
-		 */
-		private final Map<Class<? extends ModItem>, String> idKeys = new LinkedHashMap<>();
-		/**
-		 * Stable, ordered list consumed by ModItemBuilder.createDefault().
-		 */
-		private final List<HandlerSpec> handlerSpecs = new ArrayList<>();
+		private static final Map<Class<? extends ModItem>, String> ITEM_ICONS = initializeIcons();
+		
+		private final Map<String, Class<? extends ModItem>> tableToClass;
+		private final Map<Class<?>, Map.Entry<String, String>> endpoints;
+		private final Set<ITDisplay> itemDisplays;
+		private final Map<Class<? extends ModItem>, String> idKeys;
+		private final List<HandlerSpec> handlerSpecs;
+		
+		private MasterData() {}
 		
 		{
-			initializeIcons();
-			initializeTableMappings();
-			initializeEndpoints();
-			initializeDisplays();
+			this.tableToClass = initializeTableMappings();
+			this.endpoints = initializeEndpoints();
+			this.idKeys = new LinkedHashMap<>();
+			this.handlerSpecs = new ArrayList<>();
 			initializeIdKeys();
+			this.itemDisplays = new LinkedHashSet<>(initializeDisplays());
 		}
 		
-		private void initializeIcons() {
+		private static Map<Class<? extends ModItem>, String> initializeIcons() {
 			// Giant icon mapping
-			Map<Class<? extends ModItem>, String> icons = Map.ofEntries(Map.entry(Armor.class, "🛡️"), Map.entry(Ammo.class, "🎯"), Map.entry(MeleeWeapon.class, "⚔️"), Map.entry(Helmet.class, "⛑️"), Map.entry(Hood.class, "🧢"), Map.entry(Food.class, "🍎"), Map.entry(Poison.class, "☠️"), Map.entry(Herb.class, "🌿"), Map.entry(Buff.class, "✨"), Map.entry(MissileWeapon.class, "🏹"), Map.entry(CraftingMaterial.class, "🔧"), Map.entry(MiscItem.class, "📦"), Map.entry(Key.class, "🔑"), Map.entry(Money.class, "💰"), Map.entry(KeyRing.class, "🔗"), Map.entry(Perk.class, "⭐"));
-			itemIcons.putAll(icons);
+			final var icons = new HashMap<Class<? extends ModItem>, String>();
+			icons.put(Armor.class, "🛡️");
+			icons.put(Ammo.class, "🎯");
+			icons.put(MeleeWeapon.class, "⚔️");
+			icons.put(Helmet.class, "⛑️");
+			icons.put(Hood.class, "🧢");
+			icons.put(Food.class, "🍎");
+			icons.put(Poison.class, "☠️");
+			icons.put(Herb.class, "🌿");
+			icons.put(Buff.class, "✨");
+			icons.put(MissileWeapon.class, "🏹");
+			icons.put(CraftingMaterial.class, "🔧");
+			icons.put(MiscItem.class, "📦");
+			icons.put(Key.class, "🔑");
+			icons.put(Money.class, "💰");
+			icons.put(KeyRing.class, "🔗");
+			icons.put(Perk.class, "⭐");
+			return Collections.unmodifiableMap(icons);
 		}
 		
-		private void initializeTableMappings() {
+		private static Map<String, Class<? extends ModItem>> initializeTableMappings() {
 			// Giant table mapping
-			Map<String, Class<? extends ModItem>> mappings = Map.<String, Class<? extends ModItem>>ofEntries(Map.entry("ammo", Ammo.class), Map.entry("armor", Armor.class), Map.entry("armors", Armor.class), Map.entry("buff", Buff.class), Map.entry("buffs", Buff.class), Map.entry("craftingmaterial", CraftingMaterial.class), Map.entry("craftingmaterials", CraftingMaterial.class), Map.entry("dicebadge", DiceBadge.class), Map.entry("dicebadges", DiceBadge.class), Map.entry("die", Die.class), Map.entry("dice", Die.class), Map.entry("food", Food.class), Map.entry("foods", Food.class), Map.entry("gamedocument", GameDocument.class), Map.entry("gamedocuments", GameDocument.class), Map.entry("helmet", Helmet.class), Map.entry("helmets", Helmet.class), Map.entry("herb", Herb.class), Map.entry("herbs", Herb.class), Map.entry("hood", Hood.class), Map.entry("hoods", Hood.class), Map.entry("itemalias", ItemAlias.class), Map.entry("itemaliases", ItemAlias.class), Map.entry("key", Key.class), Map.entry("keys", Key.class), Map.entry("keyring", KeyRing.class), Map.entry("keyrings", KeyRing.class), Map.entry("meleeweapon", MeleeWeapon.class), Map.entry("meleeweapons", MeleeWeapon.class), Map.entry("meleeweaponclass", MeleeWeaponClass.class), Map.entry("meleeweaponclasses", MeleeWeaponClass.class), Map.entry("misc", MiscItem.class), Map.entry("miscitem", MiscItem.class), Map.entry("miscitems", MiscItem.class), Map.entry("missileweapon", MissileWeapon.class), Map.entry("missileweapons", MissileWeapon.class), Map.entry("missileweaponclass", MissileWeaponClass.class), Map.entry("missileweaponclasses", MissileWeaponClass.class), Map.entry("money", Money.class), Map.entry("npctool", NPCTool.class), Map.entry("npctools", NPCTool.class), Map.entry("perk", Perk.class), Map.entry("perks", Perk.class), Map.entry("perkbuff", PerkBuff.class), Map.entry("perkbuffs", PerkBuff.class), Map.entry("perkscript", PerkScript.class), Map.entry("perkscripts", PerkScript.class), Map.entry("pickableitem", PickableItem.class), Map.entry("pickableitems", PickableItem.class), Map.entry("poison", Poison.class), Map.entry("poisons", Poison.class), Map.entry("quickslotcontainer", QuickSlotContainer.class), Map.entry("quickslotcontainers", QuickSlotContainer.class), Map.entry("storm", Storm.class), Map.entry("storms", Storm.class), Map.entry("weapon", MeleeWeapon.class), Map.entry("weapons", MeleeWeapon.class));
-			tableToClass.putAll(mappings);
+			Map<String, Class<? extends ModItem>> mappings = new HashMap<>();
+			mappings.put("ammo", Ammo.class);
+			mappings.put("armor", Armor.class);
+			mappings.put("armors", Armor.class);
+			mappings.put("buff", Buff.class);
+			mappings.put("buffs", Buff.class);
+			mappings.put("craftingmaterial", CraftingMaterial.class);
+			mappings.put("craftingmaterials", CraftingMaterial.class);
+			mappings.put("dicebadge", DiceBadge.class);
+			mappings.put("dicebadges", DiceBadge.class);
+			mappings.put("die", Die.class);
+			mappings.put("dice", Die.class);
+			mappings.put("food", Food.class);
+			mappings.put("foods", Food.class);
+			mappings.put("gamedocument", GameDocument.class);
+			mappings.put("gamedocuments", GameDocument.class);
+			mappings.put("helmet", Helmet.class);
+			mappings.put("helmets", Helmet.class);
+			mappings.put("herb", Herb.class);
+			mappings.put("herbs", Herb.class);
+			mappings.put("hood", Hood.class);
+			mappings.put("hoods", Hood.class);
+			mappings.put("itemalias", ItemAlias.class);
+			mappings.put("itemaliases", ItemAlias.class);
+			mappings.put("key", Key.class);
+			mappings.put("keys", Key.class);
+			mappings.put("keyring", KeyRing.class);
+			mappings.put("keyrings", KeyRing.class);
+			mappings.put("meleeweapon", MeleeWeapon.class);
+			mappings.put("meleeweapons", MeleeWeapon.class);
+			mappings.put("meleeweaponclass", MeleeWeaponClass.class);
+			mappings.put("meleeweaponclasses", MeleeWeaponClass.class);
+			mappings.put("misc", MiscItem.class);
+			mappings.put("miscitem", MiscItem.class);
+			mappings.put("miscitems", MiscItem.class);
+			mappings.put("missileweapon", MissileWeapon.class);
+			mappings.put("missileweapons", MissileWeapon.class);
+			mappings.put("missileweaponclass", MissileWeaponClass.class);
+			mappings.put("missileweaponclasses", MissileWeaponClass.class);
+			mappings.put("money", Money.class);
+			mappings.put("npctool", NPCTool.class);
+			mappings.put("npctools", NPCTool.class);
+			mappings.put("perk", Perk.class);
+			mappings.put("perks", Perk.class);
+			mappings.put("perkbuff", PerkBuff.class);
+			mappings.put("perkbuffs", PerkBuff.class);
+			mappings.put("perkscript", PerkScript.class);
+			mappings.put("perkscripts", PerkScript.class);
+			mappings.put("pickableitem", PickableItem.class);
+			mappings.put("pickableitems", PickableItem.class);
+			mappings.put("poison", Poison.class);
+			mappings.put("poisons", Poison.class);
+			mappings.put("quickslotcontainer", QuickSlotContainer.class);
+			mappings.put("quickslotcontainers", QuickSlotContainer.class);
+			mappings.put("storm", Storm.class);
+			mappings.put("storms", Storm.class);
+			mappings.put("weapon", MeleeWeapon.class);
+			mappings.put("weapons", MeleeWeapon.class);
+			return Collections.unmodifiableMap(mappings);
 		}
 		
-		private void initializeEndpoints() {
-			addEndpointsForType(ItemType.PERK, orderedMapOf("perk", TABLES, "perk__combat", TABLES, "perk__hardcore", TABLES, "perk__kcd2", TABLES, "perk__dlc2", TABLES));
-			addEndpointsForType(ItemType.BUFF, orderedMapOf("buff", TABLES, "buff__alchemy", TABLES, "buff__perk", TABLES, "buff__perk_hardcore", TABLES, "buff__perk_kcd1", TABLES, "buff__dlc", TABLES, "buff__dlc2_beds", TABLES, "buff__dlc2_others", TABLES, "buff__dlc2_tables", TABLES));
-			// perk_buff_overrides, perk_soul_abilitys
-			addEndpointsForType(ItemType.WEAPON_CLASS, orderedMapOf("weapon_class", TABLES));
-			addEndpointsForType(ItemType.PERK_BUFF, orderedMapOf("perk_buff", TABLES));
-			addEndpointsForType(ItemType.PERK_SCRIPT, orderedMapOf("perk_script", TABLES));
+		private Map<Class<?>, Map.Entry<String, String>> initializeEndpoints() {
+			Map<Class<?>, Map.Entry<String, String>> temp = new HashMap<>();
+			
+			// TODO :  perk_buff_overrides, perk_soul_abilitys, rpg_params
+			temp.put(Perk.class, new AbstractMap.SimpleEntry<>("perk", TABLES));
+			temp.put(Buff.class, new AbstractMap.SimpleEntry<>("buff", TABLES));
+			temp.put(MeleeWeaponClass.class, new AbstractMap.SimpleEntry<>("weapon_class", TABLES));
+			temp.put(MissileWeaponClass.class, new AbstractMap.SimpleEntry<>("weapon_class", TABLES));
+			temp.put(PerkBuff.class, new AbstractMap.SimpleEntry<>("perk_buff", TABLES));
+			temp.put(PerkScript.class, new AbstractMap.SimpleEntry<>("perk_script", TABLES));
 			
 			// Add all item type endpoints
-			var itemEndpoints = createItemEndpoints();
-			for (var type : List.of(ItemType.WEAPON_TYPE, ItemType.ARMOR_TYPE, ItemType.CONSUMABLE_TYPE, ItemType.CRAFTING_TYPE, ItemType.MISC_TYPE)) {
-				addEndpointsForType(type, itemEndpoints);
+			for (Class<? extends ModItem> itemClass : ItemType.ALL_ITEM.get()) {
+				temp.putIfAbsent(itemClass, new AbstractMap.SimpleEntry<>("item", TABLES));
 			}
+			
+			return Collections.unmodifiableMap(temp);
 		}
 		
-		private void initializeDisplays() {
-			itemDisplays.add(new ITDisplay("All Types", _ -> true));
+		private List<ITDisplay> initializeDisplays() {
+			final List<ITDisplay> displays = new ArrayList<>();
+			displays.add(new ITDisplay("All Types", _ -> true));
 			
-			// Get all unique classes from ALL_ITEM and other type enums
-			final Set<Class<? extends ModItem>> allClasses = ItemType.ALL_ITEM.get();
+			// Get all unique classes from ALL_ITEM
+			final Set<Class<? extends ModItem>> allClasses = Arrays.stream(ItemType.values()).map(ItemType::get).flatMap(Collection::stream).collect(Collectors.toSet());
 			
 			// Generate displays dynamically
-			allClasses.stream().filter(this::shouldIncludeInDisplay).map(this::createDisplayForClass).sorted(Comparator.comparing(ITDisplay::displayName)).forEach(itemDisplays::add);
+			allClasses.stream()
+					.filter(this::shouldIncludeInDisplay)
+					.map(this::createDisplayForClass)
+					.sorted(Comparator.comparing(ITDisplay::displayName))
+					.forEach(displays::add);
+			
+			return Collections.unmodifiableList(displays);
 		}
 		
 		private boolean shouldIncludeInDisplay(final Class<?> clazz) {
 			// Filter out classes you don't want in the dropdown
-			return ! exclude.contains(clazz);
+			return MeleeWeaponClass.class != clazz && clazz != MissileWeaponClass.class;
 		}
 		
 		private ITDisplay createDisplayForClass(final Class<?> clazz) {
@@ -152,71 +255,12 @@ public enum ItemType {
 		
 		private String formatDisplayName(final String className) {
 			// Insert space before each uppercase letter that has a lowercase letter after it
-			// "MeleeWeapon" -> "Melee Weapon"
-			// "CraftingMaterial" -> "Crafting Material"
-			// "KeyRing" -> "Key Ring"
-			// "NPC" -> "NPC" (stays as is since no lowercase after)
 			String withSpaces = className.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", " ");
 			
 			// Handle special cases like "NPCTool" -> "NPC Tool"
-			// This handles consecutive uppercase letters followed by a word
 			withSpaces = withSpaces.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2");
 			
-			// Handle "DiceBadge" -> "Dice Badge" (already handled by first regex)
-			// Handle "QuickSlotContainer" -> "Quick Slot Container"
-			
 			return withSpaces;
-		}
-		
-		private void addEndpointsForType(ItemType type, Map<String, String> typeEndpoints) {
-			for (var clazz : type.get()) {
-				endpoints.put(clazz, typeEndpoints);
-			}
-		}
-		
-		private Map<String, String> createItemEndpoints() {
-			var map = new LinkedHashMap<String, String>();
-			List.of("item", "item__alchemy", "item__aux", "item__deprecated", "item__dlc", "item__horse", "item__rewards", "item__system", "item__unique").forEach(key -> map.put(key, TABLES));
-			return Collections.unmodifiableMap(map);
-		}
-		
-		private Map<String, String> orderedMapOf(String... kvPairs) {
-			if (kvPairs.length % 2 != 0) {
-				throw new IllegalArgumentException("Need even number of arguments");
-			}
-			
-			var map = new LinkedHashMap<String, String>();
-			for (int i = 0; i < kvPairs.length; i += 2) {
-				map.put(kvPairs[i], kvPairs[i + 1]);
-			}
-			return Collections.unmodifiableMap(map);
-		}
-		
-		private Map<Class<?>, Map<String, String>> getEndpoints() {
-			return Collections.unmodifiableMap(endpoints);
-		}
-		
-		private Set<String> endpointSet() {
-			return endpoints.values().stream().map(Map::keySet).flatMap(Collection::stream).collect(Collectors.toSet());
-		}
-		
-		private String[] getAllTypes() {
-			return itemDisplays.stream().map(ITDisplay::displayName).toArray(String[]::new);
-		}
-		
-		private boolean matchesItemType(ModItem item, String selectedType) {
-			if (selectedType == null)
-				return true;
-			
-			return itemDisplays.stream().filter(display -> display.displayName().equals(selectedType)).findFirst().map(display -> display.matcher().test(item)).orElse(true);
-		}
-		
-		private String getIconForClass(Class<? extends ModItem> clazz) {
-			return itemIcons.getOrDefault(clazz, "📦");
-		}
-		
-		private Class<? extends ModItem> getClassFromTableName(String tableName) {
-			return tableToClass.get(tableName.toLowerCase());
 		}
 		
 		/**
@@ -259,12 +303,39 @@ public enum ItemType {
 			handlerSpecs.add(new HandlerSpec(clazz, idKey));
 		}
 		
-		private String getIdKey(Class<? extends ModItem> clazz) {
+		public Map<Class<?>, Map.Entry<String, String>> getEndpoints() {
+			return endpoints;
+		}
+		
+		public Set<String> endpointSet() {
+			return endpoints.values().stream().map(Map.Entry::getKey).collect(Collectors.toSet());
+		}
+		
+		public Set<String> getAllTypes() {
+			return itemDisplays.stream().map(ITDisplay::displayName).collect(Collectors.toCollection(LinkedHashSet::new));
+		}
+		
+		public Predicate<ModItem> matchesItemType(String selectedType) {
+			if (selectedType == null)
+				return null;
+			
+			return itemDisplays.stream().filter(display -> display.displayName().equals(selectedType)).findFirst().map(ITDisplay::matcher).orElse(null);
+		}
+		
+		public String getIconForClass(Class<? extends ModItem> clazz) {
+			return ITEM_ICONS.getOrDefault(clazz, "📦");
+		}
+		
+		public Class<? extends ModItem> getClassFromTableName(String tableName) {
+			return tableToClass.get(tableName.toLowerCase());
+		}
+		
+		public String getIdKey(Class<? extends ModItem> clazz) {
 			return idKeys.getOrDefault(clazz, "Id");
 		}
 		
-		private List<HandlerSpec> getHandlerSpecs() {
-			return Collections.unmodifiableList(handlerSpecs);
+		public List<HandlerSpec> getHandlerSpecs() {
+			return handlerSpecs;
 		}
 	}
 	

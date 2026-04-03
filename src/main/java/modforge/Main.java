@@ -1,6 +1,5 @@
 package modforge;
 
-import modforge.backend.ItemType;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
