@@ -7,7 +7,7 @@ import org.w3c.dom.Element;
 public final class ModItemFactory {
 	private ModItemFactory() {
 	}
-
+	
 	/**
 	 * Instantiate a mod item of the given type from an XML element.
 	 */
@@ -15,13 +15,13 @@ public final class ModItemFactory {
 		try {
 			final var item = type.getDeclaredConstructor().newInstance();
 			item.setPath(path);
-
+			
 			return ModItemBuilder.create(element, item);
 		} catch (final Exception e) {
 			throw new RuntimeException("Cannot instantiate " + type.getSimpleName(), e);
 		}
 	}
-
+	
 	/**
 	 * Deep-copy a mod item, optionally changing its path.
 	 */
@@ -37,6 +37,7 @@ public final class ModItemFactory {
 			throw new RuntimeException("Deep copy failed for " + src.getClass().getSimpleName(), e);
 		}
 	}
+	
 	public static ModItem deepCopy(ModItem src) {
 		return deepCopy(src, src.getPath());
 	}

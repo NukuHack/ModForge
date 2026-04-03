@@ -14,22 +14,20 @@ import java.util.stream.Collectors;
 
 public final class AttributeFactory {
 	private static final Logger log = Logger.getLogger(AttributeFactory.class.getName());
-
-	private AttributeFactory() {
-	}
-
 	/**
 	 * Discovered at runtime by scanning XML documents.
 	 */
 	private static final Map<String, Class<?>> TYPE_MAP = new HashMap<>();
-
 	private static final Pattern BUFF_PARAM_RE = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");
-
+	
 	static {
 		TYPE_MAP.put("buff_params", BuffParam.class);
 		TYPE_MAP.put("perk_buff", PerkBuff.class);
 	}
-
+	
+	private AttributeFactory() {
+	}
+	
 	/**
 	 * Walk the entire document tree and record the best-guess Java type for
 	 * every XML attribute name encountered. Idempotent – safe to call many times.
@@ -40,53 +38,59 @@ public final class AttributeFactory {
 			final var a = (Attr) attrs.item(i);
 			String name = a.getLocalName();
 			final String value = a.getValue();
-			if (name == null || (name = name.trim()).isEmpty()) continue;
+			if (name == null || (name = name.trim()).isEmpty())
+				continue;
 			TYPE_MAP.computeIfAbsent(name, n -> inferType(n, value == null ? "" : value.trim()));
 		}
 		var children = el.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
-			if (children.item(i) instanceof Element child) traverseElement(child);
+			if (children.item(i) instanceof Element child)
+				traverseElement(child);
 		}
 	}
-
+	
 	private static Class<?> inferType(String name, String value) {
-		if (TYPE_MAP.containsKey(name)) return TYPE_MAP.get(name);
-
+		if (TYPE_MAP.containsKey(name))
+			return TYPE_MAP.get(name);
+		
 		final String lo = name.toLowerCase(Locale.ROOT);
-		if (lo.endsWith("id") || lo.endsWith("class")) return String.class;
-
+		if (lo.endsWith("id") || lo.endsWith("class"))
+			return String.class;
+		
 		if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value))
 			return Boolean.class;
-
+		
 		// Check for space-separated values
 		if (value.contains(" ") && value.matches("^[\\d\\s]+$"))
 			return List.class;
-
+		
 		try {
 			UUID.fromString(value);
 			return String.class;
 		} catch (Exception ignored) {
 		}
-
-		if (!value.isEmpty()) {
+		
+		if (! value.isEmpty()) {
 			try {
 				Double.parseDouble(value);
 				return Double.class;
 			} catch (final NumberFormatException ignored) {
 			}
 		}
-
+		
 		return String.class;
 	}
-
+	
 	/**
 	 * Create a typed IAttribute from a raw XML name/value pair.
 	 * Falls back to String if the type is not yet discovered.
 	 */
 	public static Attribute create(final String name, String value) {
-		if (value == null) value = ""; value = value.trim();
+		if (value == null)
+			value = "";
+		value = value.trim();
 		final Class<?> type = TYPE_MAP.getOrDefault(name, String.class);
-
+		
 		try {
 			if (type == BuffParam.class) {
 				final List<BuffParam> valueNew = parseBuffParams(value);
@@ -98,7 +102,7 @@ public final class AttributeFactory {
 				final Boolean valueNew = value.isBlank() ? Boolean.FALSE : Boolean.parseBoolean(value);
 				return new BooleanAttribute(name, valueNew);
 			} else if (type == Double.class) {
-				final Double valueNew =  value.isBlank() ? 0.0 : Double.parseDouble(value);
+				final Double valueNew = value.isBlank() ? 0.0 : Double.parseDouble(value);
 				return new DoubleAttribute(name, valueNew);
 			} else {
 				return new StringAttribute(name, value);
@@ -108,40 +112,36 @@ public final class AttributeFactory {
 			return new StringAttribute(name, value);
 		}
 	}
-
+	
 	/**
 	 * Parse the compact game format:  "Strength+5,Agility-2.5,Charisma=10"
 	 */
 	public static List<BuffParam> parseBuffParams(String raw) {
 		var list = new ArrayList<BuffParam>();
-		if (raw == null || raw.isBlank()) return list;
-
+		if (raw == null || raw.isBlank())
+			return list;
+		
 		for (String part : raw.split(",")) {
 			String t = part.trim();
-			if (t.isEmpty()) continue;
+			if (t.isEmpty())
+				continue;
 			var m = BUFF_PARAM_RE.matcher(t);
 			if (m.find()) {
-				list.add(new BuffParam(
-						m.group(1),
-						MathOperation.fromSymbol(m.group(2)),
-						Double.parseDouble(m.group(3))
-				));
+				list.add(new BuffParam(m.group(1), MathOperation.fromSymbol(m.group(2)), Double.parseDouble(m.group(3))));
 			} else {
-				list.add(new BuffParam(t, MathOperation.SET_ABSOLUTE, 1));
+				list.add(new BuffParam(t, MathOperation.SET, 1));
 			}
 		}
 		return list;
 	}
-
+	
 	/**
 	 * Return a default (empty-value) attribute for every discovered name.
 	 */
 	public static List<Attribute> getAllKnown() {
-		return TYPE_MAP.keySet().stream()
-				.map(k -> create(k, ""))
-				.collect(Collectors.toList());
+		return TYPE_MAP.keySet().stream().map(k -> create(k, "")).collect(Collectors.toList());
 	}
-
+	
 	public static Map<String, Class<?>> getTypeMap() {
 		return Collections.unmodifiableMap(TYPE_MAP);
 	}

@@ -18,7 +18,6 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -33,8 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-// (LinkedHashSet is in java.util.*)
 
 public final class ItemService {
 	private static final Logger log = Logger.getLogger(ItemService.class.getName());
@@ -52,14 +49,6 @@ public final class ItemService {
 	// ==================================================================
 	// READ OPERATIONS
 	// ==================================================================
-	
-	/**
-	 * Strip the file extension from a filename: "Weapons.pak" → "Weapons".
-	 */
-	private static String stripExtension(String name) {
-		int dot = name.lastIndexOf('.');
-		return dot > 0 ? name.substring(0, dot) : name;
-	}
 	
 	private static Element buildXmlElement(Document doc, String elementName, ModItem item) {
 		Element el = doc.createElement(elementName);
@@ -104,6 +93,103 @@ public final class ItemService {
 		}
 	}
 	
+	// ==================================================================
+	// PRIVATE HELPERS
+	// ==================================================================
+	
+	private static void writeXml(Document doc, File outFile) throws Exception {
+		var tf = TransformerFactory.newInstance().newTransformer();
+		//tf.setOutputProperty(OutputKeys.ENCODING, "US-ASCII");
+		//tf.setOutputProperty(OutputKeys.INDENT, "yes");
+		//tf.setOutputProperty(OutputKeys.STANDALONE, "no");
+		// xml declaration appended later
+		var writer = new StringWriter();
+		tf.transform(new DOMSource(doc), new StreamResult(writer));
+		Util.writeXml(writer.toString(), outFile.toPath());
+	}
+	
+	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod, final String typeName) {
+		final String rawPath = item.getPath() == null ? "" : item.getPath();
+		
+		// ---- Resolve PAK stem & inner directory suffix ----
+		final String pakStem;   // e.g. "Weapons"  or  modId
+		final String dirSuffix; // e.g. "Libs/Tables" or ""
+		
+		int colonIdx = rawPath.indexOf(':');
+		if (colonIdx > 0) {
+			// Format (a): "SomePak.pak:inner/dir/entry.xml"
+			final String pakFileName = rawPath.substring(0, colonIdx);       // "SomePak.pak"
+			final String innerEntry = rawPath.substring(colonIdx + 1);      // "inner/dir/entry.xml"
+			final int dot = pakFileName.lastIndexOf('.');
+			pakStem = dot > 0 ? pakFileName.substring(0, dot) : pakFileName;     // "SomePak"
+			int lastSlash = innerEntry.lastIndexOf('/');
+			dirSuffix = lastSlash >= 0 ? innerEntry.substring(0, lastSlash) : "";
+		} else {
+			// Format (b/c): plain path or blank
+			pakStem = mod.id;
+			int lastSlash = rawPath.lastIndexOf('/');
+			dirSuffix = lastSlash >= 0 ? rawPath.substring(0, lastSlash) : "";
+		}
+		
+		// ---- Build target paths inside the staging area ----
+		// Structure:  Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/
+		final String stageRoot = Util.join(Util.modData(gameDir, mod.id), "_stage", pakStem);
+		final String targetDir = dirSuffix.isEmpty() ? stageRoot : Util.join(stageRoot, dirSuffix);
+		final String outFile = Util.join(targetDir, typeName + "__" + mod.id + ".xml");
+		return new File(outFile);
+	}
+	
+	private static Document makeDocument(final File outFile, final ModItem item, final String typeName) throws Exception {
+		final var factory = DocumentBuilderFactory.newInstance();
+		final var docBuilder = factory.newDocumentBuilder();
+		final String groupName = typeName + "s";
+		final Document doc;
+		
+		if (outFile.exists()) {
+			doc = docBuilder.parse(outFile);
+			Element group = (Element) doc.getElementsByTagName(groupName).item(0);
+			if (group == null) {
+				group = doc.createElement(groupName);
+				group.setAttribute("version", "1");
+				doc.getDocumentElement().appendChild(group);
+			}
+			
+			final var newEl = buildXmlElement(doc, typeName, item);
+			final String idKey = item.getIdKey();
+			final String idVal = newEl.getAttribute(idKey).trim();
+			
+			if (! idVal.isBlank()) {
+				final NodeList existing = group.getElementsByTagName(typeName);
+				boolean replaced = false;
+				for (int i = 0; i < existing.getLength(); i++) {
+					var el = (Element) existing.item(i);
+					if (idVal.equals(el.getAttribute(idKey))) {
+						group.replaceChild(newEl, el);
+						replaced = true;
+						break;
+					}
+				}
+				if (! replaced)
+					group.appendChild(newEl);
+			} else {
+				group.appendChild(newEl);
+			}
+		} else {
+			doc = docBuilder.newDocument();
+			final var root = doc.createElement("database");
+			root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+			root.setAttribute("name", "barbora");
+			root.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
+			doc.appendChild(root);
+			
+			final var group = doc.createElement(groupName);
+			group.setAttribute("version", "1");
+			root.appendChild(group);
+			group.appendChild(buildXmlElement(doc, typeName, item));
+		}
+		return doc;
+	}
+	
 	/**
 	 * Try to read all XML pak files.
 	 * Returns false if the game directory is not configured.
@@ -127,11 +213,7 @@ public final class ItemService {
 		return Stream.of(items).flatMap(Collection::stream).filter(x -> id.equals(x.getId())).findFirst();
 	}
 	
-	// ==================================================================
-	// PRIVATE HELPERS
-	// ==================================================================
-	
-	public Set<ModItem> readModItem(DataPoint dp) {
+	public Set<ModItem> readModItems(DataPoint dp) {
 		final var result = new HashSet<ModItem>();
 		final String typeName = dp.type().getSimpleName().toLowerCase(Locale.ROOT);
 		final File pakFile = new File(dp.path());
@@ -145,12 +227,12 @@ public final class ItemService {
 			var it = zf.entries();
 			while (it.hasMoreElements()) {
 				final var entry = it.nextElement();
-				final String ename = entry.getName().replace('\\', '/');
+				final String name = entry.getName().replace('\\', '/');
 				
 				// Skip non-XML files
-				if (! ename.toLowerCase().endsWith(".xml"))
-					continue;  // Only XML files
-				if (! ename.contains(dp.endpoint()))
+				if (! name.toLowerCase().endsWith(".xml"))
+					continue;
+				if (! name.contains(dp.endpoint()))
 					continue;
 				
 				try (var is = zf.getInputStream(entry)) {
@@ -171,11 +253,11 @@ public final class ItemService {
 						}
 						if (item.getId() == null || BLACKLIST.contains(item.getId()))
 							continue;
-						item.setPath(ename);
+						item.setPath(name);
 						result.add(item);
 					}
 				} catch (Exception ex) {
-					log.fine("Parse error in " + ename + ": " + ex.getMessage());
+					log.fine("Parse error in " + name + ": " + ex.getMessage());
 				}
 			}
 		} catch (IOException e) {
@@ -196,18 +278,18 @@ public final class ItemService {
 	 * Returns the set of PAK names that were written (without extension),
 	 * so the caller knows which staging dirs to pack.
 	 */
-	public Set<String> writeModItems(ModData modData) {
+	public void writeModItems(ModData modData) {
 		final var items = modData.getItems();
 		if (items.isEmpty())
-			return Set.of();
+			return;
 		final String gameDir = configService.gameDirectory;
-		final Set<String> pakNames = new LinkedHashSet<>();
-		for (ModItem item : items) {
-			String pak = writeModItem(gameDir, modData.id, item);
-			if (pak != null)
-				pakNames.add(pak);
+		for (final ModItem item : items) {
+			try {
+				writeModItem(gameDir, modData, item);
+			} catch (final Exception e) {
+				log.severe("writeModItem failed for " + item.getClass().getSimpleName() + ": " + e.getMessage());
+			}
 		}
-		return pakNames;
 	}
 	
 	/**
@@ -219,101 +301,15 @@ public final class ItemService {
 	 * b) plain filesystem path               – came from loose XML scan
 	 * c) null / blank                        – newly created item
 	 */
-	private String writeModItem(String gameDir, String modId, ModItem item) {
-		try {
-			final String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-			final String rawPath = item.getPath() == null ? "" : item.getPath();
-			
-			// ---- Resolve PAK stem & inner directory suffix ----
-			String pakStem;   // e.g. "Weapons"  or  modId
-			String dirSuffix; // e.g. "Libs/Tables" or ""
-			
-			int colonIdx = rawPath.indexOf(':');
-			if (colonIdx > 0) {
-				// Format (a): "SomePak.pak:inner/dir/entry.xml"
-				String pakFileName = rawPath.substring(0, colonIdx);       // "SomePak.pak"
-				String innerEntry = rawPath.substring(colonIdx + 1);      // "inner/dir/entry.xml"
-				pakStem = stripExtension(pakFileName);                   // "SomePak"
-				int lastSlash = innerEntry.lastIndexOf('/');
-				dirSuffix = lastSlash >= 0 ? innerEntry.substring(0, lastSlash) : "";
-			} else {
-				// Format (b/c): plain path or blank
-				pakStem = modId;
-				int lastSlash = rawPath.lastIndexOf('/');
-				dirSuffix = lastSlash >= 0 ? rawPath.substring(0, lastSlash) : "";
-			}
-			
-			// ---- Build target paths inside the staging area ----
-			// Structure:  Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/
-			final String stageRoot = Util.join(gameDir, "Mods", modId, "Data", "_stage", pakStem);
-			final String targetDir = dirSuffix.isEmpty() ? stageRoot : Util.join(stageRoot, dirSuffix);
-			final String targetFile = Util.join(targetDir, typeName + "__" + modId + ".xml");
-			
-			Files.createDirectories(Path.of(targetDir));
-			
-			var factory = DocumentBuilderFactory.newInstance();
-			var docBuilder = factory.newDocumentBuilder();
-			
-			Document doc;
-			Element group;
-			String groupName = typeName + "s";
-			File outFile = new File(targetFile);
-			
-			if (outFile.exists()) {
-				doc = docBuilder.parse(outFile);
-				group = (Element) doc.getElementsByTagName(groupName).item(0);
-				if (group == null) {
-					group = doc.createElement(groupName);
-					group.setAttribute("version", "1");
-					doc.getDocumentElement().appendChild(group);
-				}
-				
-				final Element newEl = buildXmlElement(doc, typeName, item);
-				final String idKey = item.getIdKey();
-				final String idVal = newEl.getAttribute(idKey);
-				
-				if (idKey != null && ! idKey.isBlank() && ! idVal.isBlank()) {
-					NodeList existing = group.getElementsByTagName(typeName);
-					boolean replaced = false;
-					for (int i = 0; i < existing.getLength(); i++) {
-						var el = (Element) existing.item(i);
-						if (idVal.equals(el.getAttribute(idKey))) {
-							group.replaceChild(newEl, el);
-							replaced = true;
-							break;
-						}
-					}
-					if (! replaced)
-						group.appendChild(newEl);
-				} else {
-					group.appendChild(newEl);
-				}
-			} else {
-				doc = docBuilder.newDocument();
-				Element root = doc.createElement("database");
-				root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-				root.setAttribute("name", "barbora");
-				root.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
-				doc.appendChild(root);
-				
-				group = doc.createElement(groupName);
-				group.setAttribute("version", "1");
-				root.appendChild(group);
-				group.appendChild(buildXmlElement(doc, typeName, item));
-			}
-			
-			var tf = TransformerFactory.newInstance().newTransformer();
-			tf.setOutputProperty(OutputKeys.ENCODING, "US-ASCII");
-			tf.setOutputProperty(OutputKeys.INDENT, "yes");
-			tf.setOutputProperty(OutputKeys.STANDALONE, "no");
-			tf.transform(new DOMSource(doc), new StreamResult(outFile));
-			
-			return pakStem;
-			
-		} catch (Exception e) {
-			log.severe("writeModItem failed for " + item.getClass().getSimpleName() + ": " + e.getMessage());
-			return null;
-		}
+	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
+		final String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+		
+		final File outFile = getOutputFile(gameDir, item, mod, typeName);
+		Files.createDirectories(outFile.toPath().getParent());
+		
+		final Document doc = makeDocument(outFile, item, typeName);
+		
+		writeXml(doc, outFile);
 	}
 	
 	/**
@@ -429,7 +425,7 @@ public final class ItemService {
 				
 				ItemType.endpoints().forEach((type, eps) -> eps.forEach((key, pak) -> points.add(new DataPoint(Path.of(gameDir, pak).toString(), key, type))));
 				
-				final var temp = points.stream().map(this::readModItem).flatMap(Collection::stream).collect(Collectors.toSet());
+				final var temp = points.stream().map(this::readModItems).flatMap(Collection::stream).collect(Collectors.toSet());
 				result.addAll(temp);
 				// INFO: XML read done in 6543 ms | items=6640
 			} else if (true) {

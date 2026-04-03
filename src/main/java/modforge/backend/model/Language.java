@@ -19,67 +19,50 @@ public enum Language {
 	CHINESE("Chinese", "zh"),
 	JAPANESE("Japanese", "ja"),
 	KOREAN("Korean", "ko");
-
+	
+	// Kept displayName for extra compatibility
 	private final String displayName;
 	private final String isoCode;
-
+	
 	Language(String displayName, String isoCode) {
 		this.displayName = displayName;
 		this.isoCode = isoCode;
 	}
-
-	public String getDisplayName() {
-		return displayName;
-	}
-
-	public String getIsoCode() {
-		return isoCode;
-	}
-
+	
 	/**
 	 * Get Language enum from display name (e.g., "English" -> ENGLISH)
 	 */
 	public static Language fromDisplayName(String displayName) {
-		return Arrays.stream(values())
-				.filter(lang -> lang.displayName.equals(displayName))
-				.findFirst()
-				.orElse(null);
+		return Arrays.stream(values()).filter(lang -> lang.displayName.equals(displayName)).findFirst().orElse(null);
 	}
-
+	
 	/**
 	 * Get Language enum from ISO code (e.g., "en" -> ENGLISH)
 	 */
 	public static Language fromIsoCode(String isoCode) {
-		return Arrays.stream(values())
-				.filter(lang -> lang.isoCode.equalsIgnoreCase(isoCode))
-				.findFirst()
-				.orElse(null);
+		return Arrays.stream(values()).filter(lang -> lang.isoCode.equalsIgnoreCase(isoCode)).findFirst().orElse(null);
 	}
-
-	/**
-	 * Check if a display name or ISO code is a valid language
-	 */
-	public static boolean isValid(String language) {
-		return Arrays.stream(values())
-				.anyMatch(lang -> lang.displayName.equals(language) || lang.isoCode.equalsIgnoreCase(language));
-	}
-
+	
 	/**
 	 * Get all display names
 	 */
 	public static Set<String> getAllDisplayNames() {
-		return Arrays.stream(values())
-				.map(Language::getDisplayName)
-				.collect(Collectors.toSet());
+		return Arrays.stream(values()).map(Language::getDisplayName).collect(Collectors.toSet());
 	}
-
+	
 	/**
 	 * Get all ISO codes
 	 */
 	public static Set<String> getAllIsoCodes() {
-		return Arrays.stream(values())
-				.map(Language::getIsoCode)
-				.collect(Collectors.toSet());
+		return Arrays.stream(values()).map(Language::getIsoCode).collect(Collectors.toSet());
 	}
-
+	
+	public String getDisplayName() {
+		return displayName;
+	}
+	
+	public String getIsoCode() {
+		return isoCode;
+	}
+	
 }

@@ -21,105 +21,19 @@ import java.util.regex.Pattern;
  */
 public final class ConfigService {
 	private static final Logger log = Logger.getLogger(ConfigService.class.getName());
-
-	private static final Pattern CONFIG_LINE = Pattern.compile(
-			"^(?!#|;)\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(.*?)\\s*(?:;.*)?$"
-	);
-
+	
+	private static final Pattern CONFIG_LINE = Pattern.compile("^(?!#|;)\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(.*?)\\s*(?:;.*)?$");
+	
 	private final UserService userService;
-
+	
 	public ConfigService(UserService userService) {
 		this.userService = userService;
 	}
-
+	
 	// ==================================================================
 	// Game Config Loading (user.cfg / autoexec.cfg)
 	// ==================================================================
-
-	/**
-	 * Load game configuration by trying user.cfg first, then autoexec.cfg.
-	 * Merges both if both exist (user.cfg takes precedence).
-	 *
-	 * @return Map of config keys to their values
-	 */
-	public Map<String, String> loadGameConfig() {
-		String gameDir = userService.gameDirectory;
-		if (gameDir == null || gameDir.isBlank()) {
-			log.warning("Game directory not configured - cannot load game config.");
-			return new HashMap<>();
-		}
-
-		Path userCfg = Path.of(gameDir, "user.cfg");
-		Path autoexecCfg = Path.of(gameDir, "autoexec.cfg");
-
-		Map<String, String> config = new LinkedHashMap<>();
-
-		// Load autoexec.cfg first (lower precedence)
-		if (Files.exists(autoexecCfg)) {
-			loadConfigFile(autoexecCfg, config);
-		}
-
-		// Load user.cfg second (higher precedence - overwrites autoexec)
-		if (Files.exists(userCfg)) {
-			loadConfigFile(userCfg, config);
-		}
-
-		if (config.isEmpty()) {
-			log.info("No game config found (user.cfg or autoexec.cfg)");
-		} else {
-			log.info("Loaded " + config.size() + " config entries from game config");
-		}
-
-		return config;
-	}
-
-	/**
-	 * Save game configuration to user.cfg (default location).
-	 *
-	 * @param config The configuration map to save
-	 * @return true if successful
-	 */
-	public boolean saveGameConfig(Map<String, String> config) {
-		String gameDir = userService.gameDirectory;
-		if (gameDir == null || gameDir.isBlank()) {
-			log.warning("Game directory not configured - cannot save game config.");
-			return false;
-		}
-
-		Path userCfg = Path.of(gameDir, "user.cfg");
-		return saveConfigFile(userCfg, config);
-	}
-
-	// ==================================================================
-	// Mod Config Loading/Saving (mod.cfg)
-	// ==================================================================
-
-	/**
-	 * Load a mod's configuration file.
-	 *
-	 * @param modId The mod ID (used to locate Mods/<modId>/mod.cfg)
-	 * @return Map of config keys to their values
-	 */
-	public Map<String, String> loadModConfig(String modId) {
-		String gameDir = userService.gameDirectory;
-		if (gameDir == null || gameDir.isBlank() || modId == null || modId.isBlank()) {
-			return new HashMap<>();
-		}
-
-		Path modCfg = Path.of(gameDir, "Mods", modId, "mod.cfg");
-
-		if (!Files.exists(modCfg)) {
-			log.fine("No mod.cfg found for mod: " + modId);
-			return new HashMap<>();
-		}
-
-		Map<String, String> config = new LinkedHashMap<>();
-		loadConfigFile(modCfg, config);
-
-		log.fine("Loaded " + config.size() + " config entries for mod: " + modId);
-		return config;
-	}
-
+	
 	/**
 	 * Save a mod's configuration file.
 	 *
@@ -132,81 +46,36 @@ public final class ConfigService {
 			log.warning("Cannot save mod config - game directory or mod ID missing.");
 			return false;
 		}
-
+		
 		Path modCfg = Path.of(gameDir, "Mods", mod.id, "mod.cfg");
-
+		
 		try {
 			Files.createDirectories(modCfg.getParent());
 		} catch (IOException e) {
 			log.warning("Cannot create mod directory: " + e.getMessage());
 			return false;
 		}
-
+		
 		return saveConfigFile(modCfg, mod.getConfig());
 	}
-
-	/**
-	 * Load mod config and merge into ModData.
-	 *
-	 * @param mod The mod data to update
-	 */
-	public void loadModConfigIntoMod(ModData mod) {
-		if (mod == null || mod.id == null || mod.id.isBlank()) return;
-		mod.setConfig(loadModConfig(mod.id));
-	}
-
+	
 	/**
 	 * Save mod config from ModData.
 	 *
 	 * @param mod The mod data containing config
 	 */
 	public static void saveModConfigFromMod(String gameDirectory, ModData mod) {
-		if (mod == null || mod.id == null || mod.id.isBlank()) return;
-		if (mod.getConfig().isEmpty()) return;
+		if (mod == null || mod.id == null || mod.id.isBlank())
+			return;
+		if (mod.getConfig().isEmpty())
+			return;
 		saveModConfig(gameDirectory, mod);
 	}
-
+	
 	// ==================================================================
-	// Core File Operations
+	// Mod Config Loading/Saving (mod.cfg)
 	// ==================================================================
-
-	/**
-	 * Load a config file in key=value format (with ; or # comments).
-	 *
-	 * @param path   Path to the config file
-	 * @param target The map to load entries into (entries overwrite existing)
-	 */
-	private void loadConfigFile(Path path, Map<String, String> target) {
-		if (!Files.exists(path)) return;
-
-		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-			String line;
-			int lineNumber = 0;
-
-			while ((line = reader.readLine()) != null) {
-				lineNumber++;
-				line = line.trim();
-
-				// Skip empty lines
-				if (line.isEmpty()) continue;
-
-				Matcher m = CONFIG_LINE.matcher(line);
-				if (m.matches()) {
-					String key = m.group(1);
-					String value = m.group(2).trim();
-					target.put(key, value);
-				} else if (line.startsWith(";") || line.startsWith("#")) {
-					// Comment line - skip
-					continue;
-				} else {
-					log.fine("Skipping malformed config line " + lineNumber + ": " + line);
-				}
-			}
-		} catch (IOException e) {
-			log.warning("Failed to load config file " + path + ": " + e.getMessage());
-		}
-	}
-
+	
 	/**
 	 * Save a config map to a file in key=value format with comments preserved from original if possible.
 	 *
@@ -219,44 +88,45 @@ public final class ConfigService {
 			log.fine("No config entries to save to " + path);
 			return true;
 		}
-
+		
 		try {
 			// Check if original file exists to preserve comments
 			Map<String, String> originalComments = new LinkedHashMap<>();
 			if (Files.exists(path)) {
 				parseCommentsFromFile(path, originalComments);
 			}
-
+			
 			try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
 				writer.write("; ============================================================================\n");
 				writer.write("; Mod Configuration File\n");
 				writer.write("; Generated by ModForge\n");
 				writer.write("; ============================================================================\n\n");
-
+				
 				for (Map.Entry<String, String> entry : config.entrySet()) {
 					String key = entry.getKey();
 					String value = entry.getValue();
-
+					
 					// Preserve comment if it existed
 					String comment = originalComments.get(key);
-					if (comment != null && !comment.isBlank()) {
+					if (comment != null && ! comment.isBlank()) {
 						writer.write(comment);
-						if (!comment.endsWith("\n")) writer.write("\n");
+						if (! comment.endsWith("\n"))
+							writer.write("\n");
 					}
-
+					
 					writer.write(key + " = " + value + "\n");
 				}
 			}
-
+			
 			log.fine("Saved config to " + path + " (" + config.size() + " entries)");
 			return true;
-
+			
 		} catch (IOException e) {
 			log.warning("Failed to save config file " + path + ": " + e.getMessage());
 			return false;
 		}
 	}
-
+	
 	/**
 	 * Parse comments from an existing config file, storing them keyed by the next config line.
 	 *
@@ -264,20 +134,22 @@ public final class ConfigService {
 	 * @param commentsTarget Map to store comments (key = config key, value = comment block)
 	 */
 	private static void parseCommentsFromFile(Path path, Map<String, String> commentsTarget) {
-		if (!Files.exists(path)) return;
-
+		if (! Files.exists(path))
+			return;
+		
 		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
 			StringBuilder currentComment = new StringBuilder();
 			String line;
-
+			
 			while ((line = reader.readLine()) != null) {
 				line = line.trim();
-
+				
 				if (line.startsWith(";") || line.startsWith("#")) {
 					// Accumulate comment
-					if (currentComment.length() > 0) currentComment.append("\n");
+					if (currentComment.length() > 0)
+						currentComment.append("\n");
 					currentComment.append(line);
-				} else if (!line.isEmpty()) {
+				} else if (! line.isEmpty()) {
 					Matcher m = CONFIG_LINE.matcher(line);
 					if (m.matches()) {
 						String key = m.group(1);
@@ -298,11 +170,7 @@ public final class ConfigService {
 			log.fine("Could not parse comments from " + path + ": " + e.getMessage());
 		}
 	}
-
-	// ==================================================================
-	// Utility Methods
-	// ==================================================================
-
+	
 	/**
 	 * Merge two config maps (source overwrites target).
 	 *
@@ -310,10 +178,11 @@ public final class ConfigService {
 	 * @param merge  Configuration to merge in (overwrites base)
 	 */
 	public static void mergeConfigs(Map<String, String> base, Map<String, String> merge) {
-		if (merge == null) return;
+		if (merge == null)
+			return;
 		base.putAll(merge);
 	}
-
+	
 	/**
 	 * Convert a config map to a formatted string for display.
 	 *
@@ -321,12 +190,151 @@ public final class ConfigService {
 	 * @return Formatted string
 	 */
 	public static String configToString(Map<String, String> config) {
-		if (config == null || config.isEmpty()) return "";
-
+		if (config == null || config.isEmpty())
+			return "";
+		
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry<String, String> entry : config.entrySet()) {
 			sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
 		}
 		return sb.toString();
+	}
+	
+	// ==================================================================
+	// Core File Operations
+	// ==================================================================
+	
+	/**
+	 * Load game configuration by trying user.cfg first, then autoexec.cfg.
+	 * Merges both if both exist (user.cfg takes precedence).
+	 *
+	 * @return Map of config keys to their values
+	 */
+	public Map<String, String> loadGameConfig() {
+		String gameDir = userService.gameDirectory;
+		if (gameDir == null || gameDir.isBlank()) {
+			log.warning("Game directory not configured - cannot load game config.");
+			return new HashMap<>();
+		}
+		
+		Path userCfg = Path.of(gameDir, "user.cfg");
+		Path autoexecCfg = Path.of(gameDir, "autoexec.cfg");
+		
+		Map<String, String> config = new LinkedHashMap<>();
+		
+		// Load autoexec.cfg first (lower precedence)
+		if (Files.exists(autoexecCfg)) {
+			loadConfigFile(autoexecCfg, config);
+		}
+		
+		// Load user.cfg second (higher precedence - overwrites autoexec)
+		if (Files.exists(userCfg)) {
+			loadConfigFile(userCfg, config);
+		}
+		
+		if (config.isEmpty()) {
+			log.info("No game config found (user.cfg or autoexec.cfg)");
+		} else {
+			log.info("Loaded " + config.size() + " config entries from game config");
+		}
+		
+		return config;
+	}
+	
+	/**
+	 * Save game configuration to user.cfg (default location).
+	 *
+	 * @param config The configuration map to save
+	 * @return true if successful
+	 */
+	public boolean saveGameConfig(Map<String, String> config) {
+		String gameDir = userService.gameDirectory;
+		if (gameDir == null || gameDir.isBlank()) {
+			log.warning("Game directory not configured - cannot save game config.");
+			return false;
+		}
+		
+		Path userCfg = Path.of(gameDir, "user.cfg");
+		return saveConfigFile(userCfg, config);
+	}
+	
+	/**
+	 * Load a mod's configuration file.
+	 *
+	 * @param modId The mod ID (used to locate Mods/<modId>/mod.cfg)
+	 * @return Map of config keys to their values
+	 */
+	public Map<String, String> loadModConfig(String modId) {
+		String gameDir = userService.gameDirectory;
+		if (gameDir == null || gameDir.isBlank() || modId == null || modId.isBlank()) {
+			return new HashMap<>();
+		}
+		
+		Path modCfg = Path.of(gameDir, "Mods", modId, "mod.cfg");
+		
+		if (! Files.exists(modCfg)) {
+			log.fine("No mod.cfg found for mod: " + modId);
+			return new HashMap<>();
+		}
+		
+		Map<String, String> config = new LinkedHashMap<>();
+		loadConfigFile(modCfg, config);
+		
+		log.fine("Loaded " + config.size() + " config entries for mod: " + modId);
+		return config;
+	}
+	
+	// ==================================================================
+	// Utility Methods
+	// ==================================================================
+	
+	/**
+	 * Load mod config and merge into ModData.
+	 *
+	 * @param mod The mod data to update
+	 */
+	public void loadModConfigIntoMod(ModData mod) {
+		if (mod == null || mod.id == null || mod.id.isBlank())
+			return;
+		mod.setConfig(loadModConfig(mod.id));
+	}
+	
+	/**
+	 * Load a config file in key=value format (with ; or # comments).
+	 *
+	 * @param path   Path to the config file
+	 * @param target The map to load entries into (entries overwrite existing)
+	 */
+	private void loadConfigFile(Path path, Map<String, String> target) {
+		if (! Files.exists(path))
+			return;
+		
+		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+			String line;
+			int lineNumber = 0;
+			
+			while ((line = reader.readLine()) != null) {
+				lineNumber++;
+				line = line.trim();
+				
+				// Skip empty lines
+				if (line.isEmpty())
+					continue;
+				
+				Matcher m = CONFIG_LINE.matcher(line);
+				if (m.matches()) {
+					String key = m.group(1);
+					String value = m.group(2).trim();
+					target.put(key, value);
+				} else if (line.startsWith(";") || line.startsWith("#")) {
+					// Comment line - skip
+					continue;
+				} else {
+					log.fine("Skipping malformed config line " + lineNumber + ": " + line);
+				}
+			}
+		} catch (IOException e) {
+			log.warning("Failed to load config file " + path + ": " + e.getMessage());
+		}
 	}
 }

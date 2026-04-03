@@ -9,8 +9,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.net.URL;
-import java.util.List;
 import java.util.logging.Logger;
 
 // =============================================================================
@@ -32,54 +30,54 @@ public class MainWindow extends JFrame {
 	private final JPanel pageHolder = new JPanel(cardLayout);
 	// backend ---------------
 	private final ServiceRegistry registry;
-
+	
 	public MainWindow(ServiceRegistry registry) {
 		super("ModForge");
-
+		
 		//backend ---
 		this.registry = registry;
-
+		
 		// Load window icon before setting up the UI
 		setWindowIcon();
-
+		
 		// basic properties
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(1280, 800);
 		setMinimumSize(new Dimension(900, 600));
 		setLocationRelativeTo(null);
 		setUndecorated(true);   // custom title bar
-
+		
 		// Allow dragging via title bar
 		MouseAdapter tbm = new MouseAdapter(this);
-
+		
 		// ── root layout ───────────────────────────────────────────────────
 		JPanel root = new JPanel(new BorderLayout());
 		root.setBackground(BG);
 		root.setBorder(new LineBorder(MUTED, 1)); // thin frame border
-
+		
 		root.add(buildTitleBar(tbm), BorderLayout.NORTH);
 		root.add(buildSidebar(), BorderLayout.WEST);
 		root.add(buildPageArea(), BorderLayout.CENTER);
-
+		
 		setContentPane(root);
-
+		
 		// ── snackbar overlay ──────────────────────────────────────────────
 		snackbar = new BarManager(this);
-
+		
 		// ── zoom block (mirrors js/functions.js Ctrl+scroll / Ctrl±) ─────
 		installZoomBlock();
-
+		
 		// Initialize all pages
 		initializePages();
-
+		
 		// show home by default
 		navigate(Page.HOME);
 	}
-
+	
 	public ServiceRegistry getRegistry() {
 		return registry;
 	}
-
+	
 	/**
 	 * Loads the window icon from resources/images/Icons/modforge.png or .ico
 	 * Falls back to default Java icon if not found
@@ -88,26 +86,20 @@ public class MainWindow extends JFrame {
 		// Try PNG first (better cross-platform support)
 		final var f = new String[] {
 				// most modern systems should allow the first but left the rest for fallback is ... extreme cases
-				"/images/Icons/modforge.png",
-				"/images/Icons/modforge.ico",
-				"/resources/images/Icons/modforge.png",
-				"/resources/images/Icons/modforge.ico",
-				"resources/images/Icons/modforge.png",
-				"resources/images/Icons/modforge.ico"
-		};
-
+				"/images/Icons/modforge.png", "/images/Icons/modforge.ico", "/resources/images/Icons/modforge.png", "/resources/images/Icons/modforge.ico", "resources/images/Icons/modforge.png", "resources/images/Icons/modforge.ico" };
+		
 		for (final var el : f) {
 			final var out = getClass().getResource(el);
-
+			
 			if (out != null) {
 				setIconImage(new ImageIcon(out).getImage());
 				log.info("Window icon loaded successfully from: " + out);
 				break;
 			}
 		}
-
+		
 	}
-
+	
 	private void initializePages() {
 		for (Page page : Page.values()) {
 			try {
@@ -120,7 +112,7 @@ public class MainWindow extends JFrame {
 			}
 		}
 	}
-
+	
 	// ── title bar ─────────────────────────────────────────────────────────────
 	private JPanel buildTitleBar(MouseAdapter drag) {
 		JPanel bar = new JPanel(new BorderLayout());
@@ -129,25 +121,27 @@ public class MainWindow extends JFrame {
 		bar.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 8));
 		bar.addMouseListener(drag);
 		bar.addMouseMotionListener(drag);
-
+		
 		final JLabel title = new JLabel("ModForge");
 		title.setForeground(ACCENT);
 		title.setFont(new Font("Roboto", Font.BOLD, 14));
-
+		
 		JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 6));
 		controls.setOpaque(false);
 		controls.add(winCtrlBtn("–", MUTED, e -> setExtendedState(ICONIFIED)));
 		controls.add(winCtrlBtn("□", MUTED, e -> {
-			if (getExtendedState() == MAXIMIZED_BOTH) setExtendedState(NORMAL);
-			else setExtendedState(MAXIMIZED_BOTH);
+			if (getExtendedState() == MAXIMIZED_BOTH)
+				setExtendedState(NORMAL);
+			else
+				setExtendedState(MAXIMIZED_BOTH);
 		}));
 		controls.add(winCtrlBtn("✕", DANGER, e -> dispose()));
-
+		
 		bar.add(title, BorderLayout.WEST);
 		bar.add(controls, BorderLayout.EAST);
 		return bar;
 	}
-
+	
 	private JButton winCtrlBtn(String label, Color fg, ActionListener action) {
 		JButton b = new JButton(label);
 		b.setForeground(fg);
@@ -163,7 +157,7 @@ public class MainWindow extends JFrame {
 			public void mouseEntered(MouseEvent e) {
 				b.setBackground(new Color(0x313244));
 			}
-
+			
 			@Override
 			public void mouseExited(MouseEvent e) {
 				b.setBackground(TITLEBAR);
@@ -171,7 +165,7 @@ public class MainWindow extends JFrame {
 		});
 		return b;
 	}
-
+	
 	// ── sidebar ───────────────────────────────────────────────────────────────
 	private JPanel buildSidebar() {
 		JPanel side = new JPanel();
@@ -179,19 +173,19 @@ public class MainWindow extends JFrame {
 		side.setBackground(SURFACE);
 		side.setPreferredSize(new Dimension(200, 0));
 		side.setBorder(BorderFactory.createEmptyBorder(16, 0, 16, 0));
-
+		
 		side.add(Box.createVerticalStrut(8));
-
-		for (Page page : new Page[]{Page.HOME, Page.MODS, Page.ITEMS}) {
+		
+		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS }) {
 			side.add(navBtn(page.getDisplayName(), page));
 		}
-
+		
 		side.add(Box.createVerticalGlue());
 		side.add(navBtn(Page.SETTINGS.getDisplayName(), Page.SETTINGS));
-
+		
 		return side;
 	}
-
+	
 	private JButton navBtn(String text, Page page) {
 		final JButton b = new JButton(text);
 		b.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -210,7 +204,7 @@ public class MainWindow extends JFrame {
 			public void mouseEntered(MouseEvent e) {
 				b.setBackground(new Color(0x313244));
 			}
-
+			
 			@Override
 			public void mouseExited(MouseEvent e) {
 				b.setBackground(SURFACE);
@@ -218,25 +212,25 @@ public class MainWindow extends JFrame {
 		});
 		return b;
 	}
-
+	
 	// ── page area ─────────────────────────────────────────────────────────────
 	private JPanel buildPageArea() {
 		pageHolder.setBackground(BG);
 		return pageHolder;
 	}
-
+	
 	public void navigate(Page page, Object... input) {
 		// Show the page
 		cardLayout.show(pageHolder, page.name());
-
+		
 		page.instance.refresh(input);
-
+		
 		// Update active nav button styling
 		// (You might want to implement this to highlight the current page in sidebar)
-
+		
 		snackbar.show("Navigated to " + page.getDisplayName(), BarManager.Type.INFO);
 	}
-
+	
 	// ── zoom-block (mirrors js/functions.js) ──────────────────────────────────
 	private void installZoomBlock() {
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
@@ -250,32 +244,32 @@ public class MainWindow extends JFrame {
 			return false;
 		});
 	}
-
+	
 	// ── navigation enum ──────────────────────────────────────────────────────
 	public enum Page {
 		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class), ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class), SETTINGS("Settings", SettingsPage.class);
-
+		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;
 		private BasePage instance;
-
+		
 		Page(String displayName, Class<? extends BasePage> pageClass) {
 			this.displayName = displayName;
 			this.pageClass = pageClass;
 		}
-
+		
 		public String getDisplayName() {
 			return displayName;
 		}
-
+		
 		public Class<? extends BasePage> getPageClass() {
 			return pageClass;
 		}
-
+		
 		public BasePage getInstance() {
 			return instance;
 		}
-
+		
 		public void setInstance(BasePage instance) {
 			this.instance = instance;
 		}

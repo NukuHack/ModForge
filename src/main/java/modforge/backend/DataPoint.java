@@ -8,8 +8,8 @@ public record DataPoint(String path, String endpoint, Class<?> type) {
 		this.endpoint = Objects.requireNonNull(endpoint, "endpoint");
 		this.type = Objects.requireNonNull(type, "type");
 	}
-
-
+	
+	
 	@Override
 	public String toString() {
 		return "DataPoint{type=" + type.getSimpleName() + ", endpoint=" + endpoint + ", path=" + path + "}";

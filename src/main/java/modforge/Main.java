@@ -1,5 +1,6 @@
 package modforge;
 
+import modforge.backend.ItemType;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
@@ -13,21 +14,22 @@ import java.util.logging.Logger;
 
 public class Main {
 	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
-
+	
 	static void main(String[] args) {
 		// Configure console logging
 		applyTheme();
-
+		
 		LOGGER.setLevel(Level.INFO);
-		for (var h : LOGGER.getHandlers()) h.setLevel(Level.INFO);
-
+		for (var h : LOGGER.getHandlers())
+			h.setLevel(Level.INFO);
+		
 		System.out.println("ModForge Java - starting...");
-
+		
 		SwingUtilities.invokeLater(() -> {
 			// Show loading splash while services boot
 			final LoadingScreen splash = new LoadingScreen();
 			splash.setVisible(true);
-
+			
 			// Boot services off the EDT
 			CompletableFuture.runAsync(() -> {
 				Singleton.INSTANCE.setRegistry(new ServiceRegistry());
@@ -44,7 +46,7 @@ public class Main {
 			}));
 		});
 	}
-
+	
 	static void applyTheme() {
 		try {
 			// Requires FlatLaf on classpath

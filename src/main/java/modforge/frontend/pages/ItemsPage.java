@@ -22,82 +22,106 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ItemsPage extends BasePage {
-
-	@Override
-	public void refresh(Object... input) {
-		this.refreshAllItems();
-	}
-
+	
 	// UNDERLYING DATA - the source of truth
 	private final List<ModItem> underlyingItems = new ArrayList<>();
-
 	// DISPLAY MODEL - filtered view of underlying items
 	private final DefaultListModel<String> displayModel = new DefaultListModel<>();
 	private final JList<String> itemList = new JList<>(displayModel);
-
 	// Track indices in the underlying list
 	private final List<Integer> displayToUnderlyingIndex = new ArrayList<>();
-
 	private final JTextField search = styledField("Search items…");
 	private final JComboBox<String> itemTypeSelector = new JComboBox<>();
 	private final JComboBox<String> modSourceSelector = new JComboBox<>();
-
 	/** The ModData whose items are currently displayed; null means Base Game. */
 	private modforge.backend.ModData activeSource = null;
-
 	// Detail panel components
 	private JLabel detailLabel;
 	private ModItem selectedItem;
-
 	public ItemsPage(final MainWindow w) {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-
+		
 		// Setup the list selection listener
 		setupListSelectionListener();
-
+		
 		// Build top panel with type selector and search
 		JPanel top = new JPanel(new BorderLayout(12, 0));
 		top.setOpaque(false);
-
+		
 		JPanel leftPanel = new JPanel(new BorderLayout(8, 0));
 		leftPanel.setOpaque(false);
 		leftPanel.add(header("Game Items"), BorderLayout.WEST);
-
+		
 		JPanel filterPanel = new JPanel(new BorderLayout(8, 0));
 		filterPanel.setOpaque(false);
-
+		
 		// Add item type selector for filtering by specific item class
 		setupItemTypeSelector();
-
+		
 		// Add mod source selector (Base Game + loaded mods)
 		setupModSourceSelector();
-
+		
 		JPanel selectorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		selectorPanel.setOpaque(false);
 		selectorPanel.add(modSourceSelector);
 		selectorPanel.add(itemTypeSelector);
-
+		
 		filterPanel.add(selectorPanel, BorderLayout.WEST);
 		filterPanel.add(search, BorderLayout.CENTER);
-
+		
 		top.add(leftPanel, BorderLayout.WEST);
 		top.add(filterPanel, BorderLayout.CENTER);
-
+		
 		// Setup search filter
 		search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-			public void insertUpdate(DocumentEvent e) { refreshDisplay(false); }
-			public void removeUpdate(DocumentEvent e) { refreshDisplay(false); }
-			public void changedUpdate(DocumentEvent e) { refreshDisplay(false); }
+			public void insertUpdate(DocumentEvent e) {
+				refreshDisplay(false);
+			}
+			
+			public void removeUpdate(DocumentEvent e) {
+				refreshDisplay(false);
+			}
+			
+			public void changedUpdate(DocumentEvent e) {
+				refreshDisplay(false);
+			}
 		});
-
+		
 		// Build main content panel (list + detail)
 		JPanel mainContent = buildMainContentPanel();
-
+		
 		add(top, BorderLayout.NORTH);
 		add(mainContent, BorderLayout.CENTER);
 	}
-
+	
+	public static void addCopyToPopupMenu(JPopupMenu popupMenu, ModItem selectedItem) {
+		final JMenuItem copyAllMenuItem = new JMenuItem("Copy All Details");
+		final var window = Singleton.INSTANCE.getMainWindow();
+		copyAllMenuItem.addActionListener(e -> {
+			if (selectedItem != null) {
+				final String allDetails = selectedItem.details();
+				Util.copyText(allDetails);
+				window.snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
+			}
+		});
+		popupMenu.add(copyAllMenuItem);
+		
+		final JMenuItem copyIdMenuItem = new JMenuItem("Copy ID");
+		copyIdMenuItem.addActionListener(e -> {
+			if (selectedItem != null) {
+				Util.copyText(selectedItem.getId());
+				window.snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
+			}
+		});
+		popupMenu.add(copyIdMenuItem);
+	}
+	
+	@Override
+	public void refresh(Object... input) {
+		this.refreshAllItems();
+	}
+	
 	/**
 	 * Build and populate the mod source dropdown.
 	 * First entry is always "Base Game"; subsequent entries are loaded mods.
@@ -106,11 +130,8 @@ public class ItemsPage extends BasePage {
 		modSourceSelector.setFont(new Font("Roboto", Font.PLAIN, 12));
 		modSourceSelector.setBackground(MainWindow.SURFACE);
 		modSourceSelector.setForeground(MainWindow.TEXT);
-		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(0x2a2a3a)),
-				BorderFactory.createEmptyBorder(4, 8, 4, 8)
-		));
-
+		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+		
 		modSourceSelector.addActionListener(e -> {
 			int idx = modSourceSelector.getSelectedIndex();
 			if (idx <= 0) {
@@ -124,7 +145,7 @@ public class ItemsPage extends BasePage {
 			refreshDisplay(false);
 		});
 	}
-
+	
 	/**
 	 * Setup item type selector for filtering by specific class
 	 */
@@ -132,30 +153,27 @@ public class ItemsPage extends BasePage {
 		for (String type : ItemType.getAllTypes()) {
 			itemTypeSelector.addItem(type);
 		}
-
+		
 		itemTypeSelector.setFont(new Font("Roboto", Font.PLAIN, 12));
 		itemTypeSelector.setBackground(MainWindow.SURFACE);
 		itemTypeSelector.setForeground(MainWindow.TEXT);
-		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(0x2a2a3a)),
-				BorderFactory.createEmptyBorder(4, 8, 4, 8)
-		));
-
+		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+		
 		itemTypeSelector.addActionListener(e -> refreshDisplay(true));
 	}
-
+	
 	/**
 	 * Build the main content panel with list and detail view
 	 */
 	private JPanel buildMainContentPanel() {
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.setBackground(MainWindow.BG);
-
+		
 		JScrollPane scroll = new JScrollPane(itemList);
 		scroll.setBackground(MainWindow.SURFACE);
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		scroll.getViewport().setBackground(MainWindow.SURFACE);
-
+		
 		// Style the list
 		itemList.setBackground(new Color(0x181825));
 		itemList.setForeground(MainWindow.TEXT);
@@ -163,19 +181,18 @@ public class ItemsPage extends BasePage {
 		itemList.setSelectionForeground(MainWindow.TEXT);
 		itemList.setFont(new Font("Roboto", Font.PLAIN, 12));
 		itemList.setFixedCellHeight(28);
-
+		
 		// Create detail panel
 		JPanel detailPanel = new JPanel(new BorderLayout());
 		detailPanel.setBackground(new Color(0x181825));
 		detailPanel.setPreferredSize(new Dimension(400, 0));
 		detailPanel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
-
+		
 		// Create detail label with HTML content
-		detailLabel = new JLabel("<html><b>Select an item</b><br/><br/>" +
-				"<span style='color:#6c6f85'>Details will appear here.</span></html>");
+		detailLabel = new JLabel("<html><b>Select an item</b><br/><br/>" + "<span style='color:#6c6f85'>Details will appear here.</span></html>");
 		detailLabel.setForeground(MainWindow.TEXT);
 		detailLabel.setCursor(new Cursor(Cursor.TEXT_CURSOR));
-
+		
 		// Add mouse listener for manual copy
 		detailLabel.addMouseListener(new MouseAdapter() {
 			@Override
@@ -192,53 +209,32 @@ public class ItemsPage extends BasePage {
 				}
 			}
 		});
-
+		
 		// Add right-click menu for copying all text
 		final JPopupMenu popupMenu = getPopupMenu();
-
+		
 		detailLabel.setComponentPopupMenu(popupMenu);
 		detailPanel.add(detailLabel, BorderLayout.NORTH);
-
+		
 		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scroll, detailPanel);
 		split.setDividerLocation(500);
 		split.setBackground(MainWindow.BG);
 		split.setDividerSize(1);
 		split.setBorder(BorderFactory.createEmptyBorder());
-
+		
 		mainPanel.add(split, BorderLayout.CENTER);
 		return mainPanel;
 	}
-
-	public static void addCopyToPopupMenu(JPopupMenu popupMenu, ModItem selectedItem) {
-		final JMenuItem copyAllMenuItem = new JMenuItem("Copy All Details");
-		final var window = Singleton.INSTANCE.getMainWindow();
-		copyAllMenuItem.addActionListener(e -> {
-			if (selectedItem != null) {
-				final String allDetails = selectedItem.details();
-				Util.copyText(allDetails);
-				window.snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
-			}
-		});
-		popupMenu.add(copyAllMenuItem);
-
-		final JMenuItem copyIdMenuItem = new JMenuItem("Copy ID");
-		copyIdMenuItem.addActionListener(e -> {
-			if (selectedItem != null) {
-				Util.copyText(selectedItem.getId());
-				window.snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
-			}
-		});
-		popupMenu.add(copyIdMenuItem);
-	}
-
+	
 	private JPopupMenu getPopupMenu() {
 		JPopupMenu popupMenu = new JPopupMenu();
-
+		
 		addCopyToPopupMenu(popupMenu, selectedItem);
-
+		
 		final JMenuItem editItemMenuItem = new JMenuItem("Edit Item");
 		editItemMenuItem.addActionListener(e -> {
-			if (selectedItem == null) return;
+			if (selectedItem == null)
+				return;
 			if (selectedItem instanceof modforge.backend.model.item.Storm stormItem) {
 				// Storm items get their own dedicated editor
 				window.navigate(MainWindow.Page.STORM, stormItem);
@@ -247,7 +243,7 @@ public class ItemsPage extends BasePage {
 			}
 		});
 		popupMenu.add(editItemMenuItem);
-
+		
 		final JMenuItem addModMenuItem = new JMenuItem("Add to mod");
 		addModMenuItem.addActionListener(e -> {
 			if (selectedItem != null) {
@@ -257,53 +253,46 @@ public class ItemsPage extends BasePage {
 		popupMenu.add(addModMenuItem);
 		return popupMenu;
 	}
-
+	
 	/**
 	 * Show dialog to add item to a mod
 	 */
 	private void showAddToModDialog(ModItem item) {
 		// Create a copy for the mod
 		ModItem copy = ModItemFactory.deepCopy(item);
-
+		
 		JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add to Mod", true);
 		dialog.setSize(400, 300);
 		dialog.setLocationRelativeTo(this);
 		dialog.setLayout(new BorderLayout());
-
+		
 		JPanel mainPanel = new JPanel(new BorderLayout(8, 8));
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 		mainPanel.setBackground(MainWindow.BG);
-
+		
 		JLabel titleLabel = new JLabel("Add item to mod:");
 		titleLabel.setForeground(MainWindow.TEXT);
 		titleLabel.setFont(new Font("Roboto", Font.BOLD, 14));
 		mainPanel.add(titleLabel, BorderLayout.NORTH);
-
+		
 		DefaultListModel<String> modListModel = new DefaultListModel<>();
 		JList<String> modJList = new JList<>(modListModel);
 		modJList.setBackground(MainWindow.SURFACE);
 		modJList.setForeground(MainWindow.TEXT);
 		modJList.setSelectionBackground(new Color(0x313244));
-
+		
 		ModService modService = window.getRegistry().modService;
 		for (ModData mod : modService.modCollection) {
 			modListModel.addElement(mod.id + " | " + mod.name);
 		}
-
+		
 		JScrollPane scrollPane = new JScrollPane(modJList);
-		scrollPane.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createLineBorder(new Color(0x313244)),
-				"Select Mod",
-				TitledBorder.LEFT,
-				TitledBorder.TOP,
-				new Font("Roboto", Font.PLAIN, 11),
-				MainWindow.MUTED
-		));
+		scrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), "Select Mod", TitledBorder.LEFT, TitledBorder.TOP, new Font("Roboto", Font.PLAIN, 11), MainWindow.MUTED));
 		mainPanel.add(scrollPane, BorderLayout.CENTER);
-
+		
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		buttonPanel.setOpaque(false);
-
+		
 		JButton addBtn = new JButton("Add");
 		addBtn.setBackground(MainWindow.ACCENT);
 		addBtn.setForeground(new Color(0x1e1e2e));
@@ -311,37 +300,34 @@ public class ItemsPage extends BasePage {
 			String selected = modJList.getSelectedValue();
 			if (selected != null) {
 				String modId = selected.split(" \\| ")[0];
-				modService.modCollection.stream()
-						.filter(m -> m.id.equals(modId))
-						.findFirst()
-						.ifPresent(mod -> {
-							copy.setPath(modId + ".pak:" + copy.getClass().getSimpleName().toLowerCase() + "s/" + copy.getId() + ".xml");
-							mod.addItem(copy);
-							window.snackbar.show("Added to mod: " + mod.name, BarManager.Type.SUCCESS);
-							dialog.dispose();
-						});
+				modService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst().ifPresent(mod -> {
+					copy.setPath(modId + ".pak:" + copy.getClass().getSimpleName().toLowerCase() + "s/" + copy.getId() + ".xml");
+					mod.addItem(copy);
+					window.snackbar.show("Added to mod: " + mod.name, BarManager.Type.SUCCESS);
+					dialog.dispose();
+				});
 			}
 		});
-
+		
 		JButton cancelBtn = new JButton("Cancel");
 		cancelBtn.addActionListener(e -> dialog.dispose());
-
+		
 		buttonPanel.add(addBtn);
 		buttonPanel.add(cancelBtn);
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-
+		
 		dialog.add(mainPanel);
 		dialog.setVisible(true);
 	}
-
-
+	
+	
 	/**
 	 * Refresh the underlying list from the currently selected source
 	 * (Base Game or a specific mod).
 	 */
 	private void refreshUnderlyingList() {
 		underlyingItems.clear();
-
+		
 		if (activeSource == null) {
 			// Base Game
 			underlyingItems.addAll(Singleton.INSTANCE.game().getItems());
@@ -349,11 +335,11 @@ public class ItemsPage extends BasePage {
 			// Specific mod
 			underlyingItems.addAll(activeSource.getItems());
 		}
-
+		
 		// Sort by ID for consistent display
 		underlyingItems.sort(Comparator.comparing(ModItem::getId, String.CASE_INSENSITIVE_ORDER));
 	}
-
+	
 	/**
 	 * Setup the list selection listener
 	 */
@@ -362,71 +348,73 @@ public class ItemsPage extends BasePage {
 		for (ListSelectionListener listener : itemList.getListSelectionListeners()) {
 			itemList.removeListSelectionListener(listener);
 		}
-
+		
 		// Add a single, properly filtered listener
 		itemList.addListSelectionListener(e -> {
-			if (e.getValueIsAdjusting()) return;
-
+			if (e.getValueIsAdjusting())
+				return;
+			
 			int displayIndex = itemList.getSelectedIndex();
-			if (displayIndex == -1) return;
-
+			if (displayIndex == - 1)
+				return;
+			
 			// Get the underlying index from our mapping
 			int underlyingIndex = displayToUnderlyingIndex.get(displayIndex);
-
+			
 			// Get the actual item from underlying list
 			ModItem underlyingItem = underlyingItems.get(underlyingIndex);
 			selectedItem = underlyingItem;
-
+			
 			// Update detail panel
 			detailLabel.setText(underlyingItem.detailPanel());
-
+			
 			// NO AUTO COPY HERE - removed the automatic copy on selection
 		});
 	}
-
+	
 	/**
 	 * Get the display string for an item
 	 */
 	private String getItemDisplayString(ModItem item) {
 		String icon = ItemType.getIconForClass(item.getClass());
 		String id = item.getId();
-
+		
 		// Truncate long IDs for better display
 		if (id.length() > 45) {
 			id = id.substring(0, 42) + "...";
 		}
-
+		
 		return String.format("%s  %s", icon, id);
 	}
-
+	
 	/**
 	 * Refresh the display model based on current filters
 	 */
 	private void refreshDisplay(boolean tellUser) {
 		final String filterText = search.getText().toLowerCase().trim();
-
+		
 		// Get selected item type filter
 		final String selectedType = (String) itemTypeSelector.getSelectedItem();
-
+		
 		// Clear display model and mapping
 		displayModel.clear();
 		displayToUnderlyingIndex.clear();
-
+		
 		// Don't trigger selection events while rebuilding
 		itemList.setValueIsAdjusting(true);
-
+		
 		try {
 			// Filter the underlying list by iterating through indices
 			for (int i = 0; i < underlyingItems.size(); i++) {
 				ModItem item = underlyingItems.get(i);
 				String itemId = item.getId();
-
+				
 				// Check item type filter
 				boolean typeMatch = ItemType.matchesItemType(item, selectedType);
-
+				
 				// Check text filter
 				boolean textMatch = filterText.equals("search items…") || itemId.toLowerCase().contains(filterText);
-
+				
 				if (typeMatch && textMatch) {
 					// Add to display model and store the underlying index
 					displayModel.addElement(getItemDisplayString(item));
@@ -436,12 +424,12 @@ public class ItemsPage extends BasePage {
 		} finally {
 			itemList.setValueIsAdjusting(false);
 		}
-
+		
 		if (tellUser)
 			window.snackbar.show("Showing " + displayModel.size() + " items", BarManager.Type.INFO);
 	}
-
-
+	
+	
 	/**
 	 * Refresh all items (call this after mod changes).
 	 * Also re-syncs the mod source dropdown in case mods were added or removed.
@@ -452,7 +440,7 @@ public class ItemsPage extends BasePage {
 		for (var mod : window.getRegistry().modService.modCollection) {
 			modSourceSelector.addItem("📦  " + mod.name);
 		}
-
+		
 		refreshUnderlyingList();
 		refreshDisplay(true);
 		repaint();

@@ -15,13 +15,13 @@ import java.awt.geom.RoundRectangle2D;
 // =============================================================================
 public abstract class BasePage extends JPanel {
 	protected final MainWindow window;
-
+	
 	BasePage(MainWindow window) {
 		this.window = window;
 		setBackground(MainWindow.BG);
 		setLayout(new BorderLayout());
 	}
-
+	
 	/**
 	 * Rounded card panel.
 	 */
@@ -39,7 +39,7 @@ public abstract class BasePage extends JPanel {
 		card.setOpaque(false);
 		card.setLayout(new BorderLayout(0, 12));
 		card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
+		
 		if (title != null) {
 			JLabel h = new JLabel(title);
 			h.setForeground(MainWindow.ACCENT);
@@ -48,7 +48,7 @@ public abstract class BasePage extends JPanel {
 		}
 		return card;
 	}
-
+	
 	protected static JLabel header(String text) {
 		JLabel l = new JLabel(text);
 		l.setForeground(MainWindow.TEXT);
@@ -56,14 +56,14 @@ public abstract class BasePage extends JPanel {
 		l.setBorder(BorderFactory.createEmptyBorder(0, 0, 16, 0));
 		return l;
 	}
-
+	
 	protected static JLabel muted(String text) {
 		JLabel l = new JLabel(text);
 		l.setForeground(MainWindow.MUTED);
 		l.setFont(new Font("Roboto", Font.PLAIN, 13));
 		return l;
 	}
-
+	
 	protected static JButton primaryBtn(String text, ActionListener action) {
 		JButton b = new JButton(text);
 		b.setBackground(MainWindow.ACCENT);
@@ -75,28 +75,13 @@ public abstract class BasePage extends JPanel {
 		b.addActionListener(action);
 		return b;
 	}
-
-	protected JButton secondaryBtn(String text, ActionListener action) {
-		JButton b = new JButton(text);
-		b.setBackground(MainWindow.ACCENT);
-		b.setForeground(new Color(0x1e1e2e));
-		b.setFocusPainted(false);
-		b.setBorderPainted(false);
-		b.setFont(new Font("Roboto", Font.BOLD, 13));
-		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		b.addActionListener(action);
-		return b;
-	}
-
+	
 	protected static JTextField styledField(String placeholder) {
 		JTextField f = new JTextField();
 		f.setBackground(new Color(0x313244));
 		f.setForeground(MainWindow.TEXT);
 		f.setCaretColor(MainWindow.TEXT);
-		f.setBorder(BorderFactory.createCompoundBorder(
-				new LineBorder(new Color(0x45475a), 1),
-				BorderFactory.createEmptyBorder(6, 10, 6, 10)
-		));
+		f.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(0x45475a), 1), BorderFactory.createEmptyBorder(6, 10, 6, 10)));
 		f.setFont(new Font("Roboto", Font.PLAIN, 13));
 		// Placeholder via focus listener
 		f.setText(placeholder);
@@ -109,7 +94,7 @@ public abstract class BasePage extends JPanel {
 					f.setForeground(MainWindow.TEXT);
 				}
 			}
-
+			
 			@Override
 			public void focusLost(FocusEvent e) {
 				if (f.getText().isBlank()) {
@@ -120,7 +105,19 @@ public abstract class BasePage extends JPanel {
 		});
 		return f;
 	}
-
+	
+	protected JButton secondaryBtn(String text, ActionListener action) {
+		JButton b = new JButton(text);
+		b.setBackground(MainWindow.ACCENT);
+		b.setForeground(new Color(0x1e1e2e));
+		b.setFocusPainted(false);
+		b.setBorderPainted(false);
+		b.setFont(new Font("Roboto", Font.BOLD, 13));
+		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		b.addActionListener(action);
+		return b;
+	}
+	
 	public abstract void refresh(Object... input);
-
+	
 }

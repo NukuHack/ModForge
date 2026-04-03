@@ -18,20 +18,21 @@ import modforge.backend.model.storm.StormData;
  * PAK scan.</p>
  */
 public class Storm extends BaseModItem {
-
+	
 	/** Fully-parsed Storm file contents. May be {@code null} if not yet loaded. */
 	private StormData stormData;
-
-	public Storm() {}
-
+	
+	public Storm() {
+	}
+	
 	public StormData getStormData() {
 		return stormData;
 	}
-
+	
 	public void setStormData(StormData stormData) {
 		this.stormData = stormData;
 	}
-
+	
 	@Override
 	public String toString() {
 		return "Storm{id='" + getId() + "', parsed=" + (stormData != null) + "}";
