@@ -2,9 +2,10 @@ package modforge.backend.service;
 
 import modforge.backend.AttributeFactory;
 import modforge.backend.BuildHandler;
+import modforge.backend.ItemType;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.attributes.IAttribute;
-import modforge.backend.model.item.*;
+import modforge.backend.model.attributes.Attribute;
+import modforge.backend.model.BaseModItem;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -28,39 +29,15 @@ public final class ModItemBuilder {
 	}
 
 	/**
-	 * Creates the default handler list (mirrors C# ServiceConfiguration).
+	 * Builds the handler list from ItemType's single source of truth.
+	 * Adding or reordering item types only requires a change in ItemType.
 	 */
+	@SuppressWarnings("unchecked")
 	public static ModItemBuilder createDefault() {
-		return new ModItemBuilder(List.of(
-				new GBuildHandler<>(Perk.class, "perk_id"),
-				new GBuildHandler<>(Buff.class, "buff_id"),
-				new GBuildHandler<>(Storm.class, "id"),
-				new GBuildHandler<>(PerkBuff.class, "perk_id"),
-				new GBuildHandler<>(PerkScript.class, "perk_id"),
-				new GBuildHandler<>(MeleeWeapon.class, "Id"),
-				new GBuildHandler<>(MissileWeapon.class, "Id"),
-				new GBuildHandler<>(Ammo.class, "Id"),
-				new GBuildHandler<>(MeleeWeaponClass.class, "id"),
-				new GBuildHandler<>(MissileWeaponClass.class, "id"),
-				new GBuildHandler<>(Hood.class, "Id"),
-				new GBuildHandler<>(Armor.class, "Id"),
-				new GBuildHandler<>(Helmet.class, "Id"),
-				new GBuildHandler<>(Food.class, "Id"),
-				new GBuildHandler<>(Poison.class, "Id"),
-				new GBuildHandler<>(Herb.class, "Id"),
-				new GBuildHandler<>(CraftingMaterial.class, "Id"),
-				new GBuildHandler<>(NPCTool.class, "Id"),
-				new GBuildHandler<>(MiscItem.class, "Id"),
-				new GBuildHandler<>(GameDocument.class, "Id"),
-				new GBuildHandler<>(Die.class, "Id"),
-				new GBuildHandler<>(ItemAlias.class, "Id"),
-				new GBuildHandler<>(QuickSlotContainer.class, "Id"),
-				new GBuildHandler<>(DiceBadge.class, "Id"),
-				new GBuildHandler<>(PickableItem.class, "Id"),
-				new GBuildHandler<>(Key.class, "Id"),
-				new GBuildHandler<>(Money.class, "Id"),
-				new GBuildHandler<>(KeyRing.class, "Id")
-		));
+		var handlers = ItemType.getHandlerSpecs().stream()
+				               .map(spec -> (BuildHandler) new GBuildHandler<>((Class<BaseModItem>) spec.clazz(), spec.idKey()))
+				               .toList();
+		return new ModItemBuilder(handlers);
 	}
 
 	/**
@@ -86,7 +63,6 @@ public final class ModItemBuilder {
 		public ModItem handle(final Element element) {
 			try {
 				final M item = type.getDeclaredConstructor().newInstance();
-				item.setIdKey(idAttrKey);
 
 				final String idValue = element.getAttribute(idAttrKey);
 				item.setId(idValue.isBlank() ? null : idValue);
@@ -101,7 +77,7 @@ public final class ModItemBuilder {
 
 	public static ModItem create(final Element el, final ModItem item) {
 		final var xmlAttrs = el.getAttributes();
-		final var list = new ArrayList<IAttribute>(xmlAttrs.getLength());
+		final var list = new ArrayList<Attribute>(xmlAttrs.getLength());
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
 			final var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
 			list.add(AttributeFactory.create(a.getLocalName(), a.getValue()));

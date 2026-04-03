@@ -1,6 +1,6 @@
 package modforge.backend.model;
 
-import modforge.backend.model.attributes.IAttribute;
+import modforge.backend.model.attributes.Attribute;
 
 import java.util.Collection;
 import java.util.List;
@@ -13,22 +13,21 @@ public interface ModItem {
 	void setId(final String id);
 
 	String getIdKey();
-	void setIdKey(final String idKey);
 
 	String getPath();
 	void setPath(final String path);
 
-	List<IAttribute> getAttributes();
-	void setAttribute(final Collection<IAttribute> attributes);
-	void addAttribute(final IAttribute attr);
-	void addAttribute(final Collection<IAttribute> attributes);
+	List<Attribute> getAttributes();
+	void setAttribute(final Collection<Attribute> attributes);
+	void addAttribute(final Attribute attr);
+	void addAttribute(final Collection<Attribute> attributes);
 
 	List<String> getLinkedIds();
 	void setLinkedId(final Collection<String> linkedIds);
 	void addLinkedId(final String linkedId);
 	void addLinkedId(final Collection<String> linkedId);
 
-	Optional<IAttribute> findAttr(final String candidate);
+	Optional<Attribute> findAttr(final String candidate);
 
 
 	/**

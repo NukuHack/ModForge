@@ -324,7 +324,7 @@ public class ItemEdit extends BasePage {
 		sep.setBackground(new Color(0x313244));
 		attributesPanel.add(sep, separatorGbc(row++));
 
-		for (IAttribute attr : currentItem.getAttributes()) {
+		for (Attribute attr : currentItem.getAttributes()) {
 			row = addAttributeRow(attr, row);
 		}
 
@@ -368,7 +368,7 @@ public class ItemEdit extends BasePage {
 		return row + 1;
 	}
 
-	private int addAttributeRow(IAttribute attr, int row) {
+	private int addAttributeRow(Attribute attr, int row) {
 		JLabel lbl      = plainLabel(attr.getName());
 		JComponent editor = createEditorForAttribute(attr);
 
@@ -426,7 +426,7 @@ public class ItemEdit extends BasePage {
 
 	// ── Component factories ───────────────────────────────────────────────────
 
-	private JComponent createEditorForAttribute(IAttribute attr) {
+	private JComponent createEditorForAttribute(Attribute attr) {
 		if (attr instanceof BooleanAttribute boolAttr) {
 			JCheckBox cb = new JCheckBox();
 			cb.setSelected((Boolean) boolAttr.getValue());
@@ -578,7 +578,7 @@ public class ItemEdit extends BasePage {
 		}
 
 		// Save all attributes
-		for (IAttribute attr : currentItem.getAttributes()) {
+		for (Attribute attr : currentItem.getAttributes()) {
 			JComponent comp = attributeComponents.get(attr.getName());
 			if (comp == null) continue;
 			Object newVal = extractValue(comp, attr);
@@ -595,7 +595,7 @@ public class ItemEdit extends BasePage {
 		window.snackbar.show("Item changes saved", BarManager.Type.SUCCESS);
 	}
 
-	private Object extractValue(JComponent comp, IAttribute attr) {
+	private Object extractValue(JComponent comp, Attribute attr) {
 		if (comp instanceof JCheckBox cb  && attr instanceof BooleanAttribute) return cb.isSelected();
 		if (comp instanceof JSpinner  sp  && attr instanceof DoubleAttribute)  return sp.getValue();
 		if (comp instanceof JTextField tf) {

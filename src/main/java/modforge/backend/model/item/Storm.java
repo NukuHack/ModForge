@@ -1,5 +1,6 @@
 package modforge.backend.model.item;
 
+import modforge.backend.model.BaseModItem;
 import modforge.backend.model.storm.StormData;
 
 /**
@@ -16,7 +17,7 @@ import modforge.backend.model.storm.StormData;
  * populated separately by {@link modforge.backend.service.StormService} after the
  * PAK scan.</p>
  */
-public final class Storm extends BaseModItem {
+public class Storm extends BaseModItem {
 
 	/** Fully-parsed Storm file contents. May be {@code null} if not yet loaded. */
 	private StormData stormData;

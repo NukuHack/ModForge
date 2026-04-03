@@ -1,11 +1,8 @@
 package modforge.backend;
 
 import modforge.backend.model.ModItem;
-import modforge.backend.model.attributes.IAttribute;
 import modforge.backend.service.ModItemBuilder;
 import org.w3c.dom.Element;
-
-import java.util.List;
 
 public final class ModItemFactory {
 	private ModItemFactory() {
@@ -32,10 +29,8 @@ public final class ModItemFactory {
 		try {
 			final var copy = src.getClass().getDeclaredConstructor().newInstance();
 			copy.setId(src.getId());
-			copy.setIdKey(src.getIdKey());
 			copy.setPath(newPath);
-			final List<IAttribute> cloned = src.getAttributes().stream()
-					.map(a -> (IAttribute) a.deepClone()).toList();
+			final var cloned = src.getAttributes().stream().map(a -> a.deepClone()).toList();
 			copy.setAttribute(cloned);
 			return copy;
 		} catch (Exception e) {

@@ -10,14 +10,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.List;
 import java.util.logging.Logger;
 
 // =============================================================================
 //  MAIN WINDOW
 // =============================================================================
 public class MainWindow extends JFrame {
-	private static final Logger log = Logger.getLogger(MainWindow.class.getName());
-
 	// ── palette ──────────────────────────────────────────────────────────────
 	public static final Color BG = new Color(0x1e1e2e);
 	public static final Color SURFACE = new Color(0x181825);
@@ -26,54 +25,13 @@ public class MainWindow extends JFrame {
 	public static final Color TEXT = new Color(0xcdd6f4);
 	public static final Color MUTED = new Color(0x6c6f85);
 	public static final Color DANGER = new Color(0xf38ba8);
-
-	// ── navigation enum ──────────────────────────────────────────────────────
-	public enum Page {
-		HOME("Home", HomePage.class),
-		MODS("Mods", ModsPage.class),
-		MOD_EDIT("Edit Mod", ModEditPage.class),
-		ITEMS("Items", ItemsPage.class),
-		STORM("Storm", StormPage.class),
-		ITEM_EDIT("Item Edit", ItemEdit.class),
-		SETTINGS("Settings", SettingsPage.class);
-
-		private final String displayName;
-		private final Class<? extends BasePage> pageClass;
-		private BasePage instance;
-
-		Page(String displayName, Class<? extends BasePage> pageClass) {
-			this.displayName = displayName;
-			this.pageClass = pageClass;
-		}
-
-		public String getDisplayName() {
-			return displayName;
-		}
-
-		public Class<? extends BasePage> getPageClass() {
-			return pageClass;
-		}
-
-		public BasePage getInstance() {
-			return instance;
-		}
-
-		public void setInstance(BasePage instance) {
-			this.instance = instance;
-		}
-	}
-
+	private static final Logger log = Logger.getLogger(MainWindow.class.getName());
+	public final BarManager snackbar;
 	// ── navigation ───────────────────────────────────────────────────────────
 	private final CardLayout cardLayout = new CardLayout();
 	private final JPanel pageHolder = new JPanel(cardLayout);
-	public final BarManager snackbar;
-
 	// backend ---------------
 	private final ServiceRegistry registry;
-
-	public ServiceRegistry getRegistry() {
-		return registry;
-	}
 
 	public MainWindow(ServiceRegistry registry) {
 		super("ModForge");
@@ -118,39 +76,47 @@ public class MainWindow extends JFrame {
 		navigate(Page.HOME);
 	}
 
+	public ServiceRegistry getRegistry() {
+		return registry;
+	}
+
 	/**
 	 * Loads the window icon from resources/images/Icons/modforge.png or .ico
 	 * Falls back to default Java icon if not found
 	 */
 	private void setWindowIcon() {
 		// Try PNG first (better cross-platform support)
-		URL iconUrl = getClass().getResource("/resources/images/Icons/modforge.png");
+		final var f = new String[] {
+				// most modern systems should allow the first but left the rest for fallback is ... extreme cases
+				"/images/Icons/modforge.png",
+				"/images/Icons/modforge.ico",
+				"/resources/images/Icons/modforge.png",
+				"/resources/images/Icons/modforge.ico",
+				"resources/images/Icons/modforge.png",
+				"resources/images/Icons/modforge.ico"
+		};
 
-		// If PNG not found, try ICO
-		if (iconUrl == null) {
-			iconUrl = getClass().getResource("/resources/images/Icons/modforge.ico");
+		for (final var el : f) {
+			final var out = getClass().getResource(el);
+
+			if (out != null) {
+				setIconImage(new ImageIcon(out).getImage());
+				log.info("Window icon loaded successfully from: " + out);
+				break;
+			}
 		}
 
-		if (iconUrl != null) {
-			ImageIcon icon = new ImageIcon(iconUrl);
-			setIconImage(icon.getImage());
-			log.info("Window icon loaded successfully from: " + iconUrl.getPath());
-		} else {
-			log.warning("Window icon not found at /resources/images/Icons/modforge.png or .ico");
-		}
 	}
 
 	private void initializePages() {
 		for (Page page : Page.values()) {
 			try {
-				BasePage pageInstance = page.getPageClass()
-					.getDeclaredConstructor(MainWindow.class)
-					.newInstance(this);
+				BasePage pageInstance = page.getPageClass().getDeclaredConstructor(MainWindow.class).newInstance(this);
 				page.setInstance(pageInstance);
 				pageHolder.add(pageInstance, page.name());
 			} catch (Exception e) {
 				log.warning("Failed to create page: " + page.name());
-				log.warning("Ex : " +e);
+				log.warning("Ex : " + e);
 			}
 		}
 	}
@@ -172,10 +138,8 @@ public class MainWindow extends JFrame {
 		controls.setOpaque(false);
 		controls.add(winCtrlBtn("–", MUTED, e -> setExtendedState(ICONIFIED)));
 		controls.add(winCtrlBtn("□", MUTED, e -> {
-			if (getExtendedState() == MAXIMIZED_BOTH)
-				setExtendedState(NORMAL);
-			else
-				setExtendedState(MAXIMIZED_BOTH);
+			if (getExtendedState() == MAXIMIZED_BOTH) setExtendedState(NORMAL);
+			else setExtendedState(MAXIMIZED_BOTH);
 		}));
 		controls.add(winCtrlBtn("✕", DANGER, e -> dispose()));
 
@@ -195,10 +159,13 @@ public class MainWindow extends JFrame {
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		b.addActionListener(action);
 		b.addMouseListener(new java.awt.event.MouseAdapter() {
-			@Override public void mouseEntered(MouseEvent e) {
+			@Override
+			public void mouseEntered(MouseEvent e) {
 				b.setBackground(new Color(0x313244));
 			}
-			@Override public void mouseExited(MouseEvent e) {
+
+			@Override
+			public void mouseExited(MouseEvent e) {
 				b.setBackground(TITLEBAR);
 			}
 		});
@@ -215,7 +182,7 @@ public class MainWindow extends JFrame {
 
 		side.add(Box.createVerticalStrut(8));
 
-		for (Page page : new Page[] {Page.HOME, Page.MODS, Page.ITEMS}) {
+		for (Page page : new Page[]{Page.HOME, Page.MODS, Page.ITEMS}) {
 			side.add(navBtn(page.getDisplayName(), page));
 		}
 
@@ -239,8 +206,13 @@ public class MainWindow extends JFrame {
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		b.addActionListener(e -> navigate(page));
 		b.addMouseListener(new java.awt.event.MouseAdapter() {
-			@Override public void mouseEntered(MouseEvent e) { b.setBackground(new Color(0x313244)); }
-			@Override public void mouseExited(MouseEvent e) {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				b.setBackground(new Color(0x313244));
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
 				b.setBackground(SURFACE);
 			}
 		});
@@ -267,17 +239,45 @@ public class MainWindow extends JFrame {
 
 	// ── zoom-block (mirrors js/functions.js) ──────────────────────────────────
 	private void installZoomBlock() {
-		KeyboardFocusManager.getCurrentKeyboardFocusManager()
-			.addKeyEventDispatcher(e -> {
-				if (e.getID() == KeyEvent.KEY_PRESSED && e.isControlDown()) {
-					int k = e.getKeyCode();
-					if (k == KeyEvent.VK_PLUS || k == KeyEvent.VK_MINUS ||
-							k == KeyEvent.VK_EQUALS || k == KeyEvent.VK_0) {
-						e.consume();
-						return true;
-					}
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+			if (e.getID() == KeyEvent.KEY_PRESSED && e.isControlDown()) {
+				int k = e.getKeyCode();
+				if (k == KeyEvent.VK_PLUS || k == KeyEvent.VK_MINUS || k == KeyEvent.VK_EQUALS || k == KeyEvent.VK_0) {
+					e.consume();
+					return true;
 				}
-				return false;
-			});
+			}
+			return false;
+		});
+	}
+
+	// ── navigation enum ──────────────────────────────────────────────────────
+	public enum Page {
+		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class), ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class), SETTINGS("Settings", SettingsPage.class);
+
+		private final String displayName;
+		private final Class<? extends BasePage> pageClass;
+		private BasePage instance;
+
+		Page(String displayName, Class<? extends BasePage> pageClass) {
+			this.displayName = displayName;
+			this.pageClass = pageClass;
+		}
+
+		public String getDisplayName() {
+			return displayName;
+		}
+
+		public Class<? extends BasePage> getPageClass() {
+			return pageClass;
+		}
+
+		public BasePage getInstance() {
+			return instance;
+		}
+
+		public void setInstance(BasePage instance) {
+			this.instance = instance;
+		}
 	}
 }

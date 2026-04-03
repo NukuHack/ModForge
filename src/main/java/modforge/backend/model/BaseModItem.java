@@ -1,16 +1,15 @@
-package modforge.backend.model.item;
+package modforge.backend.model;
 
-import modforge.backend.model.ModItem;
-import modforge.backend.model.attributes.IAttribute;
+import modforge.backend.ItemType;
+import modforge.backend.model.attributes.Attribute;
 
 import java.util.*;
 
 public abstract class BaseModItem implements ModItem {
 	// TODO change the ID from string to a nicer object
 	private String id;
-	private String idKey = "Id";
 	private String path;
-	private final List<IAttribute> attributes = new ArrayList<>();
+	private final List<Attribute> attributes = new ArrayList<>();
 	private final List<String> linkedIds = new ArrayList<>();
 
 	@Override
@@ -24,15 +23,7 @@ public abstract class BaseModItem implements ModItem {
 
 	@Override
 	public String getIdKey() {
-		return this.idKey;
-	}
-	@Override
-	public void setIdKey(final String key) {
-		this.idKey = key;
-	}
-
-	public void setKey(final String id, final String key) {
-		this.id = id; this.idKey = key;
+		return ItemType.getIdKey(this.getClass());
 	}
 
 	@Override
@@ -45,24 +36,20 @@ public abstract class BaseModItem implements ModItem {
 	}
 
 	@Override
-	public List<IAttribute> getAttributes() {
+	public List<Attribute> getAttributes() {
 		return this.attributes;
 	}
 	@Override
-	public void setAttribute(final Collection<IAttribute> attr) {
-		if (this.attributes.isEmpty()) {
-			this.attributes.addAll(attr);
-		} else {
-			this.attributes.clear();
-			this.attributes.addAll(attr);
-		}
+	public void setAttribute(final Collection<Attribute> attr) {
+		this.attributes.clear();
+		this.attributes.addAll(attr);
 	}
 	@Override
-	public void addAttribute(final IAttribute attr) {
+	public void addAttribute(final Attribute attr) {
 		this.attributes.add(attr);
 	}
 	@Override
-	public void addAttribute(final Collection<IAttribute> attr) {
+	public void addAttribute(final Collection<Attribute> attr) {
 		this.attributes.addAll(attr);
 	}
 
@@ -72,12 +59,8 @@ public abstract class BaseModItem implements ModItem {
 	}
 	@Override
 	public void setLinkedId(final Collection<String> linkedIds) {
-		if (this.linkedIds.isEmpty()) {
-			this.linkedIds.addAll(linkedIds);
-		} else {
-			this.linkedIds.clear();
-			this.linkedIds.addAll(linkedIds);
-		}
+		this.linkedIds.clear();
+		this.linkedIds.addAll(linkedIds);
 	}
 	@Override
 	public void addLinkedId(final String linkedId) {
@@ -92,18 +75,18 @@ public abstract class BaseModItem implements ModItem {
 	public boolean equals(Object o) {
 		if (o == null || getClass() != o.getClass()) return false;
 		BaseModItem that = (BaseModItem) o;
-		return Objects.equals(id, that.id) && Objects.equals(idKey, that.idKey) && Objects.equals(path, that.path);
+		return Objects.equals(getId(), that.getId()) && Objects.equals(getIdKey(), that.getIdKey()) && Objects.equals(getPath(), that.getPath());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, idKey, path);
+		return Objects.hash(getId(), getIdKey(), getPath());
 	}
 
 	/**
 	 * Helper: find the first attribute whose name (case-insensitive) contains the candidate.
 	 */
-	public Optional<IAttribute> findAttr(final String candidate) {
+	public Optional<Attribute> findAttr(final String candidate) {
 		final String lo = candidate.toLowerCase(Locale.ROOT);
 		return this.attributes.stream()
 				.filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo))

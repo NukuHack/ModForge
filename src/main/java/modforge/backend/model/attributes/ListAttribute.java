@@ -14,7 +14,7 @@ public class ListAttribute<M> extends Attribute<List<M>> {
 		if (this.getValue() instanceof List<?> list) {
 			final List<M> clonedList = new ArrayList<>(list.size());
 			for (Object element : list) {
-				if (element instanceof IAttribute attr) {
+				if (element instanceof Attribute attr) {
 					// Recursively deep clone nested IAttribute elements
 					clonedList.add((M) attr.deepClone());
 				} else {

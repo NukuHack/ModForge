@@ -3,6 +3,7 @@ package modforge.backend;
 import modforge.backend.model.BuffParam;
 import modforge.backend.model.MathOperation;
 import modforge.backend.model.attributes.*;
+import modforge.backend.model.item.PerkBuff;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
@@ -26,6 +27,7 @@ public final class AttributeFactory {
 
 	static {
 		TYPE_MAP.put("buff_params", BuffParam.class);
+		TYPE_MAP.put("perk_buff", PerkBuff.class);
 	}
 
 	/**
@@ -36,10 +38,10 @@ public final class AttributeFactory {
 		var attrs = el.getAttributes();
 		for (int i = 0; i < attrs.getLength(); i++) {
 			final var a = (Attr) attrs.item(i);
-			final String name = a.getLocalName();
+			String name = a.getLocalName();
 			final String value = a.getValue();
-			if (name == null || name.isBlank()) continue;
-			TYPE_MAP.computeIfAbsent(name, n -> inferType(n, value == null ? "" : value));
+			if (name == null || (name = name.trim()).isEmpty()) continue;
+			TYPE_MAP.computeIfAbsent(name, n -> inferType(n, value == null ? "" : value.trim()));
 		}
 		var children = el.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
@@ -66,7 +68,7 @@ public final class AttributeFactory {
 		} catch (Exception ignored) {
 		}
 
-		if (!value.isBlank()) {
+		if (!value.isEmpty()) {
 			try {
 				Double.parseDouble(value);
 				return Double.class;
@@ -81,8 +83,8 @@ public final class AttributeFactory {
 	 * Create a typed IAttribute from a raw XML name/value pair.
 	 * Falls back to String if the type is not yet discovered.
 	 */
-	public static IAttribute create(final String name, String value) {
-		if (value == null) value = "";
+	public static Attribute create(final String name, String value) {
+		if (value == null) value = ""; value = value.trim();
 		final Class<?> type = TYPE_MAP.getOrDefault(name, String.class);
 
 		try {
@@ -134,7 +136,7 @@ public final class AttributeFactory {
 	/**
 	 * Return a default (empty-value) attribute for every discovered name.
 	 */
-	public static List<IAttribute> getAllKnown() {
+	public static List<Attribute> getAllKnown() {
 		return TYPE_MAP.keySet().stream()
 				.map(k -> create(k, ""))
 				.collect(Collectors.toList());
