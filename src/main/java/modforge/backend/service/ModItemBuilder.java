@@ -22,13 +22,11 @@ public final class ModItemBuilder {
 	static {
 		// Build the handler map once at class initialization
 		for (var spec : ItemType.getHandlerSpecs()) {
-			BuildHandler handler = new GBuildHandler<>(
+			final var handler = new GBuildHandler<>(
 					(Class<? extends BaseModItem>) spec.clazz(),
 					spec.idKey()
 			);
-			// Index by the element name this handler is responsible for
-			String elementName = spec.clazz().getSimpleName().toLowerCase(Locale.ROOT);
-			HANDLER_MAP.put(elementName, handler);
+			HANDLER_MAP.put(spec.name(), handler);
 		}
 	}
 	
@@ -46,9 +44,9 @@ public final class ModItemBuilder {
 		return item;
 	}
 	
-	public static ModItem build(Element element) {
+	public static ModItem build(final Element element) {
 		// glue it together yet again, barely works
-		final String elementName = element.getLocalName().toLowerCase(Locale.ROOT).replace("_", "");
+		final var elementName = element.getLocalName().toLowerCase(Locale.ROOT);
 		final var handler = HANDLER_MAP.get(elementName);
 		
 		if (handler != null) {
@@ -57,6 +55,27 @@ public final class ModItemBuilder {
 		
 		log.fine("No handler matched element <" + element.getLocalName() + ">");
 		return null;
+	}
+	
+	
+	/**
+	 * Deep-copy a mod item, optionally changing its path.
+	 */
+	public static ModItem deepCopy(ModItem src, String newPath) {
+		try {
+			final var copy = src.getClass().getDeclaredConstructor().newInstance();
+			copy.setId(src.getId());
+			copy.setPath(newPath);
+			final var cloned = src.getAttributes().stream().map(a -> a.deepClone()).toList();
+			copy.setAttribute(cloned);
+			return copy;
+		} catch (Exception e) {
+			throw new RuntimeException("Deep copy failed for " + src.getClass().getSimpleName(), e);
+		}
+	}
+	
+	public static ModItem deepCopy(ModItem src) {
+		return deepCopy(src, src.getPath());
 	}
 	
 	/**

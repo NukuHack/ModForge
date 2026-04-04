@@ -126,7 +126,7 @@ public final class StormService {
 				final String category = categoryFromPath(name);
 				
 				try (var is = zf.getInputStream(entry)) {
-					final DataPoint dp = new DataPoint(pakPath + ":" + name, name, Storm.class);
+					final var dp = new DataPoint(pakPath + ":" + name, name, Storm.class);
 					final StormData sd = StormParser.parse(is, dp, id);
 					if (sd.getCategory() == null && category != null) {
 						sd.setCategory(category);

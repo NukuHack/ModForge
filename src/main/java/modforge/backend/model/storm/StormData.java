@@ -39,45 +39,67 @@ import java.util.List;
  * </pre>
  */
 public final class StormData {
-
-    /** Stable identifier derived from the file path (used for navigation). */
-    private String id = "";
-
-    /**
-     * Optional category grouping (derived from the file path or a {@code category}
-     * attribute on the root element). {@code null} means "Miscellaneous".
-     */
-    private String category = null;
-
-    /** Source file information (path inside a PAK, endpoint tag, type). */
-    private DataPoint dataPoint;
-
-    private final List<CustomStormSelector>  customSelectors  = new ArrayList<>();
-    private final List<CustomStormOperation> customOperations = new ArrayList<>();
-    private final List<StormTask>            tasks            = new ArrayList<>();
-    private final List<StormRule>            rules            = new ArrayList<>();
-
-    // -------------------------------------------------------------------------
-    // Accessors
-    // -------------------------------------------------------------------------
-
-    public String getId()            { return id; }
-    public void   setId(String id)   { this.id = id == null ? "" : id; }
-
-    public String getCategory()           { return category; }
-    public void   setCategory(String cat) { this.category = cat; }
-
-    public DataPoint getDataPoint()               { return dataPoint; }
-    public void      setDataPoint(DataPoint dp)   { this.dataPoint = dp; }
-
-    public List<CustomStormSelector>  getCustomSelectors()  { return customSelectors; }
-    public List<CustomStormOperation> getCustomOperations() { return customOperations; }
-    public List<StormTask>            getTasks()            { return tasks; }
-    public List<StormRule>            getRules()            { return rules; }
-
-    @Override
-    public String toString() {
-        return "StormData{id='" + id + "', category=" + category
-                + ", rules=" + rules.size() + ", tasks=" + tasks.size() + "}";
-    }
+	
+	private final List<CustomStormSelector> customSelectors = new ArrayList<>();
+	private final List<CustomStormOperation> customOperations = new ArrayList<>();
+	private final List<StormTask> tasks = new ArrayList<>();
+	private final List<StormRule> rules = new ArrayList<>();
+	/** Stable identifier derived from the file path (used for navigation). */
+	private String id = "";
+	/**
+	 * Optional category grouping (derived from the file path or a {@code category}
+	 * attribute on the root element). {@code null} means "Miscellaneous".
+	 */
+	private String category = null;
+	/** Source file information (path inside a PAK, endpoint tag, type). */
+	private DataPoint dataPoint;
+	
+	// -------------------------------------------------------------------------
+	// Accessors
+	// -------------------------------------------------------------------------
+	
+	public String getId() {
+		return id;
+	}
+	
+	public void setId(String id) {
+		this.id = id == null ? "" : id;
+	}
+	
+	public String getCategory() {
+		return category;
+	}
+	
+	public void setCategory(String cat) {
+		this.category = cat;
+	}
+	
+	public DataPoint getDataPoint() {
+		return dataPoint;
+	}
+	
+	public void setDataPoint(DataPoint dp) {
+		this.dataPoint = dp;
+	}
+	
+	public List<CustomStormSelector> getCustomSelectors() {
+		return customSelectors;
+	}
+	
+	public List<CustomStormOperation> getCustomOperations() {
+		return customOperations;
+	}
+	
+	public List<StormTask> getTasks() {
+		return tasks;
+	}
+	
+	public List<StormRule> getRules() {
+		return rules;
+	}
+	
+	@Override
+	public String toString() {
+		return "StormData{id='" + id + "', category=" + category + ", rules=" + rules.size() + ", tasks=" + tasks.size() + "}";
+	}
 }

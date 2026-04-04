@@ -9,6 +9,6 @@ public class IntAttribute extends Attribute<Integer> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public IntAttribute deepClone() {
-		return new IntAttribute(this.name, this.value);
+		return this;
 	}
 }

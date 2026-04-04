@@ -1,5 +1,6 @@
 package modforge;
 
+import modforge.backend.AttributeFactory;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
@@ -26,7 +27,7 @@ public class Main {
 		
 		SwingUtilities.invokeLater(() -> {
 			// Show loading splash while services boot
-			final LoadingScreen splash = new LoadingScreen();
+			final var splash = new LoadingScreen();
 			splash.setVisible(true);
 			
 			// Boot services off the EDT
@@ -38,7 +39,8 @@ public class Main {
 					JOptionPane.showMessageDialog(null, "Startup error:\n" + ex.getMessage(), "ModForge – Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				var registry = Singleton.INSTANCE.getRegistry();
+				final var registry = Singleton.INSTANCE.getRegistry();
+				System.out.println(AttributeFactory.getTypeMap());
 				final MainWindow window = new MainWindow(registry);
 				Singleton.INSTANCE.setMainWindow(window);
 				window.setVisible(true);

@@ -6,9 +6,9 @@ import modforge.backend.AttributeFactory;
 import modforge.backend.DataPoint;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
-import modforge.backend.model.BuffParam;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.Attribute;
+import modforge.backend.model.attributes.BuffParam;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -25,12 +25,14 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public final class ItemService {
@@ -95,12 +97,8 @@ public final class ItemService {
 	// ==================================================================
 	
 	private static void writeXml(Document doc, File outFile) throws Exception {
-		var tf = TransformerFactory.newInstance().newTransformer();
-		//tf.setOutputProperty(OutputKeys.ENCODING, "US-ASCII");
-		//tf.setOutputProperty(OutputKeys.INDENT, "yes");
-		//tf.setOutputProperty(OutputKeys.STANDALONE, "no");
-		// xml declaration appended later
-		var writer = new StringWriter();
+		final var tf = TransformerFactory.newInstance().newTransformer();
+		final var writer = new StringWriter();
 		tf.transform(new DOMSource(doc), new StreamResult(writer));
 		Util.writeXml(writer.toString(), outFile.toPath());
 	}
@@ -188,10 +186,83 @@ public final class ItemService {
 	}
 	
 	/**
+	 * Write a single item to XML and return the PAK stem it belongs to
+	 * (e.g. "Weapons", or the modId when there is no origin hint).
+	 * <p>
+	 * Path stored on items follows one of two formats:
+	 * a) "SomePak.pak:inner/dir/entry.xml"  – came from a named PAK
+	 * b) plain filesystem path               – came from loose XML scan
+	 * c) null / blank                        – newly created item
+	 */
+	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
+		final String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+		
+		final File outFile = getOutputFile(gameDir, item, mod, typeName);
+		Files.createDirectories(outFile.toPath().getParent());
+		
+		final Document doc = makeDocument(outFile, item, typeName);
+		
+		writeXml(doc, outFile);
+	}
+	
+	private static Stream<ModItem> extractItemsFromPak(final Path pakFile) {
+		final Set<ModItem> items = new HashSet<>();
+		try (var zf = new ZipFile(pakFile.toFile())) {
+			for (final var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
+				final String entryName = entry.getName().replace('\\', '/');
+				try (var is = zf.getInputStream(entry)) {
+					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
+				} catch (Exception ex) {
+					log.warning("Parse error in %s from %s: %s".formatted(entryName, pakFile.getFileName(), ex.getMessage()));
+				}
+			}
+		} catch (IOException e) {
+			log.severe("Cannot open PAK file: %s - %s".formatted(pakFile, e.getMessage()));
+		}
+		return items.stream();
+	}
+	
+	private static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) throws Exception {
+		final var doc = parseXml(is);
+		final var root = doc.getDocumentElement();
+		final var tableNodes = root.getChildNodes();
+		for (int i = 0; i < tableNodes.getLength(); i++) {
+			if (! (tableNodes.item(i) instanceof Element tableEl))
+				continue;
+			
+			final var items = tableEl.getChildNodes();
+			for (int j = 0; j < items.getLength(); j++) {
+				if (! (items.item(j) instanceof Element itemElement))
+					continue;
+				
+				AttributeFactory.traverseElement(itemElement);
+				final ModItem item = ModItemBuilder.build(itemElement);
+				if (item == null || item.getId() == null)
+					continue;
+				
+				item.setPath(sourcePath);
+				sink.add(item);
+			}
+		}
+	}
+	
+	/**
+	 * Exclude PAKs that don't contain item/table data.
+	 */
+	private static Predicate<Path> excludeNonDataPaks() {
+		// TODO : make this kind of data either load or ... idk
+		return p -> {
+			String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+			return ! name.equals("scripts.pak") && ! name.equals("animations.pak") && ! name.equals("heads.pak") && ! name.equals("sounds.pak") && ! name.equals("shaders.pak");
+		};
+	}
+	
+	/**
 	 * Try to read all XML pak files.
 	 * Returns false if the game directory is not configured.
 	 */
 	public void init() {
+		final long start = System.currentTimeMillis();
 		final String gameDir = configService.gameDirectory;
 		final var game = Singleton.INSTANCE.game();
 		if (gameDir == null || gameDir.isBlank())
@@ -202,41 +273,7 @@ public final class ItemService {
 		} catch (Exception ex) {
 			log.severe("Game Data read failed: " + ex.getMessage());
 		}
-	}
-	
-	public Set<ModItem> readModItems(final DataPoint dp) {
-		final var result = new HashSet<ModItem>();
-		final File pakFile = new File(dp.path());
-		
-		if (! pakFile.exists()) {
-			log.warning("Pak file not found: " + dp.path());
-			return result;
-		}
-		
-		try (var zf = new ZipFile(pakFile)) {
-			var it = zf.entries();
-			while (it.hasMoreElements()) {
-				final var entry = it.nextElement();
-				final String path = entry.getName().replace('\\', '/');
-				final var fileName = Path.of(entry.getName()).getFileName().toString();
-				
-				// Skip non-XML files
-				if (! fileName.endsWith("xml"))
-					continue;
-				if (! fileName.startsWith(dp.endpoint()))
-					continue;
-				
-				try (var is = zf.getInputStream(entry)) {
-					
-					readItemsFromXml(is, pakFile.toString(), result);
-				} catch (Exception ex) {
-					log.fine("Parse error in " + path + ": " + ex.getMessage());
-				}
-			}
-		} catch (IOException e) {
-			log.severe("Cannot open pak: " + dp.path() + " - " + e.getMessage());
-		}
-		return result;
+		System.out.printf("Load took: %dms%n", System.currentTimeMillis() - start);
 	}
 	
 	/**
@@ -266,26 +303,6 @@ public final class ItemService {
 	}
 	
 	/**
-	 * Write a single item to XML and return the PAK stem it belongs to
-	 * (e.g. "Weapons", or the modId when there is no origin hint).
-	 * <p>
-	 * Path stored on items follows one of two formats:
-	 * a) "SomePak.pak:inner/dir/entry.xml"  – came from a named PAK
-	 * b) plain filesystem path               – came from loose XML scan
-	 * c) null / blank                        – newly created item
-	 */
-	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
-		final String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-		
-		final File outFile = getOutputFile(gameDir, item, mod, typeName);
-		Files.createDirectories(outFile.toPath().getParent());
-		
-		final Document doc = makeDocument(outFile, item, typeName);
-		
-		writeXml(doc, outFile);
-	}
-	
-	/**
 	 * Load mod items from all PAK files in the mod's Data folder.
 	 * Processes PAK files and their XML entries in parallel for maximum throughput.
 	 */
@@ -296,20 +313,14 @@ public final class ItemService {
 		}
 		
 		try (var stream = Files.list(modPath)) {
-			final var pakFiles = stream
-					.filter(Files::isRegularFile)
-					.filter(p -> p.toString().toLowerCase().endsWith(".pak"))
-					.filter(excludeNonDataPaks())
-					.collect(Collectors.toSet());
+			final var pakFiles = stream.filter(Files::isRegularFile).filter(p -> p.toString().toLowerCase().endsWith(".pak")).filter(excludeNonDataPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
 				log.fine("No PAK files found in: " + modPath);
 				return Set.of();
 			}
 			
-			final Set<ModItem> result = pakFiles.parallelStream()
-					.flatMap(ItemService::extractItemsFromPak)
-					.collect(Collectors.toSet());
+			final Set<ModItem> result = pakFiles.parallelStream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
 			
 			log.info("Loaded %d items from %d PAK file(s)".formatted(result.size(), pakFiles.size()));
 			return result;
@@ -318,75 +329,5 @@ public final class ItemService {
 			log.severe("Failed to list PAK folder: " + modPath + " - " + e.getMessage());
 			return Set.of();
 		}
-	}
-	
-	private static Stream<ModItem> extractItemsFromPak(Path pakFile) {
-		final Set<ModItem> items = new HashSet<>();
-		try (var zf = new ZipFile(pakFile.toFile())) {
-			for (final var entry : zf.stream().filter(excludeNonEndpoints()).toList()) {
-				final String entryName = entry.getName().replace('\\', '/');
-				try (var is = zf.getInputStream(entry)) {
-					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
-				} catch (Exception ex) {
-					log.warning("Parse error in %s from %s: %s".formatted(entryName, pakFile.getFileName(), ex.getMessage()));
-				}
-			}
-		} catch (IOException e) {
-			log.severe("Cannot open PAK file: %s - %s".formatted(pakFile, e.getMessage()));
-		}
-		return items.stream();
-	}
-	
-	private static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) throws Exception {
-		final var doc = parseXml(is);
-		
-		final var nodes = doc.getElementsByTagName("*");
-		for (int i = 0; i < nodes.getLength(); i++) {
-			if (! (nodes.item(i) instanceof Element tableEl) || tableEl.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-			
-			final var items = tableEl.getElementsByTagName("*");
-			for (int j = 0; j < items.getLength(); j++) {
-				if (! (items.item(j) instanceof Element itemElement) || itemElement == tableEl)
-					continue;
-				
-				AttributeFactory.traverseElement(itemElement);
-				final ModItem item = ModItemBuilder.build(itemElement);
-				if (item == null || item.getId() == null)
-					continue;
-				
-				item.setPath(sourcePath);
-				sink.add(item);
-			}
-		}
-	}
-	
-	/**
-	 * Exclude PAKs that don't contain item/table data.
-	 */
-	private static Predicate<Path> excludeNonDataPaks() {
-		// TODO : make this kind of data either load or ... idk
-		return p -> {
-			String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
-			return ! name.equals("scripts.pak") && ! name.equals("animations.pak") && ! name.equals("heads.pak") && ! name.equals("sounds.pak") && ! name.equals("shaders.pak");
-		};
-	}
-	
-	private static Predicate<ZipEntry> excludeNonEndpoints() {
-		// TODO : make this kind of data either load or ... idk
-		return p -> {
-			final String name = p.getName().toLowerCase(Locale.ROOT);
-			if (! name.endsWith(".xml"))
-				return false;
-			final Path path = Path.of(name);
-			final String fileName = path.getFileName().toString();
-			final int delimiter = fileName.indexOf("__");
-			final String shortName;
-			if (delimiter != -1)
-				shortName = fileName.substring(0, fileName.indexOf("__"));
-			else
-				shortName = fileName.substring(0, fileName.lastIndexOf("."));
-			return ItemType.endpointSet().contains(shortName);
-		};
 	}
 }

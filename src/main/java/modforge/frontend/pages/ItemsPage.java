@@ -4,9 +4,9 @@ import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
-import modforge.backend.ModItemFactory;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.item.Storm;
+import modforge.backend.service.ModItemBuilder;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
@@ -267,7 +267,7 @@ public class ItemsPage extends BasePage {
 	 */
 	private void showAddToModDialog(ModItem item) {
 		// Create a copy for the mod
-		ModItem copy = ModItemFactory.deepCopy(item);
+		final var copy = ModItemBuilder.deepCopy(item);
 		
 		JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add to Mod", true);
 		dialog.setSize(400, 300);
@@ -383,8 +383,7 @@ public class ItemsPage extends BasePage {
 	/**
 	 * Get the display string for an item
 	 */
-	private String getItemDisplayString(ModItem item) {
-		String icon = ItemType.getIconForClass(item.getClass());
+	private String getItemDisplayString(final ModItem item) {
 		String id = item.getId();
 		
 		// Truncate long IDs for better display
@@ -392,7 +391,7 @@ public class ItemsPage extends BasePage {
 			id = id.substring(0, 42) + "...";
 		}
 		
-		return String.format("%s  %s", icon, id);
+		return id;
 	}
 	
 	/**

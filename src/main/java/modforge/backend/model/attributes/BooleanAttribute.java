@@ -9,6 +9,6 @@ public class BooleanAttribute extends Attribute<Boolean> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public BooleanAttribute deepClone() {
-		return new BooleanAttribute(this.name, this.value);
+		return this;
 	}
 }

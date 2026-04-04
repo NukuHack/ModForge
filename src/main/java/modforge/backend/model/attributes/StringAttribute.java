@@ -9,6 +9,6 @@ public class StringAttribute extends Attribute<String> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public StringAttribute deepClone() {
-		return new StringAttribute(this.name, this.value);
+		return this;
 	}
 }

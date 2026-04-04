@@ -9,6 +9,6 @@ public class DoubleAttribute extends Attribute<Double> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public DoubleAttribute deepClone() {
-		return new DoubleAttribute(this.name, this.value);
+		return this;
 	}
 }

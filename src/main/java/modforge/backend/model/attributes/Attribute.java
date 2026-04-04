@@ -1,12 +1,14 @@
 package modforge.backend.model.attributes;
 
+import java.util.Objects;
+
 public abstract class Attribute<T> {
 	protected final String name;
 	protected T value;
 	
 	public Attribute(String name, T value) {
-		this.name = name;
-		this.value = value;
+		this.name = Objects.requireNonNull(name);
+		this.value = Objects.requireNonNull(value);
 	}
 	
 	public String getName() {

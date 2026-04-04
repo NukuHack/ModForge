@@ -9,6 +9,7 @@ public abstract class BaseModItem implements ModItem {
 	private final List<Attribute> attributes = new ArrayList<>();
 	private final List<String> linkedIds = new ArrayList<>();
 	// TODO change the ID from string to a nicer object
+	// - can not do since we have id of 0 and id of -1 ... LOL
 	private String id;
 	private String path;
 	
@@ -83,13 +84,13 @@ public abstract class BaseModItem implements ModItem {
 	public boolean equals(Object o) {
 		if (o == null || getClass() != o.getClass())
 			return false;
-		BaseModItem that = (BaseModItem) o;
-		return Objects.equals(getId(), that.getId()) && Objects.equals(getIdKey(), that.getIdKey()) && Objects.equals(getPath(), that.getPath());
+		final BaseModItem that = (BaseModItem) o;
+		return Objects.equals(getId(), that.getId()) && Objects.equals(getPath(), that.getPath());
 	}
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(getId(), getIdKey(), getPath(), getClass());
+		return Objects.hash(getId(), getPath());
 	}
 	
 	/**

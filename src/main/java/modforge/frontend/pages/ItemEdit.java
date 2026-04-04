@@ -3,9 +3,9 @@ package modforge.frontend.pages;
 
 import modforge.Util;
 import modforge.backend.ModData;
-import modforge.backend.ModItemFactory;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.*;
+import modforge.backend.service.ModItemBuilder;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 
@@ -291,7 +291,7 @@ public class ItemEdit extends BasePage {
 		} else {
 			name = name.replace(".xml", "__" + mod.id + ".xml");
 		}
-		final ModItem copy = ModItemFactory.deepCopy(currentItem, path + name);
+		final ModItem copy = ModItemBuilder.deepCopy(currentItem, path + name);
 		mod.addItem(copy);
 		window.snackbar.show("Added to mod: " + mod.name + " (" + mod.getItems().size() + " items)", BarManager.Type.SUCCESS);
 	}

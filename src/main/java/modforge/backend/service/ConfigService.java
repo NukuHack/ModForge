@@ -41,7 +41,7 @@ public final class ConfigService {
 	 * @param mod  The mod saved
 	 * @return true if successful
 	 */
-	public static boolean saveModConfig(String gameDir, ModData mod) {
+	public static boolean saveModConfig(final String gameDir, final ModData mod) {
 		if (gameDir == null || gameDir.isBlank() || mod.id == null || mod.id.isBlank()) {
 			log.warning("Cannot save mod config - game directory or mod ID missing.");
 			return false;
