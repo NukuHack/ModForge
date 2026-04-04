@@ -5,49 +5,62 @@ import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.model.Language;
 import modforge.backend.model.ModItem;
-import org.w3c.dom.Element;
 
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
 public final class LocalService {
 	private static final Logger log = Logger.getLogger(LocalService.class.getName());
 	private static final String EXTRA = "_xml.pak";
-	private static final Set<String> RELEVANT_FILES = Set.of("text_ui_soul.xml", "text_ui_tutorials.xml", "text_ui_quest.xml", "text_ui_misc.xml", "text_ui_minigames.xml", "text_ui_menus.xml", "text_ui_items.xml", "text_ui_ingame.xml");
-	
+	/**
+	 * Thread-local XMLInputFactory — one pre-configured instance per thread,
+	 * avoids repeated factory construction and carries the entity-size fix.
+	 */
+	private static final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
+		XMLInputFactory f = XMLInputFactory.newInstance();
+		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
+		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
+		// JAXP00010003 — individual entity size
+		f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
+		// JAXP00010004 — accumulated entity size across the whole document
+		f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
+		return f;
+	});
 	private final UserService configService;
+	
+	// ==================================================================
+	// PUBLIC API
+	// ==================================================================
 	
 	public LocalService(UserService configService) {
 		this.configService = configService;
 		init();
 	}
 	
-	// ==================================================================
-	// PUBLIC API
-	// ==================================================================
-	
 	/**
 	 * (Re-)load from disk. Call after the user sets a new game directory.
 	 */
 	public void init() {
-		final String dir = configService.gameDirectory;
-		if (dir != null && ! dir.isBlank()) {
-			try {
-				Singleton.INSTANCE.game().setLocal(readLocalizationFromXml(dir, false));
-			} catch (Exception ex) {
-				log.severe("Localisation read failed: " + ex.getMessage());
-			}
+		final long start = System.currentTimeMillis();
+		final String gameDir = configService.gameDirectory;
+		if (gameDir == null || gameDir.isBlank())
+			return;
+		final var game = Singleton.INSTANCE.game();
+		try {
+			game.setLocal(this.loadLocalization(gameDir));
+		} catch (Exception ex) {
+			log.severe("Localisation read failed: " + ex.getMessage());
 		}
+		System.out.printf("Game Localization Load took: %dms%n", System.currentTimeMillis() - start);
 	}
-	
-	// ------------------------------------------------------------------
-	// Mod-aware getters  (check mod first, fall back to base game)
-	// ------------------------------------------------------------------
 	
 	/**
 	 * Resolve the display name of {@code item}, checking {@code mod}'s own
@@ -64,16 +77,16 @@ public final class LocalService {
 		return resolve(item, mod, "ui_desc", "UIInfo");
 	}
 	
+	// ------------------------------------------------------------------
+	// Convenience overloads for base-game items (no per-mod map)
+	// ------------------------------------------------------------------
+	
 	/**
 	 * Resolve the lore description of {@code item} with mod-then-base fallback.
 	 */
 	public String getLoreDescription(ModItem item, ModData mod) {
 		return resolve(item, mod, "ui_lore_desc");
 	}
-	
-	// ------------------------------------------------------------------
-	// Convenience overloads for base-game items (no per-mod map)
-	// ------------------------------------------------------------------
 	
 	/** Resolve the display name of a base-game item. */
 	public String getName(ModItem item) {
@@ -89,10 +102,6 @@ public final class LocalService {
 	public String getLoreDescription(ModItem item) {
 		return getLoreDescription(item, Singleton.INSTANCE.game());
 	}
-	
-	// ------------------------------------------------------------------
-	// Direct key look-up (useful for UI that already has a string key)
-	// ------------------------------------------------------------------
 	
 	/**
 	 * Look up a raw localization key in the mod's strings, then the base game.
@@ -118,7 +127,7 @@ public final class LocalService {
 	}
 	
 	public String resolve(String key, ModData mod) {
-		return resolve(key, mod, currentLanguage());
+		return resolve(key, mod, Language.fromIsoCode(configService.language));
 	}
 	
 	/**
@@ -128,71 +137,98 @@ public final class LocalService {
 		return resolve(key, Singleton.INSTANCE.game());
 	}
 	
-	// ==================================================================
-	// READ OPERATIONS
-	// ==================================================================
-	
 	/**
 	 * Read all localisation paks from the game directory.
 	 * Returns: Language enum -> (string-key -> localised-value)
 	 */
-	public Map<Language, Map<String, String>> readLocalizationFromXml(String root, boolean isMod) {
-		final var result = new EnumMap<Language, Map<String, String>>(Language.class);
-		
-		int files = 0;
-		for (final String pakPath : Util.allLocPaths(root)) {
-			final File f = new File(pakPath);
-			if (! f.exists())
-				continue;
-			files++;
-			final String baseName = f.getName().replace(EXTRA, "");
-			final Language language = Language.fromDisplayName(baseName);
-			if (language == null)
-				continue;
-			
-			try (final var zf = new ZipFile(f)) {
-				final var it = zf.entries();
-				while (it.hasMoreElements()) {
-					final var entry = it.nextElement();
-					final String name = new File(entry.getName()).getName().toLowerCase(Locale.ROOT);
-					if (! isMod && ! RELEVANT_FILES.contains(name))
-						continue;
-					
-					try (var is = zf.getInputStream(entry)) {
-						var parsed = parseLocalizationXml(is);
-						result.computeIfAbsent(language, k -> new HashMap<>()).putAll(parsed);
-					}
-				}
-			} catch (Exception ex) {
-				log.warning("Localisation read error (" + pakPath + "): " + ex.getMessage());
+	public Map<Language, Map<String, String>> loadLocalization(String root) {
+		// Collect all valid (language, pakPath) pairs upfront
+		record LangPak(Language language, String pakPath) {
+			static LangPak c(File l) {
+				final var base = l.getName().replace(EXTRA, "");
+				final var lang = Language.fromDisplayName(base);
+				return lang != null ? new LangPak(lang, l.getPath()) : null;
 			}
 		}
-		log.info(String.format("Loaded %d languages from %d PAK file(s)", result.size(), files));
-		return result;
+		
+		final var langPaks = Util.allLocPaths(root).stream().map(File::new).filter(File::exists).map(LangPak::c).filter(Objects::nonNull).toList();
+		
+		// Process all PAKs in parallel; each returns a (Language -> Map) contribution
+		final Map<Language, Map<String, String>> result = new ConcurrentHashMap<>();
+		
+		langPaks.parallelStream().forEach(lp -> {
+			try (final var zf = new ZipFile(lp.pakPath())) {
+				// here using parallel is useless
+				///  for now i removed filters, so all text data will be red, but if it's too slow for you just add a filter to the base text data for items
+				zf.stream().forEach(entry -> {
+					try (var is = zf.getInputStream(entry)) {
+						final var parsed = parseLocalizationXml(is);
+						result.computeIfAbsent(lp.language(), k -> new ConcurrentHashMap<>()).putAll(parsed);
+					} catch (Exception ex) {
+						log.warning("Localisation parse error (" + entry.getName() + "): " + ex.getMessage());
+					}
+				});
+				
+			} catch (Exception ex) {
+				log.warning("Localisation read error (" + lp.pakPath() + "): " + ex.getMessage());
+			}
+		});
+		
+		log.info(String.format("Loaded %d languages from %d PAK file(s)", result.size(), langPaks.size()));
+		// Wrap back into a plain EnumMap for the rest of the codebase
+		final EnumMap<Language, Map<String, String>> out = new EnumMap<>(Language.class);
+		result.forEach((lang, map) -> out.put(lang, new HashMap<>(map)));
+		return out;
 	}
 	
 	/**
 	 * Parse a single localisation XML stream.
 	 */
 	public Map<String, String> parseLocalizationXml(InputStream is) throws Exception {
-		var result = new LinkedHashMap<String, String>();
-		var doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
-		var rows = doc.getElementsByTagName("Row");
-		for (int i = 0; i < rows.getLength(); i++) {
-			var cells = ((Element) rows.item(i)).getElementsByTagName("Cell");
-			if (cells.getLength() < 3)
+		// Pre-sized to avoid rehashing for typical file sizes
+		var result = new LinkedHashMap<String, String>(1024);
+		
+		final var factory = XML_FACTORY.get();
+		
+		final var reader = factory.createXMLStreamReader(is);
+		
+		String key = null;
+		byte cellIndex = 0;
+		boolean inRow = false;
+		
+		while (reader.hasNext()) {
+			int event = reader.next();
+			
+			if (event == XMLStreamConstants.END_ELEMENT && "Row".equals(reader.getLocalName()))
+				inRow = false;
+			if (event != XMLStreamConstants.START_ELEMENT)
 				continue;
-			String key = cells.item(0).getTextContent().trim();
-			String value = cells.item(2).getTextContent().trim();
-			if (! key.isBlank())
-				result.put(key, value);
+			
+			switch (reader.getLocalName()) {
+				case "Row":
+					inRow = true;
+					cellIndex = 0;
+					key = null;
+					break;
+				case "Cell":
+					if (!inRow)
+						break;
+					if (cellIndex++ == 1) break;  // skip the middle cell (index 1)
+					final var text = reader.getElementText().strip();
+					if (text.isEmpty())
+						break;
+					if (cellIndex == 1) {
+						key = text;
+					} else if (cellIndex == 3 && key != null) {
+						result.put(key, text);
+					}
+					break;
+			}
 		}
+		reader.close();
+		
 		return result;
 	}
-	
-	// ==================================================================
-	// WRITE OPERATIONS
-	// ==================================================================
 	
 	/**
 	 * Write per-language localization files into the mod's Localization folder.
@@ -222,13 +258,12 @@ public final class LocalService {
 			if (translations.isEmpty())
 				continue;
 			
-			final String locFilePath = Util.locExport(gameDirectory, language.getDisplayName(), modId);
-			final Path locPath = Path.of(locFilePath);
+			final Path locPath = Util.locExport(gameDirectory, language.getDisplayName(), modId);
 			
 			try {
 				final var xmlString = makeLocalizationXml(translations);
 				Util.writeXml(xmlString, locPath);
-				log.info("Localization written: " + locFilePath + " (" + translations.size() + " entries)");
+				log.info("Localization written: " + locPath + " (" + translations.size() + " entries)");
 			} catch (final Exception ex) {
 				log.warning("Failed to write localization for " + language + ": " + ex.getMessage());
 				allOk = false;
@@ -244,20 +279,12 @@ public final class LocalService {
 		sb.append("<Table>\n");
 		
 		for (var entry : entries.entrySet()) {
-			sb.append("<Row>\n")
-				.append("<Cell>").append(Util.escapeXml(entry.getKey())).append("</Cell>\n")
-				.append("<Cell/>\n")
-				.append("<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n")
-				.append("</Row>\n");
+			sb.append("<Row>\n").append("<Cell>").append(Util.escapeXml(entry.getKey())).append("</Cell>\n").append("<Cell/>\n").append("<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n").append("</Row>\n");
 		}
 		
 		sb.append("</Table>\n");
 		return sb.toString();
 	}
-	
-	// ==================================================================
-	// PRIVATE HELPERS
-	// ==================================================================
 	
 	/**
 	 * Resolve one of several candidate attribute names on {@code item} to a
@@ -269,7 +296,7 @@ public final class LocalService {
 	 * Returns {@code null} if no candidate attribute is present on the item.
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {
-		final Language lang = currentLanguage();
+		final Language lang = Language.fromIsoCode(configService.language);
 		// Pull the two lang maps once – either may be null if never populated.
 		final var game = Singleton.INSTANCE.game();
 		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(lang) : new HashMap<>();
@@ -296,10 +323,5 @@ public final class LocalService {
 			return key;
 		}
 		return null;
-	}
-	
-	/** Return the Language enum for the user's current language setting. */
-	private Language currentLanguage() {
-		return Language.fromIsoCode(configService.language);
 	}
 }

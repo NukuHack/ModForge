@@ -1,6 +1,7 @@
 package modforge;
 
 import modforge.backend.AttributeFactory;
+import modforge.backend.ItemType;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
@@ -39,6 +40,7 @@ public class Main {
 					JOptionPane.showMessageDialog(null, "Startup error:\n" + ex.getMessage(), "ModForge – Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
+				//  should be made a bit nicer, for now most of the stuff is stored inside a String - should make data storage for more specific attributes
 				final var registry = Singleton.INSTANCE.getRegistry();
 				System.out.println(AttributeFactory.getTypeMap());
 				final MainWindow window = new MainWindow(registry);

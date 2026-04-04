@@ -61,6 +61,16 @@ public final class ModData {
 		localizations.clear();
 		localizations.putAll(input);
 	}
+	public void addLocal(Language language, Map<String, String> input) {
+		final var existing = localizations.get(language);
+		final Map<String, String> map;
+		if (existing != null)
+			map = new HashMap<>(existing);
+		else
+			map = new HashMap<>();
+		map.putAll(input);
+		localizations.put(language, map);
+	}
 	
 	public Map<String, byte[]> getIcon() {
 		return Collections.unmodifiableMap(iconIndex);

@@ -3,7 +3,6 @@ package modforge.backend.service;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.AttributeFactory;
-import modforge.backend.DataPoint;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
@@ -11,7 +10,6 @@ import modforge.backend.model.attributes.Attribute;
 import modforge.backend.model.attributes.BuffParam;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -264,16 +262,16 @@ public final class ItemService {
 	public void init() {
 		final long start = System.currentTimeMillis();
 		final String gameDir = configService.gameDirectory;
-		final var game = Singleton.INSTANCE.game();
 		if (gameDir == null || gameDir.isBlank())
 			return;
+		final var game = Singleton.INSTANCE.game();
 		try {
-			game.setItems(loadModItems(Path.of(gameDir, "Data")));
+			game.setItems(this.loadItems(Path.of(gameDir, "Data")));
 			log.info(String.format("XML read done items=%d", game.getItems().size()));
 		} catch (Exception ex) {
 			log.severe("Game Data read failed: " + ex.getMessage());
 		}
-		System.out.printf("Load took: %dms%n", System.currentTimeMillis() - start);
+		System.out.printf("Game ItemData Load took: %dms%n", System.currentTimeMillis() - start);
 	}
 	
 	/**
@@ -306,7 +304,7 @@ public final class ItemService {
 	 * Load mod items from all PAK files in the mod's Data folder.
 	 * Processes PAK files and their XML entries in parallel for maximum throughput.
 	 */
-	public Set<ModItem> loadModItems(Path modPath) {
+	public Set<ModItem> loadItems(Path modPath) {
 		if (! Files.exists(modPath)) {
 			log.warning("PAK directory does not exist: " + modPath);
 			return Set.of();
@@ -319,8 +317,8 @@ public final class ItemService {
 				log.fine("No PAK files found in: " + modPath);
 				return Set.of();
 			}
-			
-			final Set<ModItem> result = pakFiles.parallelStream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
+			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
+			final Set<ModItem> result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
 			
 			log.info("Loaded %d items from %d PAK file(s)".formatted(result.size(), pakFiles.size()));
 			return result;

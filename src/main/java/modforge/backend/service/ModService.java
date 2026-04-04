@@ -5,13 +5,16 @@ import modforge.backend.ModData;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -91,10 +94,10 @@ public final class ModService {
 	 */
 	public static boolean writeModAsXml(String gameDirectory, ModData mod) {
 		final String rootPath = Util.modFolder(gameDirectory, mod.id);
-		final String manifest = rootPath + "/mod.manifest";
+		final Path manifest = Path.of(rootPath, "mod.manifest");
 		try {
-			Files.createDirectories(Path.of(rootPath + "/Data"));
-			Files.createDirectories(Path.of(rootPath + "/Localization"));
+			Files.createDirectories(Util.gameDataDir(rootPath));
+			Files.createDirectories(Util.gameDataDir(rootPath));
 			
 			// Create the new manifest content first
 			var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -130,9 +133,8 @@ public final class ModService {
 			final String newContent = newXmlWriter.toString();
 			
 			// Check if the manifest already exists and has the same content
-			final Path manifestPath = Path.of(manifest);
-			if (Files.exists(manifestPath)) {
-				final String existingContent = Files.readString(manifestPath, StandardCharsets.UTF_8);
+			if (Files.exists(manifest)) {
+				final String existingContent = Files.readString(manifest, StandardCharsets.UTF_8);
 				
 				// Normalize both strings for comparison (remove whitespace differences)
 				final var normalizedNew = Util.normalizeXml(newContent);
@@ -147,7 +149,7 @@ public final class ModService {
 			}
 			
 			// Write the new manifest content
-			try (var fileWriter = new java.io.FileWriter(manifestPath.toFile(), StandardCharsets.UTF_8)) {
+			try (var fileWriter = new java.io.FileWriter(manifest.toFile(), StandardCharsets.UTF_8)) {
 				fileWriter.write(newContent);
 			}
 			
@@ -180,7 +182,7 @@ public final class ModService {
 			stream.filter(Files::isDirectory).forEach(modPath -> {
 				try {
 					fillCollection(modPath);
-				} catch (Exception ex) {
+				} catch (IOException ex) {
 					log.warning("Cannot read mod at " + modPath + ": " + ex.getMessage());
 				}
 			});
@@ -189,25 +191,12 @@ public final class ModService {
 		}
 	}
 	
-	private void fillCollection(Path modPath) throws Exception {
-		final Path manifest;
-		try (var fs = Files.list(modPath)) {
-			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest")).findFirst().orElse(null);
-		}
-		if (manifest == null)
-			return;
+	private void fillCollection(Path modPath) throws IOException {
+		final var mod = loadModManifest(modPath);
 		
-		final var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		final var xmlDoc = docBuilder.parse(manifest.toFile());
-		
-		final var mod = parseModDescription(xmlDoc);
-		
-		final String gameDir = userConfig.gameDirectory;
-		final var items = itemService.loadModItems(Path.of(Util.modData(gameDir, mod.id)));
-		mod.setItems(items);
-		log.info(String.format("XML read done items=%d", items.size()));
-		loadModLocalizationsForMod(mod);
-		loadModConfigForMod(mod);
+		loadModConfig(mod);
+		loadModItems(mod);
+		loadModLocalizations(mod);
 		
 		if (! modCollection.contains(mod))
 			modCollection.add(mod);
@@ -276,7 +265,7 @@ public final class ModService {
 			return;
 		}
 		
-		final Path stageRoot = Path.of(gameDir, "Mods", mod.id, "Data", "_stage");
+		final Path stageRoot = Util.modStaging(gameDir, mod.id);
 		if (! Files.exists(stageRoot)) {
 			log.warning("Staging folder not found for mod " + mod.id + " – skipping PAK creation.");
 			return;
@@ -294,7 +283,7 @@ public final class ModService {
 				continue;
 			}
 			
-			Path destPak = Path.of(gameDir, "Mods", mod.id, "Data", stageDir.getName() + ".pak");
+			Path destPak = Path.of(Util.modData(gameDir, mod.id), stageDir.getName() + ".pak");
 			boolean ok = Util.packFolderExcludingSelf(stageDir.toPath(), destPak);
 			if (ok) {
 				log.info("PAK created: " + destPak.getFileName());
@@ -327,7 +316,7 @@ public final class ModService {
 		}
 		
 		AtomicBoolean allSuccess = new AtomicBoolean(true);
-		final Path modLocalizationRoot = Path.of(gameDir, "Mods", mod.id, "Localization");
+		final Path modLocalizationRoot = Util.modLocalDir(gameDir, mod.id);
 		
 		if (! Files.exists(modLocalizationRoot)) {
 			log.warning("Localization folder not found for mod " + mod.id);
@@ -370,21 +359,46 @@ public final class ModService {
 	 *
 	 * @param mod The mod data to populate with localization entries
 	 */
-	public void loadModLocalizationsForMod(ModData mod) {
+	public void loadModLocalizations(ModData mod) {
 		final String gameDir = userConfig.gameDirectory;
-		final Path modLang = Path.of(gameDir, "Mods", mod.id);
+		final Path modLang = Util.modLocalDir(gameDir, mod.id);
 		
 		if (! Files.exists(modLang)) {
 			log.fine("No Localization folder found for mod " + mod.id);
 			return;
 		}
-		mod.setLocal(localService.readLocalizationFromXml(String.valueOf(modLang), true));
+		mod.setLocal(localService.loadLocalization(String.valueOf(modLang)));
+	}
+	
+	public void loadModItems(ModData mod) {
+		final String gameDir = userConfig.gameDirectory;
+		final Path dataPath = Path.of(Util.modData(gameDir, mod.id));
+		final var items = itemService.loadItems(dataPath);
+		mod.setItems(items);
+	}
+	
+	public ModData loadModManifest(Path modPath) throws IOException {
+		final Path manifest;
+		try (var fs = Files.list(modPath)) {
+			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest")).findFirst().orElse(null);
+		}
+		if (manifest == null)
+			throw new FileNotFoundException("manifest not found");
+		
+		try {
+			final var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			final var xmlDoc = docBuilder.parse(manifest.toFile());
+			
+			return parseModDescription(xmlDoc);
+		} catch (IOException | SAXException | ParserConfigurationException e) {
+			throw new IOException(e);
+		}
 	}
 	
 	/**
 	 * Load config for a mod (mod.cfg) and store in ModData.
 	 */
-	public void loadModConfigForMod(ModData mod) {
+	public void loadModConfig(ModData mod) {
 		if (mod == null || mod.id == null || mod.id.isBlank())
 			return;
 		mod.setConfig(configService.loadModConfig(mod.id));

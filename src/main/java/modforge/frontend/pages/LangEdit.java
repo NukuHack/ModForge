@@ -14,7 +14,6 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
@@ -30,37 +29,28 @@ import java.util.List;
 public class LangEdit extends BasePage {
 	
 	// ── Attribute names that hold localization keys (checked case-insensitively)
-	private static final List<String> LANG_ATTR_HINTS = List.of(
-			"ui_name", "uiname", "name",
-			"ui_desc", "uidesc", "uiinfo",
-			"ui_lore_desc", "uiloredesc"
-	);
-	
-	// ── State ─────────────────────────────────────────────────────────────────
-	private ModItem currentItem;
-	private boolean hasChanges = false;
-	
+	private static final List<String> LANG_ATTR_HINTS = List.of("ui_name", "uiname", "name", "ui_desc", "uidesc", "uiinfo", "ui_lore_desc", "uiloredesc");
 	/**
 	 * Working copy: langKey → current translated value (editable).
 	 * Keys come from the item's localization-key attributes.
 	 */
 	private final Map<String, String> workingEntries = new LinkedHashMap<>();
-	
 	/**
 	 * langKey → attribute name on the item (so we can show a nice label).
 	 * e.g. "buff_realistic_shoe_durability_name" → "buff_ui_name"
 	 */
 	private final Map<String, String> keyToAttrName = new LinkedHashMap<>();
-	
 	/**
 	 * langKey → the JTextField the user edits.
 	 */
 	private final Map<String, JTextArea> keyToEditor = new LinkedHashMap<>();
-	
+	// ── State ─────────────────────────────────────────────────────────────────
+	private ModItem currentItem;
+	private boolean hasChanges = false;
 	// ── UI components ─────────────────────────────────────────────────────────
 	private JComboBox<String> modSelector;
 	private JComboBox<String> langSelector;
-	private JPanel fieldsPanel;
+	private final JPanel fieldsPanel;
 	private JEditorPane previewPane;
 	private JLabel statusLabel;
 	private JLabel breadcrumbItem;
@@ -81,6 +71,23 @@ public class LangEdit extends BasePage {
 	
 	// ── BasePage contract ─────────────────────────────────────────────────────
 	
+	private static JLabel labelMuted(String text) {
+		JLabel l = new JLabel(text);
+		l.setForeground(MainWindow.MUTED);
+		l.setFont(new Font("Roboto", Font.PLAIN, 12));
+		return l;
+	}
+	
+	// ── Public API ────────────────────────────────────────────────────────────
+	
+	private static String escHtml(String s) {
+		if (s == null)
+			return "";
+		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+	}
+	
+	// ── UI construction ───────────────────────────────────────────────────────
+	
 	@Override
 	public void refresh(Object... input) {
 		if (input.length > 0 && input[0] instanceof ModItem item) {
@@ -89,8 +96,6 @@ public class LangEdit extends BasePage {
 			window.navigate(MainWindow.Page.ITEMS);
 		}
 	}
-	
-	// ── Public API ────────────────────────────────────────────────────────────
 	
 	public void setItem(ModItem item) {
 		this.currentItem = item;
@@ -102,8 +107,6 @@ public class LangEdit extends BasePage {
 		updatePreview();
 		updateStatus();
 	}
-	
-	// ── UI construction ───────────────────────────────────────────────────────
 	
 	private void buildUI() {
 		add(buildTopBar(), BorderLayout.NORTH);
@@ -126,7 +129,10 @@ public class LangEdit extends BasePage {
 		breadcrumbBase.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		breadcrumbBase.setToolTipText("Back to Items");
 		breadcrumbBase.addMouseListener(new MouseAdapter() {
-			@Override public void mouseClicked(MouseEvent e) { navigateBack(); }
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				navigateBack();
+			}
 		});
 		
 		JLabel separator = new JLabel("Lang Edit");
@@ -153,7 +159,8 @@ public class LangEdit extends BasePage {
 		// Default to configured language
 		String cfgLang = window.getRegistry().userConfig.language;
 		Language defLang = Language.fromIsoCode(cfgLang);
-		if (defLang != null) langSelector.setSelectedItem(defLang.getDisplayName());
+		if (defLang != null)
+			langSelector.setSelectedItem(defLang.getDisplayName());
 		styleCombo(langSelector);
 		langSelector.setPreferredSize(new Dimension(130, 32));
 		langSelector.addActionListener(e -> rebuildFields());
@@ -177,16 +184,14 @@ public class LangEdit extends BasePage {
 		return top;
 	}
 	
+	// ── Field building ────────────────────────────────────────────────────────
+	
 	/** Left: scrollable key→value fields  |  Right: live preview */
 	private JSplitPane buildCenter() {
 		JScrollPane fieldScroll = new JScrollPane(fieldsPanel);
 		fieldScroll.setBackground(MainWindow.SURFACE);
 		fieldScroll.getViewport().setBackground(MainWindow.SURFACE);
-		fieldScroll.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createLineBorder(new Color(0x313244)),
-				"Localization Entries",
-				TitledBorder.LEFT, TitledBorder.TOP,
-				new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
+		fieldScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), "Localization Entries", TitledBorder.LEFT, TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		fieldScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		
 		previewPane = new JEditorPane();
@@ -198,11 +203,7 @@ public class LangEdit extends BasePage {
 		previewPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 		
 		JScrollPane previewScroll = new JScrollPane(previewPane);
-		previewScroll.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createLineBorder(new Color(0x313244)),
-				"Live Preview",
-				TitledBorder.LEFT, TitledBorder.TOP,
-				new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
+		previewScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), "Live Preview", TitledBorder.LEFT, TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		previewScroll.setBackground(MainWindow.SURFACE);
 		
 		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, fieldScroll, previewScroll);
@@ -212,6 +213,8 @@ public class LangEdit extends BasePage {
 		split.setBorder(BorderFactory.createEmptyBorder());
 		return split;
 	}
+	
+	// ── Save / Preview ────────────────────────────────────────────────────────
 	
 	/** Status label  +  Save / Back buttons */
 	private JPanel buildBottomBar() {
@@ -232,8 +235,6 @@ public class LangEdit extends BasePage {
 		bar.add(buttons, BorderLayout.EAST);
 		return bar;
 	}
-	
-	// ── Field building ────────────────────────────────────────────────────────
 	
 	/**
 	 * Walk the current item's attributes to find localization-key attributes,
@@ -260,14 +261,17 @@ public class LangEdit extends BasePage {
 		for (var attr : currentItem.getAttributes()) {
 			final String attrName = attr.getName().toLowerCase(Locale.ROOT);
 			boolean isLangAttr = LANG_ATTR_HINTS.stream().anyMatch(attrName::contains);
-			if (!isLangAttr) continue;
+			if (! isLangAttr)
+				continue;
 			
 			final String langKey = String.valueOf(attr.getValue()).trim();
-			if (langKey.isBlank()) continue;
+			if (langKey.isBlank())
+				continue;
 			
 			// Resolve current translation (mod-then-base fallback)
 			String translated = local.resolve(langKey, baseGame, lang);
-			if (translated == null) translated = "";
+			if (translated == null)
+				translated = "";
 			
 			workingEntries.put(langKey, translated);
 			keyToAttrName.put(langKey, attr.getName());
@@ -276,7 +280,9 @@ public class LangEdit extends BasePage {
 		// If nothing found, show a friendly message
 		if (workingEntries.isEmpty()) {
 			GridBagConstraints gc = new GridBagConstraints();
-			gc.gridx = 0; gc.gridy = 0; gc.insets = new Insets(24, 0, 0, 0);
+			gc.gridx = 0;
+			gc.gridy = 0;
+			gc.insets = new Insets(24, 0, 0, 0);
 			fieldsPanel.add(labelMuted("No localization keys found on this item."), gc);
 			fieldsPanel.revalidate();
 			fieldsPanel.repaint();
@@ -296,7 +302,8 @@ public class LangEdit extends BasePage {
 			attrLabel.setFont(new Font("Roboto", Font.PLAIN, 10));
 			
 			GridBagConstraints attrGc = new GridBagConstraints();
-			attrGc.gridx = 0; attrGc.gridy = row;
+			attrGc.gridx = 0;
+			attrGc.gridy = row;
 			attrGc.anchor = GridBagConstraints.NORTHEAST;
 			attrGc.insets = new Insets(2, 4, 0, 8);
 			fieldsPanel.add(attrLabel, attrGc);
@@ -309,14 +316,16 @@ public class LangEdit extends BasePage {
 			keyLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			keyLabel.setToolTipText("Click to copy key");
 			keyLabel.addMouseListener(new MouseAdapter() {
-				@Override public void mouseClicked(MouseEvent e) {
+				@Override
+				public void mouseClicked(MouseEvent e) {
 					Util.copyText(langKey);
 					window.snackbar.show("Key copied: " + langKey, BarManager.Type.INFO);
 				}
 			});
 			
 			GridBagConstraints keyGc = new GridBagConstraints();
-			keyGc.gridx = 0; keyGc.gridy = row;
+			keyGc.gridx = 0;
+			keyGc.gridy = row;
 			keyGc.anchor = GridBagConstraints.NORTHEAST;
 			keyGc.insets = new Insets(4, 4, 4, 8);
 			fieldsPanel.add(keyLabel, keyGc);
@@ -330,13 +339,22 @@ public class LangEdit extends BasePage {
 			ta.setFont(new Font("Roboto", Font.PLAIN, 12));
 			ta.setLineWrap(true);
 			ta.setWrapStyleWord(true);
-			ta.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(new Color(0x45475a)),
-					BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+			ta.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 			ta.getDocument().addDocumentListener(new DocumentListener() {
-				public void insertUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
-				public void removeUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
-				public void changedUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
+				public void insertUpdate(DocumentEvent e) {
+					markChanged();
+					updatePreview();
+				}
+				
+				public void removeUpdate(DocumentEvent e) {
+					markChanged();
+					updatePreview();
+				}
+				
+				public void changedUpdate(DocumentEvent e) {
+					markChanged();
+					updatePreview();
+				}
 			});
 			
 			JScrollPane taSp = new JScrollPane(ta);
@@ -345,7 +363,8 @@ public class LangEdit extends BasePage {
 			taSp.setBorder(BorderFactory.createEmptyBorder());
 			
 			GridBagConstraints editorGc = new GridBagConstraints();
-			editorGc.gridx = 1; editorGc.gridy = row;
+			editorGc.gridx = 1;
+			editorGc.gridy = row;
 			editorGc.weightx = 1.0;
 			editorGc.fill = GridBagConstraints.HORIZONTAL;
 			editorGc.anchor = GridBagConstraints.NORTHWEST;
@@ -359,7 +378,8 @@ public class LangEdit extends BasePage {
 			JSeparator sep = new JSeparator();
 			sep.setForeground(new Color(0x313244));
 			GridBagConstraints sepGc = new GridBagConstraints();
-			sepGc.gridx = 0; sepGc.gridy = row;
+			sepGc.gridx = 0;
+			sepGc.gridy = row;
 			sepGc.gridwidth = 2;
 			sepGc.fill = GridBagConstraints.HORIZONTAL;
 			sepGc.insets = new Insets(2, 0, 2, 0);
@@ -369,7 +389,8 @@ public class LangEdit extends BasePage {
 		
 		// Spacer at the bottom so everything anchors to top
 		GridBagConstraints spacerGc = new GridBagConstraints();
-		spacerGc.gridx = 0; spacerGc.gridy = row;
+		spacerGc.gridx = 0;
+		spacerGc.gridy = row;
 		spacerGc.weighty = 1.0;
 		spacerGc.fill = GridBagConstraints.VERTICAL;
 		fieldsPanel.add(Box.createVerticalGlue(), spacerGc);
@@ -379,10 +400,11 @@ public class LangEdit extends BasePage {
 		updatePreview();
 	}
 	
-	// ── Save / Preview ────────────────────────────────────────────────────────
+	// ── Preview ───────────────────────────────────────────────────────────────
 	
 	private void saveChanges() {
-		if (currentItem == null || keyToEditor.isEmpty()) return;
+		if (currentItem == null || keyToEditor.isEmpty())
+			return;
 		
 		// Flush editor content into workingEntries
 		for (var e : keyToEditor.entrySet()) {
@@ -400,7 +422,8 @@ public class LangEdit extends BasePage {
 	 * for the selected language, then write the mod to disk.
 	 */
 	private void addEntriesToSelectedMod() {
-		if (currentItem == null) return;
+		if (currentItem == null)
+			return;
 		
 		final ModData targetMod = selectedMod();
 		if (targetMod == null) {
@@ -426,18 +449,15 @@ public class LangEdit extends BasePage {
 		
 		// Merge into mod's localization map (LocalService stores per-Language)
 		// ModData.getLocal() is unmodifiable, so we build a mutable copy and set it back
-		final Map<Language, Map<String, String>> existing = new EnumMap<>(targetMod.getLocal());
-		existing.computeIfAbsent(lang, k -> new LinkedHashMap<>()).putAll(workingEntries);
-		targetMod.setLocal(existing);
+		final var map = new HashMap<>(workingEntries);
+		targetMod.addLocal(lang, map);
 		
 		hasChanges = false;
 		updateStatus();
-		window.snackbar.show(
-				"Added " + workingEntries.size() + " entries → " + targetMod.name + " [" + lang.getDisplayName() + "]",
-				BarManager.Type.SUCCESS);
+		window.snackbar.show("Added " + workingEntries.size() + " entries → " + targetMod.name + " [" + lang.getDisplayName() + "]", BarManager.Type.SUCCESS);
 	}
 	
-	// ── Preview ───────────────────────────────────────────────────────────────
+	// ── Selectors ─────────────────────────────────────────────────────────────
 	
 	private void updatePreview() {
 		if (currentItem == null || workingEntries.isEmpty()) {
@@ -453,29 +473,20 @@ public class LangEdit extends BasePage {
 		final Language lang = selectedLanguage();
 		final StringBuilder html = new StringBuilder();
 		html.append("<html><body style='background:#181825;color:#cdd6f4;font-family:sans-serif;padding:12px;'>");
-		html.append("<b style='color:#89b4fa;font-size:13px;'>")
-				.append(escHtml(currentItem.getId()))
-				.append("</b><br/>");
-		html.append("<span style='color:#6c6f85;font-size:10px;'>")
-				.append(currentItem.getClass().getSimpleName())
-				.append("</span>");
+		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(currentItem.getId())).append("</b><br/>");
+		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(currentItem.getClass().getSimpleName()).append("</span>");
 		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 		
 		if (lang != null) {
-			html.append("<span style='color:#6c6f85;font-size:10px;'>Language: ")
-					.append(escHtml(lang.getDisplayName()))
-					.append("</span><br/><br/>");
+			html.append("<span style='color:#6c6f85;font-size:10px;'>Language: ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
 		}
 		
 		for (var entry : workingEntries.entrySet()) {
 			final String attrName = keyToAttrName.getOrDefault(entry.getKey(), "");
 			html.append("<div style='margin-bottom:10px;'>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>")
-					.append(escHtml(attrName)).append("</span><br/>");
-			html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>")
-					.append(escHtml(entry.getKey())).append("</span><br/>");
-			html.append("<span style='color:#cdd6f4;'>")
-					.append(escHtml(entry.getValue())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(escHtml(attrName)).append("</span><br/>");
+			html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(entry.getKey())).append("</span><br/>");
+			html.append("<span style='color:#cdd6f4;'>").append(escHtml(entry.getValue())).append("</span>");
 			html.append("</div>");
 		}
 		
@@ -485,11 +496,8 @@ public class LangEdit extends BasePage {
 	}
 	
 	private String emptyPreviewHtml() {
-		return "<html><body style='background:#181825;color:#6c6f85;font-family:sans-serif;padding:12px;'>" +
-					   "<i>No item selected or no lang keys found.</i></body></html>";
+		return "<html><body style='background:#181825;color:#6c6f85;font-family:sans-serif;padding:12px;'>" + "<i>No item selected or no lang keys found.</i></body></html>";
 	}
-	
-	// ── Selectors ─────────────────────────────────────────────────────────────
 	
 	private void refreshModSelector() {
 		modSelector.removeAllItems();
@@ -502,41 +510,40 @@ public class LangEdit extends BasePage {
 		// Re-select configured language
 		String cfgLang = window.getRegistry().userConfig.language;
 		Language defLang = Language.fromIsoCode(cfgLang);
-		if (defLang != null) langSelector.setSelectedItem(defLang.getDisplayName());
-	}
-	
-	private Language selectedLanguage() {
-		Object sel = langSelector.getSelectedItem();
-		if (sel == null) return null;
-		return Language.fromDisplayName(sel.toString());
-	}
-	
-	private ModData selectedMod() {
-		Object sel = modSelector.getSelectedItem();
-		if (sel == null) return null;
-		String modId = sel.toString().split(" \\| ")[0];
-		return window.getRegistry().modService.modCollection.stream()
-					   .filter(m -> m.id.equals(modId))
-					   .findFirst()
-					   .orElse(null);
+		if (defLang != null)
+			langSelector.setSelectedItem(defLang.getDisplayName());
 	}
 	
 	// ── Navigation ────────────────────────────────────────────────────────────
 	
+	private Language selectedLanguage() {
+		Object sel = langSelector.getSelectedItem();
+		if (sel == null)
+			return null;
+		return Language.fromDisplayName(sel.toString());
+	}
+	
+	// ── Status ────────────────────────────────────────────────────────────────
+	
+	private ModData selectedMod() {
+		Object sel = modSelector.getSelectedItem();
+		if (sel == null)
+			return null;
+		String modId = sel.toString().split(" \\| ")[0];
+		return window.getRegistry().modService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst().orElse(null);
+	}
+	
 	private void navigateBack() {
 		if (hasChanges) {
-			int choice = JOptionPane.showConfirmDialog(this,
-					"You have unsaved changes. Discard them?",
-					"Unsaved Changes",
-					JOptionPane.YES_NO_OPTION,
-					JOptionPane.WARNING_MESSAGE);
-			if (choice != JOptionPane.YES_OPTION) return;
+			int choice = JOptionPane.showConfirmDialog(this, "You have unsaved changes. Discard them?", "Unsaved Changes", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (choice != JOptionPane.YES_OPTION)
+				return;
 			hasChanges = false;
 		}
 		window.navigate(MainWindow.Page.ITEMS);
 	}
 	
-	// ── Status ────────────────────────────────────────────────────────────────
+	// ── Helpers ───────────────────────────────────────────────────────────────
 	
 	private void markChanged() {
 		hasChanges = true;
@@ -555,26 +562,10 @@ public class LangEdit extends BasePage {
 		}
 	}
 	
-	// ── Helpers ───────────────────────────────────────────────────────────────
-	
 	private void styleCombo(JComboBox<?> cb) {
 		cb.setFont(new Font("Roboto", Font.PLAIN, 12));
 		cb.setBackground(MainWindow.SURFACE);
 		cb.setForeground(MainWindow.TEXT);
-		cb.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(0x2a2a3a)),
-				BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-	}
-	
-	private static JLabel labelMuted(String text) {
-		JLabel l = new JLabel(text);
-		l.setForeground(MainWindow.MUTED);
-		l.setFont(new Font("Roboto", Font.PLAIN, 12));
-		return l;
-	}
-	
-	private static String escHtml(String s) {
-		if (s == null) return "";
-		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+		cb.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
 	}
 }

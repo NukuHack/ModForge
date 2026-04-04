@@ -9,8 +9,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 public enum ItemType {
-	// TODO: perk_buff_overrides, perk_soul_abilitys, rpg_params
-	
 	WEAPON_CLASS("weapon_class", C.TABLES, ItemEntry.MELEE_WEAPON_CLASS, ItemEntry.MISSILE_WEAPON_CLASS),
 	
 	WEAPON_TYPE("item", C.TABLES, ItemEntry.MELEE_WEAPON, ItemEntry.MISSILE_WEAPON, ItemEntry.AMMO),

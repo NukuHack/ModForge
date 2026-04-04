@@ -22,11 +22,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -48,24 +49,27 @@ public final class Util {
 		return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT);
 	}
 	
-	public static String tables(String root) {
-		return join(root, "Data", "Tables.pak");
+	public static Path gameDataDir(String root) {
+		return joinP(root, "Data");
 	}
 	
-	public static String scripts(String root) {
-		return join(root, "Data", "Scripts.pak");
+	public static Path gameLocalDir(String root) {
+		return joinP(root, "Localization");
+	}
+	public static Path modLocalDir(String root, String modId) {
+		return joinP(modFolder(root, modId), "Localization");
 	}
 	
-	public static String gameData(String root) {
-		return join(root, "Data", "IPL_GameData.pak");
+	public static Path modStaging(String gameDir, String modId) {
+		return Path.of(Util.modData(gameDir, modId), "_stage");
 	}
 	
 	public static String locImport(String root, String lang) {
 		return join(root, "Localization", lang + "_xml.pak");
 	}
 	
-	public static String locExport(String root, String lang, String modId) {
-		return join(root, "Mods", modId, "Localization", lang + "_xml", "text__" + modId + ".xml");
+	public static Path locExport(String root, String lang, String modId) {
+		return joinP(modLocalDir(root, modId), lang + "_xml", "text__" + modId + ".xml");
 	}
 	
 	public static String modFolder(String root, String modId) {
@@ -73,7 +77,7 @@ public final class Util {
 	}
 	
 	public static Path modFolder(String root) {
-		return Path.of(join(root, "Mods"));
+		return joinP(root, "Mods");
 	}
 	
 	public static String modData(String root, String modId) {
@@ -81,11 +85,11 @@ public final class Util {
 	}
 	
 	public static String stormDir(String root, String modId) {
-		return join(root, "Mods", modId, "Data", "Libs", "Storm");
+		return join(modData(root, modId), "Libs", "Storm");
 	}
 	
-	public static List<String> allLocPaths(String root) {
-		return Language.getAllDisplayNames().stream().map(l -> locImport(root, l)).toList();
+	public static Set<String> allLocPaths(String root) {
+		return Language.getAllDisplayNames().stream().map(l -> locImport(root, l)).collect(Collectors.toSet());
 	}
 	
 	/**
@@ -93,6 +97,12 @@ public final class Util {
 	 */
 	public static String join(String... parts) {
 		return String.join("/", parts);
+	}
+	public static Path joinP(String... parts) {
+		return Path.of(join(parts));
+	}
+	public static Path joinP(Path base, String... parts) {
+		return Path.of(base.toString(), join(parts));
 	}
 	
 	// Helper method to normalize XML for comparison

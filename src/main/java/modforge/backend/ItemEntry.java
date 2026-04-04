@@ -1,6 +1,6 @@
 package modforge.backend;
 
-import modforge.backend.model.*;
+import modforge.backend.model.ModItem;
 import modforge.backend.model.item.*;
 
 import java.util.function.Predicate;
