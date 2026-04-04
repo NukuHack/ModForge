@@ -1,14 +1,17 @@
 package modforge.backend.model;
 
 import modforge.backend.model.attributes.Attribute;
+import modforge.backend.model.attributes.StringAttribute;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-
-import static modforge.Util.escapeHtml;
+import java.util.Set;
 
 public interface ModItem {
+	// ── Attribute names that hold localization keys (checked case-insensitively)
+	Set<String> LANG_ATTR_HINTS = Set.of("UIName", "Desc", "UIInfo", "UiSound", "LatinName", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
+	
 	String getId();
 	
 	void setId(final String id);
@@ -37,12 +40,15 @@ public interface ModItem {
 	
 	Optional<Attribute> findAttr(final String candidate);
 	
+	default List<StringAttribute> getLangAttributes() {
+		return getAttributes().stream().filter(a -> LANG_ATTR_HINTS.contains(a.getName().toLowerCase())).map(a -> (StringAttribute) a).toList();
+	}
 	
 	/**
 	 * Get all item details as plain text for copying
 	 */
 	default String details() {
-		StringBuilder sb = new StringBuilder();
+		final var sb = new StringBuilder();
 		sb.append("ID: ").append(this.getId()).append("\n");
 		sb.append("Class: ").append(this.getClass().getSimpleName()).append("\n");
 		sb.append("Path: ").append(this.getPath()).append("\n");
@@ -64,45 +70,5 @@ public interface ModItem {
 		}
 		
 		return sb.toString();
-	}
-	
-	
-	/**
-	 * Update the detail panel with the selected item's information
-	 */
-	default String detailPanel() {
-		// Build detailed information about the item
-		final StringBuilder details = new StringBuilder();
-		details.append("<html><div style='font-family: monospace;'>");
-		
-		// Make ID clickable with a special style
-		details.append("<div style='cursor: pointer; display: inline-block;' onclick='copyId()'>");
-		details.append("<b style='color:#89b4fa; font-size:14px; text-decoration: underline; text-decoration-color: #89b4fa;'>").append(escapeHtml(this.getId())).append("</b>");
-		details.append("</div>");
-		details.append("<span style='color:#6c6f85; font-size: 10px; margin-left: 8px;'>(click to copy)</span>");
-		details.append("<br/><br/>");
-		details.append("<span style='color:#6c6f85'>");
-		
-		details.append("Class: ").append(this.getClass().getSimpleName()).append("<br/>");
-		details.append("Path: ").append(escapeHtml(this.getPath())).append("<br/>");
-		
-		// Show attributes if any
-		if (! this.getAttributes().isEmpty()) {
-			details.append("<br/><b>Attributes:</b><br/>");
-			for (var attr : this.getAttributes()) {
-				details.append("• ").append(escapeHtml(attr.getName())).append(": ").append(escapeHtml(String.valueOf(attr.getValue()))).append("<br/>");
-			}
-		}
-		
-		// Show linked IDs if any
-		if (! this.getLinkedIds().isEmpty()) {
-			details.append("<br/><b>Linked Items:</b><br/>");
-			for (String linkedId : this.getLinkedIds()) {
-				details.append("• ").append(escapeHtml(linkedId)).append("<br/>");
-			}
-		}
-		
-		details.append("</span></div></html>");
-		return (details.toString());
 	}
 }

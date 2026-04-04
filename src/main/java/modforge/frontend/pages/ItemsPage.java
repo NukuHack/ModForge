@@ -39,6 +39,7 @@ public class ItemsPage extends BasePage {
 	// Detail panel components
 	private JLabel detailLabel;
 	private ModItem selectedItem;
+	
 	public ItemsPage(final MainWindow w) {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -266,9 +267,6 @@ public class ItemsPage extends BasePage {
 	 * Show dialog to add item to a mod
 	 */
 	private void showAddToModDialog(ModItem item) {
-		// Create a copy for the mod
-		final var copy = ModItemBuilder.deepCopy(item);
-		
 		JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add to Mod", true);
 		dialog.setSize(400, 300);
 		dialog.setLocationRelativeTo(this);
@@ -305,16 +303,26 @@ public class ItemsPage extends BasePage {
 		addBtn.setBackground(MainWindow.ACCENT);
 		addBtn.setForeground(new Color(0x1e1e2e));
 		addBtn.addActionListener(e -> {
-			String selected = modJList.getSelectedValue();
-			if (selected != null) {
-				String modId = selected.split(" \\| ")[0];
-				modService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst().ifPresent(mod -> {
-					copy.setPath(modId + ".pak:" + copy.getClass().getSimpleName().toLowerCase() + "s/" + copy.getId() + ".xml");
-					mod.addItem(copy);
-					window.snackbar.show("Added to mod: " + mod.name, BarManager.Type.SUCCESS);
-					dialog.dispose();
-				});
+			String sel = modJList.getSelectedValue();
+			if (sel == null || sel.startsWith("—")) {
+				window.snackbar.show("Please select a mod first", BarManager.Type.WARNING);
+				return;
 			}
+			if (item == null) {
+				window.snackbar.show("No item loaded", BarManager.Type.WARNING);
+				return;
+			}
+			String modId = sel.split(" \\| ")[0];
+			var found = window.getRegistry().modService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst();
+			if (found.isEmpty()) {
+				window.snackbar.show("Please select a correct mod first", BarManager.Type.WARNING);
+				return;
+			}
+			final ModData mod = found.get();
+			final var copy = ModItemBuilder.deepCopy(item, mod);
+			mod.addItem(copy);
+			window.snackbar.show("Copied Data !", BarManager.Type.SUCCESS);
+			dialog.dispose();
 		});
 		
 		JButton cancelBtn = new JButton("Cancel");
@@ -370,13 +378,11 @@ public class ItemsPage extends BasePage {
 			int underlyingIndex = displayToUnderlyingIndex.get(displayIndex);
 			
 			// Get the actual item from underlying list
-			ModItem underlyingItem = underlyingItems.get(underlyingIndex);
+			final var underlyingItem = underlyingItems.get(underlyingIndex);
 			selectedItem = underlyingItem;
 			
 			// Update detail panel
-			detailLabel.setText(underlyingItem.detailPanel());
-			
-			// NO AUTO COPY HERE - removed the automatic copy on selection
+			detailLabel.setText(htmlForItem(underlyingItem));
 		});
 	}
 	

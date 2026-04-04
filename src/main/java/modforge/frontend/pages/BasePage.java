@@ -1,5 +1,6 @@
 package modforge.frontend.pages;
 
+import modforge.backend.model.ModItem;
 import modforge.frontend.MainWindow;
 
 import javax.swing.*;
@@ -9,6 +10,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.geom.RoundRectangle2D;
+
+import static modforge.Util.escHtml;
+
 
 // =============================================================================
 //  SHARED PAGE BASE
@@ -106,9 +110,9 @@ public abstract class BasePage extends JPanel {
 		return f;
 	}
 	
-	protected JButton secondaryBtn(String text, ActionListener action) {
+	static JButton getDangerButton(String text, ActionListener action) {
 		JButton b = new JButton(text);
-		b.setBackground(MainWindow.ACCENT);
+		b.setBackground(MainWindow.DANGER);
 		b.setForeground(new Color(0x1e1e2e));
 		b.setFocusPainted(false);
 		b.setBorderPainted(false);
@@ -118,9 +122,57 @@ public abstract class BasePage extends JPanel {
 		return b;
 	}
 	
-	static JButton getDangerButton(String text, ActionListener action) {
+	protected static String htmlForItem(ModItem item) {
+		if (item == null) {
+			return ("<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:12px;'>" + "<i>No item selected.</i></body></html>");
+		}
+		
+		final StringBuilder html = new StringBuilder();
+		html.append("<html><body style='background:#181825;color:#cdd6f4;font-family:sans-serif;padding:12px;'>");
+		
+		// ── Header: ID + class ────────────────────────────────────────────
+		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(item.getId())).append("</b>");
+		html.append("<span style='color:#6c6f85;font-size:10px;margin-left:8px;'>(double-click to copy)</span>");
+		html.append("<br/>");
+		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(item.getClass().getSimpleName()).append("</span>");
+		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
+		
+		// ── Path ─────────────────────────────────────────────────────────
+		html.append("<div style='margin-bottom:10px;'>");
+		html.append("<span style='color:#6c6f85;font-size:10px;'>path</span><br/>");
+		html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(item.getPath())).append("</span>");
+		html.append("</div>");
+		
+		// ── Attributes ────────────────────────────────────────────────────
+		if (! item.getAttributes().isEmpty()) {
+			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
+			html.append("<span style='color:#6c6f85;font-size:10px;'>ATTRIBUTES</span><br/><br/>");
+			for (var attr : item.getAttributes()) {
+				html.append("<div style='margin-bottom:8px;'>");
+				html.append("<span style='color:#6c6f85;font-size:10px;'>").append(escHtml(attr.getName())).append("</span><br/>");
+				html.append("<span style='color:#cdd6f4;'>").append(escHtml(String.valueOf(attr.getValue()))).append("</span>");
+				html.append("</div>");
+			}
+		}
+		
+		// ── Linked IDs ────────────────────────────────────────────────────
+		if (! item.getLinkedIds().isEmpty()) {
+			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
+			html.append("<span style='color:#6c6f85;font-size:10px;'>LINKED ITEMS</span><br/><br/>");
+			for (String linkedId : item.getLinkedIds()) {
+				html.append("<div style='margin-bottom:6px;'>");
+				html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(linkedId)).append("</span>");
+				html.append("</div>");
+			}
+		}
+		
+		html.append("</body></html>");
+		return (html.toString());
+	}
+	
+	protected JButton secondaryBtn(String text, ActionListener action) {
 		JButton b = new JButton(text);
-		b.setBackground(MainWindow.DANGER);
+		b.setBackground(MainWindow.ACCENT);
 		b.setForeground(new Color(0x1e1e2e));
 		b.setFocusPainted(false);
 		b.setBorderPainted(false);

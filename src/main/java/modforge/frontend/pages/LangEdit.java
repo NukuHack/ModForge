@@ -10,14 +10,16 @@ import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
-import java.util.List;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static modforge.Util.escHtml;
 
 // =============================================================================
 //  LANG EDIT PAGE
@@ -25,140 +27,86 @@ import java.util.List;
 //  The item's lang-key attributes (buff_ui_name, buff_ui_desc, UIName,
 //  UIInfo, ui_lore_desc, …) are resolved to their current translated strings,
 //  displayed in an editable form, and can be saved back to any loaded mod.
+//
+//  Extends BaseItemEditPage which owns the top-bar / split-pane / bottom-bar
+//  skeleton so this class stays focused on localization logic only.
 // =============================================================================
-public class LangEdit extends BasePage {
+public class LangEdit extends BaseEditPage {
 	
-	// ── Attribute names that hold localization keys (checked case-insensitively)
-	private static final List<String> LANG_ATTR_HINTS = List.of("ui_name", "uiname", "name", "ui_desc", "uidesc", "uiinfo", "ui_lore_desc", "uiloredesc");
 	/**
 	 * Working copy: langKey → current translated value (editable).
 	 * Keys come from the item's localization-key attributes.
 	 */
 	private final Map<String, String> workingEntries = new LinkedHashMap<>();
+	
 	/**
 	 * langKey → attribute name on the item (so we can show a nice label).
 	 * e.g. "buff_realistic_shoe_durability_name" → "buff_ui_name"
 	 */
 	private final Map<String, String> keyToAttrName = new LinkedHashMap<>();
+	
 	/**
-	 * langKey → the JTextField the user edits.
+	 * langKey → the JTextArea the user edits.
 	 */
 	private final Map<String, JTextArea> keyToEditor = new LinkedHashMap<>();
-	// ── State ─────────────────────────────────────────────────────────────────
-	private ModItem currentItem;
-	private boolean hasChanges = false;
-	// ── UI components ─────────────────────────────────────────────────────────
-	private JComboBox<String> modSelector;
-	private JComboBox<String> langSelector;
-	private final JPanel fieldsPanel;
-	private JEditorPane previewPane;
-	private JLabel statusLabel;
-	private JLabel breadcrumbItem;
 	
-	// ── Constructor ───────────────────────────────────────────────────────────
+	// ── Form panel ────────────────────────────────────────────────────────────
+	private final JPanel fieldsPanel;
+	
+	// ── Top-bar widgets owned by this page ───────────────────────────────────
+	private JComboBox<String> langSelector;
+	
+	// ── Constructor ──────────────────────────────────────────────────────────
 	
 	public LangEdit(MainWindow w) {
 		super(w);
-		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-		setLayout(new BorderLayout(0, 16));
-		
+		// Initialize our panel BEFORE calling initUI(), because initUI() will
+		// invoke buildFormPanel() which returns fieldsPanel.
 		fieldsPanel = new JPanel(new GridBagLayout());
 		fieldsPanel.setBackground(MainWindow.SURFACE);
 		fieldsPanel.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
-		
-		buildUI();
+		initUI();  // safe to call now — fieldsPanel is ready
 	}
 	
-	// ── BasePage contract ─────────────────────────────────────────────────────
+	// ── BaseItemEditPage overrides ────────────────────────────────────────────
 	
-	private static JLabel labelMuted(String text) {
+	private static String emptyPreviewHtml() {
+		return "<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:12px;'>" + "<i>No item selected or no lang keys found.</i></body></html>";
+	}
+	
+	protected static JLabel muted(String text) {
 		JLabel l = new JLabel(text);
 		l.setForeground(MainWindow.MUTED);
 		l.setFont(new Font("Roboto", Font.PLAIN, 12));
 		return l;
 	}
 	
-	// ── Public API ────────────────────────────────────────────────────────────
-	
-	private static String escHtml(String s) {
-		if (s == null)
-			return "";
-		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+	@Override
+	protected String getPageTitle() {
+		return "Lang Edit";
 	}
-	
-	// ── UI construction ───────────────────────────────────────────────────────
 	
 	@Override
-	public void refresh(Object... input) {
-		if (input.length > 0 && input[0] instanceof ModItem item) {
-			setItem(item);
-		} else {
-			window.navigate(MainWindow.Page.ITEMS);
-		}
+	protected String getFormPanelTitle() {
+		return "Localization Entries";
 	}
 	
-	public void setItem(ModItem item) {
-		this.currentItem = item;
-		this.hasChanges = false;
-		
-		refreshModSelector();
-		refreshLangSelector();
-		rebuildFields();
-		updatePreview();
-		updateStatus();
+	@Override
+	protected String getPreviewTitle() {
+		return "Live Preview";
 	}
 	
-	private void buildUI() {
-		add(buildTopBar(), BorderLayout.NORTH);
-		add(buildCenter(), BorderLayout.CENTER);
-		add(buildBottomBar(), BorderLayout.SOUTH);
-	}
-	
-	/** Breadcrumb  |  language selector  |  mod selector  |  Add-to-Mod button */
-	private JPanel buildTopBar() {
-		JPanel top = new JPanel(new BorderLayout(12, 0));
-		top.setOpaque(false);
-		
-		// Left: breadcrumb
-		JPanel breadcrumbPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-		breadcrumbPanel.setOpaque(false);
-		
-		JLabel breadcrumbBase = new JLabel("Items  ›  ");
-		breadcrumbBase.setForeground(MainWindow.ACCENT);
-		breadcrumbBase.setFont(new Font("Roboto", Font.BOLD, 22));
-		breadcrumbBase.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		breadcrumbBase.setToolTipText("Back to Items");
-		breadcrumbBase.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				navigateBack();
-			}
-		});
-		
-		JLabel separator = new JLabel("Lang Edit");
-		separator.setForeground(MainWindow.TEXT);
-		separator.setFont(new Font("Roboto", Font.BOLD, 22));
-		
-		breadcrumbItem = new JLabel("—");
-		breadcrumbItem.setForeground(MainWindow.MUTED);
-		breadcrumbItem.setFont(new Font("Roboto", Font.PLAIN, 18));
-		
-		breadcrumbPanel.add(breadcrumbBase);
-		breadcrumbPanel.add(separator);
-		breadcrumbPanel.add(breadcrumbItem);
-		
-		// Right: language + mod selectors
-		JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-		rightActions.setOpaque(false);
+	@Override
+	protected JPanel buildRightActions() {
+		JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+		panel.setOpaque(false);
 		
 		// Language selector
 		langSelector = new JComboBox<>();
-		for (String name : Language.getAllDisplayNames()) {
+		for (String name : Language.getAllDisplayNames())
 			langSelector.addItem(name);
-		}
-		// Default to configured language
-		String cfgLang = window.getRegistry().userConfig.language;
-		Language defLang = Language.fromIsoCode(cfgLang);
+		final var cfgLang = window.getRegistry().userConfig.language;
+		final var defLang = Language.fromIsoCode(cfgLang);
 		if (defLang != null)
 			langSelector.setSelectedItem(defLang.getDisplayName());
 		styleCombo(langSelector);
@@ -170,76 +118,87 @@ public class LangEdit extends BasePage {
 		styleCombo(modSelector);
 		modSelector.setPreferredSize(new Dimension(200, 32));
 		
-		JButton addToModBtn = primaryBtn("+ Add to Mod", e -> addEntriesToSelectedMod());
-		
-		rightActions.add(labelMuted("Language:"));
-		rightActions.add(langSelector);
-		rightActions.add(Box.createHorizontalStrut(8));
-		rightActions.add(labelMuted("Target mod:"));
-		rightActions.add(modSelector);
-		rightActions.add(addToModBtn);
-		
-		top.add(breadcrumbPanel, BorderLayout.WEST);
-		top.add(rightActions, BorderLayout.EAST);
-		return top;
+		panel.add(muted("Language:"));
+		panel.add(langSelector);
+		panel.add(Box.createHorizontalStrut(8));
+		panel.add(muted("Target mod:"));
+		panel.add(modSelector);
+		panel.add(primaryBtn("+ Add to Mod", e -> addEntriesToSelectedMod()));
+		return panel;
 	}
 	
-	// ── Field building ────────────────────────────────────────────────────────
-	
-	/** Left: scrollable key→value fields  |  Right: live preview */
-	private JSplitPane buildCenter() {
-		JScrollPane fieldScroll = new JScrollPane(fieldsPanel);
-		fieldScroll.setBackground(MainWindow.SURFACE);
-		fieldScroll.getViewport().setBackground(MainWindow.SURFACE);
-		fieldScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), "Localization Entries", TitledBorder.LEFT, TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
-		fieldScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		
-		previewPane = new JEditorPane();
-		previewPane.setContentType("text/html");
-		previewPane.setEditable(false);
-		previewPane.setBackground(new Color(0x181825));
-		previewPane.setForeground(MainWindow.TEXT);
-		previewPane.setFont(new Font("Roboto", Font.PLAIN, 12));
-		previewPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
-		
-		JScrollPane previewScroll = new JScrollPane(previewPane);
-		previewScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), "Live Preview", TitledBorder.LEFT, TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
-		previewScroll.setBackground(MainWindow.SURFACE);
-		
-		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, fieldScroll, previewScroll);
-		split.setResizeWeight(0.6);
-		split.setDividerSize(4);
-		split.setBackground(MainWindow.BG);
-		split.setBorder(BorderFactory.createEmptyBorder());
-		return split;
+	@Override
+	protected JPanel buildFormPanel() {
+		return fieldsPanel;
 	}
 	
-	// ── Save / Preview ────────────────────────────────────────────────────────
-	
-	/** Status label  +  Save / Back buttons */
-	private JPanel buildBottomBar() {
-		JPanel bar = new JPanel(new BorderLayout());
-		bar.setOpaque(false);
-		bar.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
-		
-		statusLabel = new JLabel(" ");
-		statusLabel.setFont(new Font("Roboto", Font.ITALIC, 11));
-		statusLabel.setForeground(new Color(0xa6e3a1));
-		
+	@Override
+	protected JPanel buildActionButtons() {
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		buttons.setOpaque(false);
 		buttons.add(primaryBtn("Save Changes", e -> saveChanges()));
 		buttons.add(getDangerButton("← Back to Items", e -> navigateBack()));
-		
-		bar.add(statusLabel, BorderLayout.WEST);
-		bar.add(buttons, BorderLayout.EAST);
-		return bar;
+		return buttons;
 	}
+	
+	// ── Field building ────────────────────────────────────────────────────────
+	
+	@Override
+	protected void onItemSet(ModItem item) {
+		refreshLangSelector();
+		rebuildFields();
+	}
+	
+	// ── Save / persist ────────────────────────────────────────────────────────
+	
+	@Override
+	protected void updatePreview() {
+		if (previewPane == null)
+			return;
+		if (currentItem == null || workingEntries.isEmpty()) {
+			previewPane.setText(emptyPreviewHtml());
+			return;
+		}
+		
+		// Sync working map from current editor state
+		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
+		
+		final Language lang = selectedLanguage();
+		final StringBuilder html = new StringBuilder();
+		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:12px;'>");
+		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(currentItem.getId())).append("</b><br/>");
+		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(currentItem.getClass().getSimpleName()).append("</span>");
+		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
+		
+		if (lang != null) {
+			html.append("<span style='color:#6c6f85;font-size:10px;'>Language: ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
+		}
+		
+		for (var entry : workingEntries.entrySet()) {
+			final String attrName = keyToAttrName.getOrDefault(entry.getKey(), "");
+			html.append("<div style='margin-bottom:10px;'>");
+			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(escHtml(attrName)).append("</span><br/>");
+			html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(entry.getKey())).append("</span><br/>");
+			html.append("<span style='color:#cdd6f4;'>").append(escHtml(entry.getValue())).append("</span>");
+			html.append("</div>");
+		}
+		html.append("</body></html>");
+		previewPane.setText(html.toString());
+		previewPane.setCaretPosition(0);
+	}
+	
+	@Override
+	protected void navigateBack() {
+		if (confirmDiscard())
+			window.navigate(MainWindow.Page.ITEMS);
+	}
+	
+	// ── Helpers ───────────────────────────────────────────────────────────────
 	
 	/**
 	 * Walk the current item's attributes to find localization-key attributes,
-	 * then resolve each key to its translation in the selected language.
-	 * Build one labelled JTextArea per entry.
+	 * resolve each key to its translation in the selected language,
+	 * and build one labelled JTextArea per entry.
 	 */
 	private void rebuildFields() {
 		fieldsPanel.removeAll();
@@ -258,20 +217,14 @@ public class LangEdit extends BasePage {
 		final ModData baseGame = Singleton.INSTANCE.game();
 		
 		// Collect lang-key attributes from the item
-		for (var attr : currentItem.getAttributes()) {
-			final String attrName = attr.getName().toLowerCase(Locale.ROOT);
-			boolean isLangAttr = LANG_ATTR_HINTS.stream().anyMatch(attrName::contains);
-			if (! isLangAttr)
-				continue;
-			
-			final String langKey = String.valueOf(attr.getValue()).trim();
+		for (var attr : currentItem.getLangAttributes()) {
+			final String langKey = attr.getValue().trim();
 			if (langKey.isBlank())
 				continue;
 			
-			// Resolve current translation (mod-then-base fallback)
 			String translated = local.resolve(langKey, baseGame, lang);
 			if (translated == null)
-				translated = "";
+				translated = "--translation-not-found--";
 			
 			workingEntries.put(langKey, translated);
 			keyToAttrName.put(langKey, attr.getName());
@@ -283,24 +236,23 @@ public class LangEdit extends BasePage {
 			gc.gridx = 0;
 			gc.gridy = 0;
 			gc.insets = new Insets(24, 0, 0, 0);
-			fieldsPanel.add(labelMuted("No localization keys found on this item."), gc);
+			fieldsPanel.add(muted("No localization keys found on this item."), gc);
 			fieldsPanel.revalidate();
 			fieldsPanel.repaint();
 			updatePreview();
 			return;
 		}
 		
-		// Build one row per entry:  [attr-name label] [lang-key label] [text area]
+		// Build one row per entry: [attr-name label] [lang-key label] [text area]
 		int row = 0;
 		for (var entry : workingEntries.entrySet()) {
 			final String langKey = entry.getKey();
 			final String attrName = keyToAttrName.get(langKey);
 			
-			// ── Attribute name (small muted) ──────────────────────────────
+			// ── Attribute name (small, muted) ─────────────────────────────
 			JLabel attrLabel = new JLabel(attrName + ":");
 			attrLabel.setForeground(MainWindow.MUTED);
 			attrLabel.setFont(new Font("Roboto", Font.PLAIN, 10));
-			
 			GridBagConstraints attrGc = new GridBagConstraints();
 			attrGc.gridx = 0;
 			attrGc.gridy = row;
@@ -322,7 +274,6 @@ public class LangEdit extends BasePage {
 					window.snackbar.show("Key copied: " + langKey, BarManager.Type.INFO);
 				}
 			});
-			
 			GridBagConstraints keyGc = new GridBagConstraints();
 			keyGc.gridx = 0;
 			keyGc.gridy = row;
@@ -370,7 +321,6 @@ public class LangEdit extends BasePage {
 			editorGc.anchor = GridBagConstraints.NORTHWEST;
 			editorGc.insets = new Insets(4, 0, 4, 4);
 			fieldsPanel.add(taSp, editorGc);
-			
 			keyToEditor.put(langKey, ta);
 			row++;
 			
@@ -387,7 +337,7 @@ public class LangEdit extends BasePage {
 			row++;
 		}
 		
-		// Spacer at the bottom so everything anchors to top
+		// Spacer so content anchors to top
 		GridBagConstraints spacerGc = new GridBagConstraints();
 		spacerGc.gridx = 0;
 		spacerGc.gridy = row;
@@ -400,17 +350,10 @@ public class LangEdit extends BasePage {
 		updatePreview();
 	}
 	
-	// ── Preview ───────────────────────────────────────────────────────────────
-	
 	private void saveChanges() {
 		if (currentItem == null || keyToEditor.isEmpty())
 			return;
-		
-		// Flush editor content into workingEntries
-		for (var e : keyToEditor.entrySet()) {
-			workingEntries.put(e.getKey(), e.getValue().getText());
-		}
-		
+		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
 		hasChanges = false;
 		updateStatus();
 		updatePreview();
@@ -422,15 +365,16 @@ public class LangEdit extends BasePage {
 	 * for the selected language, then write the mod to disk.
 	 */
 	private void addEntriesToSelectedMod() {
-		if (currentItem == null)
-			return;
-		
-		final ModData targetMod = selectedMod();
-		if (targetMod == null) {
-			window.snackbar.show("No mod selected", BarManager.Type.INFO);
+		if (currentItem == null) {
+			window.snackbar.show("No item loaded", BarManager.Type.WARNING);
 			return;
 		}
-		
+		final var targetMod = getSelectedMod();
+		if (targetMod.isEmpty()) {
+			window.snackbar.show("Please select a mod first", BarManager.Type.WARNING);
+			return;
+		}
+		var mod = targetMod.get();
 		final Language lang = selectedLanguage();
 		if (lang == null) {
 			window.snackbar.show("Unknown language", BarManager.Type.INFO);
@@ -438,134 +382,27 @@ public class LangEdit extends BasePage {
 		}
 		
 		// Flush editors first
-		for (var e : keyToEditor.entrySet()) {
-			workingEntries.put(e.getKey(), e.getValue().getText());
-		}
+		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
 		
 		if (workingEntries.isEmpty()) {
 			window.snackbar.show("No entries to add", BarManager.Type.INFO);
 			return;
 		}
-		
-		// Merge into mod's localization map (LocalService stores per-Language)
-		// ModData.getLocal() is unmodifiable, so we build a mutable copy and set it back
-		final var map = new HashMap<>(workingEntries);
-		targetMod.addLocal(lang, map);
-		
+		mod.addLocal(lang, new HashMap<>(workingEntries));
 		hasChanges = false;
 		updateStatus();
-		window.snackbar.show("Added " + workingEntries.size() + " entries → " + targetMod.name + " [" + lang.getDisplayName() + "]", BarManager.Type.SUCCESS);
-	}
-	
-	// ── Selectors ─────────────────────────────────────────────────────────────
-	
-	private void updatePreview() {
-		if (currentItem == null || workingEntries.isEmpty()) {
-			previewPane.setText(emptyPreviewHtml());
-			return;
-		}
-		
-		// Sync working map from editors
-		for (var e : keyToEditor.entrySet()) {
-			workingEntries.put(e.getKey(), e.getValue().getText());
-		}
-		
-		final Language lang = selectedLanguage();
-		final StringBuilder html = new StringBuilder();
-		html.append("<html><body style='background:#181825;color:#cdd6f4;font-family:sans-serif;padding:12px;'>");
-		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(currentItem.getId())).append("</b><br/>");
-		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(currentItem.getClass().getSimpleName()).append("</span>");
-		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
-		
-		if (lang != null) {
-			html.append("<span style='color:#6c6f85;font-size:10px;'>Language: ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
-		}
-		
-		for (var entry : workingEntries.entrySet()) {
-			final String attrName = keyToAttrName.getOrDefault(entry.getKey(), "");
-			html.append("<div style='margin-bottom:10px;'>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(escHtml(attrName)).append("</span><br/>");
-			html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(entry.getKey())).append("</span><br/>");
-			html.append("<span style='color:#cdd6f4;'>").append(escHtml(entry.getValue())).append("</span>");
-			html.append("</div>");
-		}
-		
-		html.append("</body></html>");
-		previewPane.setText(html.toString());
-		previewPane.setCaretPosition(0);
-	}
-	
-	private String emptyPreviewHtml() {
-		return "<html><body style='background:#181825;color:#6c6f85;font-family:sans-serif;padding:12px;'>" + "<i>No item selected or no lang keys found.</i></body></html>";
-	}
-	
-	private void refreshModSelector() {
-		modSelector.removeAllItems();
-		for (ModData mod : window.getRegistry().modService.modCollection) {
-			modSelector.addItem(mod.id + " | " + mod.name);
-		}
+		window.snackbar.show("Added " + workingEntries.size() + " entries → " + mod.name + " [" + lang.getDisplayName() + "]", BarManager.Type.SUCCESS);
 	}
 	
 	private void refreshLangSelector() {
-		// Re-select configured language
 		String cfgLang = window.getRegistry().userConfig.language;
 		Language defLang = Language.fromIsoCode(cfgLang);
 		if (defLang != null)
 			langSelector.setSelectedItem(defLang.getDisplayName());
 	}
 	
-	// ── Navigation ────────────────────────────────────────────────────────────
-	
 	private Language selectedLanguage() {
 		Object sel = langSelector.getSelectedItem();
-		if (sel == null)
-			return null;
-		return Language.fromDisplayName(sel.toString());
-	}
-	
-	// ── Status ────────────────────────────────────────────────────────────────
-	
-	private ModData selectedMod() {
-		Object sel = modSelector.getSelectedItem();
-		if (sel == null)
-			return null;
-		String modId = sel.toString().split(" \\| ")[0];
-		return window.getRegistry().modService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst().orElse(null);
-	}
-	
-	private void navigateBack() {
-		if (hasChanges) {
-			int choice = JOptionPane.showConfirmDialog(this, "You have unsaved changes. Discard them?", "Unsaved Changes", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-			if (choice != JOptionPane.YES_OPTION)
-				return;
-			hasChanges = false;
-		}
-		window.navigate(MainWindow.Page.ITEMS);
-	}
-	
-	// ── Helpers ───────────────────────────────────────────────────────────────
-	
-	private void markChanged() {
-		hasChanges = true;
-		updateStatus();
-	}
-	
-	private void updateStatus() {
-		if (hasChanges) {
-			statusLabel.setText("⚠  Unsaved changes");
-			statusLabel.setForeground(new Color(0xf9e2af));
-		} else if (currentItem != null) {
-			statusLabel.setText("✓  No pending changes");
-			statusLabel.setForeground(new Color(0xa6e3a1));
-		} else {
-			statusLabel.setText(" ");
-		}
-	}
-	
-	private void styleCombo(JComboBox<?> cb) {
-		cb.setFont(new Font("Roboto", Font.PLAIN, 12));
-		cb.setBackground(MainWindow.SURFACE);
-		cb.setForeground(MainWindow.TEXT);
-		cb.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+		return sel == null ? null : Language.fromDisplayName(sel.toString());
 	}
 }

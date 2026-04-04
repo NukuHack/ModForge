@@ -61,6 +61,7 @@ public final class ModData {
 		localizations.clear();
 		localizations.putAll(input);
 	}
+	
 	public void addLocal(Language language, Map<String, String> input) {
 		final var existing = localizations.get(language);
 		final Map<String, String> map;

@@ -107,8 +107,8 @@ public final class LocalService {
 	 * Look up a raw localization key in the mod's strings, then the base game.
 	 * Returns {@code null} if not found in either.
 	 */
-	public String resolve(final String key, final ModData mod, final Language lang) {
-		if (key == null || key.isBlank())
+	public String resolve(String key, final ModData mod, final Language lang) {
+		if (key == null || (key = key.trim()).isEmpty())
 			return null;
 		final var game = Singleton.INSTANCE.game();
 		// 1. Mod's own strings
@@ -211,9 +211,10 @@ public final class LocalService {
 					key = null;
 					break;
 				case "Cell":
-					if (!inRow)
+					if (! inRow)
 						break;
-					if (cellIndex++ == 1) break;  // skip the middle cell (index 1)
+					if (cellIndex++ == 1)
+						break;  // skip the middle cell (index 1)
 					final var text = reader.getElementText().strip();
 					if (text.isEmpty())
 						break;

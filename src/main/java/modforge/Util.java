@@ -56,6 +56,7 @@ public final class Util {
 	public static Path gameLocalDir(String root) {
 		return joinP(root, "Localization");
 	}
+	
 	public static Path modLocalDir(String root, String modId) {
 		return joinP(modFolder(root, modId), "Localization");
 	}
@@ -98,9 +99,11 @@ public final class Util {
 	public static String join(String... parts) {
 		return String.join("/", parts);
 	}
+	
 	public static Path joinP(String... parts) {
 		return Path.of(join(parts));
 	}
+	
 	public static Path joinP(Path base, String... parts) {
 		return Path.of(base.toString(), join(parts));
 	}
@@ -127,14 +130,9 @@ public final class Util {
 			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 			
 			final var result = new StringWriter();
-			transformer.transform(
-					new StreamSource(new StringReader(input)),
-					new StreamResult(result)
-			);
+			transformer.transform(new StreamSource(new StringReader(input)), new StreamResult(result));
 			// Literally glued together
-			return result.toString()
-				 .replaceFirst("\\?>", "?>\n")
-				 .replaceAll("\\n\\s*\\n", "\n");
+			return result.toString().replaceFirst("\\?>", "?>\n").replaceAll("\\n\\s*\\n", "\n");
 		} catch (TransformerException e) {
 			throw new RuntimeException("Failed to indent XML", e);
 		}
@@ -177,19 +175,16 @@ public final class Util {
 	/**
 	 * Simple HTML escaping
 	 */
-	public static String escapeHtml(String s) {
+	public static String escHtml(String s) {
 		if (s == null)
 			return "";
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
 	}
+	
 	// Need this to escape XML special chars
 	public static String escapeXml(String s) {
 		// theoretically escapeHtml could work, but I made this just in case
-		return s.replace("&", "&amp;")
-					   .replace("<", "&lt;")
-					   .replace(">", "&gt;")
-					   .replace("\"", "&quot;")
-					   .replace("'", "&apos;");
+		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
 	}
 	
 	public static void copyText(String text) {

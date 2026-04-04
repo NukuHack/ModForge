@@ -1,7 +1,6 @@
 package modforge;
 
 import modforge.backend.AttributeFactory;
-import modforge.backend.ItemType;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
@@ -51,6 +50,7 @@ public class Main {
 	}
 	
 	static void applyTheme() {
+		setNicerFont();
 		try {
 			// Requires FlatLaf on classpath
 			Class<?> flat = Class.forName("com.formdev.flatlaf.FlatDarkLaf");
@@ -70,5 +70,30 @@ public class Main {
 			UIManager.put("List.selectionBackground", new Color(0x89b4fa));
 			UIManager.put("List.selectionForeground", new Color(0x1e1e2e));
 		}
+	}
+	
+	///  just to make korean chars actually display
+	private static void setNicerFont() {
+		// Universal fonts
+		final var koreanFonts = new String[] {
+				"Malgun Gothic",      // Windows
+				"Apple SD Gothic Neo", // macOS
+				"UnDotum",            // Linux
+				"Noto Sans CJK KR",   // Cross-platform
+				"Nanum Gothic",       // Open source
+				"SansSerif"           // Fallback
+		};
+		
+		for (var fontName : koreanFonts) {
+			Font testFont = new Font(fontName, Font.PLAIN, 12);
+			if (testFont.canDisplay('한')) { // Test with a Korean character
+				// Set as default font
+				UIManager.put("defaultFont", testFont);
+				System.out.println("Using font: " + fontName);
+				return;
+			}
+		}
+		
+		System.out.println("Warning: No good font found");
 	}
 }

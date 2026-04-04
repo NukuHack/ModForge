@@ -2,11 +2,13 @@ package modforge.backend.service;
 
 import modforge.backend.AttributeFactory;
 import modforge.backend.ItemType;
+import modforge.backend.ModData;
 import modforge.backend.model.BaseModItem;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.Attribute;
 import org.w3c.dom.Element;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -22,10 +24,7 @@ public final class ModItemBuilder {
 	static {
 		// Build the handler map once at class initialization
 		for (var spec : ItemType.getHandlerSpecs()) {
-			final var handler = new GBuildHandler<>(
-					(Class<? extends BaseModItem>) spec.clazz(),
-					spec.idKey()
-			);
+			final var handler = new GBuildHandler<>((Class<? extends BaseModItem>) spec.clazz(), spec.idKey());
 			HANDLER_MAP.put(spec.name(), handler);
 		}
 	}
@@ -59,9 +58,9 @@ public final class ModItemBuilder {
 	
 	
 	/**
-	 * Deep-copy a mod item, optionally changing its path.
+	 * Deep-copy a mod item, changing its path.
 	 */
-	public static ModItem deepCopy(ModItem src, String newPath) {
+	private static ModItem deepCopy(ModItem src, String newPath) {
 		try {
 			final var copy = src.getClass().getDeclaredConstructor().newInstance();
 			copy.setId(src.getId());
@@ -76,6 +75,18 @@ public final class ModItemBuilder {
 	
 	public static ModItem deepCopy(ModItem src) {
 		return deepCopy(src, src.getPath());
+	}
+	
+	public static ModItem deepCopy(ModItem src, ModData mod) {
+		Path fullPath = Path.of(src.getPath());
+		String dir = fullPath.getParent().toString();
+		String name = fullPath.getFileName().toString();
+		String nameFinal = name.contains("__") ? name.replaceAll("__[^_]+\\.xml", "__" + mod.id + ".xml") : name.replace(".xml", "__" + mod.id + ".xml");
+		return deepCopy(src, dir + nameFinal);
+	}
+	
+	protected interface BuildHandler {
+		ModItem handle(final Element element);
 	}
 	
 	/**
@@ -106,9 +117,5 @@ public final class ModItemBuilder {
 				return null;
 			}
 		}
-	}
-	
-	protected interface BuildHandler {
-		ModItem handle(final Element element);
 	}
 }

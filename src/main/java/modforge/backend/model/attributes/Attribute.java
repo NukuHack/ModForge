@@ -15,7 +15,7 @@ public abstract class Attribute<T> {
 		return name;
 	}
 	
-	public Object getValue() {
+	public T getValue() {
 		return value;
 	}
 	

@@ -5,7 +5,6 @@ public class StringAttribute extends Attribute<String> {
 		super(name, value);
 	}
 	
-	
 	@Override
 	@SuppressWarnings("unchecked")
 	public StringAttribute deepClone() {
