@@ -140,8 +140,8 @@ public class StormPage extends BasePage {
 		JPanel metaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
 		metaPanel.setOpaque(false);
 		
-		categoryLabel = styledMeta("Category: —");
-		fileIdLabel = styledMeta("ID: —");
+		categoryLabel = LangEdit.muted("Category: —");
+		fileIdLabel = LangEdit.muted("ID: —");
 		metaPanel.add(categoryLabel);
 		metaPanel.add(fileIdLabel);
 		
@@ -160,15 +160,6 @@ public class StormPage extends BasePage {
 		top.add(leftSide, BorderLayout.WEST);
 		top.add(actions, BorderLayout.EAST);
 		return top;
-	}
-	
-	// ── Left: rule list ───────────────────────────────────────────────────────
-	
-	private JLabel styledMeta(String text) {
-		JLabel l = new JLabel(text);
-		l.setForeground(MainWindow.MUTED);
-		l.setFont(new Font("Roboto", Font.PLAIN, 12));
-		return l;
 	}
 	
 	// ── Right: detail area ────────────────────────────────────────────────────
@@ -247,10 +238,10 @@ public class StormPage extends BasePage {
 	}
 	
 	private JSplitPane buildRuleDetailArea() {
-		JPanel topDetail = buildRuleHeaderAndTrees();
+		JPanel detail = buildRuleHeaderAndTrees();
 		JScrollPane xmlPane = buildXmlPreview();
 		
-		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topDetail, xmlPane);
+		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, detail, xmlPane);
 		split.setResizeWeight(0.65);
 		split.setDividerSize(4);
 		split.setBorder(BorderFactory.createEmptyBorder());
@@ -768,26 +759,7 @@ public class StormPage extends BasePage {
 		private static JTextField dialogField(String placeholder) {
 			JTextField f = new JTextField();
 			styleField(f);
-			f.setText(placeholder);
-			f.setForeground(MainWindow.MUTED);
-			f.addFocusListener(new FocusAdapter() {
-				@Override
-				public void focusGained(FocusEvent e) {
-					if (f.getText().equals(placeholder)) {
-						f.setText("");
-						f.setForeground(MainWindow.TEXT);
-					}
-				}
-				
-				@Override
-				public void focusLost(FocusEvent e) {
-					if (f.getText().isBlank()) {
-						f.setText(placeholder);
-						f.setForeground(MainWindow.MUTED);
-					}
-				}
-			});
-			return f;
+			return getJTextField(placeholder, f);
 		}
 		
 		// ── Step 2: Selectors ─────────────────────────────────────────────

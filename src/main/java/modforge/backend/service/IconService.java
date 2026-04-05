@@ -124,7 +124,7 @@ public final class IconService {
 	 * Scan all PAK files inside Mods/<modId>/Data/ for DDS textures and store
 	 * the raw bytes in mod.iconIndex. Clears any previously cached PNGs for
 	 * the mod so stale data-URIs are never returned.
-	 *
+	 * <p/>
 	 * Call this from ModService.fillCollection() after the mod's items are loaded.
 	 */
 	public void loadModIconsForMod(ModData mod, boolean isMod) {

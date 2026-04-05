@@ -25,7 +25,7 @@ public final class ModItemBuilder {
 	static {
 		// Build the handler map once at class initialization
 		for (var spec : ItemType.getHandlerSpecs()) {
-			final var handler = new GBuildHandler<>((Class<? extends BaseModItem>) spec.clazz(), spec.idKey());
+			final var handler = new GBuildHandler<>(spec.clazz(), spec.idKey());
 			HANDLER_MAP.put(spec.name(), handler);
 		}
 	}
@@ -96,7 +96,7 @@ public final class ModItemBuilder {
 	 * Generic build handler: recognizes elements whose local name matches the
 	 * simple class name (case-insensitive) and populates a configurable ID attribute.
 	 */
-	protected static final class GBuildHandler<M extends BaseModItem> implements BuildHandler {
+	protected static final class GBuildHandler<M extends ModItem> implements BuildHandler {
 		private static final Logger log = Logger.getLogger(GBuildHandler.class.getName());
 		private final Class<M> type;
 		private final String idAttrKey;

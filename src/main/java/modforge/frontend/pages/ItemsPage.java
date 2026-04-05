@@ -441,7 +441,7 @@ public class ItemsPage extends BasePage {
 		}
 		
 		if (tellUser)
-			window.snackbar.show("Showing " + displayModel.size() + " items", BarManager.Type.INFO);
+			window.snackbar.show("Showing " + displayModel.size() + " items", BarManager.Type.SUCCESS);
 	}
 	
 	

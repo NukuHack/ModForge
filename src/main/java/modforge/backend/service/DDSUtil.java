@@ -630,8 +630,7 @@ public class DDSUtil {
 	
 	// Add helper to write DDS header with DX10 extension
 	private static void writeDDSHeaderWithDX10(OutputStream out, int width, int height, int dxgiFormat) throws IOException {
-		byte[] headerBytes = new byte[128];
-		ByteBuffer buffer = ByteBuffer.wrap(headerBytes).order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
 		
 		buffer.putInt(0x20534444); // Magic "DDS "
 		buffer.putInt(124); // Header size
@@ -639,50 +638,13 @@ public class DDSUtil {
 		buffer.putInt(height);
 		buffer.putInt(width);
 		buffer.putInt(width * height * 4); // Pitch/Linear size
-		buffer.putInt(0); // Depth
-		buffer.putInt(0); // Mipmaps
 		
-		// Reserved (11 ints)
-		for (int i = 0; i < 11; i++)
-			buffer.putInt(0);
-		
-		// Pixel format
-		buffer.putInt(32); // size
-		buffer.putInt(0x00000004); // DDPF_FOURCC
-		buffer.putInt(DX10); // FOURCC code for DX10
-		buffer.putInt(0); // RGB bit count
-		buffer.putInt(0); // R mask
-		buffer.putInt(0); // G mask
-		buffer.putInt(0); // B mask
-		buffer.putInt(0); // A mask
-		
-		// Caps
-		buffer.putInt(0x00001000); // DDSCAPS_TEXTURE
-		buffer.putInt(0);
-		buffer.putInt(0);
-		buffer.putInt(0);
-		
-		// Reserved
-		buffer.putInt(0);
-		
-		out.write(headerBytes);
-		
-		// Write DX10 header (20 bytes)
-		byte[] dx10Bytes = new byte[20];
-		ByteBuffer dx10Buffer = ByteBuffer.wrap(dx10Bytes).order(ByteOrder.LITTLE_ENDIAN);
-		dx10Buffer.putInt(dxgiFormat);        // DXGI format
-		dx10Buffer.putInt(3);                 // D3D10_RESOURCE_DIMENSION_TEXTURE2D
-		dx10Buffer.putInt(0);                 // Misc flag
-		dx10Buffer.putInt(1);                 // Array size
-		dx10Buffer.putInt(0);                 // Misc flags 2
-		
-		out.write(dx10Bytes);
+		writeDx10Bytes(out, buffer);
 	}
 	
 	// BC7 requires a DX10 header with the linear size correctly set for 16-byte blocks
 	private static void writeDDSHeaderWithDX10BC7(OutputStream out, int width, int height) throws IOException {
-		byte[] headerBytes = new byte[128];
-		ByteBuffer buffer = ByteBuffer.wrap(headerBytes).order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
 		
 		buffer.putInt(0x20534444); // Magic "DDS "
 		buffer.putInt(124); // Header size
@@ -694,6 +656,10 @@ public class DDSUtil {
 		int blocksHigh = (height + 3) / 4;
 		buffer.putInt(blocksWide * blocksHigh * 16); // Linear size
 		
+		writeDx10Bytes(out, buffer);
+	}
+	
+	private static void writeDx10Bytes(OutputStream out, ByteBuffer buffer) throws IOException {
 		buffer.putInt(0); // Depth
 		buffer.putInt(0); // Mipmaps
 		
@@ -715,7 +681,7 @@ public class DDSUtil {
 		buffer.putInt(0);
 		buffer.putInt(0);
 		
-		out.write(headerBytes);
+		out.write(buffer.array());
 		
 		// Write DX10 header (20 bytes)
 		byte[] dx10Bytes = new byte[20];
@@ -849,37 +815,42 @@ public class DDSUtil {
 		
 		for (int by = 0; by < blocksHigh; by++) {
 			for (int bx = 0; bx < blocksWide; bx++) {
-				int[] blockColors = new int[16];
-				int[] alphas = new int[16];
-				int idx = 0;
+				var res = compressBlock(argb, by, bx, width, height);
 				
-				for (int py = 0; py < 4; py++) {
-					for (int px = 0; px < 4; px++) {
-						int x = bx * 4 + px;
-						int y = by * 4 + py;
-						
-						if (x < width && y < height) {
-							int pixelIdx = (y * width + x) * 4;
-							int r = argb[pixelIdx] & 0xFF;
-							int g = argb[pixelIdx + 1] & 0xFF;
-							int b = argb[pixelIdx + 2] & 0xFF;
-							int a = argb[pixelIdx + 3] & 0xFF;
-							
-							blockColors[idx] = (r << 16) | (g << 8) | b;
-							alphas[idx] = a;
-						} else {
-							blockColors[idx] = 0;
-							alphas[idx] = 0;
-						}
-						idx++;
-					}
-				}
-				
-				compressDXT3Block(blockColors, alphas, result, (by * blocksWide + bx) * 16);
+				compressDXT3Block(res.blockColors, res.alphas, result, (by * blocksWide + bx) * 16);
 			}
 		}
 		
 		return result;
+	}
+	private record DoubleByte(int[] alphas, int[] blockColors) {}
+	private static DoubleByte compressBlock(byte[] argb, int by, int bx, int width, int height) {
+		int[] blockColors = new int[16];
+		int[] alphas = new int[16];
+		int idx = 0;
+		
+		for (int py = 0; py < 4; py++) {
+			for (int px = 0; px < 4; px++) {
+				int x = bx * 4 + px;
+				int y = by * 4 + py;
+				
+				if (x < width && y < height) {
+					int pixelIdx = (y * width + x) * 4;
+					int r = argb[pixelIdx] & 0xFF;
+					int g = argb[pixelIdx + 1] & 0xFF;
+					int b = argb[pixelIdx + 2] & 0xFF;
+					int a = argb[pixelIdx + 3] & 0xFF;
+					
+					blockColors[idx] = (r << 16) | (g << 8) | b;
+					alphas[idx] = a;
+				} else {
+					blockColors[idx] = 0;
+					alphas[idx] = 0;
+				}
+				idx++;
+			}
+		}
+		return new DoubleByte(alphas, blockColors);
 	}
 	
 	// ========== DXT3 COMPRESSION ==========
@@ -956,33 +927,9 @@ public class DDSUtil {
 		
 		for (int by = 0; by < blocksHigh; by++) {
 			for (int bx = 0; bx < blocksWide; bx++) {
-				int[] blockColors = new int[16];
-				int[] alphas = new int[16];
-				int idx = 0;
+				var res = compressBlock(argb, by, bx, width, height);
 				
-				for (int py = 0; py < 4; py++) {
-					for (int px = 0; px < 4; px++) {
-						int x = bx * 4 + px;
-						int y = by * 4 + py;
-						
-						if (x < width && y < height) {
-							int pixelIdx = (y * width + x) * 4;
-							int r = argb[pixelIdx] & 0xFF;
-							int g = argb[pixelIdx + 1] & 0xFF;
-							int b = argb[pixelIdx + 2] & 0xFF;
-							int a = argb[pixelIdx + 3] & 0xFF;
-							
-							blockColors[idx] = (r << 16) | (g << 8) | b;
-							alphas[idx] = a;
-						} else {
-							blockColors[idx] = 0;
-							alphas[idx] = 0;
-						}
-						idx++;
-					}
-				}
-				
-				compressDXT5Block(blockColors, alphas, result, (by * blocksWide + bx) * 16);
+				compressDXT5Block(res.blockColors, res.alphas, result, (by * blocksWide + bx) * 16);
 			}
 		}
 		
@@ -1273,7 +1220,7 @@ class BC7Util {
 		if (mode == 0 || mode == 3 || mode == 6 || mode == 7) {
 			for (int s = 0; s < numSubsets; s++) {
 				pBits[s][0] = reader.read(1);
-				pBits[s][1] = (mode == 1) ? pBits[s][0] : reader.read(1); // Mode 1 shares P-bits
+				pBits[s][1] = reader.read(1);
 			}
 		} else if (mode == 1) { // Shared p-bit for mode 1
 			for (int s = 0; s < numSubsets; s++) {
@@ -1633,7 +1580,7 @@ class BC7Util {
 				int bit = (val >> i) & 1;
 				int byteIdx = bitPos / 8;
 				if (bit == 1) {
-					data[byteIdx] |= (1 << (bitPos % 8));
+					data[byteIdx] |= (byte) (1 << (bitPos % 8));
 				}
 				bitPos++;
 			}

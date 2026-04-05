@@ -31,9 +31,7 @@ public class Main {
 			splash.setVisible(true);
 			
 			// Boot services off the EDT
-			CompletableFuture.runAsync(() -> {
-				Singleton.INSTANCE.setRegistry(new ServiceRegistry());
-			}).whenComplete((v, ex) -> SwingUtilities.invokeLater(() -> {
+			CompletableFuture.runAsync(() -> Singleton.INSTANCE.setRegistry(new ServiceRegistry())).whenComplete((v, ex) -> SwingUtilities.invokeLater(() -> {
 				splash.dispose();
 				if (ex != null) {
 					JOptionPane.showMessageDialog(null, "Startup error:\n" + ex.getMessage(), "ModForge – Error", JOptionPane.ERROR_MESSAGE);
@@ -75,8 +73,7 @@ public class Main {
 	///  just to make korean chars actually display
 	private static void setNicerFont() {
 		// Universal fonts
-		final var koreanFonts = new String[] {
-				"Malgun Gothic",      // Windows
+		final var koreanFonts = new String[] { "Malgun Gothic",      // Windows
 				"Apple SD Gothic Neo", // macOS
 				"UnDotum",            // Linux
 				"Noto Sans CJK KR",   // Cross-platform

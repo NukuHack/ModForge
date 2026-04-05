@@ -293,18 +293,15 @@ public final class ConfigService {
 				// Skip empty lines
 				if (line.isEmpty())
 					continue;
-				
-				Matcher m = CONFIG_LINE.matcher(line);
-				if (m.matches()) {
-					String key = m.group(1);
-					String value = m.group(2).trim();
-					target.put(key, value);
-				} else if (line.startsWith(";") || line.startsWith("#")) {
-					// Comment line - skip
+				var fst = line.charAt(0);
+				if (fst == ';' || fst == '#')
 					continue;
-				} else {
+				var m = CONFIG_LINE.matcher(line);
+				if (!m.matches())
 					log.fine("Skipping malformed config line " + lineNumber + ": " + line);
-				}
+				String key = m.group(1);
+				String value = m.group(2).trim();
+				target.put(key, value);
 			}
 		} catch (IOException e) {
 			log.warning("Failed to load config file " + path + ": " + e.getMessage());

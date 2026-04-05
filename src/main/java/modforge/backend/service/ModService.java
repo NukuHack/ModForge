@@ -250,13 +250,13 @@ public final class ModService {
 	
 	/**
 	 * Pack each staging folder into its own PAK file and then delete the staging dir.
-	 *
+	 * <p/>
 	 * Layout written by ItemService.writeModItems:
 	 *   Mods/<modId>/Data/_stage/<pakStem>/<inner-dir-structure>/
-	 *
+	 * <p/>
 	 * Each <pakStem> becomes:
 	 *   Mods/<modId>/Data/<pakStem>.pak
-	 *
+	 * <p/>
 	 * The _stage folder is removed on success.
 	 */
 	private void createModPaks(String gameDir, ModData mod) {

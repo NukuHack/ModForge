@@ -326,14 +326,14 @@ public final class Util {
 			log.severe("PAK creation failed: " + e.getMessage());
 			return false;
 		}
-		try (var fos = new FileOutputStream(destPakFile.toFile()); var out = new ZipOutputStream(fos)) {
+		try (var fos = new FileOutputStream(destPakFile.toFile()); var out = new ZipOutputStream(fos); var walk = Files.walk(sourceFolder)) {
 			
 			// Optionally set the ZipOutputStream comment to empty or fixed
 			if (stripMetadata) {
 				out.setComment(""); // Remove any comments
 			}
 			
-			Files.walk(sourceFolder).filter(Files::isRegularFile).filter(path -> fileFilter == null || fileFilter.test(path)).forEach(file -> {
+			walk.filter(Files::isRegularFile).filter(path -> fileFilter == null || fileFilter.test(path)).forEach(file -> {
 				try {
 					// Get the path relative to the source folder
 					String relPath = sourceFolder.relativize(file).toString().replace('\\', '/');
@@ -397,8 +397,8 @@ public final class Util {
 	public static void deleteRecursively(Path path) {
 		if (! Files.exists(path))
 			return;
-		try {
-			Files.walk(path).sorted(Comparator.reverseOrder()).forEach(p -> {
+		try (var walk = Files.walk(path)) {
+			walk.sorted(Comparator.reverseOrder()).forEach(p -> {
 				try {
 					Files.deleteIfExists(p);
 				} catch (IOException e) {

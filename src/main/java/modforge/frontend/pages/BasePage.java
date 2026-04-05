@@ -90,6 +90,10 @@ public abstract class BasePage extends JPanel {
 		f.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(0x45475a), 1), BorderFactory.createEmptyBorder(6, 10, 6, 10)));
 		f.setFont(new Font("Roboto", Font.PLAIN, 13));
 		// Placeholder via focus listener
+		return getJTextField(placeholder, f);
+	}
+	
+	static JTextField getJTextField(String placeholder, JTextField f) {
 		f.setText(placeholder);
 		f.setForeground(MainWindow.MUTED);
 		f.addFocusListener(new FocusAdapter() {

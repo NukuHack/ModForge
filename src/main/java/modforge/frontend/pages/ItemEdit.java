@@ -281,7 +281,7 @@ public class ItemEdit extends BaseEditPage {
 			currentItem.setId(f.getText());
 		}
 		
-		for (var attr : currentItem.getAttributes())
+		for (Attribute<?> attr : currentItem.getAttributes())
 			handleAttribute(attr);
 		
 		hasChanges = false;

@@ -297,7 +297,7 @@ public final class LocalService {
 	 *   1. mod's own localizations for the current language
 	 *   2. base-game localizations for the current language
 	 *   3. the raw attribute value (key itself) as a last resort
-	 *
+	 * <p/>
 	 * Returns {@code null} if no candidate attribute is present on the item.
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {

@@ -55,19 +55,35 @@ public final class ItemService {
 		return el;
 	}
 	
-	@SuppressWarnings("unchecked")
-	private static String serializeValue(Attribute attr) {
-		Object v = attr.getValue();
+	private static <T> String serializeValue(Attribute<T> attr) {
+		final T v = attr.getValue();
 		if (v == null)
 			return "";
-		if ("buff_params".equals(attr.getName()) && v instanceof List<?> list) {
-			return BuffParam.listToString((List<BuffParam>) list);
+		if (attr instanceof List<?> list) {
+			if (list.isEmpty())
+				return "";
+			if (list.getFirst() instanceof String)
+				return String.join(",", list.stream().map(Object::toString).toList());
+			var sb = new StringBuilder();
+			for (var f : list)
+				if (f instanceof Attribute<?> a)
+					sb.append(serializeValue(a)).append(',');
+				else
+					log.warning("found list with unsupported type: " + (list.stream().limit(20).toList()) + " type: " + f.getClass());
+			return sb.toString();
 		}
 		return switch (v) {
+			case BuffParam b -> b.toAttrString();
 			case Enum<?> e -> String.valueOf(e.ordinal());
 			case Boolean b -> b.toString().toLowerCase(Locale.ROOT);
-			case Double d ->
-					d == Math.floor(d) && ! Double.isInfinite(d) ? String.valueOf(d.longValue()) : d.toString();
+			case Double d -> {
+				if (Double.isInfinite(d) || Double.isNaN(d))
+					yield "-1";
+				long rounded = Math.round(d);
+				if (Math.abs(d - rounded) < 1e-8)
+					yield String.valueOf(rounded);
+				yield d.toString();
+			}
 			default -> v.toString();
 		};
 	}

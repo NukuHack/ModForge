@@ -176,13 +176,6 @@ public class LocalizationPage extends BasePage {
 	//  Selector population helpers
 	// =========================================================================
 	
-	private static void styleCombo(JComboBox<?> cb) {
-		cb.setFont(new Font("Roboto", Font.PLAIN, 12));
-		cb.setBackground(MainWindow.SURFACE);
-		cb.setForeground(MainWindow.TEXT);
-		cb.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-	}
-	
 	private static Map<String, LangEntry> getLangEntryMap(Map<String, String> langMap, ModData source) {
 		final Map<String, LangEntry> entryByKey = new LinkedHashMap<>(langMap.size());
 		for (var e : langMap.entrySet()) {
@@ -229,13 +222,13 @@ public class LocalizationPage extends BasePage {
 		controls.setOpaque(false);
 		
 		// ── Mod selector ──────────────────────────────────────────────────
-		styleCombo(modSelector);
+		BaseEditPage.styleCombo(modSelector);
 		modSelector.setPreferredSize(new Dimension(200, 28));
 		modSelector.setToolTipText("Source mod (Base Game or a user mod)");
 		modSelector.addActionListener(e -> refreshAll());
 		
 		// ── Language selector ─────────────────────────────────────────────
-		styleCombo(langSelector);
+		BaseEditPage.styleCombo(langSelector);
 		langSelector.setPreferredSize(new Dimension(130, 28));
 		langSelector.setToolTipText("Language to display");
 		langSelector.addActionListener(e -> refreshAll());
@@ -243,7 +236,7 @@ public class LocalizationPage extends BasePage {
 		// ── Attribute-type selector ───────────────────────────────────────
 		for (String opt : ATTR_TYPE_OPTIONS)
 			attrSelector.addItem(opt);
-		styleCombo(attrSelector);
+		BaseEditPage.styleCombo(attrSelector);
 		attrSelector.setPreferredSize(new Dimension(170, 28));
 		attrSelector.setToolTipText("Filter by attribute hint");
 		attrSelector.addActionListener(e -> applyFilters());

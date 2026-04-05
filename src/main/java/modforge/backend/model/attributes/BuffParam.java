@@ -37,16 +37,22 @@ public non-sealed class BuffParam extends BaseAttribute<BuffParam.Param> {
 		return Arrays.stream(data.split(",")).map(BuffParam::fromString).filter(Objects::nonNull).toList();
 	}
 	
-	public static String listToString(List<BuffParam> params) {
+	public static String toAttrString(List<BuffParam> params) {
 		if (params == null || params.isEmpty())
 			return "";
-		return params.stream().map(BuffParam::toAttributeString).collect(Collectors.joining(","));
+		return params.stream().map(b -> b.toAttrString()).collect(Collectors.joining(","));
+	}
+	
+	public static String toAttrString(BuffParam params) {
+		if (params == null)
+			return "";
+		return params.toAttrString();
 	}
 	
 	/**
 	 * Serialize back to the game's attribute-string format, e.g. "Strength+5,Agility-2"
 	 */
-	public String toAttributeString() {
+	public String toAttrString() {
 		return this.name + this.value.operation.getSymbol() + this.value.value;
 	}
 	
@@ -62,7 +68,7 @@ public non-sealed class BuffParam extends BaseAttribute<BuffParam.Param> {
 	
 	@Override
 	public String toString() {
-		return toAttributeString();
+		return toAttrString();
 	}
 	
 	public record Param(MathOperation operation, double value) {
