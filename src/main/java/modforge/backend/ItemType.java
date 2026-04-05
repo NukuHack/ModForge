@@ -8,29 +8,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
-public enum ItemType {
-	WEAPON_CLASS(ItemEntry.MELEE_WEAPON_CLASS, ItemEntry.MISSILE_WEAPON_CLASS),
-	
-	WEAPON_TYPE(ItemEntry.MELEE_WEAPON, ItemEntry.MISSILE_WEAPON, ItemEntry.AMMO),
-	
-	ARMOR_TYPE(ItemEntry.HOOD, ItemEntry.ARMOR, ItemEntry.HELMET),
-	
-	CONSUMABLE_TYPE(ItemEntry.FOOD, ItemEntry.POISON),
-	
-	CRAFTING_TYPE(ItemEntry.HERB, ItemEntry.CRAFTING_MATERIAL),
-	
-	MISC_TYPE(ItemEntry.NPC_TOOL, ItemEntry.MISC_ITEM, ItemEntry.GAME_DOCUMENT, ItemEntry.DIE, ItemEntry.ITEM_ALIAS, ItemEntry.QUICK_SLOT_CONTAINER, ItemEntry.DICE_BADGE, ItemEntry.PICKABLE_ITEM, ItemEntry.KEY, ItemEntry.MONEY, ItemEntry.KEY_RING),
-	
-	PERK(ItemEntry.PERK),
-	
-	BUFF(ItemEntry.BUFF),
-	
-	STORM(ItemEntry.STORM),
-	
-	PERK_BUFF(ItemEntry.PERK_BUFF),
-	
-	PERK_SCRIPT(ItemEntry.PERK_SCRIPT);
-	
+public class ItemType {
 	// ── Static indexes built once from ItemEntry.values() ───────────────────
 	
 	/** class → idKey */
@@ -53,10 +31,10 @@ public enum ItemType {
 		
 		displays.add(new ITDisplay("All Types", _ -> true));
 		
-		for (final ItemEntry e : ItemEntry.values()) {
+		for (final var e : ItemEntry.values()) {
 			// id key (first registration wins – ItemEntry order is the priority)
-			idMap.putIfAbsent(e.clazz, e.idKey);
-			specs.add(new HandlerSpec(e.clazz, e.idKey, e.simpleName));
+			idMap.put(e.clazz, e.idKey);
+			specs.add(new HandlerSpec(e.clazz, e.idKey, e.simpleName()));
 			
 			// endpoint key set
 			epKeys.add(e.endpointKey);
@@ -80,14 +58,6 @@ public enum ItemType {
 		HANDLER_SPECS = Collections.unmodifiableList(specs);
 		DISPLAYS = Collections.unmodifiableList(displays);
 		ENDPOINT_KEYS = Collections.unmodifiableSet(epKeys);
-	}
-	
-	// ── Instance fields ──────────────────────────────────────────────────────
-	
-	private final Set<ItemEntry> entries;
-	
-	ItemType(ItemEntry... entries) {
-		this.entries = Set.of(entries);
 	}
 	
 	// ── Public API (signatures unchanged) ────────────────────────────────────
@@ -127,12 +97,6 @@ public enum ItemType {
 	 */
 	public static List<HandlerSpec> getHandlerSpecs() {
 		return HANDLER_SPECS;
-	}
-	
-	// ── Internal helpers ─────────────────────────────────────────────────────
-	
-	private Set<ItemEntry> get() {
-		return entries;
 	}
 	
 	// ── Nested types (public API – unchanged) ─────────────────────────────────

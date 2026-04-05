@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Set;
@@ -36,7 +37,17 @@ public final class Util {
 	public static final String os = System.getProperty("os.name").toLowerCase();
 	public static final String TABLES = "Tables.pak";
 	public static final String STORM = "Storm.pak";
+	public static final String COMP_FORMAT = ".pak";
+	public static final String DATA_FORMAT = ".xml";
 	public static final String ICONS = "IPL_GameData.pak";
+	
+	public static final String LOCALIZATION_DIR = "Localization";
+	public static final String LOCALIZATION_EXTRA = "_xml";
+	public static final String DATA_DIR = "Data";
+	public static final String LIBS_DIR = "Libs";
+	public static final String TABLES_DIR = "Tables";
+	public static final String MODS_DIR = "Mods";
+	
 	private static final Logger log = Logger.getLogger(Util.class.getName());
 	
 	private Util() {
@@ -53,19 +64,19 @@ public final class Util {
 	}
 	
 	public static Path gameDataDir(String root) {
-		return joinP(root, "Data");
+		return joinP(root, DATA_DIR);
 	}
 	
 	public static String gameData(String root) {
-		return join(root, "Data");
+		return join(root, DATA_DIR);
 	}
 	
 	public static Path gameLocalDir(String root) {
-		return joinP(root, "Localization");
+		return joinP(root, LOCALIZATION_DIR);
 	}
 	
 	public static Path modLocalDir(String root, String modId) {
-		return joinP(modFolder(root, modId), "Localization");
+		return joinP(modFolder(root, modId), LOCALIZATION_DIR);
 	}
 	
 	public static Path modStaging(String gameDir, String modId) {
@@ -73,39 +84,47 @@ public final class Util {
 	}
 	
 	public static Path modStormStaging(String gameDir, String modId) {
-		return Path.of(Util.modStaging(gameDir, modId).toString(), "Storm");
+		return Path.of(Util.modStaging(gameDir, modId).toString(), DATA_DIR);
 	}
 	
-	public static String locImport(String root, String lang) {
-		return join(root, "Localization", lang + "_xml.pak");
+	public static String locImport(String root, Language lang) {
+		return join(root, LOCALIZATION_DIR, lang.getName() + LOCALIZATION_EXTRA + COMP_FORMAT);
 	}
 	
-	public static Path locExport(String root, String lang, String modId) {
-		return joinP(modLocalDir(root, modId), lang + "_xml", modXmlFile("text", modId));
+	public static Path locExport(String root, Language lang, String modId) {
+		return joinP(modLocalDir(root, modId), lang.getName() + LOCALIZATION_EXTRA, modXmlForce("text", modId));
 	}
 	
 	public static String modXmlFile(String fileName, String modId) {
-		return fileName + "__" + modId + ".xml";
+		final int delimit = fileName.indexOf("__");
+		final String nameFinal;
+		if (delimit != - 1)
+			nameFinal = fileName.substring(0, delimit);
+		else if (fileName.endsWith(DATA_FORMAT))
+			nameFinal = fileName.substring(0, fileName.length() - 4);
+		else
+			nameFinal = fileName;
+		return modXmlForce(nameFinal, modId);
+	}
+	
+	private static String modXmlForce(String fileName, String modId) {
+		return fileName + "__" + modId + DATA_FORMAT;
 	}
 	
 	public static String modFolder(String root, String modId) {
-		return join(root, "Mods", modId);
+		return join(root, MODS_DIR, modId);
 	}
 	
 	public static Path modFolder(String root) {
-		return joinP(root, "Mods");
+		return joinP(root, MODS_DIR);
 	}
 	
 	public static String modData(String root, String modId) {
-		return join(root, "Mods", modId, "Data");
-	}
-	
-	public static String stormDir(String root, String modId) {
-		return join(modData(root, modId), "Libs", "Storm");
+		return join(root, MODS_DIR, modId, DATA_DIR);
 	}
 	
 	public static Set<String> allLocPaths(String root) {
-		return Language.getAllNames().stream().map(l -> locImport(root, l)).collect(Collectors.toSet());
+		return Arrays.stream(Language.values()).map(l -> locImport(root, l)).collect(Collectors.toSet());
 	}
 	
 	public static String icons(String gameDir) {
@@ -116,12 +135,11 @@ public final class Util {
 	 * Join path segments using forward slashes (cross-platform safe).
 	 */
 	public static String join(String... parts) {
-		if (parts.length < 1)
-			return "";
-		else if (parts.length == 1)
-			return parts[0];
-		return String.join("/", parts);
+		if (parts.length < 1) return "";
+		return String.join(File.separator, parts);
 	}
+	// Windows: "C:\Users\name\file.txt"
+	// Linux: "/home/name/file.txt"
 	
 	public static Path joinP(String... parts) {
 		if (parts.length < 1)
@@ -313,7 +331,7 @@ public final class Util {
 	 * @param stripMetadata  If true, removes timestamps and other metadata from ZIP entries
 	 * @return true if packing succeeded, false otherwise
 	 */
-	public static boolean packFolder(Path sourceFolder, Path destPakFile, Predicate<Path> fileFilter, boolean stripMetadata) {
+	public static boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
 		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
 			log.warning("Source folder does not exist: " + sourceFolder);
 			return false;
@@ -336,10 +354,10 @@ public final class Util {
 			walk.filter(Files::isRegularFile).filter(path -> fileFilter == null || fileFilter.test(path)).forEach(file -> {
 				try {
 					// Get the path relative to the source folder
-					String relPath = sourceFolder.relativize(file).toString().replace('\\', '/');
+					final String relPath = sourceFolder.relativize(file).toString().replace('\\', '/');
 					
 					// Create ZipEntry with a fixed timestamp to strip metadata
-					final var entry = getZipEntry(stripMetadata, relPath, ft);
+					final var entry = getZipEntry(relPath, ft, stripMetadata);
 					
 					out.putNextEntry(entry);
 					Files.copy(file, out);
@@ -359,8 +377,8 @@ public final class Util {
 		return true;
 	}
 	
-	private static ZipEntry getZipEntry(boolean stripMetadata, String relPath, FileTime ft) {
-		ZipEntry entry = new ZipEntry(relPath);
+	private static ZipEntry getZipEntry(final String relPath, final FileTime ft, final boolean stripMetadata) {
+		final var entry = new ZipEntry(relPath);
 		
 		if (stripMetadata) {
 			// Set a fixed timestamp (Unix epoch, or any constant value)

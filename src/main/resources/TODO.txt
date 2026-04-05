@@ -1,5 +1,5 @@
 
-TODO : Make these Model -  perk_buff_overrides, perk_soul_abilitys, rpg_params, perk2perk_exclusivity, key_type, npc_tool_type, dice_badge_type, food_subtype, events, combat, game_over_type, rpg_context_type, player_damage, item_category, firearms,
+TODO : Make these Model -  perk_soul_abilitys, perk2perk_exclusivity, key_type, npc_tool_type, dice_badge_type, food_subtype, events, combat, game_over_type, rpg_context_type, player_damage, item_category, firearms,
 todo : (not so important but looks useful) - role, characters, alchemypotionbase, tutorial, basearchetypes, splash, faction_label, document_requirement, names, attributes, rpg_movement_type, pickable_area_desc, infotext_category, gunsmith, sack_generic, itemtransfer, packagestring, archery, poi, situation, apothecary_mixingoinment, watch, diggingspot, shovel, chest, reputation_condition, trainingground, default_controls, cartchest, reputation_change_target, translator
 
 all not implemented data types .... a lot : Over 50K char long ... Ugh

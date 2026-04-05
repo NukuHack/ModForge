@@ -4,7 +4,6 @@ import modforge.Util;
 import modforge.backend.AttributeFactory;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
-import modforge.backend.model.BaseModItem;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.Attribute;
 import org.w3c.dom.Element;
@@ -21,12 +20,13 @@ public final class ModItemBuilder {
 	
 	// O(1) lookup map - element name to handler
 	private static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
+	private static final Map<Class<? extends ModItem>, CreateHandler> MAKER_MAP = new HashMap<>();
 	
 	static {
 		// Build the handler map once at class initialization
 		for (var spec : ItemType.getHandlerSpecs()) {
-			final var handler = new GBuildHandler<>(spec.clazz(), spec.idKey());
-			HANDLER_MAP.put(spec.name(), handler);
+			HANDLER_MAP.put(spec.name(), new GBuildHandler<>(spec.clazz(), spec.idKey()));
+			MAKER_MAP.put(spec.clazz(), new GCreateHandler<>(spec.clazz(), spec.idKey()));
 		}
 	}
 	
@@ -57,6 +57,18 @@ public final class ModItemBuilder {
 		return null;
 	}
 	
+	public static Element build(final ModItem item) {
+		// getting the correct one from HANDLER_MAP
+		final var maker = MAKER_MAP.get(item.getClass());
+		
+		if (maker != null) {
+			return maker.handle(item);
+		}
+		
+		log.fine("No maker matched item <" + item + ">");
+		return null;
+	}
+	
 	
 	/**
 	 * Deep-copy a mod item, changing its path.
@@ -73,23 +85,41 @@ public final class ModItemBuilder {
 		}
 	}
 	
-	public static ModItem deepCopy(ModItem src) {
-		return deepCopy(src, src.getPath());
-	}
-	
+	/**
+	 * @param src ModItem - the data to be copied itself
+	 * @param mod ModData - the mod it's going to be copied To
+	 * @return ModItem - the element, it might be == to the base, and it could be .equal() but usually not
+	 * since path change is reflected in the data of the item
+	 */
 	public static ModItem deepCopy(ModItem src, ModData mod) {
-		final var fullPath = Path.of(src.getPath());
+		final var path = src.getPath();
+		final int colon = path.indexOf(':') + 1;
+		
+		final String prefix;   // e.g. "SomePak.pak:" or ""
+		final String innerPath; // e.g. "inner/dir/entry.xml"
+		// check for 0 since we incremented it once for later splitting
+		if (colon != 0 && colon < path.length()) {
+			prefix = path.substring(0, colon);   // includes ':'
+			innerPath = path.substring(colon);
+		} else {
+			prefix = "";
+			innerPath = path;
+		}
+		
+		final var fullPath = Path.of(innerPath);
 		final var name = fullPath.getFileName().toString();
-		// Strip any existing __modId suffix
-		final int delimit = name.indexOf("__");
-		final var nameFinal = delimit != -1 ? name.substring(0, delimit) : name.replace(".xml", "");
-		// Build new path using Util
-		final var fullFinal = Util.join(fullPath.getParent().toString(), Util.modXmlFile(nameFinal, mod.id));
+		final var parent = fullPath.getParent();
+		final var xmlFile = Util.modXmlFile(name, mod.id);
+		final var fullFinal = prefix + (parent != null ? Util.join(parent.toString(), xmlFile) : xmlFile);
 		return deepCopy(src, fullFinal);
 	}
 	
 	protected interface BuildHandler {
 		ModItem handle(final Element element);
+	}
+	
+	protected interface CreateHandler {
+		Element handle(final ModItem item);
 	}
 	
 	/**
@@ -119,6 +149,21 @@ public final class ModItemBuilder {
 				log.warning("Handler failed for " + type.getSimpleName() + ": " + e.getMessage());
 				return null;
 			}
+		}
+	}
+	protected static final class GCreateHandler<M extends ModItem> implements CreateHandler {
+		private static final Logger log = Logger.getLogger(GCreateHandler.class.getName());
+		private final Class<M> type;
+		private final String idAttrKey;
+		
+		public GCreateHandler(Class<M> type, String idAttrKey) {
+			this.type = type;
+			this.idAttrKey = idAttrKey;
+		}
+		
+		@Override
+		public Element handle(final ModItem item) {
+			return null;
 		}
 	}
 }

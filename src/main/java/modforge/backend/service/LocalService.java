@@ -263,7 +263,7 @@ public final class LocalService {
 			if (translations.isEmpty())
 				continue;
 			
-			final Path locPath = Util.locExport(gameDirectory, language.getDisplayName(), modId);
+			final Path locPath = Util.locExport(gameDirectory, language, modId);
 			
 			try {
 				final var xmlString = makeLocalizationXml(translations);

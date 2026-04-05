@@ -3,6 +3,7 @@ package modforge.backend.service;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.AttributeFactory;
+import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
@@ -48,8 +49,8 @@ public final class ItemService {
 	// ==================================================================
 	
 	private static Element buildXmlElement(Document doc, String elementName, ModItem item) {
-		Element el = doc.createElement(elementName);
-		for (var attr : item.getAttributes()) {
+		final var el = doc.createElement(elementName);
+		for (Attribute<?> attr : item.getAttributes()) {
 			el.setAttribute(attr.getName(), serializeValue(attr));
 		}
 		return el;
@@ -117,7 +118,7 @@ public final class ItemService {
 		Util.writeXml(writer.toString(), outFile.toPath());
 	}
 	
-	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod, final String typeName) {
+	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod) {
 		final String rawPath = item.getPath() == null ? "" : item.getPath();
 		
 		// ---- Resolve PAK stem & inner directory suffix ----
@@ -142,16 +143,18 @@ public final class ItemService {
 		
 		// ---- Build target paths inside the staging area ----
 		// Structure:  <gameDir>/Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/<type>__<mod.id>.xml
+		final var typeName = ItemEntry.forClass(item.getClass()).simpleName();
 		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
 		final var targetDir = dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, dirSuffix);
 		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
 		return outFile.toFile();
 	}
 	
-	private static Document makeDocument(final File outFile, final ModItem item, final String typeName) throws Exception {
+	private static Document makeDocument(final File outFile, final ModItem item) throws Exception {
 		final var factory = DocumentBuilderFactory.newInstance();
 		final var docBuilder = factory.newDocumentBuilder();
-		final String groupName = typeName + "s";
+		final var typeName = ItemEntry.forClass(item.getClass()).simpleName();
+		final var groupName = ItemEntry.forClass(item.getClass()).parentName();
 		final Document doc;
 		
 		if (outFile.exists()) {
@@ -209,12 +212,10 @@ public final class ItemService {
 	 * c) null / blank                        – newly created item
 	 */
 	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
-		final String typeName = item.getClass().getSimpleName().toLowerCase(Locale.ROOT);
-		
-		final File outFile = getOutputFile(gameDir, item, mod, typeName);
+		final File outFile = getOutputFile(gameDir, item, mod);
 		Files.createDirectories(outFile.toPath().getParent());
 		
-		final Document doc = makeDocument(outFile, item, typeName);
+		final Document doc = makeDocument(outFile, item);
 		
 		writeXml(doc, outFile);
 	}

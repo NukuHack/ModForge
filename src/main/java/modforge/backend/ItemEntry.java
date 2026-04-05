@@ -3,6 +3,8 @@ package modforge.backend;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.item.*;
 
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.function.Predicate;
 
 /**
@@ -22,67 +24,75 @@ import java.util.function.Predicate;
 public enum ItemEntry {
 	
 	// ── Weapons ─────────────────────────────────────────────────────────────
-	MELEE_WEAPON(MeleeWeapon.class, "Id", "item", true, "meleeweapon"),
+	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", true),
 	
-	MISSILE_WEAPON(MissileWeapon.class, "Id", "item", true, "missileweapon"),
+	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", true),
 	
-	AMMO(Ammo.class, "Id", "item", true, "ammo"),
+	AMMO(I.Ammo.class, "Id", "item", true),
 	
-	MELEE_WEAPON_CLASS(MeleeWeaponClass.class, "id", "weapon_class", false, "meleeweaponclass"),
+	MELEE_WEAPON_CLASS(I.MeleeWeaponClass.class, "id", "weapon_class", false),
 	
-	MISSILE_WEAPON_CLASS(MissileWeaponClass.class, "id", "weapon_class", false, "missileweaponclass"),
+	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", false),
 	
 	// ── Armor ────────────────────────────────────────────────────────────────
-	ARMOR(Armor.class, "Id", "item", true, "armor"),
+	ARMOR(I.Armor.class, "Id", "item", true),
 	
-	HELMET(Helmet.class, "Id", "item", true, "helmet"),
+	HELMET(I.Helmet.class, "Id", "item", true),
 	
-	HOOD(Hood.class, "Id", "item", true, "hood"),
+	HOOD(I.Hood.class, "Id", "item", true),
 	
 	// ── Consumables ──────────────────────────────────────────────────────────
-	FOOD(Food.class, "Id", "item", true, "food"),
+	FOOD(I.Food.class, "Id", "item", true),
 	
-	POISON(Poison.class, "Id", "item", true, "poison"),
+	POISON(I.Poison.class, "Id", "item", true),
 	
 	// ── Crafting ─────────────────────────────────────────────────────────────
-	HERB(Herb.class, "Id", "item", true, "herb"),
+	HERB(I.Herb.class, "Id", "item", true),
 	
-	CRAFTING_MATERIAL(CraftingMaterial.class, "Id", "item", true, "craftingmaterial"),
+	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", true),
 	
 	// ── Misc ─────────────────────────────────────────────────────────────────
-	NPC_TOOL(NPCTool.class, "Id", "item", true, "npctool"),
+	NPC_TOOL(I.NPCTool.class, "Id", "item", true),
 	
-	MISC_ITEM(MiscItem.class, "Id", "item", true, "miscitem"),
+	MISC_ITEM(I.MiscItem.class, "Id", "item", true),
 	
-	GAME_DOCUMENT(GameDocument.class, "Id", "item", true, "gamedocument"),
+	DOCUMENT(I.Document.class, "Id", "item", true), // ItemClasses version="8" - BlacksmithRecipeId
 	
-	DIE(Die.class, "Id", "item", true, "die"),
+	DIE(I.Die.class, "Id", "item", true),
 	
-	ITEM_ALIAS(ItemAlias.class, "Id", "item", true, "itemalias"),
+	ITEM_ALIAS(I.ItemAlias.class, "Id", "item", true),
 	
-	QUICK_SLOT_CONTAINER(QuickSlotContainer.class, "Id", "item", true, "quickslotcontainer"),
+	QUICK_SLOT_CONTAINER(I.QuickSlotContainer.class, "Id", "item", true),
 	
-	DICE_BADGE(DiceBadge.class, "Id", "item", true, "dicebadge"),
+	DICE_BADGE(I.DiceBadge.class, "Id", "item", true),
 	
-	PICKABLE_ITEM(PickableItem.class, "Id", "item", true, "pickableitem"),
+	PICKABLE_ITEM(I.PickableItem.class, "Id", "item", true),
 	
-	KEY(Key.class, "Id", "item", true, "key"),
+	KEY(I.Key.class, "Id", "item", true),
 	
-	MONEY(Money.class, "Id", "item", true, "money"),
+	MONEY(I.Money.class, "Id", "item", true),
 	
-	KEY_RING(KeyRing.class, "Id", "item", true, "keyring"),
+	KEY_RING(I.KeyRing.class, "Id", "item", true),
 	
 	// ── Perks / Buffs related ───────────────────────────────────────────────
-	PERK(Perk.class, "perk_id", "perk", true, "perk"),
+	PERK(I.Perk.class, "perk_id", "perk", true),
 	
-	BUFF(Buff.class, "buff_id", "buff", true, "buff"),
+	BUFF(I.Buff.class, "buff_id", "buff", true),
 	
-	PERK_BUFF(PerkBuff.class, "perk_id", "perk_buff", true, "perk_buff"),
+	RPG_PARAM(I.RpgParam.class, "rpg_param_key", "rpg_param", true),
 	
-	PERK_SCRIPT(PerkScript.class, "perk_id", "perk_script", true, "perk_script"),
+	PERK_BUFF(I.PerkBuff.class, "perk_id", "perk_buff", true),
+	
+	PERK_BUFF_OVERRIDE(I.PerkBuffOverride.class, "perk_id", "perk_buff_override", true),
+	
+	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", true),
+	
+	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParam", true),
+	
+	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", true),
 	
 	// ── Storm ────────────────────────────────────────────────────────────────
-	STORM(Storm.class, "id", "storm", true, "storm");
+	STORM(Storm.class, "id", "storm", true);
 	
 	// ────────────────────────────────────────────────────────────────────────
 	// Fields
@@ -96,13 +106,6 @@ public enum ItemEntry {
 	 * (e.g. {@code "Id"}, {@code "perk_id"}, {@code "buff_id"}, {@code "id"}).
 	 */
 	public final String idKey;
-	
-	/**
-	 * The XML element name used for quick lookup in the builder
-	 * All lower-cased table-name aliases that resolve to this class.
-	 * (e.g. {@code "perk"}, {@code "perk_buff"}, {@code "buff"}).
-	 */
-	public final String simpleName;
 	
 	/**
 	 * The short XML key used as the endpoint name in zip entries
@@ -120,12 +123,11 @@ public enum ItemEntry {
 	// Constructor
 	// ────────────────────────────────────────────────────────────────────────
 	
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String endpointKey, boolean showInDisplay, String simpleName) {
+	ItemEntry(Class<? extends ModItem> clazz, String idKey, String endpointKey, boolean showInDisplay) {
 		this.clazz = clazz;
 		this.idKey = idKey;
 		this.endpointKey = endpointKey;
 		this.showInDisplay = showInDisplay;
-		this.simpleName = simpleName;
 	}
 	
 	// ────────────────────────────────────────────────────────────────────────
@@ -143,9 +145,27 @@ public enum ItemEntry {
 	 *  {@code "NPCTool"} → {@code "NPC Tool"}).
 	 */
 	public String displayName() {
-		String s = clazz.getSimpleName();
+		var s = clazz.getSimpleName();
 		s = s.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", " ");
 		s = s.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2");
 		return s;
+	}
+	
+	public static ItemEntry forClass(Class<? extends ModItem> clazz) {
+		return Arrays.stream(values()).filter(c -> c.clazz.equals(clazz)).findAny().orElse(null);
+	}
+	
+	/**
+	 * Formats the simple class name into an id like simple name
+	 * (e.g. {@code "MeleeWeapon"} → {@code "melee_weapon"},
+	 *  {@code "NPCTool"} → {@code "npc_tool"}).
+	 */
+	public String simpleName() {
+		return displayName().replaceAll(" ", "_").toLowerCase(Locale.ROOT);
+	}
+	
+	public String parentName() {
+		return simpleName() + "s";
+		// TODO : some of the items have special parent stuffs so ... mehhh
 	}
 }
