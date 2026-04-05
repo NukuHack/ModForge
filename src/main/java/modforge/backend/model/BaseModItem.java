@@ -40,7 +40,7 @@ public abstract class BaseModItem implements ModItem {
 	
 	@Override
 	public List<Attribute> getAttributes() {
-		return this.attributes;
+		return List.copyOf(this.attributes);
 	}
 	
 	@Override
@@ -52,6 +52,11 @@ public abstract class BaseModItem implements ModItem {
 	@Override
 	public void addAttribute(final Attribute attr) {
 		this.attributes.add(attr);
+	}
+	
+	@Override
+	public void removeAttribute(final Attribute attr) {
+		this.attributes.remove(attr);
 	}
 	
 	@Override

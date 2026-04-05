@@ -5,10 +5,15 @@ public class DoubleAttribute extends Attribute<Double> {
 		super(name, value);
 	}
 	
-	
 	@Override
 	@SuppressWarnings("unchecked")
 	public DoubleAttribute deepClone() {
 		return this;
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public DoubleAttribute deepClone(Double newValue) {
+		return new DoubleAttribute(name, newValue);
 	}
 }

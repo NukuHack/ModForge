@@ -1,6 +1,7 @@
 package modforge.backend.model.attributes;
 
 import modforge.backend.model.MathOperation;
+import modforge.backend.model.item.Buff;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +14,7 @@ public class BuffParam extends Attribute<BuffParam.Param> {
 	
 	private static final Pattern BUFF_PARAM_RE = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");
 	
-	public BuffParam(String name, Param value) {
+	protected BuffParam(String name, Param value) {
 		super(name, value);
 	}
 	
@@ -51,8 +52,15 @@ public class BuffParam extends Attribute<BuffParam.Param> {
 	}
 	
 	@Override
-	public <R extends Attribute> R deepClone() {
-		return (R) this; // value is immutable, returning as is, is fine
+	@SuppressWarnings("unchecked")
+	public BuffParam deepClone() {
+		return this; // value is immutable, returning as is, is fine
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public BuffParam deepClone(Param newValue) {
+		return new BuffParam(name, newValue);
 	}
 	
 	@Override

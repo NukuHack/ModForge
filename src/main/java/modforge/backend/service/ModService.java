@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ModService {
@@ -282,9 +283,9 @@ public final class ModService {
 				log.fine("Staging dir missing for PAK '" + stageDir + "' – skipping.");
 				continue;
 			}
-			
-			Path destPak = Path.of(Util.modData(gameDir, mod.id), stageDir.getName() + ".pak");
-			boolean ok = Util.packFolderExcludingSelf(stageDir.toPath(), destPak);
+			final var dataDir = Util.modData(gameDir, mod.id);
+			final var destPak = Path.of(dataDir, stageDir.getName() + ".pak");
+			final var ok = Util.packFolderExcludingSelf(stageDir.toPath(), destPak);
 			if (ok) {
 				log.info("PAK created: " + destPak.getFileName());
 			} else {
@@ -361,13 +362,8 @@ public final class ModService {
 	 */
 	public void loadModLocalizations(ModData mod) {
 		final String gameDir = userConfig.gameDirectory;
-		final Path modLang = Util.modLocalDir(gameDir, mod.id);
-		
-		if (! Files.exists(modLang)) {
-			log.fine("No Localization folder found for mod " + mod.id);
-			return;
-		}
-		mod.setLocal(localService.loadLocalization(String.valueOf(modLang)));
+		final var modLang = Util.modFolder(gameDir, mod.id);
+		mod.setLocal(localService.loadLocalization(modLang));
 	}
 	
 	public void loadModItems(ModData mod) {

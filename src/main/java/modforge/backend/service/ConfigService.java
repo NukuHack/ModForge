@@ -1,5 +1,6 @@
 package modforge.backend.service;
 
+import modforge.Util;
 import modforge.backend.ModData;
 
 import java.io.BufferedReader;
@@ -47,7 +48,7 @@ public final class ConfigService {
 			return false;
 		}
 		
-		Path modCfg = Path.of(gameDir, "Mods", mod.id, "mod.cfg");
+		Path modCfg = Path.of(Util.modFolder(gameDir, mod.id), "mod.cfg");
 		
 		try {
 			Files.createDirectories(modCfg.getParent());
@@ -146,14 +147,14 @@ public final class ConfigService {
 				
 				if (line.startsWith(";") || line.startsWith("#")) {
 					// Accumulate comment
-					if (currentComment.length() > 0)
+					if (! currentComment.isEmpty())
 						currentComment.append("\n");
 					currentComment.append(line);
 				} else if (! line.isEmpty()) {
 					Matcher m = CONFIG_LINE.matcher(line);
 					if (m.matches()) {
 						String key = m.group(1);
-						if (currentComment.length() > 0) {
+						if (! currentComment.isEmpty()) {
 							commentsTarget.put(key, currentComment.toString());
 							currentComment = new StringBuilder();
 						}
@@ -270,7 +271,7 @@ public final class ConfigService {
 			return new HashMap<>();
 		}
 		
-		Path modCfg = Path.of(gameDir, "Mods", modId, "mod.cfg");
+		Path modCfg = Path.of(Util.modFolder(gameDir, modId), "mod.cfg");
 		
 		if (! Files.exists(modCfg)) {
 			log.fine("No mod.cfg found for mod: " + modId);

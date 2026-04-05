@@ -34,6 +34,9 @@ import java.util.zip.ZipOutputStream;
 public final class Util {
 	public static final String APP_NAME = "ModForge";
 	public static final String os = System.getProperty("os.name").toLowerCase();
+	public static final String TABLES = "Tables.pak";
+	public static final String STORM = "Storm.pak";
+	public static final String ICONS = "IPL_GameData.pak";
 	private static final Logger log = Logger.getLogger(Util.class.getName());
 	
 	private Util() {
@@ -53,6 +56,10 @@ public final class Util {
 		return joinP(root, "Data");
 	}
 	
+	public static String gameData(String root) {
+		return join(root, "Data");
+	}
+	
 	public static Path gameLocalDir(String root) {
 		return joinP(root, "Localization");
 	}
@@ -65,12 +72,20 @@ public final class Util {
 		return Path.of(Util.modData(gameDir, modId), "_stage");
 	}
 	
+	public static Path modStormStaging(String gameDir, String modId) {
+		return Path.of(Util.modStaging(gameDir, modId).toString(), "Storm");
+	}
+	
 	public static String locImport(String root, String lang) {
 		return join(root, "Localization", lang + "_xml.pak");
 	}
 	
 	public static Path locExport(String root, String lang, String modId) {
-		return joinP(modLocalDir(root, modId), lang + "_xml", "text__" + modId + ".xml");
+		return joinP(modLocalDir(root, modId), lang + "_xml", modXmlFile("text", modId));
+	}
+	
+	public static String modXmlFile(String fileName, String modId) {
+		return fileName + "__" + modId + ".xml";
 	}
 	
 	public static String modFolder(String root, String modId) {
@@ -90,17 +105,29 @@ public final class Util {
 	}
 	
 	public static Set<String> allLocPaths(String root) {
-		return Language.getAllDisplayNames().stream().map(l -> locImport(root, l)).collect(Collectors.toSet());
+		return Language.getAllNames().stream().map(l -> locImport(root, l)).collect(Collectors.toSet());
+	}
+	
+	public static String icons(String gameDir) {
+		return Util.join(gameData(gameDir), ICONS);
 	}
 	
 	/**
 	 * Join path segments using forward slashes (cross-platform safe).
 	 */
 	public static String join(String... parts) {
+		if (parts.length < 1)
+			return "";
+		else if (parts.length == 1)
+			return parts[0];
 		return String.join("/", parts);
 	}
 	
 	public static Path joinP(String... parts) {
+		if (parts.length < 1)
+			return Path.of("");
+		else if (parts.length == 1)
+			return Path.of(parts[0]);
 		return Path.of(join(parts));
 	}
 	
@@ -185,6 +212,13 @@ public final class Util {
 	public static String escapeXml(String s) {
 		// theoretically escapeHtml could work, but I made this just in case
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
+	}
+	
+	public static String unescapeXml(String s) {
+		if (s == null) {
+			return null;
+		}
+		return s.replace("&nbsp;", " ").replace("&apos;", "'").replace("&quot;", "\"").replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&");
 	}
 	
 	public static void copyText(String text) {

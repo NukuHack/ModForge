@@ -5,10 +5,15 @@ public class BooleanAttribute extends Attribute<Boolean> {
 		super(name, value);
 	}
 	
-	
 	@Override
 	@SuppressWarnings("unchecked")
 	public BooleanAttribute deepClone() {
 		return this;
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public BooleanAttribute deepClone(Boolean newValue) {
+		return new BooleanAttribute(name, newValue);
 	}
 }

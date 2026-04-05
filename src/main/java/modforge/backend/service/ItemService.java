@@ -125,11 +125,11 @@ public final class ItemService {
 		}
 		
 		// ---- Build target paths inside the staging area ----
-		// Structure:  Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/
-		final String stageRoot = Util.join(Util.modData(gameDir, mod.id), "_stage", pakStem);
-		final String targetDir = dirSuffix.isEmpty() ? stageRoot : Util.join(stageRoot, dirSuffix);
-		final String outFile = Util.join(targetDir, typeName + "__" + mod.id + ".xml");
-		return new File(outFile);
+		// Structure:  <gameDir>/Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/<type>__<mod.id>.xml
+		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
+		final var targetDir = dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, dirSuffix);
+		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
+		return outFile.toFile();
 	}
 	
 	private static Document makeDocument(final File outFile, final ModItem item, final String typeName) throws Exception {

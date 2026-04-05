@@ -82,7 +82,7 @@ public final class StormService {
 		
 		// Derive a sensible file name from the ID (last path segment)
 		final String fileName = idToFileName(data.getId());
-		final Path targetDir = Path.of(gameDir, "Mods", modId, "Data", "_stage", modId, "Libs", "Storm");
+		final Path targetDir = Util.modStormStaging(gameDir, modId);
 		final Path targetFile = targetDir.resolve(fileName);
 		
 		try {
@@ -192,7 +192,7 @@ public final class StormService {
 			return;
 		
 		// Storm files are typically in Scripts.pak; scan all data PAKs for robustness.
-		final Path dataFolder = Path.of(gameDir, "Data");
+		final Path dataFolder = Util.gameDataDir(gameDir);
 		if (! Files.exists(dataFolder))
 			return;
 		

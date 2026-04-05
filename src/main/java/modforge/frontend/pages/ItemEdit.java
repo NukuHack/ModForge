@@ -98,41 +98,47 @@ public class ItemEdit extends BaseEditPage {
 		refreshModSelector();
 		buildAttributeEditor();
 		
-		// Wire up double-click and right-click menu on the shared previewPane
+		// Wire up double-click and right-click menu on the shared previewPane.
+		// NOTE: do NOT remove existing mouse listeners — Swing's BasicTextUI installs
+		// its own listeners for text selection, and stripping them kills selectability.
 		if (previewPane != null) {
-			// Remove previous listeners to avoid stacking on repeated calls
-			for (var l : previewPane.getMouseListeners()) {
-				previewPane.removeMouseListener(l);
-			}
-			previewPane.addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseClicked(MouseEvent e) {
-					if (e.getClickCount() == 2 && currentItem != null) {
-						Util.copyText(currentItem.getId());
-						window.snackbar.show("ID copied: " + currentItem.getId(), BarManager.Type.INFO);
+			// Use a client-property flag so we only add our listener once,
+			// even when onItemSet() is called repeatedly.
+			if (previewPane.getClientProperty("itemEditListenerInstalled") == null) {
+				previewPane.addMouseListener(new MouseAdapter() {
+					@Override
+					public void mouseClicked(MouseEvent e) {
+						if (e.getClickCount() == 2 && currentItem != null) {
+							Util.copyText(currentItem.getId());
+							window.snackbar.show("ID copied: " + currentItem.getId(), BarManager.Type.INFO);
+						}
 					}
-				}
-			});
-			
-			JPopupMenu menu = new JPopupMenu();
-			JMenuItem copyId = new JMenuItem("Copy ID");
-			copyId.addActionListener(e -> {
-				if (currentItem != null) {
-					Util.copyText(currentItem.getId());
-					window.snackbar.show("ID copied: " + currentItem.getId(), BarManager.Type.INFO);
-				}
-			});
-			JMenuItem copyAll = new JMenuItem("Copy All Details");
-			copyAll.addActionListener(e -> {
-				if (currentItem != null) {
-					Util.copyText(currentItem.details());
-					window.snackbar.show("All details copied", BarManager.Type.INFO);
-				}
-			});
-			menu.add(copyId);
-			menu.add(copyAll);
-			previewPane.setComponentPopupMenu(menu);
+				});
+				previewPane.putClientProperty("itemEditListenerInstalled", Boolean.TRUE);
+			}
+			previewPane.setComponentPopupMenu(getPopupMenu());
 		}
+	}
+	
+	private JPopupMenu getPopupMenu() {
+		JPopupMenu menu = new JPopupMenu();
+		JMenuItem copyId = new JMenuItem("Copy ID");
+		copyId.addActionListener(e -> {
+			if (currentItem != null) {
+				Util.copyText(currentItem.getId());
+				window.snackbar.show("ID copied: " + currentItem.getId(), BarManager.Type.INFO);
+			}
+		});
+		JMenuItem copyAll = new JMenuItem("Copy All Details");
+		copyAll.addActionListener(e -> {
+			if (currentItem != null) {
+				Util.copyText(currentItem.details());
+				window.snackbar.show("All details copied", BarManager.Type.INFO);
+			}
+		});
+		menu.add(copyId);
+		menu.add(copyAll);
+		return menu;
 	}
 	
 	@Override
@@ -181,7 +187,7 @@ public class ItemEdit extends BaseEditPage {
 		var mod = targetMod.get();
 		ModItem copy = ModItemBuilder.deepCopy(currentItem, mod);
 		mod.addItem(copy);
-		window.snackbar.show("Added to mod: " + mod.name + " (" + mod.getItems().size() + " items)", BarManager.Type.SUCCESS);
+		window.snackbar.show("Added item to mod: " + mod.name, BarManager.Type.SUCCESS);
 	}
 	
 	// ── Attribute editor ──────────────────────────────────────────────────────
@@ -207,7 +213,7 @@ public class ItemEdit extends BaseEditPage {
 		sep.setBackground(new Color(0x313244));
 		attributesPanel.add(sep, separatorGbc(row++));
 		
-		for (Attribute attr : currentItem.getAttributes())
+		for (var attr : currentItem.getAttributes())
 			row = addAttributeRow(attr, row);
 		
 		GridBagConstraints filler = new GridBagConstraints();
@@ -273,13 +279,15 @@ public class ItemEdit extends BaseEditPage {
 			currentItem.setId(f.getText());
 		}
 		
-		for (Attribute attr : currentItem.getAttributes()) {
-			JComponent comp = attributeComponents.get(attr.getName());
+		for (var attr : currentItem.getAttributes()) {
+			var comp = attributeComponents.get(attr.getName());
 			if (comp == null)
 				continue;
 			Object val = extractValue(comp, attr);
-			if (val != null)
-				attr.setValue(val);
+			if (val != null) {
+				currentItem.removeAttribute(attr);
+				currentItem.addAttribute(attr.deepClone(val));
+			}
 		}
 		
 		hasChanges = false;
@@ -295,15 +303,7 @@ public class ItemEdit extends BaseEditPage {
 		if (comp instanceof JSpinner sp && attr instanceof DoubleAttribute)
 			return sp.getValue();
 		if (comp instanceof JTextField tf) {
-			String text = tf.getText();
-			if (attr instanceof DoubleAttribute) {
-				try {
-					return Double.parseDouble(text);
-				} catch (NumberFormatException e) {
-					return 0.0;
-				}
-			}
-			return text;
+			return tf.getText();
 		}
 		if (comp instanceof JScrollPane sp && sp.getViewport().getView() instanceof JTextArea ta)
 			return ta.getText();
@@ -315,7 +315,7 @@ public class ItemEdit extends BaseEditPage {
 	private JComponent createEditorForAttribute(Attribute attr) {
 		if (attr instanceof BooleanAttribute boolAttr) {
 			JCheckBox cb = new JCheckBox();
-			cb.setSelected((Boolean) boolAttr.getValue());
+			cb.setSelected(boolAttr.getValue());
 			cb.setBackground(MainWindow.SURFACE);
 			cb.setForeground(MainWindow.TEXT);
 			cb.addActionListener(e -> markChanged());

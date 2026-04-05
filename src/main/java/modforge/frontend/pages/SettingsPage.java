@@ -2,6 +2,7 @@ package modforge.frontend.pages;
 
 import modforge.Singleton;
 import modforge.Util;
+import modforge.backend.model.Language;
 import modforge.backend.service.UserService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
@@ -17,7 +18,7 @@ public class SettingsPage extends BasePage {
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");
 	private final JPanel card = card(null);
 	private final JTextField userName = styledField("Your name (used as mod author)");
-	private final JComboBox<String> langBox = new JComboBox<>(new String[] { "en – English", "de – Deutsch", "fr – Français", "es – Español", "it – Italiano", "pl – Polski", "ru – Русский", "cs – Čeština" });
+	private final JComboBox<String> langBox = new JComboBox<>(Language.getAllNames().toArray(new String[]{}));
 	private final UserService configService;
 	public SettingsPage(MainWindow w) {
 		super(w);
@@ -63,7 +64,7 @@ public class SettingsPage extends BasePage {
 		card.add(gameDir, gc);
 		gc.gridx = 2;
 		gc.weightx = 0.1;
-		card.add(primaryBtn("Browse…", e -> {
+		card.add(primaryBtn("Browse…", e ->
 			Util.pickFolderAsync().thenAccept(path -> {
 				if (path != null)
 					SwingUtilities.invokeLater(() -> {
@@ -72,8 +73,8 @@ public class SettingsPage extends BasePage {
 						configService.save();
 						w.snackbar.show("Game directory set", BarManager.Type.SUCCESS);
 					});
-			});
-		}), gc);
+			})
+		), gc);
 		
 		// Username row (gridy = 2)
 		gc.gridx = 0;

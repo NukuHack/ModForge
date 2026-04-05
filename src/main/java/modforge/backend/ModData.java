@@ -6,7 +6,7 @@ import modforge.backend.model.ModItem;
 import java.util.*;
 
 public final class ModData {
-	private final List<ModItem> items = new ArrayList<>();
+	private final Map<String, ModItem> items = new HashMap<>();
 	private final Map<String, String> config = new HashMap<>();
 	/**
 	 * lang-code -> (string-key -> localized-value)
@@ -31,17 +31,33 @@ public final class ModData {
 		return "ModData{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", description='" + description + '\'' + ", author='" + author + '\'' + ", modVersion='" + modVersion + '\'' + ", createdOn='" + createdOn + '\'' + ", modifiesLevel=" + modifiesLevel + ", supportsGameVersions=" + supportsGameVersions + ", item_size=" + items.size() + ", lang_size=" + localizations.size() + ", icon_size=" + iconIndex.size() + '}';
 	}
 	
-	public void addItem(ModItem copy) {
-		items.add(copy);
+	public void addItem(ModItem item) {
+		items.put(item.getId(), item);
 	}
 	
-	public List<ModItem> getItems() {
-		return Collections.unmodifiableList(items);
+	public Collection<ModItem> getItems() {
+		return Collections.unmodifiableCollection(items.values());
 	}
 	
 	public void setItems(Collection<ModItem> input) {
 		items.clear();
-		items.addAll(input);
+		input.forEach(i -> items.put(i.getId(), i));
+	}
+	
+	public Map<String, ModItem> items() {
+		return Collections.unmodifiableMap(items);
+	}
+	
+	public ModItem getItem(String key) {
+		return items.get(key);
+	}
+	
+	public boolean containsItem(String key) {
+		return items.containsKey(key);
+	}
+	
+	public boolean containsItem(ModItem value) {
+		return items.containsValue(value);
 	}
 	
 	public Map<String, String> getConfig() {

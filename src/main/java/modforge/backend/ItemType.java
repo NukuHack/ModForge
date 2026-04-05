@@ -9,32 +9,27 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 public enum ItemType {
-	WEAPON_CLASS("weapon_class", C.TABLES, ItemEntry.MELEE_WEAPON_CLASS, ItemEntry.MISSILE_WEAPON_CLASS),
+	WEAPON_CLASS("weapon_class", ItemEntry.MELEE_WEAPON_CLASS, ItemEntry.MISSILE_WEAPON_CLASS),
 	
-	WEAPON_TYPE("item", C.TABLES, ItemEntry.MELEE_WEAPON, ItemEntry.MISSILE_WEAPON, ItemEntry.AMMO),
+	WEAPON_TYPE("item", ItemEntry.MELEE_WEAPON, ItemEntry.MISSILE_WEAPON, ItemEntry.AMMO),
 	
-	ARMOR_TYPE("item", C.TABLES, ItemEntry.HOOD, ItemEntry.ARMOR, ItemEntry.HELMET),
+	ARMOR_TYPE("item", ItemEntry.HOOD, ItemEntry.ARMOR, ItemEntry.HELMET),
 	
-	CONSUMABLE_TYPE("item", C.TABLES, ItemEntry.FOOD, ItemEntry.POISON),
+	CONSUMABLE_TYPE("item", ItemEntry.FOOD, ItemEntry.POISON),
 	
-	CRAFTING_TYPE("item", C.TABLES, ItemEntry.HERB, ItemEntry.CRAFTING_MATERIAL),
+	CRAFTING_TYPE("item", ItemEntry.HERB, ItemEntry.CRAFTING_MATERIAL),
 	
-	MISC_TYPE("item", C.TABLES, ItemEntry.NPC_TOOL, ItemEntry.MISC_ITEM, ItemEntry.GAME_DOCUMENT, ItemEntry.DIE, ItemEntry.ITEM_ALIAS, ItemEntry.QUICK_SLOT_CONTAINER, ItemEntry.DICE_BADGE, ItemEntry.PICKABLE_ITEM, ItemEntry.KEY, ItemEntry.MONEY, ItemEntry.KEY_RING),
+	MISC_TYPE("item", ItemEntry.NPC_TOOL, ItemEntry.MISC_ITEM, ItemEntry.GAME_DOCUMENT, ItemEntry.DIE, ItemEntry.ITEM_ALIAS, ItemEntry.QUICK_SLOT_CONTAINER, ItemEntry.DICE_BADGE, ItemEntry.PICKABLE_ITEM, ItemEntry.KEY, ItemEntry.MONEY, ItemEntry.KEY_RING),
 	
-	PERK("perk", C.TABLES, ItemEntry.PERK),
+	PERK("perk", ItemEntry.PERK),
 	
-	BUFF("buff", C.TABLES, ItemEntry.BUFF),
+	BUFF("buff", ItemEntry.BUFF),
 	
-	STORM("storm", C.STORM, ItemEntry.STORM),
+	STORM("storm", ItemEntry.STORM),
 	
-	PERK_BUFF("perk_buff", C.TABLES, ItemEntry.PERK_BUFF),
+	PERK_BUFF("perk_buff", ItemEntry.PERK_BUFF),
 	
-	PERK_SCRIPT("perk_script", C.TABLES, ItemEntry.PERK_SCRIPT);
-	
-	// ── Constants ────────────────────────────────────────────────────────────
-	
-	public static final String TABLES = C.TABLES;
-	public static final String GAMEDATA = C.GAMEDATA;
+	PERK_SCRIPT("perk_script", ItemEntry.PERK_SCRIPT);
 	
 	// ── Static indexes built once from ItemEntry.values() ───────────────────
 	
@@ -92,12 +87,9 @@ public enum ItemType {
 	private final Set<ItemEntry> entries;
 	@SuppressWarnings("unused")
 	private final String key;
-	@SuppressWarnings("unused")
-	private final String path;
 	
-	ItemType(String key, String path, ItemEntry... entries) {
+	ItemType(String key, ItemEntry... entries) {
 		this.key = key;
-		this.path = path;
 		this.entries = Set.of(entries);
 	}
 	
@@ -155,10 +147,4 @@ public enum ItemType {
 	/** Display entry for the frontend type dropdown. */
 	private record ITDisplay(String displayName, Predicate<ModItem> matcher) {
 	}
-}
-
-class C {
-	public static final String TABLES = "Data/Tables.pak";
-	public static final String STORM = "Data/Storm.pak";
-	public static final String GAMEDATA = "Data/IPL_GameData.pak";
 }

@@ -122,7 +122,7 @@ public class ModsPage extends BasePage {
 				}
 			} catch (Exception e) {
 				window.snackbar.show("Import failed: " + e.getMessage(), BarManager.Type.ERROR);
-				e.printStackTrace();
+				log.severe("Import error: " + e);
 			}
 		}
 	}

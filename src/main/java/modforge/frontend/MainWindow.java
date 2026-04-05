@@ -23,7 +23,7 @@ public class MainWindow extends JFrame {
 	public static final Color TEXT = new Color(0xcdd6f4);
 	public static final Color MUTED = new Color(0x6c6f85);
 	public static final Color DANGER = new Color(0xf38ba8);
-	private static final Logger log = Logger.getLogger(MainWindow.class.getName());
+	protected static final Logger log = Logger.getLogger(MainWindow.class.getName());
 	public final BarManager snackbar;
 	// ── navigation ───────────────────────────────────────────────────────────
 	private final CardLayout cardLayout = new CardLayout();
@@ -176,7 +176,7 @@ public class MainWindow extends JFrame {
 		
 		side.add(Box.createVerticalStrut(8));
 		
-		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS }) {
+		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG }) {
 			side.add(navBtn(page.getDisplayName(), page));
 		}
 		
@@ -249,7 +249,7 @@ public class MainWindow extends JFrame {
 	public enum Page {
 		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class),
 		ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class),
-		LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class);
+		LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class), LANG("Localizations", LocalizationPage.class);
 		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;

@@ -1,6 +1,7 @@
 package modforge.backend.service;
 
 import modforge.Singleton;
+import modforge.Util;
 import modforge.backend.ModData;
 
 import java.io.IOException;
@@ -71,7 +72,7 @@ public final class UserService {
 	public void writeLoadout(List<ModData> orderedMods) {
 		if (gameDirectory == null || gameDirectory.isBlank())
 			return;
-		Path loadOrder = Path.of(gameDirectory, "Mods", "mod_order.txt");
+		Path loadOrder = Path.of(Util.modFolder(gameDirectory).toString(), "mod_order.txt");
 		try {
 			Files.deleteIfExists(loadOrder);
 			var ids = orderedMods.stream().map(m -> m.id).collect(Collectors.toList());

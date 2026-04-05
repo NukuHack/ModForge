@@ -1,5 +1,6 @@
 package modforge.backend.service;
 
+import modforge.Util;
 import modforge.backend.AttributeFactory;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
@@ -78,11 +79,14 @@ public final class ModItemBuilder {
 	}
 	
 	public static ModItem deepCopy(ModItem src, ModData mod) {
-		Path fullPath = Path.of(src.getPath());
-		String dir = fullPath.getParent().toString();
-		String name = fullPath.getFileName().toString();
-		String nameFinal = name.contains("__") ? name.replaceAll("__[^_]+\\.xml", "__" + mod.id + ".xml") : name.replace(".xml", "__" + mod.id + ".xml");
-		return deepCopy(src, dir + nameFinal);
+		final var fullPath = Path.of(src.getPath());
+		final var name = fullPath.getFileName().toString();
+		// Strip any existing __modId suffix
+		final int delimit = name.indexOf("__");
+		final var nameFinal = delimit != -1 ? name.substring(0, delimit) : name.replace(".xml", "");
+		// Build new path using Util
+		final var fullFinal = Util.join(fullPath.getParent().toString(), Util.modXmlFile(nameFinal, mod.id));
+		return deepCopy(src, fullFinal);
 	}
 	
 	protected interface BuildHandler {

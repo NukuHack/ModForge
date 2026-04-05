@@ -22,67 +22,67 @@ import java.util.function.Predicate;
 public enum ItemEntry {
 	
 	// ── Weapons ─────────────────────────────────────────────────────────────
-	MELEE_WEAPON(MeleeWeapon.class, "Id", C.TABLES, "item", true, "meleeweapon"),
+	MELEE_WEAPON(MeleeWeapon.class, "Id", "item", true, "meleeweapon"),
 	
-	MISSILE_WEAPON(MissileWeapon.class, "Id", C.TABLES, "item", true, "missileweapon"),
+	MISSILE_WEAPON(MissileWeapon.class, "Id", "item", true, "missileweapon"),
 	
-	AMMO(Ammo.class, "Id", C.TABLES, "item", true, "ammo"),
+	AMMO(Ammo.class, "Id", "item", true, "ammo"),
 	
-	MELEE_WEAPON_CLASS(MeleeWeaponClass.class, "id", C.TABLES, "weapon_class", false, "meleeweaponclass"),
+	MELEE_WEAPON_CLASS(MeleeWeaponClass.class, "id", "weapon_class", false, "meleeweaponclass"),
 	
-	MISSILE_WEAPON_CLASS(MissileWeaponClass.class, "id", C.TABLES, "weapon_class", false, "missileweaponclass"),
+	MISSILE_WEAPON_CLASS(MissileWeaponClass.class, "id", "weapon_class", false, "missileweaponclass"),
 	
 	// ── Armor ────────────────────────────────────────────────────────────────
-	ARMOR(Armor.class, "Id", C.TABLES, "item", true, "armor"),
+	ARMOR(Armor.class, "Id", "item", true, "armor"),
 	
-	HELMET(Helmet.class, "Id", C.TABLES, "item", true, "helmet"),
+	HELMET(Helmet.class, "Id", "item", true, "helmet"),
 	
-	HOOD(Hood.class, "Id", C.TABLES, "item", true, "hood"),
+	HOOD(Hood.class, "Id", "item", true, "hood"),
 	
 	// ── Consumables ──────────────────────────────────────────────────────────
-	FOOD(Food.class, "Id", C.TABLES, "item", true, "food"),
+	FOOD(Food.class, "Id", "item", true, "food"),
 	
-	POISON(Poison.class, "Id", C.TABLES, "item", true, "poison"),
+	POISON(Poison.class, "Id", "item", true, "poison"),
 	
 	// ── Crafting ─────────────────────────────────────────────────────────────
-	HERB(Herb.class, "Id", C.TABLES, "item", true, "herb"),
+	HERB(Herb.class, "Id", "item", true, "herb"),
 	
-	CRAFTING_MATERIAL(CraftingMaterial.class, "Id", C.TABLES, "item", true, "craftingmaterial"),
+	CRAFTING_MATERIAL(CraftingMaterial.class, "Id", "item", true, "craftingmaterial"),
 	
 	// ── Misc ─────────────────────────────────────────────────────────────────
-	NPC_TOOL(NPCTool.class, "Id", C.TABLES, "item", true, "npctool"),
+	NPC_TOOL(NPCTool.class, "Id", "item", true, "npctool"),
 	
-	MISC_ITEM(MiscItem.class, "Id", C.TABLES, "item", true, "miscitem"),
+	MISC_ITEM(MiscItem.class, "Id", "item", true, "miscitem"),
 	
-	GAME_DOCUMENT(GameDocument.class, "Id", C.TABLES, "item", true, "gamedocument"),
+	GAME_DOCUMENT(GameDocument.class, "Id", "item", true, "gamedocument"),
 	
-	DIE(Die.class, "Id", C.TABLES, "item", true, "die"),
+	DIE(Die.class, "Id", "item", true, "die"),
 	
-	ITEM_ALIAS(ItemAlias.class, "Id", C.TABLES, "item", true, "itemalias"),
+	ITEM_ALIAS(ItemAlias.class, "Id", "item", true, "itemalias"),
 	
-	QUICK_SLOT_CONTAINER(QuickSlotContainer.class, "Id", C.TABLES, "item", true, "quickslotcontainer"),
+	QUICK_SLOT_CONTAINER(QuickSlotContainer.class, "Id", "item", true, "quickslotcontainer"),
 	
-	DICE_BADGE(DiceBadge.class, "Id", C.TABLES, "item", true, "dicebadge"),
+	DICE_BADGE(DiceBadge.class, "Id", "item", true, "dicebadge"),
 	
-	PICKABLE_ITEM(PickableItem.class, "Id", C.TABLES, "item", true, "pickableitem"),
+	PICKABLE_ITEM(PickableItem.class, "Id", "item", true, "pickableitem"),
 	
-	KEY(Key.class, "Id", C.TABLES, "item", true, "key"),
+	KEY(Key.class, "Id", "item", true, "key"),
 	
-	MONEY(Money.class, "Id", C.TABLES, "item", true, "money"),
+	MONEY(Money.class, "Id", "item", true, "money"),
 	
-	KEY_RING(KeyRing.class, "Id", C.TABLES, "item", true, "keyring"),
+	KEY_RING(KeyRing.class, "Id", "item", true, "keyring"),
 	
-	// ── Perks / Buffs / Scripts ───────────────────────────────────────────────
-	PERK(Perk.class, "perk_id", C.TABLES, "perk", true, "perk"),
+	// ── Perks / Buffs related ───────────────────────────────────────────────
+	PERK(Perk.class, "perk_id", "perk", true, "perk"),
 	
-	BUFF(Buff.class, "buff_id", C.TABLES, "buff", true, "buff"),
+	BUFF(Buff.class, "buff_id", "buff", true, "buff"),
 	
-	PERK_BUFF(PerkBuff.class, "perk_id", C.TABLES, "perk_buff", true, "perk_buff"),
+	PERK_BUFF(PerkBuff.class, "perk_id", "perk_buff", true, "perk_buff"),
 	
-	PERK_SCRIPT(PerkScript.class, "perk_id", C.TABLES, "perk_script", true, "perk_script"),
+	PERK_SCRIPT(PerkScript.class, "perk_id", "perk_script", true, "perk_script"),
 	
 	// ── Storm ────────────────────────────────────────────────────────────────
-	STORM(Storm.class, "id", C.STORM, "storm", true, "storm");
+	STORM(Storm.class, "id", "storm", true, "storm");
 	
 	// ────────────────────────────────────────────────────────────────────────
 	// Fields
@@ -96,12 +96,6 @@ public enum ItemEntry {
 	 * (e.g. {@code "Id"}, {@code "perk_id"}, {@code "buff_id"}, {@code "id"}).
 	 */
 	public final String idKey;
-	
-	/**
-	 * Pak-path (e.g. {@code "Data/Tables.pak"}).
-	 * Ignored at Mod load
-	 */
-	public final String endpointPath;
 	
 	/**
 	 * The XML element name used for quick lookup in the builder
@@ -126,10 +120,9 @@ public enum ItemEntry {
 	// Constructor
 	// ────────────────────────────────────────────────────────────────────────
 	
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String endpointPath, String endpointKey, boolean showInDisplay, String simpleName) {
+	ItemEntry(Class<? extends ModItem> clazz, String idKey, String endpointKey, boolean showInDisplay, String simpleName) {
 		this.clazz = clazz;
 		this.idKey = idKey;
-		this.endpointPath = endpointPath;
 		this.endpointKey = endpointKey;
 		this.showInDisplay = showInDisplay;
 		this.simpleName = simpleName;

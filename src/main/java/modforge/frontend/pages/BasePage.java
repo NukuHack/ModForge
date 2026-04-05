@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.logging.Logger;
 
 import static modforge.Util.escHtml;
 
@@ -18,6 +19,7 @@ import static modforge.Util.escHtml;
 //  SHARED PAGE BASE
 // =============================================================================
 public abstract class BasePage extends JPanel {
+	protected static final Logger log = Logger.getLogger(BasePage.class.getName());
 	protected final MainWindow window;
 	
 	BasePage(MainWindow window) {
@@ -132,7 +134,6 @@ public abstract class BasePage extends JPanel {
 		
 		// ── Header: ID + class ────────────────────────────────────────────
 		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(item.getId())).append("</b>");
-		html.append("<span style='color:#6c6f85;font-size:10px;margin-left:8px;'>(double-click to copy)</span>");
 		html.append("<br/>");
 		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(item.getClass().getSimpleName()).append("</span>");
 		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");

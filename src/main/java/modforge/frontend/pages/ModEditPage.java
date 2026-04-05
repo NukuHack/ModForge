@@ -1,5 +1,6 @@
 package modforge.frontend.pages;
 
+import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.service.ConfigService;
 import modforge.backend.service.ModService;
@@ -8,6 +9,8 @@ import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -312,11 +315,11 @@ public class ModEditPage extends BasePage {
 		
 		if (confirm == JOptionPane.YES_OPTION) {
 			String gameDir = window.getRegistry().userConfig.gameDirectory;
-			java.nio.file.Path modPath = java.nio.file.Path.of(gameDir, "Mods", currentMod.id);
+			Path modPath = Path.of(gameDir, "Mods", currentMod.id);
 			
 			try {
-				if (java.nio.file.Files.exists(modPath)) {
-					deleteRecursively(modPath.toFile());
+				if (Files.exists(modPath)) {
+					Util.deleteRecursively(modPath);
 					window.snackbar.show("Mod deleted: " + currentMod.name, BarManager.Type.SUCCESS);
 				}
 				
@@ -326,17 +329,5 @@ public class ModEditPage extends BasePage {
 				window.snackbar.show("Failed to delete mod: " + e.getMessage(), BarManager.Type.ERROR);
 			}
 		}
-	}
-	
-	private void deleteRecursively(java.io.File file) {
-		if (file.isDirectory()) {
-			java.io.File[] children = file.listFiles();
-			if (children != null) {
-				for (java.io.File child : children) {
-					deleteRecursively(child);
-				}
-			}
-		}
-		file.delete();
 	}
 }

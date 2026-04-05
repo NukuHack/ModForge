@@ -198,7 +198,7 @@ public class LangEdit extends BaseEditPage {
 	/**
 	 * Walk the current item's attributes to find localization-key attributes,
 	 * resolve each key to its translation in the selected language,
-	 * and build one labelled JTextArea per entry.
+	 * and build one labeled JTextArea per entry.
 	 */
 	private void rebuildFields() {
 		fieldsPanel.removeAll();

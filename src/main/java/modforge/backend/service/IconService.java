@@ -118,7 +118,7 @@ public final class IconService {
 		if (gameDir == null || gameDir.isBlank())
 			return;
 		loadModIconsForMod(game, false);
-		game.setIcon(indexDdsFromPak(Util.join(gameDir, ItemType.GAMEDATA)));
+		game.setIcon(indexDdsFromPak(Util.icons(gameDir)));
 	}
 	
 	/**
@@ -133,9 +133,9 @@ public final class IconService {
 		
 		final Path dataFolder;
 		if (isMod) {
-			dataFolder = Path.of(Util.join(gameDir, "Mods", mod.id, "Data"));
+			dataFolder = Path.of(Util.modData(gameDir, mod.id));
 		} else {
-			dataFolder = Path.of(Util.join(gameDir, "Data"));
+			dataFolder = Util.gameDataDir(gameDir);
 		}
 		
 		if (! Files.exists(dataFolder))
@@ -150,7 +150,7 @@ public final class IconService {
 			log.warning("Cannot list Data folder for mod " + mod.id + ": " + e.getMessage());
 		}
 		mod.setIcon(map);
-		int total = mod.getItems().size();
+		int total = mod.getIcon().size();
 		if (total > 0) {
 			log.info(String.format("Mod '%s': indexed %d icon(s) from Data PAK(s).", mod.id, total));
 		}

@@ -10,9 +10,11 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
@@ -146,12 +148,16 @@ public final class LocalService {
 		record LangPak(Language language, String pakPath) {
 			static LangPak c(File l) {
 				final var base = l.getName().replace(EXTRA, "");
-				final var lang = Language.fromDisplayName(base);
+				final var lang = Language.fromName(base);
 				return lang != null ? new LangPak(lang, l.getPath()) : null;
 			}
 		}
 		
 		final var langPaks = Util.allLocPaths(root).stream().map(File::new).filter(File::exists).map(LangPak::c).filter(Objects::nonNull).toList();
+		if (langPaks.isEmpty()) {
+			log.fine("No Localization folder found for folder " + root);
+			return new EnumMap<>(Language.class);
+		}
 		
 		// Process all PAKs in parallel; each returns a (Language -> Map) contribution
 		final Map<Language, Map<String, String>> result = new ConcurrentHashMap<>();
