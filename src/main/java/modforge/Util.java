@@ -275,7 +275,7 @@ public final class Util {
 			}
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(w, "Failed to open game directory:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-			ex.printStackTrace();
+			log.warning("IOException: " + ex);
 		}
 	}
 	
@@ -326,11 +326,11 @@ public final class Util {
 			log.severe("PAK creation failed: " + e.getMessage());
 			return false;
 		}
-		try (var fos = new FileOutputStream(destPakFile.toFile()); var zout = new ZipOutputStream(fos)) {
+		try (var fos = new FileOutputStream(destPakFile.toFile()); var out = new ZipOutputStream(fos)) {
 			
 			// Optionally set the ZipOutputStream comment to empty or fixed
 			if (stripMetadata) {
-				zout.setComment(""); // Remove any comments
+				out.setComment(""); // Remove any comments
 			}
 			
 			Files.walk(sourceFolder).filter(Files::isRegularFile).filter(path -> fileFilter == null || fileFilter.test(path)).forEach(file -> {
@@ -341,9 +341,9 @@ public final class Util {
 					// Create ZipEntry with a fixed timestamp to strip metadata
 					final var entry = getZipEntry(stripMetadata, relPath, ft);
 					
-					zout.putNextEntry(entry);
-					Files.copy(file, zout);
-					zout.closeEntry();
+					out.putNextEntry(entry);
+					Files.copy(file, out);
+					out.closeEntry();
 					
 					log.fine("Added to PAK: " + relPath);
 				} catch (IOException e) {

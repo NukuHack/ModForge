@@ -9,27 +9,27 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 public enum ItemType {
-	WEAPON_CLASS("weapon_class", ItemEntry.MELEE_WEAPON_CLASS, ItemEntry.MISSILE_WEAPON_CLASS),
+	WEAPON_CLASS(ItemEntry.MELEE_WEAPON_CLASS, ItemEntry.MISSILE_WEAPON_CLASS),
 	
-	WEAPON_TYPE("item", ItemEntry.MELEE_WEAPON, ItemEntry.MISSILE_WEAPON, ItemEntry.AMMO),
+	WEAPON_TYPE(ItemEntry.MELEE_WEAPON, ItemEntry.MISSILE_WEAPON, ItemEntry.AMMO),
 	
-	ARMOR_TYPE("item", ItemEntry.HOOD, ItemEntry.ARMOR, ItemEntry.HELMET),
+	ARMOR_TYPE(ItemEntry.HOOD, ItemEntry.ARMOR, ItemEntry.HELMET),
 	
-	CONSUMABLE_TYPE("item", ItemEntry.FOOD, ItemEntry.POISON),
+	CONSUMABLE_TYPE(ItemEntry.FOOD, ItemEntry.POISON),
 	
-	CRAFTING_TYPE("item", ItemEntry.HERB, ItemEntry.CRAFTING_MATERIAL),
+	CRAFTING_TYPE(ItemEntry.HERB, ItemEntry.CRAFTING_MATERIAL),
 	
-	MISC_TYPE("item", ItemEntry.NPC_TOOL, ItemEntry.MISC_ITEM, ItemEntry.GAME_DOCUMENT, ItemEntry.DIE, ItemEntry.ITEM_ALIAS, ItemEntry.QUICK_SLOT_CONTAINER, ItemEntry.DICE_BADGE, ItemEntry.PICKABLE_ITEM, ItemEntry.KEY, ItemEntry.MONEY, ItemEntry.KEY_RING),
+	MISC_TYPE(ItemEntry.NPC_TOOL, ItemEntry.MISC_ITEM, ItemEntry.GAME_DOCUMENT, ItemEntry.DIE, ItemEntry.ITEM_ALIAS, ItemEntry.QUICK_SLOT_CONTAINER, ItemEntry.DICE_BADGE, ItemEntry.PICKABLE_ITEM, ItemEntry.KEY, ItemEntry.MONEY, ItemEntry.KEY_RING),
 	
-	PERK("perk", ItemEntry.PERK),
+	PERK(ItemEntry.PERK),
 	
-	BUFF("buff", ItemEntry.BUFF),
+	BUFF(ItemEntry.BUFF),
 	
-	STORM("storm", ItemEntry.STORM),
+	STORM(ItemEntry.STORM),
 	
-	PERK_BUFF("perk_buff", ItemEntry.PERK_BUFF),
+	PERK_BUFF(ItemEntry.PERK_BUFF),
 	
-	PERK_SCRIPT("perk_script", ItemEntry.PERK_SCRIPT);
+	PERK_SCRIPT(ItemEntry.PERK_SCRIPT);
 	
 	// ── Static indexes built once from ItemEntry.values() ───────────────────
 	
@@ -85,11 +85,8 @@ public enum ItemType {
 	// ── Instance fields ──────────────────────────────────────────────────────
 	
 	private final Set<ItemEntry> entries;
-	@SuppressWarnings("unused")
-	private final String key;
 	
-	ItemType(String key, ItemEntry... entries) {
-		this.key = key;
+	ItemType(ItemEntry... entries) {
 		this.entries = Set.of(entries);
 	}
 	

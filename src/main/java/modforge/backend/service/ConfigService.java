@@ -38,39 +38,28 @@ public final class ConfigService {
 	/**
 	 * Save a mod's configuration file.
 	 *
-	 * @param gameDir directory, will save stuff in the gameDir/Mods/mod.id/*
+	 * @param dir directory, will save stuff in it
 	 * @param mod  The mod saved
 	 * @return true if successful
 	 */
-	public static boolean saveModConfig(final String gameDir, final ModData mod) {
-		if (gameDir == null || gameDir.isBlank() || mod.id == null || mod.id.isBlank()) {
+	public static boolean saveModConfig(final String dir, final ModData mod) {
+		if (dir == null || dir.isBlank() || mod.id == null || mod.id.isBlank()) {
 			log.warning("Cannot save mod config - game directory or mod ID missing.");
 			return false;
 		}
+		if (mod.getConfig().isEmpty())
+			return true;
 		
-		Path modCfg = Path.of(Util.modFolder(gameDir, mod.id), "mod.cfg");
+		Path modCfg = Path.of(dir, "mod.cfg");
 		
 		try {
 			Files.createDirectories(modCfg.getParent());
 		} catch (IOException e) {
-			log.warning("Cannot create mod directory: " + e.getMessage());
+			log.warning("Cannot create config directory: " + e.getMessage());
 			return false;
 		}
 		
 		return saveConfigFile(modCfg, mod.getConfig());
-	}
-	
-	/**
-	 * Save mod config from ModData.
-	 *
-	 * @param mod The mod data containing config
-	 */
-	public static void saveModConfigFromMod(String gameDirectory, ModData mod) {
-		if (mod == null || mod.id == null || mod.id.isBlank())
-			return;
-		if (mod.getConfig().isEmpty())
-			return;
-		saveModConfig(gameDirectory, mod);
 	}
 	
 	// ==================================================================
@@ -243,29 +232,12 @@ public final class ConfigService {
 	}
 	
 	/**
-	 * Save game configuration to user.cfg (default location).
-	 *
-	 * @param config The configuration map to save
-	 * @return true if successful
-	 */
-	public boolean saveGameConfig(Map<String, String> config) {
-		String gameDir = userService.gameDirectory;
-		if (gameDir == null || gameDir.isBlank()) {
-			log.warning("Game directory not configured - cannot save game config.");
-			return false;
-		}
-		
-		Path userCfg = Path.of(gameDir, "user.cfg");
-		return saveConfigFile(userCfg, config);
-	}
-	
-	/**
 	 * Load a mod's configuration file.
 	 *
 	 * @param modId The mod ID (used to locate Mods/<modId>/mod.cfg)
 	 * @return Map of config keys to their values
 	 */
-	public Map<String, String> loadModConfig(String modId) {
+	private Map<String, String> loadModConfig(String modId) {
 		String gameDir = userService.gameDirectory;
 		if (gameDir == null || gameDir.isBlank() || modId == null || modId.isBlank()) {
 			return new HashMap<>();
@@ -294,7 +266,7 @@ public final class ConfigService {
 	 *
 	 * @param mod The mod data to update
 	 */
-	public void loadModConfigIntoMod(ModData mod) {
+	public void loadModConfig(ModData mod) {
 		if (mod == null || mod.id == null || mod.id.isBlank())
 			return;
 		mod.setConfig(loadModConfig(mod.id));

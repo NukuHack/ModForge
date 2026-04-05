@@ -44,7 +44,7 @@ public abstract class BaseModItem implements ModItem {
 	}
 	
 	@Override
-	public void setAttribute(final Collection<Attribute> attr) {
+	public void setAttribute(final List<Attribute> attr) {
 		this.attributes.clear();
 		this.attributes.addAll(attr);
 	}

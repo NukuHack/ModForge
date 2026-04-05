@@ -18,7 +18,9 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 public class ItemsPage extends BasePage {
@@ -96,28 +98,6 @@ public class ItemsPage extends BasePage {
 		add(mainContent, BorderLayout.CENTER);
 	}
 	
-	public static void addCopyToPopupMenu(JPopupMenu popupMenu, ModItem selectedItem) {
-		final JMenuItem copyAllMenuItem = new JMenuItem("Copy All Details");
-		final var window = Singleton.INSTANCE.getMainWindow();
-		copyAllMenuItem.addActionListener(e -> {
-			if (selectedItem != null) {
-				final String allDetails = selectedItem.details();
-				Util.copyText(allDetails);
-				window.snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
-			}
-		});
-		popupMenu.add(copyAllMenuItem);
-		
-		final JMenuItem copyIdMenuItem = new JMenuItem("Copy ID");
-		copyIdMenuItem.addActionListener(e -> {
-			if (selectedItem != null) {
-				Util.copyText(selectedItem.getId());
-				window.snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
-			}
-		});
-		popupMenu.add(copyIdMenuItem);
-	}
-	
 	@Override
 	public void refresh(Object... input) {
 		this.refreshAllItems();
@@ -139,7 +119,7 @@ public class ItemsPage extends BasePage {
 				activeSource = null; // Base Game
 			} else {
 				// idx - 1 because index 0 is "Base Game"
-				var mods2 = window.getRegistry().modService.modCollection;
+				var mods2 = ModService.modCollection;
 				activeSource = (idx - 1 < mods2.size()) ? mods2.get(idx - 1) : null;
 			}
 			refreshUnderlyingList();
@@ -302,8 +282,7 @@ public class ItemsPage extends BasePage {
 		modJList.setForeground(MainWindow.TEXT);
 		modJList.setSelectionBackground(new Color(0x313244));
 		
-		ModService modService = window.getRegistry().modService;
-		for (ModData mod : modService.modCollection) {
+		for (ModData mod : ModService.modCollection) {
 			modListModel.addElement(mod.id + " | " + mod.name);
 		}
 		
@@ -336,7 +315,7 @@ public class ItemsPage extends BasePage {
 				return;
 			}
 			String modId = sel.split(" \\| ")[0];
-			var found = window.getRegistry().modService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst();
+			var found = ModService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst();
 			if (found.isEmpty()) {
 				window.snackbar.show("Please select a correct mod first", BarManager.Type.WARNING);
 				return;
@@ -473,7 +452,7 @@ public class ItemsPage extends BasePage {
 	public void refreshAllItems() {
 		modSourceSelector.removeAllItems();
 		modSourceSelector.addItem("🎮  Base Game");
-		for (var mod : window.getRegistry().modService.modCollection) {
+		for (var mod : ModService.modCollection) {
 			modSourceSelector.addItem("📦  " + mod.name);
 		}
 		

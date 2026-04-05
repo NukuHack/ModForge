@@ -3,6 +3,7 @@ package modforge.backend.service;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
+import modforge.backend.model.Language;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +20,7 @@ public final class UserService {
 	
 	public String gameDirectory = "";
 	public String userName = "";
-	public String language = "en";
+	public Language language = Language.ENGLISH;
 	
 	public UserService() {
 		configFile = Singleton.INSTANCE.getUserConfig();
@@ -38,7 +39,7 @@ public final class UserService {
 		final JsonIO.JsonObject obj = new JsonIO.JsonObject();
 		obj.put("gameDirectory", new JsonIO.JsonString(gameDirectory));
 		obj.put("userName", new JsonIO.JsonString(userName));
-		obj.put("language", new JsonIO.JsonString(language));
+		obj.put("language", new JsonIO.JsonString(language.getIsoCode()));
 		return obj;
 	}
 	
@@ -52,7 +53,7 @@ public final class UserService {
 				userName = string.getValue();
 			}
 			if (obj.get("language") instanceof JsonIO.JsonString string) {
-				language = string.getValue();
+				language = Language.fromIsoCode(string.getValue());
 			}
 		}
 	}

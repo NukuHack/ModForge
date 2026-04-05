@@ -289,7 +289,7 @@ public class ModEditPage extends BasePage {
 		// Write manifest
 		final String gameDir = window.getRegistry().userConfig.gameDirectory;
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
-		ConfigService.saveModConfigFromMod(gameDir, currentMod);
+		ConfigService.saveModConfig(Util.modFolder(gameDir, currentMod.id), currentMod);
 		
 		if (success) {
 			window.snackbar.show("Manifest saved for " + currentMod.name, BarManager.Type.SUCCESS);
@@ -323,7 +323,7 @@ public class ModEditPage extends BasePage {
 					window.snackbar.show("Mod deleted: " + currentMod.name, BarManager.Type.SUCCESS);
 				}
 				
-				window.getRegistry().modService.modCollection.remove(currentMod);
+				ModService.modCollection.remove(currentMod);
 				window.navigate(MainWindow.Page.MODS);
 			} catch (Exception e) {
 				window.snackbar.show("Failed to delete mod: " + e.getMessage(), BarManager.Type.ERROR);

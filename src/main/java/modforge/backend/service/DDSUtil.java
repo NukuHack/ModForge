@@ -205,7 +205,7 @@ public class DDSUtil {
 	// ========== DXT DECOMPRESSION ==========
 	
 	// Add decompression for uncompressed DDS (RGBA/BGRA)
-	private static void decompressUncompressed(ImgData data, byte[] out) throws IOException {
+	private static void decompressUncompressed(ImgData data, byte[] out) {
 		byte[] rawData = data.data;
 		int width = data.w;
 		int height = data.h;
@@ -348,7 +348,7 @@ public class DDSUtil {
 	
 	private static int[] expandColorsDXT1(int c0, int c1) {
 		int[] colors = new int[4];
-		// FIX: alpha must be 0xFF for opaque pixels in 4-colour mode.
+		// FIX: alpha must be 0xFF for opaque pixels in 4-color mode.
 		// Previously colors[0]/[1] had no alpha set (0x00RRGGBB), so every
 		// decoded pixel came out fully transparent.
 		colors[0] = expand565(c0) | 0xFF000000;
@@ -403,27 +403,27 @@ public class DDSUtil {
 	
 	private static int getAlphaDXT5(int alpha0, int alpha1, int code) {
 		if (alpha0 > alpha1) {
-			switch (code) {
-				case 0: return alpha0;
-				case 1: return alpha1;
-				case 2: return (6 * alpha0 + alpha1) / 7;
-				case 3: return (5 * alpha0 + 2 * alpha1) / 7;
-				case 4: return (4 * alpha0 + 3 * alpha1) / 7;
-				case 5: return (3 * alpha0 + 4 * alpha1) / 7;
-				case 6: return (2 * alpha0 + 5 * alpha1) / 7;
-				default: return (alpha0 + 6 * alpha1) / 7;
-			}
+			return switch (code) {
+				case 0 -> alpha0;
+				case 1 -> alpha1;
+				case 2 -> (6 * alpha0 + alpha1) / 7;
+				case 3 -> (5 * alpha0 + 2 * alpha1) / 7;
+				case 4 -> (4 * alpha0 + 3 * alpha1) / 7;
+				case 5 -> (3 * alpha0 + 4 * alpha1) / 7;
+				case 6 -> (2 * alpha0 + 5 * alpha1) / 7;
+				default -> (alpha0 + 6 * alpha1) / 7;
+			};
 		} else {
-			switch (code) {
-				case 0: return alpha0;
-				case 1: return alpha1;
-				case 2: return (4 * alpha0 + alpha1) / 5;
-				case 3: return (3 * alpha0 + 2 * alpha1) / 5;
-				case 4: return (2 * alpha0 + 3 * alpha1) / 5;
-				case 5: return (alpha0 + 4 * alpha1) / 5;
-				case 6: return 0;
-				default: return 255;
-			}
+			return switch (code) {
+				case 0 -> alpha0;
+				case 1 -> alpha1;
+				case 2 -> (4 * alpha0 + alpha1) / 5;
+				case 3 -> (3 * alpha0 + 2 * alpha1) / 5;
+				case 4 -> (2 * alpha0 + 3 * alpha1) / 5;
+				case 5 -> (alpha0 + 4 * alpha1) / 5;
+				case 6 -> 0;
+				default -> 255;
+			};
 		}
 	}
 	
@@ -453,7 +453,7 @@ public class DDSUtil {
 	}
 	
 	/**
-	 * Compress ARGB data to DDS DXT5 format (best alpha)
+	 * Compress ARGB data to DDS DXT5 format ( the best alpha)
 	 */
 	public static byte[] compressToDXT5(BufferedImage image) throws IOException {
 		final DDSImage i = DDSImage.fromBufferedImage(image);
@@ -481,7 +481,7 @@ public class DDSUtil {
 	}
 	
 	/**
-	 * Compress ARGB data to DDS DXT5 format (best alpha)
+	 * Compress ARGB data to DDS DXT5 format ( the best alpha)
 	 */
 	public static byte[] compressToDXT5(byte[] argb, int width, int height) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -1617,7 +1617,7 @@ class BC7Util {
 	
 	// Inverse of the BitReader you currently have
 	static class BitWriter {
-		byte[] data;
+		final byte[] data;
 		int bitPos;
 		
 		BitWriter(byte[] data, int byteOffset) {
@@ -1642,7 +1642,7 @@ class BC7Util {
 	
 	// Stateful bit reader for traversing the 128-bit blocks safely
 	static class BitReader {
-		byte[] data;
+		final byte[] data;
 		int bitPos = 0;
 		
 		BitReader(byte[] data) {
@@ -1667,12 +1667,12 @@ class BC7Util {
 }
 
 class ImgData {
-	int h;
-	int w;
-	int code;
-	int length;
+	final int h;
+	final int w;
+	final int code;
+	final int length;
 	byte[] data;
-	DDSHeaderDXT10 header;
+	final DDSHeaderDXT10 header;
 	
 	public ImgData(int h, int w, int code, int length, DDSHeaderDXT10 header) {
 		this.h = h;

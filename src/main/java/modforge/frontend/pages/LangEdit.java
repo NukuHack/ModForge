@@ -105,8 +105,7 @@ public class LangEdit extends BaseEditPage {
 		langSelector = new JComboBox<>();
 		for (String name : Language.getAllDisplayNames())
 			langSelector.addItem(name);
-		final var cfgLang = window.getRegistry().userConfig.language;
-		final var defLang = Language.fromIsoCode(cfgLang);
+		final var defLang = window.getRegistry().userConfig.language;
 		if (defLang != null)
 			langSelector.setSelectedItem(defLang.getDisplayName());
 		styleCombo(langSelector);
@@ -395,8 +394,7 @@ public class LangEdit extends BaseEditPage {
 	}
 	
 	private void refreshLangSelector() {
-		String cfgLang = window.getRegistry().userConfig.language;
-		Language defLang = Language.fromIsoCode(cfgLang);
+		final var defLang = window.getRegistry().userConfig.language;
 		if (defLang != null)
 			langSelector.setSelectedItem(defLang.getDisplayName());
 	}

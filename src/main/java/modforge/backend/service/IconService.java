@@ -2,7 +2,6 @@ package modforge.backend.service;
 
 import modforge.Singleton;
 import modforge.Util;
-import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
 
@@ -161,7 +160,7 @@ public final class IconService {
 	 * against mod-local icons first, then the base-game index.
 	 *
 	 * @param item The mod item whose icon_id / IconId attribute is used.
-	 * @param mod  The mod that owns the item (may be {@code Singleton.INSTANCE.game()}).
+	 * @param mod  The mod that owns the item (maybe {@code Singleton.INSTANCE.game()}).
 	 * @return the image.
 	 */
 	public BufferedImage getIcon(ModItem item, ModData mod) {

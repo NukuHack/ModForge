@@ -1,7 +1,6 @@
 package modforge.backend.model.attributes;
 
 import modforge.backend.model.MathOperation;
-import modforge.backend.model.item.Buff;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 // Simple value object for buff parameters (stat_key op value)
-public class BuffParam extends Attribute<BuffParam.Param> {
+public non-sealed class BuffParam extends BaseAttribute<BuffParam.Param> {
 	
 	private static final Pattern BUFF_PARAM_RE = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");
 	
@@ -52,13 +51,11 @@ public class BuffParam extends Attribute<BuffParam.Param> {
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public BuffParam deepClone() {
 		return this; // value is immutable, returning as is, is fine
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public BuffParam deepClone(Param newValue) {
 		return new BuffParam(name, newValue);
 	}

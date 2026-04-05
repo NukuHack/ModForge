@@ -76,7 +76,7 @@ public class ModsPage extends BasePage {
 	public void refreshMods() {
 		listModel.clear();
 		// Add user-created mods
-		for (final ModData mod : window.getRegistry().modService.modCollection) {
+		for (var mod : ModService.modCollection) {
 			listModel.addElement(mod);
 		}
 		
@@ -110,8 +110,8 @@ public class ModsPage extends BasePage {
 					var mod = ModService.parseModDescription(doc);
 					
 					// Check if already exists
-					if (! window.getRegistry().modService.modCollection.contains(mod)) {
-						window.getRegistry().modService.modCollection.add(mod);
+					if (! ModService.modCollection.contains(mod)) {
+						ModService.modCollection.add(mod);
 						refreshMods();
 						window.snackbar.show("Imported mod: " + mod.name, BarManager.Type.SUCCESS);
 					} else {

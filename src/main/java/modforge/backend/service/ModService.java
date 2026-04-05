@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class ModService {
@@ -36,7 +35,7 @@ public final class ModService {
 	public final ItemService itemService;
 	public final IconService iconService;
 	
-	public List<ModData> modCollection = new ArrayList<>();
+	public static final List<ModData> modCollection = new ArrayList<>();
 	
 	public ModService(ServiceRegistry registry) {
 		this.itemService = registry.itemService;
@@ -195,7 +194,7 @@ public final class ModService {
 	private void fillCollection(Path modPath) throws IOException {
 		final var mod = loadModManifest(modPath);
 		
-		loadModConfig(mod);
+		configService.loadModConfig(mod);
 		loadModItems(mod);
 		loadModLocalizations(mod);
 		
@@ -389,14 +388,5 @@ public final class ModService {
 		} catch (IOException | SAXException | ParserConfigurationException e) {
 			throw new IOException(e);
 		}
-	}
-	
-	/**
-	 * Load config for a mod (mod.cfg) and store in ModData.
-	 */
-	public void loadModConfig(ModData mod) {
-		if (mod == null || mod.id == null || mod.id.isBlank())
-			return;
-		mod.setConfig(configService.loadModConfig(mod.id));
 	}
 }

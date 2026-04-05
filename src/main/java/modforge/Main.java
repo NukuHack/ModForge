@@ -1,7 +1,6 @@
 package modforge;
 
 import modforge.backend.AttributeFactory;
-import modforge.backend.model.Language;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
@@ -11,7 +10,6 @@ import java.awt.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 
 public class Main {

@@ -5,6 +5,7 @@ import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.model.Language;
 import modforge.backend.model.ModItem;
+import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 
@@ -22,7 +23,7 @@ import static modforge.Util.unescapeXml;
 // =============================================================================
 //  LOCALIZATION PAGE
 //
-//  Displays all localisation entries from a chosen source (Base Game or a
+//  Displays all localization entries from a chosen source (Base Game or a
 //  user mod) in a chosen language, optionally filtered by attribute-hint type.
 //
 //  Layout
@@ -60,7 +61,7 @@ public class LocalizationPage extends BasePage {
 	private final JTextField search = styledField("Search keys or values…");
 	
 	// ── List data ─────────────────────────────────────────────────────────────
-	/** Flat, ordered working set: one Entry per resolved localisation string. */
+	/** Flat, ordered working set: one Entry per resolved localization string. */
 	private final List<LangEntry> allEntries = new ArrayList<>();
 	private final DefaultListModel<String> listModel = new DefaultListModel<>();
 	private final JList<String> entryList = new JList<>(listModel);
@@ -189,7 +190,7 @@ public class LocalizationPage extends BasePage {
 			entryByKey.put(e.getKey(), new LangEntry(e.getKey(), e.getValue(), "", null));
 		}
 		
-		// Walk items once and patch in context for every lang-key attribute we recognise.
+		// Walk items once and patch in context for every lang-key attribute we recognize.
 		for (var item : source.getItems()) {
 			for (var attr : item.getLangAttributes()) {
 				final String key = attr.getValue();
@@ -299,30 +300,7 @@ public class LocalizationPage extends BasePage {
 		});
 		
 		// Right-click popup
-		JPopupMenu popup = new JPopupMenu();
-		JMenuItem copyKey = new JMenuItem("Copy Key");
-		copyKey.addActionListener(e -> {
-			if (selectedEntry != null) {
-				Util.copyText(selectedEntry.langKey);
-				window.snackbar.show("Key copied: " + selectedEntry.langKey, BarManager.Type.INFO);
-			}
-		});
-		JMenuItem copyVal = new JMenuItem("Copy Value");
-		copyVal.addActionListener(e -> {
-			if (selectedEntry != null) {
-				Util.copyText(selectedEntry.value);
-				window.snackbar.show("Value copied", BarManager.Type.INFO);
-			}
-		});
-		JMenuItem goToItem = new JMenuItem("Go to Item Edit");
-		goToItem.addActionListener(e -> {
-			if (selectedEntry != null && selectedEntry.item != null)
-				window.navigate(MainWindow.Page.LANG_EDIT, selectedEntry.item);
-		});
-		popup.add(copyKey);
-		popup.add(copyVal);
-		popup.addSeparator();
-		popup.add(goToItem);
+		JPopupMenu popup = getJPopupMenu();
 		entryList.setComponentPopupMenu(popup);
 		
 		// Double-click copies key
@@ -361,6 +339,34 @@ public class LocalizationPage extends BasePage {
 		return split;
 	}
 	
+	private JPopupMenu getJPopupMenu() {
+		JPopupMenu popup = new JPopupMenu();
+		JMenuItem copyKey = new JMenuItem("Copy Key");
+		copyKey.addActionListener(e -> {
+			if (selectedEntry != null) {
+				Util.copyText(selectedEntry.langKey);
+				window.snackbar.show("Key copied: " + selectedEntry.langKey, BarManager.Type.INFO);
+			}
+		});
+		JMenuItem copyVal = new JMenuItem("Copy Value");
+		copyVal.addActionListener(e -> {
+			if (selectedEntry != null) {
+				Util.copyText(selectedEntry.value);
+				window.snackbar.show("Value copied", BarManager.Type.INFO);
+			}
+		});
+		JMenuItem goToItem = new JMenuItem("Go to Item Edit");
+		goToItem.addActionListener(e -> {
+			if (selectedEntry != null && selectedEntry.item != null)
+				window.navigate(MainWindow.Page.LANG_EDIT, selectedEntry.item);
+		});
+		popup.add(copyKey);
+		popup.add(copyVal);
+		popup.addSeparator();
+		popup.add(goToItem);
+		return popup;
+	}
+	
 	// =========================================================================
 	//  Display helpers
 	// =========================================================================
@@ -373,7 +379,7 @@ public class LocalizationPage extends BasePage {
 		
 		modSelector.removeAllItems();
 		modSelector.addItem("🎮  Base Game");
-		for (ModData mod : window.getRegistry().modService.modCollection) {
+		for (ModData mod : ModService.modCollection) {
 			modSelector.addItem("📦  " + mod.id + " | " + mod.name);
 		}
 		
@@ -389,8 +395,7 @@ public class LocalizationPage extends BasePage {
 		langSelector.removeAllItems();
 		
 		// Put the user's configured language first, then the rest
-		String cfgCode = window.getRegistry().userConfig.language;
-		Language defLang = Language.fromIsoCode(cfgCode);
+		final var defLang = window.getRegistry().userConfig.language;
 		
 		List<Language> ordered = new ArrayList<>();
 		if (defLang != null)
@@ -486,7 +491,7 @@ public class LocalizationPage extends BasePage {
 			// Base Game
 			return Singleton.INSTANCE.game();
 		}
-		var mods = window.getRegistry().modService.modCollection;
+		var mods = ModService.modCollection;
 		int modIdx = idx - 1;
 		return (modIdx < mods.size()) ? mods.get(modIdx) : null;
 	}
@@ -504,7 +509,7 @@ public class LocalizationPage extends BasePage {
 	//  Internal data model
 	// =========================================================================
 	
-	/** One resolved localisation entry. */
+	/** One resolved localization entry. */
 	private record LangEntry(String langKey, String value, String attrName, ModItem item) {
 		public boolean has(String inp) {
 			return langKey.toLowerCase(Locale.ROOT).contains(inp) || value.toLowerCase(Locale.ROOT).contains(inp);

@@ -197,7 +197,7 @@ public final class StormService {
 			return;
 		
 		try (var stream = Files.list(dataFolder)) {
-			stream.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".pak")).forEach(pak -> indexStormFromPak(pak.toString(), false));
+			stream.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".pak")).forEach(pak -> indexStormFromPak(pak.toString()));
 		} catch (IOException e) {
 			log.warning("Cannot list game Data folder for Storm scan: " + e.getMessage());
 		}
@@ -293,7 +293,7 @@ public final class StormService {
 	/**
 	 * Scan a PAK file for Storm XML entries and add them to {@link #stormIndex}.
 	 */
-	private void indexStormFromPak(String pakPath, boolean isMod) {
+	private void indexStormFromPak(String pakPath) {
 		stormIndex.putAll(indexStormFromPakToMap(pakPath));
 	}
 	
@@ -570,12 +570,12 @@ public final class StormService {
 			
 			if (! data.getCustomSelectors().isEmpty()) {
 				final Element cs = doc.createElement("CustomSelectors");
-				for (var csel : data.getCustomSelectors()) {
+				for (var cSel : data.getCustomSelectors()) {
 					final Element sel = doc.createElement("Selector");
-					sel.setAttribute("name", csel.getName());
-					if (! csel.getComment().isEmpty())
-						sel.setAttribute("comment", csel.getComment());
-					for (var attrName : csel.getAttributeNames()) {
+					sel.setAttribute("name", cSel.getName());
+					if (! cSel.getComment().isEmpty())
+						sel.setAttribute("comment", cSel.getComment());
+					for (var attrName : cSel.getAttributeNames()) {
 						final Element a = doc.createElement("Attribute");
 						a.setAttribute("name", attrName);
 						sel.appendChild(a);

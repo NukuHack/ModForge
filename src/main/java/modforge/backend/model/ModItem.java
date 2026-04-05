@@ -25,7 +25,7 @@ public interface ModItem {
 	
 	List<Attribute> getAttributes();
 	
-	void setAttribute(final Collection<Attribute> attributes);
+	void setAttribute(final List<Attribute> attributes);
 	
 	void addAttribute(final Attribute attr);
 	

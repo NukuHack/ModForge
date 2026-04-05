@@ -2,6 +2,7 @@ package modforge.frontend.pages;
 
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
+import modforge.backend.service.ModService;
 import modforge.frontend.MainWindow;
 
 import javax.swing.*;
@@ -55,7 +56,7 @@ public abstract class BaseEditPage extends BasePage {
 		setLayout(new BorderLayout(0, 16));
 		// NOTE: do NOT call buildUI() here.
 		// Subclasses must call initUI() at the end of their own constructor,
-		// after their own fields (attributesPanel, fieldsPanel, etc.) are initialised.
+		// after their own fields (attributesPanel, fieldsPanel, etc.) are initialized.
 	}
 	
 	protected static void styleCombo(JComboBox<?> cb) {
@@ -172,7 +173,7 @@ public abstract class BaseEditPage extends BasePage {
 	/** Shared helper to populate a mod combo-box from the live mod collection. */
 	protected void populateModSelector() {
 		modSelector.removeAllItems();
-		for (ModData mod : window.getRegistry().modService.modCollection) {
+		for (var mod : ModService.modCollection) {
 			modSelector.addItem(mod.id + " | " + mod.name);
 		}
 	}
@@ -183,7 +184,7 @@ public abstract class BaseEditPage extends BasePage {
 		if (sel == null || sel.startsWith("—"))
 			return Optional.empty();
 		String modId = sel.split(" \\| ")[0];
-		return window.getRegistry().modService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst();
+		return ModService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst();
 	}
 	
 	// ── Unsaved-changes guard ─────────────────────────────────────────────────

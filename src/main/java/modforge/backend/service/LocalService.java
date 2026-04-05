@@ -10,11 +10,9 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
@@ -129,7 +127,7 @@ public final class LocalService {
 	}
 	
 	public String resolve(String key, ModData mod) {
-		return resolve(key, mod, Language.fromIsoCode(configService.language));
+		return resolve(key, mod, configService.language);
 	}
 	
 	/**
@@ -141,7 +139,7 @@ public final class LocalService {
 	
 	/**
 	 * Read all localisation paks from the game directory.
-	 * Returns: Language enum -> (string-key -> localised-value)
+	 * Returns: Language enum -> (string-key -> localized-value)
 	 */
 	public Map<Language, Map<String, String>> loadLocalization(String root) {
 		// Collect all valid (language, pakPath) pairs upfront
@@ -165,7 +163,7 @@ public final class LocalService {
 		langPaks.parallelStream().forEach(lp -> {
 			try (final var zf = new ZipFile(lp.pakPath())) {
 				// here using parallel is useless
-				///  for now i removed filters, so all text data will be red, but if it's too slow for you just add a filter to the base text data for items
+				//  for now I removed filters, so all text data will be red, but if it's too slow for you just add a filter to the base text data for items
 				zf.stream().forEach(entry -> {
 					try (var is = zf.getInputStream(entry)) {
 						final var parsed = parseLocalizationXml(is);
@@ -303,11 +301,10 @@ public final class LocalService {
 	 * Returns {@code null} if no candidate attribute is present on the item.
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {
-		final Language lang = Language.fromIsoCode(configService.language);
 		// Pull the two lang maps once – either may be null if never populated.
 		final var game = Singleton.INSTANCE.game();
-		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(lang) : new HashMap<>();
-		final Map<String, String> baseMap = game.getLocal().get(lang);
+		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(configService.language) : new HashMap<>();
+		final Map<String, String> baseMap = game.getLocal().get(configService.language);
 		
 		for (String candidate : candidates) {
 			final String clo = candidate.toLowerCase(Locale.ROOT);

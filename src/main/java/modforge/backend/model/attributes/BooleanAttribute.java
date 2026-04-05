@@ -1,18 +1,16 @@
 package modforge.backend.model.attributes;
 
-public class BooleanAttribute extends Attribute<Boolean> {
+public non-sealed class BooleanAttribute extends BaseAttribute<Boolean> {
 	public BooleanAttribute(String name, Boolean value) {
 		super(name, value);
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public BooleanAttribute deepClone() {
 		return this;
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public BooleanAttribute deepClone(Boolean newValue) {
 		return new BooleanAttribute(name, newValue);
 	}

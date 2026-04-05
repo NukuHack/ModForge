@@ -1,40 +1,38 @@
 package modforge.backend.model.attributes;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class ListAttribute<M> extends Attribute<List<M>> {
+public non-sealed class ListAttribute<M> extends BaseAttribute<List<M>> {
 	public ListAttribute(String name, List<M> value) {
 		super(name, value);
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public ListAttribute<M> deepClone() {
-		return new ListAttribute<M>(getName(), (List<M>) deepCloneList(value));
+		return new ListAttribute<>(getName(), deepCloneList(value));
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
-	public ListAttribute<M> deepClone(List newValue) {
-		return new ListAttribute<M>(name, (List<M>) deepCloneList(newValue));
+	public ListAttribute<M> deepClone(List<M> newValue) {
+		return new ListAttribute<>(name, deepCloneList(newValue));
 	}
 	
 	/**
 	 * Helper method to deep clone nested lists
 	 */
-	@SuppressWarnings("unchecked")
-	private <O> List<O> deepCloneList(List<?> list) {
+	private <O> List<O> deepCloneList(List<O> list) {
 		if (list == null) return null;
 		
 		List<O> clonedList = new ArrayList<>(list.size());
-		for (Object element : list) {
-			if (element instanceof Attribute) {
-				clonedList.add((O) ((Attribute<?>) element).deepClone());
-			} else if (element instanceof List) {
-				clonedList.add((O) deepCloneList((List<?>) element));
+		for (O e : list) {
+			if (e instanceof Attribute) {
+				throw new IllegalArgumentException("No nesting inside attributes");
+			} else if (e instanceof Collection<?>) {
+				throw new IllegalArgumentException("No nesting inside attributes");
 			} else {
-				clonedList.add((O) element);
+				clonedList.add(e);
 			}
 		}
 		return clonedList;

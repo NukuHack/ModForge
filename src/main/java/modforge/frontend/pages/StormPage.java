@@ -6,6 +6,7 @@ import modforge.backend.model.storm.GenericOperation;
 import modforge.backend.model.storm.GenericSelector;
 import modforge.backend.model.storm.StormData;
 import modforge.backend.model.storm.StormRule;
+import modforge.backend.service.ModService;
 import modforge.backend.service.StormService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
@@ -42,11 +43,11 @@ public class StormPage extends BasePage {
 	private final DefaultListModel<StormRule> ruleListModel = new DefaultListModel<>();
 	private final JList<StormRule> ruleList = new JList<>(ruleListModel);
 	/**
-	 * The StormData we are currently viewing / editing (may be null).
+	 * The StormData we are currently viewing / editing (maybe null).
 	 */
 	private StormData currentStorm;
 	/**
-	 * The mod context when opened from a mod item (may be null = view-only).
+	 * The mod context when opened from a mod item (maybe null = view-only).
 	 */
 	private ModData currentMod;
 	// ── right panel – rule editor ─────────────────────────────────────────────
@@ -82,7 +83,7 @@ public class StormPage extends BasePage {
 	
 	private static String xmlToHtml(String xml) {
 		String escaped = xml.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-		// Basic syntax colouring
+		// Basic syntax coloring
 		escaped = escaped.replaceAll("(&lt;[/]?)([a-zA-Z_][a-zA-Z0-9_]*)", "$1<font color='#89b4fa'>$2</font>").replaceAll("([a-zA-Z_][a-zA-Z0-9_]*)=&quot;", "<font color='#89dceb'>$1</font>=<font color='#a6e3a1'>&quot;").replaceAll("&quot;(?=[^=])", "&quot;</font>");
 		return "<html><body style='background:#11111b;color:#cdd6f4;font-family:monospace;font-size:11px;padding:8px;white-space:pre;'>" + escaped + "</body></html>";
 	}
@@ -510,7 +511,7 @@ public class StormPage extends BasePage {
 			return;
 		}
 		// Pick a mod
-		List<ModData> mods = window.getRegistry().modService.modCollection;
+		var mods = ModService.modCollection;
 		if (mods.isEmpty()) {
 			window.snackbar.show("No mods available — create a mod first", BarManager.Type.WARNING);
 			return;
@@ -624,7 +625,7 @@ public class StormPage extends BasePage {
 	// =========================================================================
 	
 	/**
-	 * Colours rule names in the left list
+	 * Colors rule names in the left list
 	 */
 	private static final class RuleListRenderer extends DefaultListCellRenderer {
 		@Override
@@ -643,7 +644,7 @@ public class StormPage extends BasePage {
 	}
 	
 	/**
-	 * Colours selector/operation nodes by type
+	 * Colors selector/operation nodes by type
 	 */
 	private static final class StormTreeRenderer extends DefaultTreeCellRenderer {
 		@Override
@@ -680,7 +681,6 @@ public class StormPage extends BasePage {
 		
 		private static final String[] STEP_TITLES = { "Step 1 — Name & Comment", "Step 2 — Selectors  (conditions)", "Step 3 — Operations" };
 		
-		private final StormService stormService;
 		private final JLabel stepLabel = new JLabel();
 		// Step panels
 		private final JPanel stepContainer = new JPanel(new CardLayout());
@@ -688,7 +688,7 @@ public class StormPage extends BasePage {
 		private StormRule result = null;
 		// Step indicator
 		private int currentStep = 0;
-		// Step 1 components
+		// Step 1 component
 		private JTextField nameField;
 		private JTextField commentField;
 		private JLabel nameError;
@@ -705,7 +705,6 @@ public class StormPage extends BasePage {
 		
 		RuleWizardDialog(Frame owner, StormRule existing, StormService stormService) {
 			super(owner, existing == null ? "New Rule" : "Edit Rule — " + existing.getName(), true);
-			this.stormService = stormService;
 			
 			// Clone or create working rule
 			workingRule = new StormRule();
@@ -1106,7 +1105,7 @@ public class StormPage extends BasePage {
 		
 		private boolean validateStep2() {
 			if (workingRule.getSelectors().isEmpty()) {
-				JOptionPane.showMessageDialog(this, "Thou art missing a selector, milord. Add at least one.", "Missing Selector", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Thou art missing a selector, mi lord. Add at least one.", "Missing Selector", JOptionPane.WARNING_MESSAGE);
 				return false;
 			}
 			for (GenericSelector sel : workingRule.getSelectors()) {

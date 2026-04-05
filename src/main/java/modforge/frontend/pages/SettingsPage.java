@@ -18,7 +18,7 @@ public class SettingsPage extends BasePage {
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");
 	private final JPanel card = card(null);
 	private final JTextField userName = styledField("Your name (used as mod author)");
-	private final JComboBox<String> langBox = new JComboBox<>(Language.getAllNames().toArray(new String[]{}));
+	private final JComboBox<Language> langBox = new JComboBox<>(Language.values());
 	private final UserService configService;
 	public SettingsPage(MainWindow w) {
 		super(w);
@@ -108,7 +108,7 @@ public class SettingsPage extends BasePage {
 		gc.gridwidth = 1;
 		card.add(primaryBtn("Save Settings", e -> {
 			configService.userName = userName.getText();
-			configService.language = langCode();
+			configService.language = selectedLang();
 			Singleton.INSTANCE.getRegistry().init();
 			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
 		}), gc);
@@ -117,25 +117,23 @@ public class SettingsPage extends BasePage {
 	}
 	
 	private void loadSettings() {
-		final var config = configService;
-		
 		// Load game directory if exists
-		if (config.gameDirectory != null && ! config.gameDirectory.isEmpty()) {
-			gameDir.setText(config.gameDirectory);
+		if (configService.gameDirectory != null && ! configService.gameDirectory.isEmpty()) {
+			gameDir.setText(configService.gameDirectory);
 			gameDir.setForeground(MainWindow.TEXT);
 		}
 		
 		// Load username if exists
-		if (config.userName != null && ! config.userName.isEmpty()) {
-			userName.setText(config.userName);
+		if (configService.userName != null && ! configService.userName.isEmpty()) {
+			userName.setText(configService.userName);
 		}
 		
 		// Load language if exists
-		if (config.language != null && ! config.language.isEmpty()) {
-			String targetLangCode = config.language;
+		if (configService.language != null) {
+			final var targetLangCode = configService.language;
 			for (int i = 0; i < langBox.getItemCount(); i++) {
-				String item = langBox.getItemAt(i);
-				if (item != null && item.startsWith(targetLangCode)) {
+				final var item = langBox.getItemAt(i);
+				if (item != null && item.equals(targetLangCode)) {
 					langBox.setSelectedIndex(i);
 					break;
 				}
@@ -143,8 +141,8 @@ public class SettingsPage extends BasePage {
 		}
 	}
 	
-	private String langCode() {
-		String sel = (String) langBox.getSelectedItem();
-		return sel != null ? sel.substring(0, 2) : "en";
+	private Language selectedLang() {
+		final var sel = langBox.getSelectedItem();
+		return sel != null ? (Language) sel : Language.ENGLISH;
 	}
 }

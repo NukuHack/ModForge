@@ -66,8 +66,7 @@ public final class ModItemBuilder {
 			final var copy = src.getClass().getDeclaredConstructor().newInstance();
 			copy.setId(src.getId());
 			copy.setPath(newPath);
-			final var cloned = src.getAttributes().stream().map(a -> a.deepClone()).toList();
-			copy.setAttribute(cloned);
+			copy.setAttribute(src.getAttributes().stream().map(Attribute::deepClone).toList());
 			return copy;
 		} catch (Exception e) {
 			throw new RuntimeException("Deep copy failed for " + src.getClass().getSimpleName(), e);

@@ -4,6 +4,7 @@ import modforge.Util;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.*;
 import modforge.backend.service.ModItemBuilder;
+import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 
@@ -14,6 +15,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 // =============================================================================
@@ -163,7 +165,7 @@ public class ItemEdit extends BaseEditPage {
 		DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) modSelector.getModel();
 		model.removeAllElements();
 		
-		var mods = window.getRegistry().modService.modCollection;
+		var mods = ModService.modCollection;
 		if (mods.isEmpty()) {
 			model.addElement("— no mods found —");
 		} else {
@@ -272,23 +274,15 @@ public class ItemEdit extends BaseEditPage {
 		
 		JComponent idComp = attributeComponents.get("__id__");
 		if (idComp instanceof JPanel idPanel) {
-			for (Component c : idPanel.getComponents())
+			for (var c : idPanel.getComponents())
 				if (c instanceof JTextField f)
 					currentItem.setId(f.getText());
 		} else if (idComp instanceof JTextField f) {
 			currentItem.setId(f.getText());
 		}
 		
-		for (var attr : currentItem.getAttributes()) {
-			var comp = attributeComponents.get(attr.getName());
-			if (comp == null)
-				continue;
-			Object val = extractValue(comp, attr);
-			if (val != null) {
-				currentItem.removeAttribute(attr);
-				currentItem.addAttribute(attr.deepClone(val));
-			}
-		}
+		for (var attr : currentItem.getAttributes())
+			handleAttribute(attr);
 		
 		hasChanges = false;
 		updatePreview();
@@ -297,16 +291,32 @@ public class ItemEdit extends BaseEditPage {
 		window.snackbar.show("Item changes saved", BarManager.Type.SUCCESS);
 	}
 	
-	private Object extractValue(JComponent comp, Attribute attr) {
-		if (comp instanceof JCheckBox cb && attr instanceof BooleanAttribute)
-			return cb.isSelected();
-		if (comp instanceof JSpinner sp && attr instanceof DoubleAttribute)
-			return sp.getValue();
-		if (comp instanceof JTextField tf) {
-			return tf.getText();
+	private <T> void handleAttribute(Attribute<T> attr) {
+		var comp = attributeComponents.get(attr.getName());
+		if (comp == null)
+			return;
+		T val = extractValue(comp, attr);
+		if (val != null) {
+			currentItem.removeAttribute(attr);
+			currentItem.addAttribute(attr.deepClone(val));
 		}
-		if (comp instanceof JScrollPane sp && sp.getViewport().getView() instanceof JTextArea ta)
-			return ta.getText();
+	}
+	
+	@SuppressWarnings("unchecked")
+	private <T> T extractValue(JComponent comp, Attribute<T> attr) {
+		if (attr instanceof BooleanAttribute && comp instanceof JCheckBox cb)
+			return (T) Boolean.valueOf(cb.isSelected());
+		if (attr instanceof DoubleAttribute && comp instanceof JSpinner sp)
+			return (T) sp.getValue();  // SpinnerNumberModel already stores Double
+		if (attr instanceof StringAttribute && comp instanceof JTextField tf)
+			return (T) tf.getText();
+		if (attr instanceof ListAttribute<?> && comp instanceof JScrollPane sp && sp.getViewport().getView() instanceof JTextArea ta)
+			return (T) List.of(ta.getText().split("\\s+"));
+		
+		// fallback for unknown string-backed attributes
+		if (comp instanceof JTextField tf)
+			return (T) tf.getText();
+		
 		return null;
 	}
 	
