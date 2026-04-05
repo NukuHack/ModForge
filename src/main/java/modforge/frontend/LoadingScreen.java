@@ -4,16 +4,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 
-// =============================================================================
-//  LOADING SCREEN
-// =============================================================================
 public class LoadingScreen extends JWindow {
 	public LoadingScreen() {
 		setSize(500, 340);
 		setLocationRelativeTo(null);
 		setBackground(new Color(0, 0, 0, 0));
 		
-		JPanel panel = getJPanel();
+		JPanel panel = getJPanel(); // Has BorderLayout + padding
 		
 		JLabel logo = new JLabel("⚒  ModForge", SwingConstants.CENTER);
 		logo.setFont(new Font("Roboto", Font.BOLD, 36));
@@ -29,15 +26,27 @@ public class LoadingScreen extends JWindow {
 		bar.setBackground(new Color(0x313244));
 		bar.setBorderPainted(false);
 		
-		panel.add(logo, BorderLayout.CENTER);
-		panel.add(sub, BorderLayout.SOUTH);
+		// Center panel: logo + subtitle stacked
+		JPanel centerPanel = new JPanel(new GridBagLayout());
+		centerPanel.setOpaque(false);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
+		gbc.anchor = GridBagConstraints.CENTER;
+		gbc.insets = new Insets(0, 0, 16, 0);
+		centerPanel.add(logo, gbc);
+		gbc.insets = new Insets(0, 0, 0, 0);
+		centerPanel.add(sub, gbc);
 		
-		JPanel outer = new JPanel(new BorderLayout(0, 16));
-		outer.setOpaque(false);
-		outer.add(panel, BorderLayout.CENTER);
-		outer.add(bar, BorderLayout.SOUTH);
+		// Bottom panel: progress bar, inside the styled panel
+		JPanel bottomPanel = new JPanel(new BorderLayout());
+		bottomPanel.setOpaque(false);
+		bottomPanel.add(bar, BorderLayout.CENTER);
 		
-		setContentPane(outer);
+		// Everything goes inside the rounded, dark `panel`
+		panel.add(centerPanel, BorderLayout.CENTER);
+		panel.add(bottomPanel, BorderLayout.SOUTH);
+		
+		setContentPane(panel);
 		setShape(new RoundRectangle2D.Float(0, 0, 500, 340, 24, 24));
 	}
 	
