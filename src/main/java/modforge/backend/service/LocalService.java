@@ -279,12 +279,12 @@ public final class LocalService {
 	
 	public String makeLocalizationXml(Map<String, String> entries) {
 		var sb = new StringBuilder();
-		//sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		// xml declaration appended later
 		sb.append("<Table>\n");
 		
 		for (var entry : entries.entrySet()) {
-			sb.append("<Row>\n").append("<Cell>").append(Util.escapeXml(entry.getKey())).append("</Cell>\n").append("<Cell/>\n").append("<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n").append("</Row>\n");
+			final var key = entry.getKey();
+			if (! key.isBlank())
+				sb.append("<Row>\n").append("<Cell>").append(Util.escapeXml(key)).append("</Cell>\n").append("<Cell/>\n").append("<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n").append("</Row>\n");
 		}
 		
 		sb.append("</Table>\n");

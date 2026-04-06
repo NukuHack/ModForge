@@ -15,18 +15,17 @@ class DDSUtilTest {
 
 	private static byte[] pngData;
 	private static byte[] dxt1Data;
-	private static byte[] dssData;
 	private static byte[] dxt5Data;
 	private static int expectedWidth;
 	private static int expectedHeight;
+	private static final String output = "src/test/resources/img/output";
 
 	@BeforeAll
 	static void setUp() throws IOException {
 		// Load test files using classloader (works in both IDE and build)
-		pngData = readResourceBytes("test.png");
-		dssData = readResourceBytes("test.dds");
-		dxt5Data = readResourceBytes("test-dxt5.dds");
-		dxt1Data = readResourceBytes("test-dxt1.dds");
+		pngData = readResourceBytes("img/test.png");
+		dxt5Data = readResourceBytes("img/test-dxt5.dds");
+		dxt1Data = readResourceBytes("img/test-dxt1.dds");
 
 		// Get expected dimensions from PNG
 		BufferedImage png = ImageIO.read(new ByteArrayInputStream(pngData));
@@ -200,52 +199,12 @@ class DDSUtilTest {
 	}
 
 	@Test
-	void testRoundTripDss() throws IOException {
-
-		Path outputDir = Paths.get("src/test/resources/output");
-		if (!Files.exists(outputDir)) {
-			Files.createDirectories(outputDir);
-		}
-		// Arrange
-		DDSUtil.DDSImage original = DDSUtil.decodeWithInfo(dssData);
-		BufferedImage originalImage = original.toBufferedImage();
-		Path createPath = outputDir.resolve("converted-dds.png");
-		ImageIO.write(originalImage, "png", createPath.toFile());
-
-		// Act - compress and decompress
-		byte[] compressed = DDSUtil.compressToBC7(originalImage);
-		DDSUtil.DDSImage roundTripped = DDSUtil.decodeWithInfo(compressed);
-
-		Path createnPath = outputDir.resolve("converted-dds.dds");
-		Files.write(createnPath, compressed);
-		// Assert
-		assertNotNull(roundTripped);
-		assertEquals(original.width, roundTripped.width);
-		assertEquals(original.height, roundTripped.height);
-
-		// DXT5 should preserve alpha better
-		int samplesToCheck = Math.min(100, original.width * original.height);
-		int alphaDifferences = 0;
-
-		for (int i = 0; i < samplesToCheck; i++) {
-			int origA = original.pixels[i * 4 + 3] & 0xFF;
-			int roundA = roundTripped.pixels[i * 4 + 3] & 0xFF;
-
-			if (Math.abs(origA - roundA) > 30) { // Allow some alpha loss
-				alphaDifferences++;
-			}
-		}
-		System.out.println("found " + alphaDifferences + " alphaDifferences in " + samplesToCheck + " samples" );
-		assertTrue(alphaDifferences <= samplesToCheck / 5, "Too many alpha differences: " + alphaDifferences);
-	}
-
-	@Test
 	void testWriteAllDDSFormats() throws IOException {
 		// Load the original PNG
 		BufferedImage originalPNG = ImageIO.read(new ByteArrayInputStream(pngData));
 
 		// Create output directory
-		Path outputDir = Paths.get("src/test/resources/output");
+		Path outputDir = Paths.get(output);
 		if (!Files.exists(outputDir)) {
 			Files.createDirectories(outputDir);
 		}

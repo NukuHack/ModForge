@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<database xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="barbora" xsi:noNamespaceSchemaLocation="item.xsd">
+	<ItemClasses version="8">
+		<MiscItem Type="5" IconId="loot_cloth" UIInfo="ui_in_lootinfo_config1" UIName="ui_nm_lootinfo_config1" Model="manmade/task_specific_props/clothing_industry/tailoring/cloth_folded_b.cgf" Material="manmade/task_specific_props/clothing_industry/tailoring/cloth_folded_b_linen_white.mtl" Weight="0" Price="0" FadeCoef="1.568627" VisibilityCoef="1" Id="578c1e67-7c0f-4a9f-8f03-2735b6f81688" Name="lootinfo_config1" />
+	</ItemClasses>
+</database>

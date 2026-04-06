@@ -93,17 +93,28 @@ public final class ItemService {
 	// WRITE OPERATIONS
 	// ==================================================================
 	
-	static Document parseXml(InputStream is) throws ParserConfigurationException, IOException, SAXException {
-		var f = DocumentBuilderFactory.newInstance();
-		f.setNamespaceAware(true);
-		f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		f.setFeature("http://xml.org/sax/features/validation", false);
-		f.setFeature("http://xml.org/sax/features/external-general-entities", false);
-		f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-		
-		// Use a proper encoding-aware reader
-		try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-			return f.newDocumentBuilder().parse(new InputSource(reader));
+	static Document parseXml(InputStream is) {
+		try {
+			var f = DocumentBuilderFactory.newInstance();
+			f.setNamespaceAware(true);
+			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			f.setFeature("http://xml.org/sax/features/validation", false);
+			f.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			
+			// Use a proper encoding-aware reader
+			try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+				return f.newDocumentBuilder().parse(new InputSource(reader));
+			}
+		} catch (final ParserConfigurationException e) {
+			log.warning("Could not configure the parser");
+			return null;
+		} catch (final SAXException e) {
+			log.warning("Could not parse the file");
+			return null;
+		} catch (final IOException e) {
+			log.warning("Could access the file");
+			return null;
 		}
 	}
 	
@@ -227,7 +238,7 @@ public final class ItemService {
 				final String entryName = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
-				} catch (Exception ex) {
+				} catch (final Exception ex) {
 					log.warning("Parse error in %s from %s: %s".formatted(entryName, pakFile.getFileName(), ex.getMessage()));
 				}
 			}
@@ -237,8 +248,10 @@ public final class ItemService {
 		return items.stream();
 	}
 	
-	private static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) throws Exception {
+	private static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) {
 		final var doc = parseXml(is);
+		if (doc == null)
+			return;
 		final var root = doc.getDocumentElement();
 		final var tableNodes = root.getChildNodes();
 		for (int i = 0; i < tableNodes.getLength(); i++) {
