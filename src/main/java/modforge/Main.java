@@ -39,7 +39,7 @@ public class Main {
 				}
 				//  should be made a bit nicer, for now most of the stuff is stored inside a String - should make data storage for more specific attributes
 				final var registry = Singleton.INSTANCE.getRegistry();
-				System.out.println(AttributeFactory.getTypeMap());
+				//System.out.println(AttributeFactory.getTypeMap());
 				final MainWindow window = new MainWindow(registry);
 				Singleton.INSTANCE.setMainWindow(window);
 				window.setVisible(true);

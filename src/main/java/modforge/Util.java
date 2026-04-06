@@ -261,15 +261,15 @@ public final class Util {
 		return future;
 	}
 	
-	public static void openGameDirectory(JPanel w, String gameDirPath) {
-		if (gameDirPath == null || gameDirPath.isBlank()) {
+	public static void openDirectory(JPanel w, String dirPath) {
+		if (dirPath == null || dirPath.isBlank()) {
 			JOptionPane.showMessageDialog(w, "Game directory not set. Please configure it in Settings.", "Directory Not Set", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		
-		final File gameDir = new File(gameDirPath);
+		final File gameDir = new File(dirPath);
 		if (! gameDir.exists() || ! gameDir.isDirectory()) {
-			JOptionPane.showMessageDialog(w, "Game directory does not exist or is invalid:\n" + gameDirPath, "Invalid Directory", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(w, "Game directory does not exist or is invalid:\n" + dirPath, "Invalid Directory", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		
@@ -283,11 +283,11 @@ public final class Util {
 			final Runtime runtime = Runtime.getRuntime();
 			
 			if (os.contains("win")) {
-				runtime.exec(new String[] { "explorer", gameDirPath });
+				runtime.exec(new String[] { "explorer", dirPath });
 			} else if (os.contains("mac")) {
-				runtime.exec(new String[] { "open", gameDirPath });
+				runtime.exec(new String[] { "open", dirPath });
 			} else if (os.contains("nix") || os.contains("nux")) {
-				runtime.exec(new String[] { "xdg-open", gameDirPath });
+				runtime.exec(new String[] { "xdg-open", dirPath });
 			} else {
 				JOptionPane.showMessageDialog(w, "Cannot open directory on this operating system.", "Unsupported OS", JOptionPane.ERROR_MESSAGE);
 			}

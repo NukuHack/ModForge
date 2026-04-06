@@ -176,7 +176,7 @@ public class MainWindow extends JFrame {
 		
 		side.add(Box.createVerticalStrut(8));
 		
-		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG }) {
+		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.CONVERT }) {
 			side.add(navBtn(page.getDisplayName(), page));
 		}
 		
@@ -249,7 +249,8 @@ public class MainWindow extends JFrame {
 	public enum Page {
 		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class),
 		ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class),
-		LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class), LANG("Localizations", LocalizationPage.class);
+		LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class),
+		LANG("Localizations", LocalizationPage.class), CONVERT("Image convert", ConvertPage.class);
 		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;

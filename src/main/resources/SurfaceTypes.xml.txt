@@ -1,0 +1,412 @@
+<!-- 
+
+	Pierceability:
+	
+		works in a very simple manner:
+		p <= 9 	: cannot see or pierce through
+		p = 10 	: cannot see but can pierce through
+		p >= 11	: can see and pierce through
+		
+	Ignore for navmesh generation:
+	
+		<AI navIgnored="1" />
+		
+	Don't generate navmesh on this:
+	
+		<AI navWeight="-1.0" />
+		
+		
+	Movement speed multiplier (both for Player and NPCs). Value must be greater than 0.0 and less or equal to 1.0, default value is 0.9
+	Materials that are used for the roads have the value 1.0 to boost the movement speed on the roads.
+		
+		<AI movementSpeedMult="0.95"
+-->
+
+<SurfaceTypes>
+
+	<SurfaceType name="mat_none">
+		<Physics friction="0.5" elasticity="0"  pierceability="12" dbg_color="0,0,0" sound_obstruction="0" />
+	</SurfaceType>
+
+	<!-- TBa: these materials is somehow important for the engine, please leave it here ... -->
+	<SurfaceType name="mat_canopy">
+		<Physics friction="1.5" elasticity="0.05" pierceability="10" no_collide="1" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_vegetation_seethrough">
+		<Physics friction="0.5" elasticity="0"  pierceability="11" no_collide="1" dbg_color="0,128,0" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<!-- TBa: End -->
+	
+	<!-- 
+	Helper materials ... 
+	-->
+	<SurfaceType name="mat_window"><!-- Prevents interaction through windows -->
+		<Physics dbg_color="0,254,254" pierceability="15" coll_types="ray -float" window_collision="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_default">
+		<Physics dbg_color="254,0,254"  />
+		<AI dogDiggingAllowed="1" edible="1" animalComfortable="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_player_collider">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="11" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_player_only">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="0,128,128" player_only="1" sound_obstruction="0" />
+		<AI navIgnored="1" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_no_photomode">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="204,255,102" no_photomode="1" sound_obstruction="0" />
+		<AI navIgnored="1" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_npc_only">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="0,180,100" npc_only="1" sound_obstruction="0" />
+		<AI navIgnored="1" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_horse_only">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="0,128,128" horse_only="1" sound_obstruction="0" />
+		<AI navIgnored="1" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_horse_ignore">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="0,128,128" horse_ignore="1" sound_obstruction="0" />
+		<AI navIgnored="1" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_player_only_with_bark">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="0,128,128" player_only="1" sound_obstruction="0" />
+		<Barrier distance="1" slowdown="0" monologMetaroleId="HRAC_NEMUZE_Z_MAPY"/>
+		<AI navIgnored="1" />
+	</SurfaceType>
+	
+	<!-- Barriers (slows player during approach, triggers monolog-->
+	<SurfaceType name="mat_level_barrier">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="123,103,65" player_only="1" sound_obstruction="0" />
+		<Barrier distance="10" slowdown="1" monologMetaroleId="HRAC_NEMUZE_Z_MAPY"/>
+		<AI navIgnored="1" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_deep_water_barrier">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="123,103,65" sound_obstruction="0" />
+		<Barrier distance="3" slowdown="1" monologMetaroleId="HRAC_NEMUZE_DO_HLUBOKE_VODY"/>
+	</SurfaceType>
+
+	<SurfaceType name="mat_cart_slowdown">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="123,103,65" sound_obstruction="0" />
+		<Barrier distance="3" slowdown="1" monologMetaroleId=""/>
+	</SurfaceType>
+	
+	<SurfaceType name="mat_corpses_barrier">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="123,103,65" player_only="1" sound_obstruction="0" />
+		<Barrier distance="3" slowdown="1" monologMetaroleId=""/>		
+	</SurfaceType>
+	
+	<!--Quests-->
+	<SurfaceType name="mat_prepadeni_roadTocamp_barrier">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="123,103,65" player_only="1" sound_obstruction="0" />
+		<Barrier distance="3" slowdown="1" monologMetaroleId=""/> <!-- no bark -->		
+	</SurfaceType>
+	
+	<SurfaceType name="mat_corpses_barrier">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="123,103,65" player_only="1" sound_obstruction="0" />
+		<Barrier distance="5" slowdown="0" monologMetaroleId=""/>		
+	</SurfaceType>
+	
+	<!-- 
+	Player and NPC materials ... 
+	-->
+	
+	<SurfaceType name="mat_flesh">
+		<Physics friction="1.0" elasticity="-2"  pierceability="8" can_shatter="1" dbg_color="128,0,0" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_leather">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="8" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_chainmail">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="4" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_plate">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="2" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_bells">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="2" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+
+	<!-- 
+	special combinations of layered armor we want to distinguish 
+	-->
+	
+	<SurfaceType name="mat_chainmail_plate">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="2" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_fabric_plate">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="5" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_fabric_chainmail">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="4" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_fabric_chainmail_plate">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="2" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_leather_chainmail">
+		<Physics friction="0.60000002" elasticity="-2"  pierceability="4" can_shatter="1" sound_obstruction="0" />
+	</SurfaceType>
+
+	<!-- 
+	Regular materials ... 
+	-->
+	
+	<SurfaceType name="mat_thatch">
+		<Physics friction="0.69999999" pierceability="9"  dbg_color="202,168,63" sound_obstruction="0.2" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType> 
+
+	<SurfaceType name="mat_plaster">
+		<Physics friction="0.69999999" pierceability="3"  dbg_color="179,179,179" sound_obstruction="0.3" />
+	</SurfaceType> 
+
+	<SurfaceType name="mat_wicker">
+		<Physics friction="0.69999999" pierceability="10"  dbg_color="132,61,30" sound_obstruction="0.3" />
+	</SurfaceType> 
+
+	<SurfaceType name="mat_ceramics">
+		<Physics friction="0.69999999" pierceability="2" sound_obstruction="0.1" />
+	</SurfaceType> 
+	
+	<SurfaceType name="mat_organic_stuff">
+		<Physics friction="0.69999999" pierceability="3" sound_obstruction="0" />
+	</SurfaceType> 
+
+	<SurfaceType name="mat_glass" type="glass">
+		<Physics friction="0.60000002" elasticity="0.30000001" pierceability="14" can_shatter="1" dbg_color="112,208,236" sound_obstruction="0.1" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_soil">
+		<Physics friction="1.5" elasticity="0"  pierceability="7" dbg_color="86,75,41" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.95" dogDiggingAllowed="1"  animalComfortable="1"/>
+	</SurfaceType>
+	
+	<SurfaceType name="mat_mud">
+		<Physics friction="2.5" elasticity="0"  pierceability="8" dbg_color="86,76,61" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.95" dogDiggingAllowed="1"  animalComfortable="1"/>
+	</SurfaceType>
+	
+	<SurfaceType name="mat_mudwater">
+		<Physics friction="0.5" elasticity="0"  pierceability="8" dbg_color="255,0,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.95" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_rockwater">
+		<Physics friction="0.5" elasticity="0"  pierceability="2" dbg_color="255,0,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.6" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_slowwater">
+		<Physics friction="0.5" elasticity="0"  pierceability="2" dbg_color="255,0,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.3" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_water">
+		<Physics friction="0.34999999" elasticity="0"  pierceability="11" dbg_color="255,0,0" sound_obstruction="0.1" />
+		<AI soundIntensityCoef="1" movementSpeedMult="0.8" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_rock">
+		<Physics friction="1.3" elasticity="0"  pierceability="2"   dbg_color="132,132,132" sound_obstruction="0.2" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_wood" type="wood">
+		<Physics friction="1.5" elasticity="0.050000001"  pierceability="5"  dbg_color="123,103,65" sound_obstruction="0.1" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_wood_soft" type="wood">
+		<Physics friction="1.8" elasticity="0.050000001"  pierceability="9"  dbg_color="123,103,65" sound_obstruction="0.1" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_grass">
+		<Physics friction="2.0" elasticity="-2"  pierceability="7" no_collide="1"  dbg_color="0,255,0" sound_obstruction="0.6" />
+		<AI soundIntensityCoef="0.375" movementSpeedMult="0.95" dogDiggingAllowed="1" edible="1"  animalComfortable="1"/>
+	</SurfaceType>
+	
+	<SurfaceType name="mat_grassdry">
+		<Physics friction="1.8" elasticity="0"  pierceability="8" dbg_color="0,255,0" sound_obstruction="0.6" />
+		<AI soundIntensityCoef="0.425" movementSpeedMult="0.95" dogDiggingAllowed="1" edible="1"  animalComfortable="1"/>
+	</SurfaceType>
+	
+	<SurfaceType name="mat_forest">
+		<Physics friction="1.8" elasticity="0"  pierceability="8" edible="1"  animalComfortable="1" dbg_color="0,255,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.95" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_gravel">
+		<Physics friction="2.5" elasticity="0"  pierceability="8" dbg_color="0,255,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.95" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_metal">
+		<Physics friction="0.80000001" elasticity="0.2"  pierceability="2"  dbg_color="55,86,117" sound_obstruction="0" />
+	</SurfaceType> 
+	
+	<SurfaceType name="mat_vegetation">
+		<Physics friction="1.8" elasticity="0"  pierceability="10" no_collide="1" dbg_color="0,128,0" sound_obstruction="0.6" />
+		<AI  edible="1" animalComfortable="1" />
+	</SurfaceType> 
+
+	<SurfaceType name="mat_super_cool_sparkly_type">
+		<Physics friction="0.80000001" elasticity="0"  pierceability="7" sound_obstruction="0" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_fabric">
+		<Physics friction="0.80000001" elasticity="0"  pierceability="10" dbg_color="147,143,32" sound_obstruction="0" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_fabric_items">
+		<Physics friction="0.80000001" elasticity="0"  pierceability="10" dbg_color="147,143,32" sound_obstruction="0" />
+		<AI navWeight="-1.0"/>
+	</SurfaceType>
+	
+	<SurfaceType name="mat_sack">
+		<Physics friction="0.80000001" elasticity="0"  pierceability="5" dbg_color="170,211,29" sound_obstruction="0.1" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_invulnerable" type="default">
+		<Physics friction="1" elasticity="0"  pierceability="0"  dbg_color="254,254,0" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_shield_wood" type="wood">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="5"  dbg_color="123,103,65" sound_obstruction="0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_road">
+		<Physics friction="1.5" elasticity="0"  pierceability="10" dbg_color="0,0,255" sound_obstruction="0.6" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_field">
+		<Physics friction="2.5" elasticity="0"  pierceability="10" dbg_color="255,255,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.7"  animalComfortable="1"/>
+	</SurfaceType>
+
+	<SurfaceType name="mat_grass_tall">
+		<Physics friction="2.5" elasticity="0"  pierceability="10" dbg_color="255,255,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.7" edible="1"  animalComfortable="1"/>
+	</SurfaceType>
+
+	<SurfaceType name="mat_bushes">
+		<Physics friction="0.5" elasticity="0"  pierceability="10" dbg_color="255,0,0" sound_obstruction="0.6" />
+		<AI movementSpeedMult="0.1" edible="1" soundIntensityCoef="1.2" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_metal_seethrough">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="175,75,21" sound_obstruction="0" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType>
+
+	<!-- 
+	Collisions ignored by horse 
+	-->
+	
+	<SurfaceType name="mat_vegetation_horse_ignore">
+		<Physics friction="0.5" elasticity="0"  pierceability="10" no_collide="1" dbg_color="0,128,0" horse_ignore="1" sound_obstruction="0" />
+	</SurfaceType> 
+	
+	<SurfaceType name="mat_rock_horse_ignore">
+		<Physics friction="0.8" elasticity="0"  pierceability="2"   dbg_color="156,204,201" horse_ignore="1" sound_obstruction="0" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType>
+	
+	<!-- 
+	No navmesh materials 
+	-->
+	
+	<SurfaceType name="mat_wood_unwalk" type="wood">
+	  <Physics friction="0.5" elasticity="0.050000001"  pierceability="5"  dbg_color="123,103,65" sound_obstruction="0" />
+	  <AI navWeight="-1.0" movementSpeedMult="1.0" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_rock_unwalk" type="wood">
+	  <Physics friction="0.8" elasticity="0"  pierceability="2" dbg_color="132,132,132" sound_obstruction="0" />
+		<AI navWeight="-1.0" movementSpeedMult="0.9"/>
+	</SurfaceType>
+	
+	<SurfaceType name="mat_soil_unwalk">
+		<Physics friction="0.5" elasticity="0"  pierceability="7" dbg_color="86,75,41" sound_obstruction="0" />
+		<AI navWeight="-1.0" movementSpeedMult="0.9"/>
+	</SurfaceType>
+
+
+	<!-- 
+	Stair materials 
+	-->
+	
+	<SurfaceType name="mat_stairs_stone">
+		<Physics friction="0.5" elasticity="0"  pierceability="7" dbg_color="89, 189, 247" sound_obstruction="0.05" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_stairs_wood">
+		<Physics friction="0.5" elasticity="0"  pierceability="7" dbg_color="247, 171, 89" sound_obstruction="0.05" />
+		<AI soundIntensityCoef="0.625" />
+	</SurfaceType>
+	
+	<SurfaceType name="mat_slope">
+		<Physics friction="0.5" elasticity="0"  pierceability="15" dbg_color="66, 245, 212" sound_obstruction="0.05" />
+	</SurfaceType>
+
+	<SurfaceType name="mat_railing_wood_seethrough" type="wood">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="11"  dbg_color="175,75,21" sound_obstruction="0" />
+		<AI movementSpeedMult="1.0" />
+	</SurfaceType>
+	
+	<!-- 
+	Door materials 
+	-->
+	
+	<SurfaceType name="mat_door_wood" type="wood">
+		<Physics friction="0.5" elasticity="0.050000001"  pierceability="5"  dbg_color="123,103,65" sound_obstruction="0.15" />
+		<AI navIgnored="1"/>
+	</SurfaceType>
+
+	<SurfaceType name="mat_door_metal">
+		<Physics friction="0.80000001" elasticity="0.2"  pierceability="2"  dbg_color="55,86,117" sound_obstruction="0.2" />
+		<AI navIgnored="1"/>
+	</SurfaceType> 
+	
+	<!-- 
+	Material for nav mesh ignore and colliding barrier
+	-->
+	<SurfaceType name="mat_barrier_navignore">
+		<Physics pierceability="2"  dbg_color="55,86,117" sound_obstruction="0" />
+		<AI navIgnored="1"/>
+	</SurfaceType> 
+	
+	<!-- 
+	Material for no draw designer objects, can be piercable
+	-->
+	<SurfaceType name="mat_nodraw_designer">
+		<Physics friction="0.5" elasticity="0"  pierceability="11" dbg_color="128,128,0" sound_obstruction="0" />
+	</SurfaceType>	
+	
+	<SurfaceType name="mat_raycast">
+		<Physics dbg_color="204,0,204" pierceability="10" />
+		<AI dogDiggingAllowed="1" edible="1" animalComfortable="1" sound_obstruction="0" />
+	</SurfaceType>
+
+</SurfaceTypes>

@@ -60,7 +60,7 @@ public class HomePage extends BasePage {
 		btns.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		// New button to open game directory
-		JButton openGameDirBtn = secondaryBtn("Open Game Directory", e -> Util.openGameDirectory(this, gameDir));
+		JButton openGameDirBtn = secondaryBtn("Open Game Directory", e -> Util.openDirectory(this, gameDir));
 		openGameDirBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		// Add some spacing before the new button

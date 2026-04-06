@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<database xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="barbora" xsi:noNamespaceSchemaLocation="InventoryPreset.xsd">
+	<InventoryPresets version="2">
+		<InventoryPreset Name="inventory_shop_commonMiller" Mode="All" Health="1">
+			<InventoryPresetRef Name="inventory_shop_money_1500"/>
+			<InventoryPresetRef Name="inventory_commonMillerItems"/>
+		</InventoryPreset>
+		<InventoryPreset Name="inventory_shop_commonCoalman" Mode="All" Health="1">
+			<InventoryPresetRef Name="inventory_shop_money_350"/>
+			<InventoryPresetRef Name="inventory_commonCoalmanCoal"/>
+			<InventoryPresetRef Name="inventory_commonCoalman_fluffGarbage"/>
+			<PresetItem Name="player_shovel" Amount="1"/>
+		</InventoryPreset>
+		<InventoryPreset Name="inventory_shop_commonCarpenter" Mode="All" Health="1">
+			<InventoryPresetRef Name="inventory_shop_money_750"/>
+			<InventoryPresetRef Name="inventory_commonCarpenterArmsMelee"/>
+			<InventoryPresetRef Name="inventory_commonCarpenterArmsRanged"/>
+			<InventoryPresetRef Name="inventory_commonBlacksmithAmmo"/>
+			<InventoryPresetRef Name="inventory_commonCarpenterItems"/>
+			<InventoryPresetRef Name="inventory_commonCarpenterShileds"/>
+			<InventoryPresetRef Name="inventory_commonCarpenterRecipes"/>
+		</InventoryPreset>
+		<InventoryPreset Name="inventory_shop_commonTanner" Mode="All" Health="1">
+			<InventoryPresetRef Name="inventory_shop_money_350"/>
+			<InventoryPresetRef Name="inventory_commonTanner_skins"/>
+			<InventoryPresetRef Name="inventory_commonTanner_specialSkins"/>
+			<PresetItem Name="repairKit_cobblersSmall" Amount="1"/>
+			<PresetItem Name="special_charcoal" Amount="2"/>
+			<PresetItem Name="loot_salt" Amount="6"/>
+			<PresetItem Name="special_lard" Amount="3"/>
+			<PresetItem Name="special_bilin" Amount="1"/>
+			<PresetItem Name="loot_oakBark" Amount="8"/>
+			<PresetItem Name="special_attire" Amount="4"/>
+		</InventoryPreset>
+		<InventoryPreset Name="inventory_shop_commonHuntsman" Mode="All" Health="1">
+			<InventoryPresetRef Name="inventory_shop_money_750"/>
+			<InventoryPresetRef Name="inventory_commonHuntsmanItems"/>
+		</InventoryPreset>
+		<InventoryPreset Name="inventory_shop_mistakenNPC_3" Mode="All" Health="1">
+			<PresetItem Name="money" Amount="81000"/>
+			<PresetItem Name="repairKit_cobblersSmall" Amount="1" Health="1"/>
+			<PresetItem Name="repairKit_tailorsSmall" Amount="1" Health="1"/>
+			<PresetItem Name="torch_weapon" Amount="1" Weight="1"/>
+			<PresetItem Name="potion_saviourSchnapps" Amount="3"/>
+			<PresetItem Name="potion_marigold" Amount="1" Weight="0.5"/>
+			<PresetItem Name="CoifLarge02_m08_C3" Amount="1" Weight="1"/>
+		</InventoryPreset>
+	</InventoryPresets>
+</database>
