@@ -247,10 +247,7 @@ public class MainWindow extends JFrame {
 	
 	// ── navigation enum ──────────────────────────────────────────────────────
 	public enum Page {
-		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class),
-		ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class),
-		LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class),
-		LANG("Localizations", LocalizationPage.class), CONVERT("Image convert", ConvertPage.class);
+		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class), ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class), LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class), LANG("Localizations", LocalizationPage.class), CONVERT("Image convert", ConvertPage.class);
 		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;

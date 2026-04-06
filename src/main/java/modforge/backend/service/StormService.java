@@ -45,7 +45,7 @@ public final class StormService {
 	/** Path prefix inside PAKs where Storm XML files reside. */
 	private static final String STORM_PATH_PREFIX = "Libs/Storm/";
 	
-	private final UserService userService;
+	private final UserConfig userConfig;
 	
 	/** All parsed Storm files, keyed by their stable ID. */
 	private final Map<String, StormData> stormIndex = new LinkedHashMap<>();
@@ -54,8 +54,8 @@ public final class StormService {
 	// Construction
 	// =========================================================================
 	
-	public StormService(UserService userService) {
-		this.userService = userService;
+	public StormService(UserConfig userConfig) {
+		this.userConfig = userConfig;
 	}
 	
 	// =========================================================================
@@ -116,7 +116,7 @@ public final class StormService {
 				
 				if (! name.toLowerCase(Locale.ROOT).contains(STORM_PATH_PREFIX.toLowerCase(Locale.ROOT)))
 					continue;
-				if (! name.toLowerCase(Locale.ROOT).endsWith(".xml"))
+				if (! name.toLowerCase(Locale.ROOT).endsWith(Util.DATA_FORMAT))
 					continue;
 				
 				final String id = entryToId(name);
@@ -187,7 +187,7 @@ public final class StormService {
 	 */
 	public void init() {
 		stormIndex.clear();
-		final String gameDir = userService.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank())
 			return;
 		
@@ -216,7 +216,7 @@ public final class StormService {
 	 * @param mod The mod whose Data folder will be scanned.
 	 */
 	public void loadForMod(ModData mod) {
-		final String gameDir = userService.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 		final Path dataFolder = Path.of(Util.modData(gameDir, mod.id));
 		if (! Files.exists(dataFolder))
 			return;

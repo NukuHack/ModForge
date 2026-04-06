@@ -79,6 +79,9 @@ public enum Language {
 		return Arrays.stream(values()).map(lang -> lang.getIsoCode() + " - " + lang.getName()).collect(Collectors.toSet());
 	}
 	
+	/**
+	 * Get English name
+	 */
 	public String getName() {
 		return name;
 	}

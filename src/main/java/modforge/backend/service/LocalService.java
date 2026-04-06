@@ -10,6 +10,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,15 +35,14 @@ public final class LocalService {
 		f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
 		return f;
 	});
-	private final UserService configService;
+	private final UserConfig userConfig;
 	
 	// ==================================================================
 	// PUBLIC API
 	// ==================================================================
 	
-	public LocalService(UserService configService) {
-		this.configService = configService;
-		init();
+	public LocalService(UserConfig userConfig) {
+		this.userConfig = userConfig;
 	}
 	
 	/**
@@ -50,7 +50,7 @@ public final class LocalService {
 	 */
 	public void init() {
 		final long start = System.currentTimeMillis();
-		final String gameDir = configService.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank())
 			return;
 		final var game = Singleton.INSTANCE.game();
@@ -127,7 +127,7 @@ public final class LocalService {
 	}
 	
 	public String resolve(String key, ModData mod) {
-		return resolve(key, mod, configService.language);
+		return resolve(key, mod, userConfig.language);
 	}
 	
 	/**
@@ -137,21 +137,22 @@ public final class LocalService {
 		return resolve(key, Singleton.INSTANCE.game());
 	}
 	
+	
+	record LangPak(Language language, String pakPath) {
+		static LangPak c(String l) {
+			final var base = new File(l).getName();
+			final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
+			return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
+		}
+	}
+	
 	/**
 	 * Read all localisation paks from the game directory.
 	 * Returns: Language enum -> (string-key -> localized-value)
 	 */
 	public Map<Language, Map<String, String>> loadLocalization(String root) {
 		// Collect all valid (language, pakPath) pairs upfront
-		record LangPak(Language language, String pakPath) {
-			static LangPak c(File l) {
-				final var base = l.getName().replace(EXTRA, "");
-				final var lang = Language.fromName(base);
-				return lang != null ? new LangPak(lang, l.getPath()) : null;
-			}
-		}
-		
-		final var langPaks = Util.allLocPaths(root).stream().map(File::new).filter(File::exists).map(LangPak::c).filter(Objects::nonNull).toList();
+		final var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.pakPath()))).toList();
 		if (langPaks.isEmpty()) {
 			log.fine("No Localization folder found for folder " + root);
 			return new EnumMap<>(Language.class);
@@ -240,7 +241,7 @@ public final class LocalService {
 	 * Each language gets: Localization/<Lang>_xml/text__<modId>.xml
 	 */
 	public void writeModLocalization(ModData mod) {
-		final var gameDir = configService.gameDirectory;
+		final var gameDir = userConfig.gameDirectory;
 		boolean ok = writeModLocalizationFiles(gameDir, mod.id, mod.getLocal());
 		if (ok) {
 			log.info("Localization written for mod: " + mod.id);
@@ -303,8 +304,8 @@ public final class LocalService {
 	private String resolve(ModItem item, ModData mod, String... candidates) {
 		// Pull the two lang maps once – either may be null if never populated.
 		final var game = Singleton.INSTANCE.game();
-		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(configService.language) : new HashMap<>();
-		final Map<String, String> baseMap = game.getLocal().get(configService.language);
+		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(userConfig.language) : new HashMap<>();
+		final Map<String, String> baseMap = game.getLocal().get(userConfig.language);
 		
 		for (String candidate : candidates) {
 			final String clo = candidate.toLowerCase(Locale.ROOT);

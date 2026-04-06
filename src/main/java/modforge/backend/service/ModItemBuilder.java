@@ -1,11 +1,13 @@
 package modforge.backend.service;
 
 import modforge.Util;
-import modforge.backend.AttributeFactory;
+import modforge.backend.model.attributes.Attributes;
+import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.Attribute;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.nio.file.Path;
@@ -38,31 +40,32 @@ public final class ModItemBuilder {
 		final var list = new ArrayList<Attribute>(xmlAttrs.getLength());
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
 			final var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
-			list.add(AttributeFactory.create(a.getLocalName(), a.getValue()));
+			list.add(Attributes.create(a.getLocalName(), a.getValue()));
 		}
 		item.setAttribute(list);
 		return item;
 	}
 	
-	public static ModItem build(final Element element) {
+	public static ModItem create(final Element element) {
+		Attributes.traverseElement(element);
 		// glue it together yet again, barely works
 		final var elementName = element.getLocalName().toLowerCase(Locale.ROOT);
 		final var handler = HANDLER_MAP.get(elementName);
 		
 		if (handler != null) {
-			return handler.handle(element);
+			return handler.create(element);
 		}
 		
 		log.fine("No handler matched element <" + element.getLocalName() + ">");
 		return null;
 	}
 	
-	public static Element build(final ModItem item) {
+	public static Element build(final Document document, final ModItem item) {
 		// getting the correct one from HANDLER_MAP
 		final var maker = MAKER_MAP.get(item.getClass());
 		
 		if (maker != null) {
-			return maker.handle(item);
+			return maker.build(document, item);
 		}
 		
 		log.fine("No maker matched item <" + item + ">");
@@ -114,12 +117,16 @@ public final class ModItemBuilder {
 		return deepCopy(src, fullFinal);
 	}
 	
+	public static String groupName(ModItem item) {
+		return ItemEntry.forClass(item.getClass()).parentName();
+	}
+	
 	protected interface BuildHandler {
-		ModItem handle(final Element element);
+		ModItem create(final Element element);
 	}
 	
 	protected interface CreateHandler {
-		Element handle(final ModItem item);
+		Element build(final Document document, final ModItem item);
 	}
 	
 	/**
@@ -137,7 +144,7 @@ public final class ModItemBuilder {
 		}
 		
 		@Override
-		public ModItem handle(final Element element) {
+		public ModItem create(final Element element) {
 			try {
 				final M item = type.getDeclaredConstructor().newInstance();
 				
@@ -151,6 +158,7 @@ public final class ModItemBuilder {
 			}
 		}
 	}
+	
 	protected static final class GCreateHandler<M extends ModItem> implements CreateHandler {
 		private static final Logger log = Logger.getLogger(GCreateHandler.class.getName());
 		private final Class<M> type;
@@ -162,8 +170,13 @@ public final class ModItemBuilder {
 		}
 		
 		@Override
-		public Element handle(final ModItem item) {
-			return null;
+		public Element build(final Document document, final ModItem item) {
+			final var typeName = ItemEntry.forClass(item.getClass()).simpleName();
+			final var el = document.createElement(typeName);
+			for (Attribute<?> attr : item.getAttributes()) {
+				el.setAttribute(attr.getName(), Attributes.serializeValue(attr));
+			}
+			return el;
 		}
 	}
 }

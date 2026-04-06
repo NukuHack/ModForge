@@ -1,18 +1,14 @@
-package modforge.backend;
+package modforge.backend.model.attributes;
 
-import modforge.backend.model.attributes.*;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-public final class AttributeFactory {
-	private static final Logger log = Logger.getLogger(AttributeFactory.class.getName());
+public final class Attributes {
+	private static final Logger log = Logger.getLogger(Attributes.class.getName());
 	/**
 	 * Discovered at runtime by scanning XML documents.
 	 * Concurrent, since we now use multithreading
@@ -23,7 +19,7 @@ public final class AttributeFactory {
 		TYPE_MAP.put("buff_params", BuffParam.class);
 	}
 	
-	private AttributeFactory() {
+	private Attributes() {
 	}
 	
 	/**
@@ -64,6 +60,7 @@ public final class AttributeFactory {
 		
 		try {
 			UUID.fromString(value);
+			// TODO : actually save them as UUID
 			return String.class;
 		} catch (Exception ignored) {
 		}
@@ -77,6 +74,40 @@ public final class AttributeFactory {
 		}
 		
 		return String.class;
+	}
+	
+	
+	public static <T> String serializeValue(Attribute<T> attr) {
+		final T v = attr.getValue();
+		if (v == null)
+			return "";
+		if (attr instanceof List<?> list) {
+			if (list.isEmpty())
+				return "";
+			if (list.getFirst() instanceof String)
+				return String.join(",", list.stream().map(Object::toString).toList());
+			var sb = new StringBuilder();
+			for (var f : list)
+				if (f instanceof Attribute<?> a)
+					sb.append(serializeValue(a)).append(',');
+				else
+					log.warning("found list with unsupported type: " + (list.stream().limit(20).toList()) + " type: " + f.getClass());
+			return sb.toString();
+		}
+		return switch (v) {
+			case BuffParam b -> b.toAttrString();
+			case Enum<?> e -> String.valueOf(e.ordinal());
+			case Boolean b -> b.toString().toLowerCase(Locale.ROOT);
+			case Double d -> {
+				if (Double.isInfinite(d) || Double.isNaN(d))
+					yield "-1";
+				long rounded = Math.round(d);
+				if (Math.abs(d - rounded) < 1e-8)
+					yield String.valueOf(rounded);
+				yield d.toString();
+			}
+			default -> v.toString();
+		};
 	}
 	
 	/**

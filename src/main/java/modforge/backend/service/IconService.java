@@ -13,7 +13,9 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 public final class IconService {
@@ -22,16 +24,15 @@ public final class IconService {
 	private static final String TEXTURES_ROOT = "Libs/UI/Textures";
 	private static final String FALLBACK_ICON = "crime_investigation_icon";
 	
-	private final UserService configService;
+	private final UserConfig userConfig;
 	
 	
 	// =====================================================================
 	// Construction & lifecycle
 	// =====================================================================
 	
-	public IconService(UserService configService) {
-		this.configService = configService;
-		init();
+	public IconService(UserConfig userConfig) {
+		this.userConfig = userConfig;
 	}
 	
 	/**
@@ -52,11 +53,11 @@ public final class IconService {
 				final String name = ze.getName();
 				if (! name.endsWith(".dds"))
 					return false;
-				return ! name.startsWith(TEXTURES_ROOT);
+				return name.startsWith(TEXTURES_ROOT);
 			}).toList()) {
 				final String name = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
-					final String stem = stemOf(name);
+					final String stem = Util.stemOf(name);
 					if (stem.isBlank())
 						continue;
 					map.put(stem, is.readAllBytes());
@@ -69,22 +70,6 @@ public final class IconService {
 		}
 		return map;
 	}
-	
-	// =====================================================================
-	// Mod icon loading
-	// =====================================================================
-	
-	/** Extract the filename stem from a ZIP entry path (no directory, no extension). */
-	private static String stemOf(String entryName) {
-		var slash = entryName.lastIndexOf('/');
-		var filename = slash >= 0 ? entryName.substring(slash + 1) : entryName;
-		var dot = filename.lastIndexOf('.');
-		return (dot > 0 ? filename.substring(0, dot) : filename).toLowerCase(Locale.ROOT);
-	}
-	
-	// =====================================================================
-	// Public API – mod-aware icon resolution
-	// =====================================================================
 	
 	static BufferedImage convertToImage(byte[] ddsBytes) throws IOException {
 		final DDSUtil.DDSImage ddsImage = DDSUtil.decodeWithInfo(ddsBytes);
@@ -131,7 +116,7 @@ public final class IconService {
 		try {
 			if (Files.isDirectory(source)) {
 				convertDirectory(source, source, toPng);
-			} else if (isZipLike(source)) {
+			} else if (Util.isZipLike(source)) {
 				convertArchive(source, toPng);
 			} else {
 				convertSingleFile(source, source.getParent(), toPng);
@@ -144,20 +129,6 @@ public final class IconService {
 	// =====================================================================
 	// Bulk conversion utilities
 	// =====================================================================
-	
-	/** Returns true if the path ends with .zip / .pak, OR its first bytes are the ZIP magic (PK\x03\x04). */
-	private static boolean isZipLike(Path path) {
-		final String lower = path.getFileName().toString().toLowerCase(Locale.ROOT);
-		if (lower.endsWith(".zip") || lower.endsWith(".pak"))
-			return true;
-		try (var in = Files.newInputStream(path)) {
-			final byte[] magic = in.readNBytes(4);
-			// ZIP local-file header signature: 0x50 0x4B 0x03 0x04
-			return magic.length >= 4 && magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04;
-		} catch (IOException ex) {
-			return false;
-		}
-	}
 	
 	/** Recurse into a directory, converting every matching file. */
 	private static void convertDirectory(Path dir, Path outputBase, boolean toPng) throws IOException {
@@ -173,7 +144,7 @@ public final class IconService {
 	 */
 	private static void convertArchive(Path archive, boolean toPng) throws IOException {
 		// e.g. MyPak.pak  →  MyPak_converted/
-		final String archiveStem = stemOf(archive.getFileName().toString());
+		final String archiveStem = Util.stemOf(archive.getFileName().toString());
 		final Path outRoot = archive.getParent().resolve(archiveStem + "_converted");
 		Files.createDirectories(outRoot);
 		
@@ -293,11 +264,11 @@ public final class IconService {
 		// to not get unreachable compile time exception
 		
 		
-		final String gameDir = configService.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank())
 			return;
-		loadModIconsForMod(game, false);
-		game.setIcon(indexDdsFromPak(Util.icons(gameDir)));
+		
+		game.setIcon(loadModIcons(Util.icons(gameDir)));
 	}
 	
 	/**
@@ -307,32 +278,43 @@ public final class IconService {
 	 * <p/>
 	 * Call this from ModService.fillCollection() after the mod's items are loaded.
 	 */
-	public void loadModIconsForMod(ModData mod, boolean isMod) {
-		final String gameDir = configService.gameDirectory;
-		
-		final Path dataFolder;
-		if (isMod) {
-			dataFolder = Path.of(Util.modData(gameDir, mod.id));
-		} else {
-			dataFolder = Util.gameDataDir(gameDir);
+	public static Map<String, byte[]> loadModIcons(Path modPath) {
+		if (! Files.exists(modPath)) {
+			log.warning("PAK directory does not exist: " + modPath);
+			return Map.of();
 		}
 		
-		if (! Files.exists(dataFolder))
-			return;
-		
 		final Map<String, byte[]> map = new HashMap<>();
-		try (var stream = Files.list(dataFolder)) {
-			for (Path pakPath : stream.filter(Files::isRegularFile).filter(p -> p.toString().toLowerCase(Locale.ROOT).endsWith(".pak")).toList()) {
+		try (var stream = Files.list(modPath)) {
+			final var pakFiles = stream.filter(excludeNonIconPaks()).collect(Collectors.toSet());
+			
+			if (pakFiles.isEmpty()) {
+				log.fine("No PAK files found in: " + modPath);
+				return Map.of();
+			}
+			for (Path pakPath : pakFiles) {
 				map.putAll(indexDdsFromPak(pakPath.toString()));
 			}
 		} catch (IOException e) {
-			log.warning("Cannot list Data folder for mod " + mod.id + ": " + e.getMessage());
+			log.warning("Cannot list Data folder for path " + modPath + ": " + e.getMessage());
 		}
-		mod.setIcon(map);
-		int total = mod.getIcon().size();
+		int total = map.size();
 		if (total > 0) {
-			log.info(String.format("Mod '%s': indexed %d icon(s) from Data PAK(s).", mod.id, total));
+			log.info(String.format("Mod path '%s': indexed %d icon(s) from Data PAK(s).", modPath, total));
 		}
+		return map;
+	}
+	
+	/**
+	 * Exclude PAKs that don't contain icon data.
+	 */
+	private static Predicate<Path> excludeNonIconPaks() {
+		return p -> {
+			if (!Files.isRegularFile(p))
+				return false;
+			final var name = p.toString().toLowerCase(Locale.ROOT);
+			return name.endsWith(".pak");
+		};
 	}
 	
 	/**
@@ -347,13 +329,13 @@ public final class IconService {
 		if (item == null || item.getAttributes() == null)
 			return null;
 		
-		final var iconAttr = item.getAttributes().stream().filter(a -> a.getName().equalsIgnoreCase("icon_id") || a.getName().equalsIgnoreCase("IconId")).findFirst().orElse(null);
+		final var iconAttr = item.getAttributes().stream().filter(a -> a.getName().equals("icon_id")).findFirst().orElse(null);
 		
 		if (iconAttr == null || iconAttr.getValue() == null)
 			return null;
 		final String rawValue = iconAttr.getValue().toString();
 		
-		final boolean useFallback = rawValue.equals("0") || rawValue.equalsIgnoreCase("replaceme");
+		final boolean useFallback = rawValue.equals("0") || rawValue.equals("replaceme");
 		
 		final String iconId = useFallback ? FALLBACK_ICON : rawValue;
 		return getBase64Icon(iconId, mod);
@@ -373,8 +355,6 @@ public final class IconService {
 	 * @return the image.
 	 */
 	private BufferedImage getBase64Icon(String iconId, ModData mod) {
-		if (iconId == null || iconId.isBlank())
-			return null;
 		final String key = iconId.toLowerCase(Locale.ROOT);
 		
 		// 1. Mod's raw DDS index

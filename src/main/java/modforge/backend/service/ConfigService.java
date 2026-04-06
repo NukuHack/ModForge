@@ -25,10 +25,10 @@ public final class ConfigService {
 	
 	private static final Pattern CONFIG_LINE = Pattern.compile("^(?!#|;)\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(.*?)\\s*(?:;.*)?$");
 	
-	private final UserService userService;
+	private final UserConfig userConfig;
 	
-	public ConfigService(UserService userService) {
-		this.userService = userService;
+	public ConfigService(UserConfig userConfig) {
+		this.userConfig = userConfig;
 	}
 	
 	// ==================================================================
@@ -157,7 +157,7 @@ public final class ConfigService {
 	 * @return Map of config keys to their values
 	 */
 	public Map<String, String> loadGameConfig() {
-		String gameDir = userService.gameDirectory;
+		String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warning("Game directory not configured - cannot load game config.");
 			return new HashMap<>();
@@ -194,7 +194,7 @@ public final class ConfigService {
 	 * @return Map of config keys to their values
 	 */
 	private Map<String, String> loadModConfig(String modId) {
-		String gameDir = userService.gameDirectory;
+		String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank() || modId == null || modId.isBlank()) {
 			return new HashMap<>();
 		}

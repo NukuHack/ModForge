@@ -2,8 +2,8 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-**/src/test/resources/**/output
-**/src/test/resources/output
+**/src/test/resources/**/out
+**/src/test/resources/out
 **/src/test/resources/**/tmp
 **/src/test/resources/tmp
 .kotlin

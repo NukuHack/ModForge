@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 public final class ServiceRegistry {
 	private static final Logger log = Logger.getLogger(ServiceRegistry.class.getName());
 	
-	public final UserService userConfig;
+	public final UserConfig userConfig;
 	public final ConfigService configService;
 	public final LocalService localService;
 	public final ItemService itemService;
@@ -20,12 +20,18 @@ public final class ServiceRegistry {
 	public final ModService modService;
 	
 	public ServiceRegistry() {
-		userConfig = new UserService();
+		userConfig = new UserConfig();
+		userConfig.load();
+		
 		configService = new ConfigService(userConfig);
 		localService = new LocalService(userConfig);
+		localService.init();
 		itemService = new ItemService(userConfig);
+		itemService.init();
 		iconService = new IconService(userConfig);
+		iconService.init();
 		stormService = new StormService(userConfig);
+		
 		modService = new ModService(this);
 	}
 	

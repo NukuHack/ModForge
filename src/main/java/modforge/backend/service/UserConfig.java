@@ -13,18 +13,19 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public final class UserService {
-	private static final Logger log = Logger.getLogger(UserService.class.getName());
+public final class UserConfig {
+	private static final Logger log = Logger.getLogger(UserConfig.class.getName());
 	
-	private final Path configFile;
+	private static final Path configFile = Singleton.getUserConfig();
 	
 	public String gameDirectory = "";
 	public String userName = "";
 	public Language language = Language.ENGLISH;
 	
-	public UserService() {
-		configFile = Singleton.INSTANCE.getUserConfig();
-		
+	public UserConfig() {
+	}
+	
+	public void load() {
 		try {
 			final var parsed = JsonIO.read(configFile);
 			fromJson(parsed);

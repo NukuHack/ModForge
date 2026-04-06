@@ -15,14 +15,13 @@ import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DDSUtilTest {
+class DDSUtilTest extends BaseServiceTest {
 
 	private static byte[] pngData;
 	private static byte[] dxt1Data;
 	private static byte[] dxt5Data;
 	private static int expectedWidth;
 	private static int expectedHeight;
-	private static final String output = "src/test/resources/img/output";
 
 	@BeforeAll
 	static void setUp() throws IOException {
@@ -35,22 +34,6 @@ class DDSUtilTest {
 		BufferedImage png = ImageIO.read(new ByteArrayInputStream(pngData));
 		expectedWidth = png.getWidth();
 		expectedHeight = png.getHeight();
-	}
-
-	private static byte[] readResourceBytes(String resourceName) throws IOException {
-		// Try classloader first (works for resources in JAR)
-		try (InputStream is = DDSUtilTest.class.getClassLoader().getResourceAsStream(resourceName)) {
-			if (is != null) {
-				return is.readAllBytes();
-			}
-		}
-
-		// Try filesystem path for IDE
-		Path path = Paths.get("src/test/resources/" + resourceName);
-		if (Files.exists(path)) {
-			return Files.readAllBytes(path);
-		}
-		throw new FileNotFoundException("Resource not found: " + resourceName);
 	}
 
 	@Test
@@ -208,7 +191,7 @@ class DDSUtilTest {
 		BufferedImage originalPNG = ImageIO.read(new ByteArrayInputStream(pngData));
 
 		// Create output directory
-		Path outputDir = Paths.get(output);
+		Path outputDir = RESOURCES_OUTPUT;
 		if (!Files.exists(outputDir)) {
 			Files.createDirectories(outputDir);
 		}

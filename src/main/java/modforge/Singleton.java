@@ -11,16 +11,17 @@ import java.nio.file.Path;
 public enum Singleton {
 	INSTANCE;
 	
-	private final Path userConfig;
+	private static final Path userConfigDir = Util.getConfigDir();
+	private static final Path userConfig = userConfigDir.resolve("userconfig.json");
 	private final ModData game = new ModData();
 	private ServiceRegistry registry;
 	private MainWindow mainWindow;
 	
-	Singleton() {
-		final var userConfigDir = Util.getConfigDir();
-		this.userConfig = userConfigDir.resolve("userconfig.json");
+	static {
 		ensureConfigDirExists();
-		
+	}
+	
+	Singleton() {
 		game.name = "Kingdom Come Deliverance 2";
 		game.description = "The game itself : Kingdom Come Deliverance II";
 		game.author = "warhorse studios";
@@ -31,7 +32,7 @@ public enum Singleton {
 		game.supportsGameVersions.add("*");
 	}
 	
-	private void ensureConfigDirExists() {
+	private static void ensureConfigDirExists() {
 		final var dir = userConfig.getParent();
 		try {
 			if (Files.exists(dir))
@@ -59,7 +60,7 @@ public enum Singleton {
 		this.mainWindow = mainWindow;
 	}
 	
-	public Path getUserConfig() {
+	public static Path getUserConfig() {
 		return userConfig;
 	}
 	

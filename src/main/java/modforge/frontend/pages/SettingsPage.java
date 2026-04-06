@@ -3,7 +3,7 @@ package modforge.frontend.pages;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.model.Language;
-import modforge.backend.service.UserService;
+import modforge.backend.service.UserConfig;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 
@@ -19,7 +19,7 @@ public class SettingsPage extends BasePage {
 	private final JPanel card = card(null);
 	private final JTextField userName = styledField("Your name (used as mod author)");
 	private final JComboBox<Language> langBox = new JComboBox<>(Language.values());
-	private final UserService configService;
+	private final UserConfig configService;
 	public SettingsPage(MainWindow w) {
 		super(w);
 		configService = w.getRegistry().userConfig;

@@ -26,16 +26,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 public final class ModService {
+	public static final List<ModData> modCollection = new ArrayList<>();
 	private static final Logger log = Logger.getLogger(ModService.class.getName());
-	
-	public final UserService userConfig;
+	public final UserConfig userConfig;
 	public final ConfigService configService;
 	public final LocalService localService;
 	//public final ModItemBuilder builder;
 	public final ItemService itemService;
 	public final IconService iconService;
-	
-	public static final List<ModData> modCollection = new ArrayList<>();
 	
 	public ModService(ServiceRegistry registry) {
 		this.itemService = registry.itemService;
@@ -197,6 +195,7 @@ public final class ModService {
 		configService.loadModConfig(mod);
 		loadModItems(mod);
 		loadModLocalizations(mod);
+		loadModIcons(mod);
 		
 		if (! modCollection.contains(mod))
 			modCollection.add(mod);
@@ -309,47 +308,36 @@ public final class ModService {
 	 * @param gameDir The game directory path
 	 * @param mod     The mod data containing localizations
 	 */
-	private void packLocalization(String gameDir, ModData mod) {
+	private boolean packLocalization(String gameDir, ModData mod) {
 		if (mod.getLocal().isEmpty()) {
 			log.fine("No localizations to pack for mod " + mod.id);
-			return;
+			return true;
 		}
 		
-		AtomicBoolean allSuccess = new AtomicBoolean(true);
-		final Path modLocalizationRoot = Util.modLocalDir(gameDir, mod.id);
-		
-		if (! Files.exists(modLocalizationRoot)) {
-			log.warning("Localization folder not found for mod " + mod.id);
-			return;
+		final var success = new AtomicBoolean(true);
+		final var modRoot = Util.modFolder(gameDir, mod.id);
+		final var langPaks = Util.allLocPaths(modRoot).stream().map(File::new).filter(File::exists).filter(File::isDirectory).toList();
+		if (langPaks.isEmpty()) {
+			log.fine("No Localization folder found for folder " + modRoot);
+			return true;
 		}
 		
-		try (var stream = Files.list(modLocalizationRoot)) {
-			stream.filter(Files::isDirectory).forEach(langFolder -> {
-				final String folderName = langFolder.getFileName().toString();
-				// Expected format: "German_xml", "English_xml", etc.
-				if (! folderName.endsWith("_xml")) {
-					log.fine("Skipping non-localization folder: " + folderName);
-					return;
-				}
-				
-				// The PAK should be named like "German_xml.pak" and placed in the game root
-				final Path destPak = Path.of(langFolder + ".pak");
-				boolean success = Util.packFolder(langFolder, destPak);
-				
-				if (success) {
-					log.info("Localization packed: " + folderName + ".pak");
-					Util.deleteRecursively(langFolder);
-				} else {
-					log.warning("Failed to pack localization: " + folderName);
-					allSuccess.set(false);
-				}
-			});
-		} catch (IOException e) {
-			log.severe("Failed to list localization folders: " + e.getMessage());
-			return;
-		}
+		langPaks.forEach(file -> {
+			var langFolder = file.toPath();
+			// The PAK should be named like "German_xml.pak" and placed in the game root
+			final Path destPak = Path.of(langFolder + Util.COMP_FORMAT);
+			boolean ok = Util.packFolder(langFolder, destPak);
+			
+			if (ok) {
+				log.info("Localization packed: " + destPak);
+				Util.deleteRecursively(langFolder);
+			} else {
+				log.warning("Failed to pack localization: " + file);
+				success.set(false);
+			}
+		});
 		
-		allSuccess.get();
+		return success.get();
 	}
 	
 	/**
@@ -361,15 +349,20 @@ public final class ModService {
 	 */
 	public void loadModLocalizations(ModData mod) {
 		final String gameDir = userConfig.gameDirectory;
-		final var modLang = Util.modFolder(gameDir, mod.id);
-		mod.setLocal(localService.loadLocalization(modLang));
+		final var langFolder = Util.modFolder(gameDir, mod.id);
+		mod.setLocal(localService.loadLocalization(langFolder));
 	}
 	
 	public void loadModItems(ModData mod) {
 		final String gameDir = userConfig.gameDirectory;
 		final Path dataPath = Path.of(Util.modData(gameDir, mod.id));
-		final var items = itemService.loadItems(dataPath);
-		mod.setItems(items);
+		mod.setItems(itemService.loadItems(dataPath));
+	}
+	
+	private void loadModIcons(ModData mod) {
+		final String gameDir = userConfig.gameDirectory;
+		final Path dataFolder = Path.of(Util.modData(gameDir, mod.id));
+		mod.setIcon(IconService.loadModIcons(dataFolder));
 	}
 	
 	public ModData loadModManifest(Path modPath) throws IOException {

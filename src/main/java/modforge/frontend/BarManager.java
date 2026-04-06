@@ -15,6 +15,7 @@ public class BarManager {
 	private static final int PAD = 12;
 	private final JFrame owner;
 	private final List<JWindow> active = new ArrayList<>();
+	
 	BarManager(JFrame owner) {
 		this.owner = owner;
 	}

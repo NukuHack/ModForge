@@ -2,13 +2,10 @@ package modforge.backend.service;
 
 import modforge.Singleton;
 import modforge.Util;
-import modforge.backend.AttributeFactory;
 import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.attributes.Attribute;
-import modforge.backend.model.attributes.BuffParam;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -25,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -37,61 +33,11 @@ import java.util.zip.ZipFile;
 public final class ItemService {
 	private static final Logger log = Logger.getLogger(ItemService.class.getName());
 	
-	private final UserService configService;
+	private final UserConfig userConfig;
 	
-	public ItemService(UserService configService) {
-		this.configService = configService;
-		init();
+	public ItemService(UserConfig userConfig) {
+		this.userConfig = userConfig;
 	}
-	
-	// ==================================================================
-	// READ OPERATIONS
-	// ==================================================================
-	
-	private static Element buildXmlElement(Document doc, String elementName, ModItem item) {
-		final var el = doc.createElement(elementName);
-		for (Attribute<?> attr : item.getAttributes()) {
-			el.setAttribute(attr.getName(), serializeValue(attr));
-		}
-		return el;
-	}
-	
-	private static <T> String serializeValue(Attribute<T> attr) {
-		final T v = attr.getValue();
-		if (v == null)
-			return "";
-		if (attr instanceof List<?> list) {
-			if (list.isEmpty())
-				return "";
-			if (list.getFirst() instanceof String)
-				return String.join(",", list.stream().map(Object::toString).toList());
-			var sb = new StringBuilder();
-			for (var f : list)
-				if (f instanceof Attribute<?> a)
-					sb.append(serializeValue(a)).append(',');
-				else
-					log.warning("found list with unsupported type: " + (list.stream().limit(20).toList()) + " type: " + f.getClass());
-			return sb.toString();
-		}
-		return switch (v) {
-			case BuffParam b -> b.toAttrString();
-			case Enum<?> e -> String.valueOf(e.ordinal());
-			case Boolean b -> b.toString().toLowerCase(Locale.ROOT);
-			case Double d -> {
-				if (Double.isInfinite(d) || Double.isNaN(d))
-					yield "-1";
-				long rounded = Math.round(d);
-				if (Math.abs(d - rounded) < 1e-8)
-					yield String.valueOf(rounded);
-				yield d.toString();
-			}
-			default -> v.toString();
-		};
-	}
-	
-	// ==================================================================
-	// WRITE OPERATIONS
-	// ==================================================================
 	
 	static Document parseXml(InputStream is) {
 		try {
@@ -164,8 +110,7 @@ public final class ItemService {
 	private static Document makeDocument(final File outFile, final ModItem item) throws Exception {
 		final var factory = DocumentBuilderFactory.newInstance();
 		final var docBuilder = factory.newDocumentBuilder();
-		final var typeName = ItemEntry.forClass(item.getClass()).simpleName();
-		final var groupName = ItemEntry.forClass(item.getClass()).parentName();
+		final var groupName = ModItemBuilder.groupName(item);
 		final Document doc;
 		
 		if (outFile.exists()) {
@@ -177,12 +122,14 @@ public final class ItemService {
 				doc.getDocumentElement().appendChild(group);
 			}
 			
-			final var newEl = buildXmlElement(doc, typeName, item);
+			final var newEl = ModItemBuilder.build(doc, item);
+			if (newEl == null)
+				return doc;
 			final String idKey = item.getIdKey();
-			final String idVal = newEl.getAttribute(idKey).trim();
+			final String idVal = newEl.getAttribute(idKey);
 			
 			if (! idVal.isBlank()) {
-				final NodeList existing = group.getElementsByTagName(typeName);
+				final NodeList existing = group.getElementsByTagName(newEl.getTagName());
 				boolean replaced = false;
 				for (int i = 0; i < existing.getLength(); i++) {
 					var el = (Element) existing.item(i);
@@ -208,7 +155,8 @@ public final class ItemService {
 			final var group = doc.createElement(groupName);
 			group.setAttribute("version", "1");
 			root.appendChild(group);
-			group.appendChild(buildXmlElement(doc, typeName, item));
+			final var newEl = ModItemBuilder.build(doc, item);
+			group.appendChild(newEl);
 		}
 		return doc;
 	}
@@ -263,8 +211,7 @@ public final class ItemService {
 				if (! (items.item(j) instanceof Element itemElement))
 					continue;
 				
-				AttributeFactory.traverseElement(itemElement);
-				final ModItem item = ModItemBuilder.build(itemElement);
+				final ModItem item = ModItemBuilder.create(itemElement);
 				if (item == null || item.getId() == null)
 					continue;
 				
@@ -274,14 +221,20 @@ public final class ItemService {
 		}
 	}
 	
+	// TODO : make this kind of data load or ... idk
+	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
 	/**
 	 * Exclude PAKs that don't contain item/table data.
 	 */
 	private static Predicate<Path> excludeNonDataPaks() {
-		// TODO : make this kind of data either load or ... idk
 		return p -> {
-			String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
-			return ! name.equals("scripts.pak") && ! name.equals("animations.pak") && ! name.equals("heads.pak") && ! name.equals("sounds.pak") && ! name.equals("shaders.pak");
+			if (!Files.isRegularFile(p))
+				return false;
+			final var name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+			if (!name.endsWith(".pak"))
+				return false;
+			boolean isIgnored = IGNORED_FILES.contains(name);
+			return !isIgnored;
 		};
 	}
 	
@@ -291,7 +244,7 @@ public final class ItemService {
 	 */
 	public void init() {
 		final long start = System.currentTimeMillis();
-		final String gameDir = configService.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank())
 			return;
 		final var game = Singleton.INSTANCE.game();
@@ -320,7 +273,7 @@ public final class ItemService {
 		final var items = modData.getItems();
 		if (items.isEmpty())
 			return;
-		final String gameDir = configService.gameDirectory;
+		final String gameDir = userConfig.gameDirectory;
 		for (final ModItem item : items) {
 			try {
 				writeModItem(gameDir, modData, item);
@@ -341,7 +294,7 @@ public final class ItemService {
 		}
 		
 		try (var stream = Files.list(modPath)) {
-			final var pakFiles = stream.filter(Files::isRegularFile).filter(p -> p.toString().toLowerCase().endsWith(".pak")).filter(excludeNonDataPaks()).collect(Collectors.toSet());
+			final var pakFiles = stream.filter(excludeNonDataPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
 				log.fine("No PAK files found in: " + modPath);
