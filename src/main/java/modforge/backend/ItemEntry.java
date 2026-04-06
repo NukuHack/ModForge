@@ -1,7 +1,8 @@
 package modforge.backend;
 
 import modforge.backend.model.ModItem;
-import modforge.backend.model.item.*;
+import modforge.backend.model.item.I;
+import modforge.backend.model.item.Storm;
 
 import java.util.Arrays;
 import java.util.Locale;

@@ -1,14 +1,18 @@
 package modforge.backend.service;
 
-import java.awt.*;
-import java.io.*;
-import java.util.*;
-import java.nio.file.*;
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class DDSUtilTest {

@@ -1,6 +1,5 @@
 package modforge;
 
-import modforge.backend.AttributeFactory;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;

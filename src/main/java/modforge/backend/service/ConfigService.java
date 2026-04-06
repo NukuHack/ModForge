@@ -118,50 +118,6 @@ public final class ConfigService {
 	}
 	
 	/**
-	 * Parse comments from an existing config file, storing them keyed by the next config line.
-	 *
-	 * @param path           Path to the config file
-	 * @param commentsTarget Map to store comments (key = config key, value = comment block)
-	 */
-	private static void parseCommentsFromFile(Path path, Map<String, String> commentsTarget) {
-		if (! Files.exists(path))
-			return;
-		
-		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-			StringBuilder currentComment = new StringBuilder();
-			String line;
-			
-			while ((line = reader.readLine()) != null) {
-				line = line.trim();
-				
-				if (line.startsWith(";") || line.startsWith("#")) {
-					// Accumulate comment
-					if (! currentComment.isEmpty())
-						currentComment.append("\n");
-					currentComment.append(line);
-				} else if (! line.isEmpty()) {
-					Matcher m = CONFIG_LINE.matcher(line);
-					if (m.matches()) {
-						String key = m.group(1);
-						if (! currentComment.isEmpty()) {
-							commentsTarget.put(key, currentComment.toString());
-							currentComment = new StringBuilder();
-						}
-					} else {
-						// Non-comment, non-config line - clear comment accumulation
-						currentComment = new StringBuilder();
-					}
-				} else {
-					// Empty line - clear comment accumulation (comments only belong to immediate next config)
-					currentComment = new StringBuilder();
-				}
-			}
-		} catch (IOException e) {
-			log.fine("Could not parse comments from " + path + ": " + e.getMessage());
-		}
-	}
-	
-	/**
 	 * Merge two config maps (source overwrites target).
 	 *
 	 * @param base   Base configuration (will be modified)
@@ -278,7 +234,7 @@ public final class ConfigService {
 	 * @param path   Path to the config file
 	 * @param target The map to load entries into (entries overwrite existing)
 	 */
-	private void loadConfigFile(Path path, Map<String, String> target) {
+	static void loadConfigFile(Path path, Map<String, String> target) {
 		if (! Files.exists(path))
 			return;
 		
@@ -305,6 +261,50 @@ public final class ConfigService {
 			}
 		} catch (IOException e) {
 			log.warning("Failed to load config file " + path + ": " + e.getMessage());
+		}
+	}
+	
+	/**
+	 * Parse comments from an existing config file, storing them keyed by the next config line.
+	 *
+	 * @param path           Path to the config file
+	 * @param commentsTarget Map to store comments (key = config key, value = comment block)
+	 */
+	private static void parseCommentsFromFile(Path path, Map<String, String> commentsTarget) {
+		if (! Files.exists(path))
+			return;
+		
+		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+			StringBuilder currentComment = new StringBuilder();
+			String line;
+			
+			while ((line = reader.readLine()) != null) {
+				line = line.trim();
+				
+				if (line.startsWith(";") || line.startsWith("#")) {
+					// Accumulate comment
+					if (! currentComment.isEmpty())
+						currentComment.append("\n");
+					currentComment.append(line);
+				} else if (! line.isEmpty()) {
+					Matcher m = CONFIG_LINE.matcher(line);
+					if (m.matches()) {
+						String key = m.group(1);
+						if (! currentComment.isEmpty()) {
+							commentsTarget.put(key, currentComment.toString());
+							currentComment = new StringBuilder();
+						}
+					} else {
+						// Non-comment, non-config line - clear comment accumulation
+						currentComment = new StringBuilder();
+					}
+				} else {
+					// Empty line - clear comment accumulation (comments only belong to immediate next config)
+					currentComment = new StringBuilder();
+				}
+			}
+		} catch (IOException e) {
+			log.fine("Could not parse comments from " + path + ": " + e.getMessage());
 		}
 	}
 }
