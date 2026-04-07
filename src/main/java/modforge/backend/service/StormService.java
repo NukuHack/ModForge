@@ -38,9 +38,8 @@ import java.util.zip.ZipFile;
  *   <li>Write modified {@link StormData} back to XML inside a mod's staging folder.</li>
  * </ol>
  */
+@lombok.extern.slf4j.Slf4j
 public final class StormService {
-	
-	private static final Logger log = Logger.getLogger(StormService.class.getName());
 	
 	/** Path prefix inside PAKs where Storm XML files reside. */
 	private static final String STORM_PATH_PREFIX = "Libs/Storm/";
@@ -76,7 +75,7 @@ public final class StormService {
 	 */
 	public static boolean writeStormFile(String gameDir, String modId, StormData data) {
 		if (data == null || data.getId().isBlank()) {
-			log.warning("writeStormFile: missing data or id.");
+			log.warn("writeStormFile: missing data or id.");
 			return false;
 		}
 		
@@ -92,7 +91,7 @@ public final class StormService {
 			log.info("Storm file written: " + targetFile);
 			return true;
 		} catch (Exception e) {
-			log.severe("writeStormFile failed for '" + data.getId() + "': " + e.getMessage());
+			log.error("writeStormFile failed for '" + data.getId() + "': " + e.getMessage());
 			return false;
 		}
 	}
@@ -133,11 +132,11 @@ public final class StormService {
 					}
 					result.put(id, sd);
 				} catch (Exception ex) {
-					log.fine("Storm parse error in " + name + " (" + pakFileName + "): " + ex.getMessage());
+					log.info("Storm parse error in " + name + " (" + pakFileName + "): " + ex.getMessage());
 				}
 			}
 		} catch (IOException ex) {
-			log.warning("Cannot open PAK for Storm scan: " + pakPath + " – " + ex.getMessage());
+			log.error("Cannot open PAK for Storm scan: " + pakPath + " – " + ex.getMessage());
 		}
 		
 		return result;
@@ -199,7 +198,7 @@ public final class StormService {
 		try (var stream = Files.list(dataFolder)) {
 			stream.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".pak")).forEach(pak -> indexStormFromPak(pak.toString()));
 		} catch (IOException e) {
-			log.warning("Cannot list game Data folder for Storm scan: " + e.getMessage());
+			log.warn("Cannot list game Data folder for Storm scan: " + e.getMessage());
 		}
 		
 		log.info("StormService: indexed " + stormIndex.size() + " Storm file(s) from base game.");
@@ -229,7 +228,7 @@ public final class StormService {
 				modIndex.putAll(fromPak);
 			});
 		} catch (IOException e) {
-			log.warning("Cannot list Data folder for Storm mod " + mod.id + ": " + e.getMessage());
+			log.warn("Cannot list Data folder for Storm mod " + mod.id + ": " + e.getMessage());
 		}
 		
 		// Attach parsed StormData to the Storm ModItems that belong to this mod

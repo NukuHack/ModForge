@@ -27,6 +27,7 @@ import java.util.Locale;
 // =============================================================================
 //  STORM PAGE  –  view & edit Storm rules
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class StormPage extends BasePage {
 	
 	// ── palette helpers ───────────────────────────────────────────────────────

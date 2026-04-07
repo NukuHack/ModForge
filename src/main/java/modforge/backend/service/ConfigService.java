@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
  * Service for loading and saving configuration files in key=value format with comments.
  * Supports both game configs (user.cfg, autoexec.cfg) and mod configs (mod.cfg).
  */
+@lombok.extern.slf4j.Slf4j
 public final class ConfigService {
-	private static final Logger log = Logger.getLogger(ConfigService.class.getName());
 	
 	private static final Pattern CONFIG_LINE = Pattern.compile("^(?!#|;)\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(.*?)\\s*(?:;.*)?$");
 	
@@ -44,7 +44,7 @@ public final class ConfigService {
 	 */
 	public static boolean saveModConfig(final String dir, final ModData mod) {
 		if (dir == null || dir.isBlank() || mod.id == null || mod.id.isBlank()) {
-			log.warning("Cannot save mod config - game directory or mod ID missing.");
+			log.warn("Cannot save mod config - game directory or mod ID missing.");
 			return false;
 		}
 		if (mod.getConfig().isEmpty())
@@ -55,7 +55,7 @@ public final class ConfigService {
 		try {
 			Files.createDirectories(modCfg.getParent());
 		} catch (IOException e) {
-			log.warning("Cannot create config directory: " + e.getMessage());
+			log.warn("Cannot create config directory: " + e.getMessage());
 			return false;
 		}
 		
@@ -75,7 +75,7 @@ public final class ConfigService {
 	 */
 	private static boolean saveConfigFile(Path path, Map<String, String> config) {
 		if (config == null || config.isEmpty()) {
-			log.fine("No config entries to save to " + path);
+			log.info("No config entries to save to " + path);
 			return true;
 		}
 		
@@ -108,11 +108,11 @@ public final class ConfigService {
 				}
 			}
 			
-			log.fine("Saved config to " + path + " (" + config.size() + " entries)");
+			log.info("Saved config to " + path + " (" + config.size() + " entries)");
 			return true;
 			
 		} catch (IOException e) {
-			log.warning("Failed to save config file " + path + ": " + e.getMessage());
+			log.warn("Failed to save config file " + path + ": " + e.getMessage());
 			return false;
 		}
 	}
@@ -159,7 +159,7 @@ public final class ConfigService {
 	public Map<String, String> loadGameConfig() {
 		String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
-			log.warning("Game directory not configured - cannot load game config.");
+			log.warn("Game directory not configured - cannot load game config.");
 			return new HashMap<>();
 		}
 		
@@ -202,14 +202,14 @@ public final class ConfigService {
 		Path modCfg = Path.of(Util.modFolder(gameDir, modId), "mod.cfg");
 		
 		if (! Files.exists(modCfg)) {
-			log.fine("No mod.cfg found for mod: " + modId);
+			log.info("No mod.cfg found for mod: " + modId);
 			return new HashMap<>();
 		}
 		
 		Map<String, String> config = new LinkedHashMap<>();
 		loadConfigFile(modCfg, config);
 		
-		log.fine("Loaded " + config.size() + " config entries for mod: " + modId);
+		log.info("Loaded " + config.size() + " config entries for mod: " + modId);
 		return config;
 	}
 	
@@ -254,13 +254,13 @@ public final class ConfigService {
 					continue;
 				var m = CONFIG_LINE.matcher(line);
 				if (!m.matches())
-					log.fine("Skipping malformed config line " + lineNumber + ": " + line);
+					log.info("Skipping malformed config line " + lineNumber + ": " + line);
 				String key = m.group(1);
 				String value = m.group(2).trim();
 				target.put(key, value);
 			}
 		} catch (IOException e) {
-			log.warning("Failed to load config file " + path + ": " + e.getMessage());
+			log.warn("Failed to load config file " + path + ": " + e.getMessage());
 		}
 	}
 	
@@ -304,7 +304,7 @@ public final class ConfigService {
 				}
 			}
 		} catch (IOException e) {
-			log.fine("Could not parse comments from " + path + ": " + e.getMessage());
+			log.info("Could not parse comments from " + path + ": " + e.getMessage());
 		}
 	}
 }

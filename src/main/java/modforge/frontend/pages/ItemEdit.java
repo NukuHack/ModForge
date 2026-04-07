@@ -20,10 +20,8 @@ import java.util.Map;
 
 // =============================================================================
 //  ITEM EDIT PAGE
-//  Edits a ModItem's typed attributes (strings, booleans, doubles, lists …).
-//  Extends BaseItemEditPage which owns the top-bar / split-pane / bottom-bar
-//  skeleton so this class stays focused on attribute-editing logic only.
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class ItemEdit extends BaseEditPage {
 	
 	// ── Attribute form state ──────────────────────────────────────────────────

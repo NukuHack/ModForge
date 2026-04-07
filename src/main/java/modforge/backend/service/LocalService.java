@@ -8,6 +8,7 @@ import modforge.backend.model.ModItem;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -17,8 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
+@lombok.extern.slf4j.Slf4j
 public final class LocalService {
-	private static final Logger log = Logger.getLogger(LocalService.class.getName());
 	private static final String EXTRA = "_xml.pak";
 	/**
 	 * Thread-local XMLInputFactory — one pre-configured instance per thread,
@@ -29,10 +30,16 @@ public final class LocalService {
 		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
 		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
 		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
-		// JAXP00010003 — individual entity size
-		f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
-		// JAXP00010004 — accumulated entity size across the whole document
-		f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
+		// these for speed
+		f.setProperty(XMLInputFactory.IS_COALESCING, true);
+		if (false /*get class for "jackson-dataformat-xml"*/)
+			f.setProperty("com.ctc.wstx.maxElementDepth", 5); // should be fine on 3 but left it
+		else {
+			// JAXP00010003 — individual entity size
+			f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
+			// JAXP00010004 — accumulated entity size across the whole document
+			f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
+		}
 		return f;
 	});
 	private final UserConfig userConfig;
@@ -57,7 +64,7 @@ public final class LocalService {
 		try {
 			game.setLocal(this.loadLocalization(gameDir));
 		} catch (Exception ex) {
-			log.severe("Localisation read failed: " + ex.getMessage());
+			log.error("Localisation read failed: " + ex.getMessage());
 		}
 		System.out.printf("Game Localization Load took: %dms%n", System.currentTimeMillis() - start);
 	}
@@ -137,15 +144,6 @@ public final class LocalService {
 		return resolve(key, Singleton.INSTANCE.game());
 	}
 	
-	
-	record LangPak(Language language, String pakPath) {
-		static LangPak c(String l) {
-			final var base = new File(l).getName();
-			final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
-			return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
-		}
-	}
-	
 	/**
 	 * Read all localisation paks from the game directory.
 	 * Returns: Language enum -> (string-key -> localized-value)
@@ -154,7 +152,7 @@ public final class LocalService {
 		// Collect all valid (language, pakPath) pairs upfront
 		final var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.pakPath()))).toList();
 		if (langPaks.isEmpty()) {
-			log.fine("No Localization folder found for folder " + root);
+			log.info("No Localization folder found for folder " + root);
 			return new EnumMap<>(Language.class);
 		}
 		
@@ -169,13 +167,13 @@ public final class LocalService {
 					try (var is = zf.getInputStream(entry)) {
 						final var parsed = parseLocalizationXml(is);
 						result.computeIfAbsent(lp.language(), k -> new ConcurrentHashMap<>()).putAll(parsed);
-					} catch (Exception ex) {
-						log.warning("Localisation parse error (" + entry.getName() + "): " + ex.getMessage());
+					} catch (final Exception ex) {
+						log.warn("Localisation parse error (" + entry.getName() + "): " + ex.getMessage());
 					}
 				});
 				
-			} catch (Exception ex) {
-				log.warning("Localisation read error (" + lp.pakPath() + "): " + ex.getMessage());
+			} catch (final Exception ex) {
+				log.warn("Localisation read error (" + lp.pakPath() + "): " + ex.getMessage());
 			}
 		});
 		
@@ -189,49 +187,50 @@ public final class LocalService {
 	/**
 	 * Parse a single localisation XML stream.
 	 */
-	public Map<String, String> parseLocalizationXml(InputStream is) throws Exception {
+	public Map<String, String> parseLocalizationXml(InputStream is) throws XMLStreamException {
 		// Pre-sized to avoid rehashing for typical file sizes
 		var result = new LinkedHashMap<String, String>(1024);
 		
 		final var factory = XML_FACTORY.get();
 		
-		final var reader = factory.createXMLStreamReader(is);
-		
 		String key = null;
 		byte cellIndex = 0;
 		boolean inRow = false;
-		
-		while (reader.hasNext()) {
-			int event = reader.next();
-			
-			if (event == XMLStreamConstants.END_ELEMENT && "Row".equals(reader.getLocalName()))
-				inRow = false;
-			if (event != XMLStreamConstants.START_ELEMENT)
-				continue;
-			
-			switch (reader.getLocalName()) {
-				case "Row":
-					inRow = true;
-					cellIndex = 0;
-					key = null;
-					break;
-				case "Cell":
-					if (! inRow)
+		final var reader = factory.createXMLStreamReader(is);
+		try {
+			while (reader.hasNext()) {
+				int event = reader.next();
+				
+				if (event == XMLStreamConstants.END_ELEMENT && "Row".equals(reader.getLocalName()))
+					inRow = false;
+				if (event != XMLStreamConstants.START_ELEMENT)
+					continue;
+				
+				switch (reader.getLocalName()) {
+					case "Row":
+						inRow = true;
+						cellIndex = 0;
+						key = null;
 						break;
-					if (cellIndex++ == 1)
-						break;  // skip the middle cell (index 1)
-					final var text = reader.getElementText().strip();
-					if (text.isEmpty())
+					case "Cell":
+						if (! inRow)
+							break;
+						if (cellIndex++ == 1)
+							break;  // skip the middle cell (index 1)
+						final var text = reader.getElementText().strip();
+						if (text.isEmpty())
+							break;
+						if (cellIndex == 1) {
+							key = text;
+						} else if (cellIndex == 3 && key != null) {
+							result.put(key, text);
+						}
 						break;
-					if (cellIndex == 1) {
-						key = text;
-					} else if (cellIndex == 3 && key != null) {
-						result.put(key, text);
-					}
-					break;
+				}
 			}
+		} finally {
+			reader.close();
 		}
-		reader.close();
 		
 		return result;
 	}
@@ -246,7 +245,7 @@ public final class LocalService {
 		if (ok) {
 			log.info("Localization written for mod: " + mod.id);
 		} else {
-			log.warning("Localization write had errors for mod: " + mod.id);
+			log.warn("Localization write had errors for mod: " + mod.id);
 		}
 	}
 	
@@ -271,7 +270,7 @@ public final class LocalService {
 				Util.writeXml(xmlString, locPath);
 				log.info("Localization written: " + locPath + " (" + translations.size() + " entries)");
 			} catch (final Exception ex) {
-				log.warning("Failed to write localization for " + language + ": " + ex.getMessage());
+				log.warn("Failed to write localization for " + language + ": " + ex.getMessage());
 				allOk = false;
 			}
 		}
@@ -328,5 +327,13 @@ public final class LocalService {
 			return key;
 		}
 		return null;
+	}
+	
+	record LangPak(Language language, String pakPath) {
+		static LangPak c(String l) {
+			final var base = new File(l).getName();
+			final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
+			return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
+		}
 	}
 }

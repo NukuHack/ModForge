@@ -1,5 +1,9 @@
 package modforge.backend.model;
 
+import lombok.Getter;
+
+@Getter
+@lombok.extern.slf4j.Slf4j
 public enum MathOperation {
 	ADD("+"),
 	SUBTRACT("-"),
@@ -24,7 +28,4 @@ public enum MathOperation {
 		throw new IllegalArgumentException("Unknown operation symbol: " + s);
 	}
 	
-	public String getSymbol() {
-		return symbol;
-	}
 }

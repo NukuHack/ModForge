@@ -8,7 +8,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
-public class ItemType {
+@lombok.extern.slf4j.Slf4j
+public final class ItemType {
 	// ── Static indexes built once from ItemEntry.values() ───────────────────
 	
 	/** class → idKey */

@@ -32,6 +32,7 @@ import java.util.zip.ZipOutputStream;
  * Utility class providing common file operations, path handling, XML/JSON escaping,
  * PAK file packing, and cross-platform directory utilities for the ModForge application.
  */
+@lombok.extern.slf4j.Slf4j
 public final class Util {
 	// ================================================================================
 	// APPLICATION CONSTANTS - Modify these to change application behavior
@@ -87,9 +88,6 @@ public final class Util {
 	// ================================================================================
 	// PRIVATE STATIC FIELDS
 	// ================================================================================
-	
-	/** Logger instance for this utility class */
-	private static final Logger log = Logger.getLogger(Util.class.getName());
 	
 	/**
 	 * Private constructor to prevent instantiation - this is a utility class
@@ -554,7 +552,7 @@ public final class Util {
 			}
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(w, "Failed to open game directory:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-			log.warning("IOException: " + ex);
+			log.warn("IOException: " + ex);
 		}
 	}
 	
@@ -634,7 +632,7 @@ public final class Util {
 	 */
 	public static boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
 		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
-			log.warning("Source folder does not exist: " + sourceFolder);
+			log.warn("Source folder does not exist: " + sourceFolder);
 			return false;
 		}
 		final FileTime ft = FileTime.fromMillis(0);
@@ -642,7 +640,7 @@ public final class Util {
 			Files.createDirectories(destPakFile.getParent());
 			Files.deleteIfExists(destPakFile);
 		} catch (final IOException e) {
-			log.severe("PAK creation failed: " + e.getMessage());
+			log.error("PAK creation failed: " + e.getMessage());
 			return false;
 		}
 		try (var fos = new FileOutputStream(destPakFile.toFile()); var out = new ZipOutputStream(fos); var walk = Files.walk(sourceFolder)) {
@@ -664,13 +662,13 @@ public final class Util {
 					Files.copy(file, out);
 					out.closeEntry();
 					
-					log.fine("Added to PAK: " + relPath);
+					log.info("Added to PAK: " + relPath);
 				} catch (IOException e) {
-					log.warning("Cannot add to pak: " + file + " - " + e.getMessage());
+					log.warn("Cannot add to pak: " + file + " - " + e.getMessage());
 				}
 			});
 		} catch (IOException e) {
-			log.severe("PAK creation failed: " + e.getMessage());
+			log.error("PAK creation failed: " + e.getMessage());
 			return false;
 		}
 		

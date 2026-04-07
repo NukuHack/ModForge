@@ -22,21 +22,8 @@ import static modforge.Util.unescapeXml;
 
 // =============================================================================
 //  LOCALIZATION PAGE
-//
-//  Displays all localization entries from a chosen source (Base Game or a
-//  user mod) in a chosen language, optionally filtered by attribute-hint type.
-//
-//  Layout
-//  ──────
-//    ┌──────────────────────────────────────────────────────────────────┐
-//    │  "Localization"          [mod ▾] [lang ▾] [attr-type ▾] [search]│  top bar
-//    ├─────────────────────────────────────┬────────────────────────────┤
-//    │  key list (JList)                   │  detail pane (HTML)        │  center
-//    └─────────────────────────────────────┴────────────────────────────┘
-//
-//  Each row in the list shows:    <langKey>   (<attrName> on <itemId>)
-//  The detail pane shows the full translated value plus item context.
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class LocalizationPage extends BasePage {
 	
 	// ── Selector: "All Attributes" + one entry per LANG_ATTR_HINTS value ─────

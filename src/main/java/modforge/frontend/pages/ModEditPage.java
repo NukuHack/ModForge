@@ -16,8 +16,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 // =============================================================================
-//  MOD EDIT PAGE  (create / edit a mod with full manifest editing)
+//  MOD EDIT PAGE
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class ModEditPage extends BasePage {
 	
 	private final List<JTextField> versionFields = new ArrayList<>();

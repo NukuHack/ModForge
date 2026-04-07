@@ -4,9 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
-// =============================================================================
-//  TITLE-BAR DRAG  (replaces DragMove / TitleBar_MouseDown)
-// =============================================================================
+@lombok.extern.slf4j.Slf4j
 class MouseAdapter extends java.awt.event.MouseAdapter {
 	private final JFrame frame;
 	private Point origin;

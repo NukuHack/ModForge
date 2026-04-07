@@ -1,5 +1,6 @@
 package modforge.backend.model.attributes;
 
+@lombok.extern.slf4j.Slf4j
 public non-sealed class BooleanAttribute extends BaseAttribute<Boolean> {
 	public BooleanAttribute(String name, Boolean value) {
 		super(name, value);

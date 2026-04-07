@@ -2,6 +2,7 @@ package modforge.backend;
 
 import java.util.Objects;
 
+@lombok.extern.slf4j.Slf4j
 public record DataPoint(String path, String endpoint, Class<?> type) {
 	public DataPoint(String path, String endpoint, Class<?> type) {
 		this.path = Objects.requireNonNull(path, "path");

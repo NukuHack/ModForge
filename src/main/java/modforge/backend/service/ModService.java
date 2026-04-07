@@ -25,9 +25,9 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
+@lombok.extern.slf4j.Slf4j
 public final class ModService {
 	public static final List<ModData> modCollection = new ArrayList<>();
-	private static final Logger log = Logger.getLogger(ModService.class.getName());
 	public final UserConfig userConfig;
 	public final ConfigService configService;
 	public final LocalService localService;
@@ -154,7 +154,7 @@ public final class ModService {
 			log.info("Manifest written: " + manifest);
 			return true;
 		} catch (Exception e) {
-			log.severe("writeModManifest failed: " + e.getMessage());
+			log.error("writeModManifest failed: " + e.getMessage());
 			return false;
 		}
 	}
@@ -162,7 +162,7 @@ public final class ModService {
 	public void init() {
 		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank()) {
-			log.warning("Game directory not configured - skipping mod collection scan.");
+			log.warn("Game directory not configured - skipping mod collection scan.");
 			return;
 		}
 		
@@ -170,7 +170,7 @@ public final class ModService {
 		try {
 			Files.createDirectories(modsFolder);
 		} catch (IOException e) {
-			log.severe("Cannot create Mods folder: " + e.getMessage());
+			log.error("Cannot create Mods folder: " + e.getMessage());
 			return;
 		}
 		
@@ -181,11 +181,11 @@ public final class ModService {
 				try {
 					fillCollection(modPath);
 				} catch (IOException ex) {
-					log.warning("Cannot read mod at " + modPath + ": " + ex.getMessage());
+					log.warn("Cannot read mod at " + modPath + ": " + ex.getMessage());
 				}
 			});
 		} catch (IOException e) {
-			log.warning("Cannot list Mods folder: " + e.getMessage());
+			log.warn("Cannot list Mods folder: " + e.getMessage());
 		}
 	}
 	
@@ -207,11 +207,11 @@ public final class ModService {
 	
 	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel, List<String> supportedVersions) {
 		if (name.isBlank() || modId.isBlank()) {
-			log.warning("createNewMod: required fields missing.");
+			log.warn("createNewMod: required fields missing.");
 			return new ModData();
 		}
 		if (modCollection.stream().anyMatch(mod -> mod.id.equals(modId))) {
-			log.warning("createNewMod: mod ID '" + modId + "' already exists.");
+			log.warn("createNewMod: mod ID '" + modId + "' already exists.");
 			return new ModData();
 		}
 		final var m = new ModData();
@@ -266,19 +266,19 @@ public final class ModService {
 		
 		final Path stageRoot = Util.modStaging(gameDir, mod.id);
 		if (! Files.exists(stageRoot)) {
-			log.warning("Staging folder not found for mod " + mod.id + " – skipping PAK creation.");
+			log.warn("Staging folder not found for mod " + mod.id + " – skipping PAK creation.");
 			return;
 		}
 		final var pakList = stageRoot.toFile().listFiles();
 		if (pakList == null || pakList.length == 0) {
-			log.warning("No data has been written " + mod.id + " – skipping PAK creation.");
+			log.warn("No data has been written " + mod.id + " – skipping PAK creation.");
 			return;
 		}
 		
 		boolean allOk = true;
 		for (File stageDir : pakList) {
 			if (! Files.exists(stageDir.toPath())) {
-				log.fine("Staging dir missing for PAK '" + stageDir + "' – skipping.");
+				log.info("Staging dir missing for PAK '" + stageDir + "' – skipping.");
 				continue;
 			}
 			final var dataDir = Util.modData(gameDir, mod.id);
@@ -287,7 +287,7 @@ public final class ModService {
 			if (ok) {
 				log.info("PAK created: " + destPak.getFileName());
 			} else {
-				log.warning("PAK creation failed for stem '" + stageDir + "'.");
+				log.warn("PAK creation failed for stem '" + stageDir + "'.");
 				allOk = false;
 			}
 		}
@@ -310,7 +310,7 @@ public final class ModService {
 	 */
 	private boolean packLocalization(String gameDir, ModData mod) {
 		if (mod.getLocal().isEmpty()) {
-			log.fine("No localizations to pack for mod " + mod.id);
+			log.info("No localizations to pack for mod " + mod.id);
 			return true;
 		}
 		
@@ -318,7 +318,7 @@ public final class ModService {
 		final var modRoot = Util.modFolder(gameDir, mod.id);
 		final var langPaks = Util.allLocPaths(modRoot).stream().map(File::new).filter(File::exists).filter(File::isDirectory).toList();
 		if (langPaks.isEmpty()) {
-			log.fine("No Localization folder found for folder " + modRoot);
+			log.info("No Localization folder found for folder " + modRoot);
 			return true;
 		}
 		
@@ -332,7 +332,7 @@ public final class ModService {
 				log.info("Localization packed: " + destPak);
 				Util.deleteRecursively(langFolder);
 			} else {
-				log.warning("Failed to pack localization: " + file);
+				log.warn("Failed to pack localization: " + file);
 				success.set(false);
 			}
 		});

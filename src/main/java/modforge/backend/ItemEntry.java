@@ -22,6 +22,7 @@ import java.util.function.Predicate;
  * {@link ItemType} references these constants to build its lookup structures;
  * all public methods on {@code ItemType} are unaffected.
  */
+@lombok.extern.slf4j.Slf4j
 public enum ItemEntry {
 	
 	// ── Weapons ─────────────────────────────────────────────────────────────

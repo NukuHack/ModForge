@@ -23,14 +23,8 @@ import static modforge.Util.escHtml;
 
 // =============================================================================
 //  LANG EDIT PAGE
-//  Mirrors the ItemEdit pattern but operates on localization key→value pairs.
-//  The item's lang-key attributes (buff_ui_name, buff_ui_desc, UIName,
-//  UIInfo, ui_lore_desc, …) are resolved to their current translated strings,
-//  displayed in an editable form, and can be saved back to any loaded mod.
-//
-//  Extends BaseItemEditPage which owns the top-bar / split-pane / bottom-bar
-//  skeleton so this class stays focused on localization logic only.
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class LangEdit extends BaseEditPage {
 	
 	/**

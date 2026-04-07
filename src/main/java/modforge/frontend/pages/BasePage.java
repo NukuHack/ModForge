@@ -15,11 +15,8 @@ import java.util.logging.Logger;
 import static modforge.Util.escHtml;
 
 
-// =============================================================================
-//  SHARED PAGE BASE
-// =============================================================================
+@lombok.extern.slf4j.Slf4j
 public abstract class BasePage extends JPanel {
-	protected static final Logger log = Logger.getLogger(BasePage.class.getName());
 	protected final MainWindow window;
 	
 	BasePage(MainWindow window) {

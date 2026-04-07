@@ -1,5 +1,6 @@
 package modforge.backend.model.attributes;
 
+@lombok.extern.slf4j.Slf4j
 public non-sealed class StringAttribute extends BaseAttribute<String> {
 	public StringAttribute(String name, String value) {
 		super(name, value);

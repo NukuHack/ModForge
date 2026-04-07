@@ -11,31 +11,34 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Optional;
-
-// =============================================================================
-//  BASE ITEM-EDIT PAGE
-//
-//  Shared structural skeleton for ItemEdit and LangEdit:
-//
-//    ┌─────────────────────────────────────────────────────────┐
-//    │  [breadcrumb]               [right toolbar actions]     │  ← buildTopBar()
-//    ├──────────────────────┬──────────────────────────────────┤
-//    │  [left form panel]   │  [live preview]                  │  ← buildCenter()
-//    ├─────────────────────────────────────────────────────────┤
-//    │  [status label]                  [action buttons]       │  ← buildBottomBar()
-//    └─────────────────────────────────────────────────────────┘
-//
-//  Subclasses override:
-//    • getPageTitle()          – static label next to "Items ›"
-//    • buildRightActions()     – toolbar widgets (selectors, buttons, …)
-//    • buildFormPanel()        – the scrollable left-hand form
-//    • getFormPanelTitle()     – titled-border text over the form
-//    • getPreviewTitle()       – titled-border text over the preview
-//    • buildActionButtons()    – buttons in the bottom-right cluster
-//    • onItemSet(ModItem)      – hook called after setCurrentItem()
-//    • updatePreview()         – regenerate the HTML in previewPane
-//    • navigateBack()          – where "Back" goes (with unsaved-changes guard)
-// =============================================================================
+/**
+ *
+ =============================================================================
+ BASE ITEM-EDIT PAGE
+ 
+ Shared structural skeleton for ItemEdit and LangEdit:
+ 
+ ┌─────────────────────────────────────────────────────────┐
+ │  [breadcrumb]               [right toolbar actions]     │  ← buildTopBar()
+ ├──────────────────────┬──────────────────────────────────┤
+ │  [left form panel]   │  [live preview]                  │  ← buildCenter()
+ ├─────────────────────────────────────────────────────────┤
+ │  [status label]                  [action buttons]       │  ← buildBottomBar()
+ └─────────────────────────────────────────────────────────┘
+ 
+ Subclasses override:
+ • getPageTitle()          – static label next to "Items ›"
+ • buildRightActions()     – toolbar widgets (selectors, buttons, …)
+ • buildFormPanel()        – the scrollable left-hand form
+ • getFormPanelTitle()     – titled-border text over the form
+ • getPreviewTitle()       – titled-border text over the preview
+ • buildActionButtons()    – buttons in the bottom-right cluster
+ • onItemSet(ModItem)      – hook called after setCurrentItem()
+ • updatePreview()         – regenerate the HTML in previewPane
+ • navigateBack()          – where "Back" goes (with unsaved-changes guard)
+ =============================================================================
+ */
+@lombok.extern.slf4j.Slf4j
 public abstract class BaseEditPage extends BasePage {
 	
 	protected JComboBox<String> modSelector;

@@ -5,9 +5,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-// =============================================================================
-//  SNACKBAR  (replaces MudSnackbar – bottom-right toasts)
-// =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class BarManager {
 	private static final int VISIBLE_MS = 3000;
 	private static final int BAR_HEIGHT = 44;

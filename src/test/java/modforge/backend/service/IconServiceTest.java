@@ -1,5 +1,6 @@
 package modforge.backend.service;
 
+import image.DDSUtil;
 import modforge.backend.ModData;
 import modforge.backend.model.BaseModItem;
 import modforge.backend.model.ModItem;
@@ -68,7 +69,7 @@ class IconServiceTest extends BaseServiceTest {
 	
 	/**
 	 * Produces a real, decodable DDS by compressing a 64×64 gradient image via
-	 * {@link DDSUtil#compressToBC7} — the same path the production code uses for
+	 * {@link image.DDSUtil#compressToBC7} — the same path the production code uses for
 	 * PNG → DDS conversion.
 	 */
 	private static byte[] realDdsBytes() throws IOException {
@@ -135,9 +136,8 @@ class IconServiceTest extends BaseServiceTest {
 	@Test
 	@DisplayName("[setup] create test PAK with real DDS entries")
 	void createTestPakFile() throws Exception {
-		Path pakDir = Path.of("src/test/resources/img/out");
-		Files.createDirectories(pakDir);
-		Files.createDirectories(pakDir.resolve("out"));
+		Path pakDir = RESOURCES_OUTPUT;
+		Files.createDirectories(pakDir.resolve("img"));
 		
 		Path pak = pakDir.resolve("img-test.pak");
 		
@@ -367,12 +367,12 @@ class IconServiceTest extends BaseServiceTest {
 			requireTestPak();
 			
 			// Work with a copy inside tempDir so we don't pollute the test resources
-			Path pakCopy = tempDir.resolve("img-test.pak");
+			Path pakCopy = tempDir.resolve("test.pak");
 			Files.copy(TEST_PAK, pakCopy);
 			
 			IconService.convertImages(pakCopy.toString(), true);
 			
-			Path convertedDir = tempDir.resolve("img-test_converted");
+			Path convertedDir = tempDir.resolve("test_converted");
 			assertTrue(Files.exists(convertedDir), "converted output directory must be created");
 			
 			long pngCount = Files.walk(convertedDir).filter(p -> p.getFileName().toString().endsWith(".png")).count();

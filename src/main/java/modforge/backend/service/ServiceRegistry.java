@@ -8,8 +8,8 @@ import java.util.logging.Logger;
  * Wires all dependencies together in the correct order.
  * Use as the single entry-point for bootstrapping the application.
  */
+@lombok.extern.slf4j.Slf4j
 public final class ServiceRegistry {
-	private static final Logger log = Logger.getLogger(ServiceRegistry.class.getName());
 	
 	public final UserConfig userConfig;
 	public final ConfigService configService;

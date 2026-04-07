@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 // =============================================================================
 //  MAIN WINDOW
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class MainWindow extends JFrame {
 	// ── palette ──────────────────────────────────────────────────────────────
 	public static final Color BG = new Color(0x1e1e2e);
@@ -23,7 +24,6 @@ public class MainWindow extends JFrame {
 	public static final Color TEXT = new Color(0xcdd6f4);
 	public static final Color MUTED = new Color(0x6c6f85);
 	public static final Color DANGER = new Color(0xf38ba8);
-	protected static final Logger log = Logger.getLogger(MainWindow.class.getName());
 	public final BarManager snackbar;
 	// ── navigation ───────────────────────────────────────────────────────────
 	private final CardLayout cardLayout = new CardLayout();
@@ -107,8 +107,8 @@ public class MainWindow extends JFrame {
 				page.setInstance(pageInstance);
 				pageHolder.add(pageInstance, page.name());
 			} catch (Exception e) {
-				log.warning("Failed to create page: " + page.name());
-				log.warning("Ex : " + e);
+				log.warn("Failed to create page: " + page.name());
+				log.warn("Ex : " + e);
 			}
 		}
 	}

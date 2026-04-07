@@ -17,8 +17,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
+@lombok.extern.slf4j.Slf4j
 public final class ModItemBuilder {
-	private static final Logger log = Logger.getLogger(ModItemBuilder.class.getName());
 	
 	// O(1) lookup map - element name to handler
 	private static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
@@ -56,7 +56,7 @@ public final class ModItemBuilder {
 			return handler.create(element);
 		}
 		
-		log.fine("No handler matched element <" + element.getLocalName() + ">");
+		log.info("No handler matched element <" + element.getLocalName() + ">");
 		return null;
 	}
 	
@@ -68,7 +68,7 @@ public final class ModItemBuilder {
 			return maker.build(document, item);
 		}
 		
-		log.fine("No maker matched item <" + item + ">");
+		log.info("No maker matched item <" + item + ">");
 		return null;
 	}
 	

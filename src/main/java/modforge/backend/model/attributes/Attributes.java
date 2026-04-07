@@ -7,8 +7,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+@lombok.extern.slf4j.Slf4j
 public final class Attributes {
-	private static final Logger log = Logger.getLogger(Attributes.class.getName());
 	/**
 	 * Discovered at runtime by scanning XML documents.
 	 * Concurrent, since we now use multithreading
@@ -91,7 +91,7 @@ public final class Attributes {
 				if (f instanceof Attribute<?> a)
 					sb.append(serializeValue(a)).append(',');
 				else
-					log.warning("found list with unsupported type: " + (list.stream().limit(20).toList()) + " type: " + f.getClass());
+					log.warn("found list with unsupported type: " + (list.stream().limit(20).toList()) + " type: " + f.getClass());
 			return sb.toString();
 		}
 		return switch (v) {
@@ -130,7 +130,7 @@ public final class Attributes {
 				return new DoubleAttribute(name, Double.parseDouble(value));
 			}
 		} catch (Exception ex) {
-			log.warning("Cannot parse attribute '" + name + "'='" + value + "': " + ex.getMessage());
+			log.warn("Cannot parse attribute '" + name + "'='" + value + "': " + ex.getMessage());
 		}
 		// fallback -> all of it is string
 		return new StringAttribute(name, value);

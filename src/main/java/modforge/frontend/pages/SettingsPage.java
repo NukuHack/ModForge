@@ -13,6 +13,7 @@ import java.awt.*;
 // =============================================================================
 //  SETTINGS PAGE
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class SettingsPage extends BasePage {
 	
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");

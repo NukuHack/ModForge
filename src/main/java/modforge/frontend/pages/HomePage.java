@@ -9,6 +9,7 @@ import java.awt.*;
 // =============================================================================
 //  HOME PAGE
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class HomePage extends BasePage {
 	
 	public HomePage(MainWindow w) {

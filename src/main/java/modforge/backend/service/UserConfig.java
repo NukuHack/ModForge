@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+@lombok.extern.slf4j.Slf4j
 public final class UserConfig {
-	private static final Logger log = Logger.getLogger(UserConfig.class.getName());
 	
 	private static final Path configFile = Singleton.getUserConfig();
 	
@@ -31,7 +31,7 @@ public final class UserConfig {
 			fromJson(parsed);
 			log.info("User configuration loaded from " + configFile);
 		} catch (Exception e) {
-			log.severe("Config load error: " + e.getMessage());
+			log.error("Config load error: " + e.getMessage());
 		}
 	}
 	
@@ -64,7 +64,7 @@ public final class UserConfig {
 		if (good)
 			log.info("User configuration saved.");
 		else
-			log.severe("Config save error");
+			log.error("Config save error");
 	}
 	
 	/**
@@ -80,7 +80,7 @@ public final class UserConfig {
 			var ids = orderedMods.stream().map(m -> m.id).collect(Collectors.toList());
 			Files.write(loadOrder, ids, StandardCharsets.UTF_8);
 		} catch (IOException e) {
-			log.warning("Cannot write mod_order.txt: " + e.getMessage());
+			log.warn("Cannot write mod_order.txt: " + e.getMessage());
 		}
 	}
 }

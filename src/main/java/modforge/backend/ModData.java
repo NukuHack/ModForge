@@ -5,6 +5,7 @@ import modforge.backend.model.ModItem;
 
 import java.util.*;
 
+@lombok.extern.slf4j.Slf4j
 public final class ModData {
 	private final Map<String, ModItem> items = new HashMap<>();
 	private final Map<String, String> config = new HashMap<>();

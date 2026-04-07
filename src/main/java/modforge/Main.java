@@ -10,17 +10,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
+@lombok.extern.slf4j.Slf4j
 public class Main {
-	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
-	
 	static void main(String[] args) {
 		// Configure console logging
 		applyTheme();
-		
-		LOGGER.setLevel(Level.INFO);
-		for (var h : LOGGER.getHandlers())
-			h.setLevel(Level.INFO);
 		
 		System.out.println("ModForge Java - starting...");
 		
@@ -50,7 +44,7 @@ public class Main {
 		setNicerFont();
 		try {
 			// Requires FlatLaf on classpath
-			Class<?> flat = Class.forName("com.formdev.flatlaf.FlatDarkLaf");
+			var flat = Class.forName("com.formdev.flatlaf.FlatDarkLaf");
 			flat.getMethod("setup").invoke(null);
 		} catch (Exception e) {
 			// Fallback: force metal dark-ish defaults
@@ -71,16 +65,7 @@ public class Main {
 	
 	///  just to make korean chars actually display
 	private static void setNicerFont() {
-		// Universal fonts
-		final var koreanFonts = new String[] { "Malgun Gothic",      // Windows
-				"Apple SD Gothic Neo", // macOS
-				"UnDotum",            // Linux
-				"Noto Sans CJK KR",   // Cross-platform
-				"Nanum Gothic",       // Open source
-				"SansSerif"           // Fallback
-		};
-		
-		for (var fontName : koreanFonts) {
+		for (var fontName : new String[] { "Noto Sans CJK KR", "Nanum Gothic", "SansSerif" }) {
 			Font testFont = new Font(fontName, Font.PLAIN, 12);
 			if (testFont.canDisplay('한')) { // Test with a Korean character
 				// Set as default font

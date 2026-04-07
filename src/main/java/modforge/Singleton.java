@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@lombok.extern.slf4j.Slf4j
 public enum Singleton {
 	INSTANCE;
 	

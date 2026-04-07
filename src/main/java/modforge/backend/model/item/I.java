@@ -2,6 +2,7 @@ package modforge.backend.model.item;
 
 import modforge.backend.model.BaseModItem;
 
+@lombok.extern.slf4j.Slf4j
 public final class I {
 	private I() {
 	}

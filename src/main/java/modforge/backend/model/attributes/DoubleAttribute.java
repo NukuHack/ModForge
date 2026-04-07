@@ -1,5 +1,6 @@
 package modforge.backend.model.attributes;
 
+@lombok.extern.slf4j.Slf4j
 public non-sealed class DoubleAttribute extends BaseAttribute<Double> {
 	public DoubleAttribute(String name, Double value) {
 		super(name, value);

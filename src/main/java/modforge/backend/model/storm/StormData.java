@@ -1,5 +1,6 @@
 package modforge.backend.model.storm;
 
+import lombok.Getter;
 import modforge.backend.DataPoint;
 
 import java.util.ArrayList;
@@ -38,6 +39,8 @@ import java.util.List;
  * &lt;/AISystem&gt;
  * </pre>
  */
+@Getter
+@lombok.extern.slf4j.Slf4j
 public final class StormData {
 	
 	private final List<CustomStormSelector> customSelectors = new ArrayList<>();
@@ -58,44 +61,16 @@ public final class StormData {
 	// Accessors
 	// -------------------------------------------------------------------------
 	
-	public String getId() {
-		return id;
-	}
-	
 	public void setId(String id) {
 		this.id = id == null ? "" : id;
-	}
-	
-	public String getCategory() {
-		return category;
 	}
 	
 	public void setCategory(String cat) {
 		this.category = cat;
 	}
 	
-	public DataPoint getDataPoint() {
-		return dataPoint;
-	}
-	
 	public void setDataPoint(DataPoint dp) {
 		this.dataPoint = dp;
-	}
-	
-	public List<CustomStormSelector> getCustomSelectors() {
-		return customSelectors;
-	}
-	
-	public List<CustomStormOperation> getCustomOperations() {
-		return customOperations;
-	}
-	
-	public List<StormTask> getTasks() {
-		return tasks;
-	}
-	
-	public List<StormRule> getRules() {
-		return rules;
 	}
 	
 	@Override

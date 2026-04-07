@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@lombok.extern.slf4j.Slf4j
 public non-sealed class ListAttribute<M> extends BaseAttribute<List<M>> {
 	public ListAttribute(String name, List<M> value) {
 		super(name, value);

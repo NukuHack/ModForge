@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 // Simple value object for buff parameters (stat_key op value)
+@lombok.extern.slf4j.Slf4j
 public non-sealed class BuffParam extends BaseAttribute<BuffParam.Param> {
 	
 	private static final Pattern BUFF_PARAM_RE = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");

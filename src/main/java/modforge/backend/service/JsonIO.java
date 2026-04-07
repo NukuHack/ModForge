@@ -9,8 +9,8 @@ import java.util.logging.Logger;
 
 import static modforge.Util.escapeJson;
 
+@lombok.extern.slf4j.Slf4j
 public final class JsonIO {
-	private static final Logger log = Logger.getLogger(JsonIO.class.getName());
 	
 	private JsonIO() {
 	}
@@ -26,7 +26,7 @@ public final class JsonIO {
 				return JsonValue.parse(content);
 			}
 		} catch (Exception e) {
-			log.severe("Config load error: " + e.getMessage());
+			log.error("Config load error: " + e.getMessage());
 		}
 		return null;
 	}
@@ -43,7 +43,7 @@ public final class JsonIO {
 			Files.writeString(target, arr.toJsonString(), StandardCharsets.UTF_8);
 			return true;
 		} catch (IOException e) {
-			log.warning("JSON write failed: " + e.getMessage());
+			log.warn("JSON write failed: " + e.getMessage());
 		}
 		return false;
 	}
@@ -60,7 +60,7 @@ public final class JsonIO {
 			Files.writeString(target, item.toJsonString(), StandardCharsets.UTF_8);
 			return true;
 		} catch (IOException e) {
-			log.warning("JSON write failed: " + e.getMessage());
+			log.warn("JSON write failed: " + e.getMessage());
 		}
 		return false;
 	}

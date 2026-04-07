@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
+@lombok.extern.slf4j.Slf4j
 public class ItemsPage extends BasePage {
 	
 	// UNDERLYING DATA - the source of truth

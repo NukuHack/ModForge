@@ -1,5 +1,6 @@
 package modforge.backend.service;
 
+import image.DDSUtil;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
@@ -18,8 +19,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
+@lombok.extern.slf4j.Slf4j
 public final class IconService {
-	private static final Logger log = Logger.getLogger(IconService.class.getName());
 	
 	private static final String TEXTURES_ROOT = "Libs/UI/Textures";
 	private static final String FALLBACK_ICON = "crime_investigation_icon";
@@ -43,7 +44,7 @@ public final class IconService {
 		final var pakFile = Path.of(pakPath);
 		
 		if (! pakFile.toFile().exists()) {
-			log.fine("PAK not found – skipping icon scan: " + pakPath);
+			log.info("PAK not found – skipping icon scan: " + pakPath);
 			return new HashMap<>();
 		}
 		
@@ -62,11 +63,11 @@ public final class IconService {
 						continue;
 					map.put(stem, is.readAllBytes());
 				} catch (Exception ex) {
-					log.fine("Could not read icon entry " + name + ": " + ex.getMessage());
+					log.info("Could not read icon entry " + name + ": " + ex.getMessage());
 				}
 			}
 		} catch (IOException ex) {
-			log.severe("Cannot open PAK for icon indexing (" + pakPath + "): " + ex.getMessage());
+			log.error("Cannot open PAK for icon indexing (" + pakPath + "): " + ex.getMessage());
 		}
 		return map;
 	}
@@ -103,13 +104,13 @@ public final class IconService {
 	 */
 	public static void convertImages(String inputPath, boolean toPng) {
 		if (inputPath == null || inputPath.isBlank()) {
-			log.warning("convertImages: null or blank input path – nothing to do.");
+			log.warn("convertImages: null or blank input path – nothing to do.");
 			return;
 		}
 		
 		final Path source = Path.of(inputPath);
 		if (! Files.exists(source)) {
-			log.warning("convertImages: path does not exist – " + inputPath);
+			log.warn("convertImages: path does not exist – " + inputPath);
 			return;
 		}
 		
@@ -122,7 +123,7 @@ public final class IconService {
 				convertSingleFile(source, source.getParent(), toPng);
 			}
 		} catch (IOException ex) {
-			log.severe("convertImages failed for '" + inputPath + "': " + ex.getMessage());
+			log.error("convertImages failed for '" + inputPath + "': " + ex.getMessage());
 		}
 	}
 	
@@ -162,7 +163,7 @@ public final class IconService {
 				try (var is = zf.getInputStream(entry)) {
 					raw = is.readAllBytes();
 				} catch (IOException ex) {
-					log.fine("Could not read archive entry '" + entry.getName() + "': " + ex.getMessage());
+					log.info("Could not read archive entry '" + entry.getName() + "': " + ex.getMessage());
 					continue;
 				}
 				
@@ -206,7 +207,7 @@ public final class IconService {
 				final byte[] ddsBytes = Files.readAllBytes(src);
 				final BufferedImage img = convertToImage(ddsBytes);
 				ImageIO.write(img, "png", dstPath.toFile());
-				log.fine("DDS→PNG: " + src + " → " + dstPath);
+				log.info("DDS→PNG: " + src + " → " + dstPath);
 			} else {
 				// caller gets a clear error rather than silent data loss.
 				final BufferedImage img = ImageIO.read(src.toFile());
@@ -214,10 +215,10 @@ public final class IconService {
 					throw new IOException("ImageIO could not read PNG: " + src);
 				final byte[] ddsBytes = DDSUtil.compressToBC7(img);
 				Files.write(dstPath, ddsBytes);
-				log.fine("PNG→DDS: " + src + " → " + dstPath);
+				log.info("PNG→DDS: " + src + " → " + dstPath);
 			}
 		} catch (IOException ex) {
-			log.warning("Conversion failed for '" + src + "': " + ex.getMessage());
+			log.warn("Conversion failed for '" + src + "': " + ex.getMessage());
 		}
 	}
 	
@@ -244,7 +245,7 @@ public final class IconService {
 		final Path backupPath = backupDir.resolve(stem + "_" + suffix + ext);
 		
 		Files.move(path, backupPath);
-		log.fine("Backed up existing file: " + path + " → " + backupPath);
+		log.info("Backed up existing file: " + path + " → " + backupPath);
 	}
 	
 	/**
@@ -280,7 +281,7 @@ public final class IconService {
 	 */
 	public static Map<String, byte[]> loadModIcons(Path modPath) {
 		if (! Files.exists(modPath)) {
-			log.warning("PAK directory does not exist: " + modPath);
+			log.warn("PAK directory does not exist: " + modPath);
 			return Map.of();
 		}
 		
@@ -289,14 +290,14 @@ public final class IconService {
 			final var pakFiles = stream.filter(excludeNonIconPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
-				log.fine("No PAK files found in: " + modPath);
+				log.info("No PAK files found in: " + modPath);
 				return Map.of();
 			}
 			for (Path pakPath : pakFiles) {
 				map.putAll(indexDdsFromPak(pakPath.toString()));
 			}
 		} catch (IOException e) {
-			log.warning("Cannot list Data folder for path " + modPath + ": " + e.getMessage());
+			log.warn("Cannot list Data folder for path " + modPath + ": " + e.getMessage());
 		}
 		int total = map.size();
 		if (total > 0) {
@@ -372,7 +373,7 @@ public final class IconService {
 			}
 		}
 		
-		log.fine("Icon not found in any index: " + iconId);
+		log.info("Icon not found in any index: " + iconId);
 		return null;
 	}
 	
@@ -394,7 +395,7 @@ public final class IconService {
 		try {
 			return convertToImage(ddsBytes);
 		} catch (IOException ex) {
-			log.warning("DDS→PNG conversion failed for '" + key + "': " + ex.getMessage());
+			log.warn("DDS→PNG conversion failed for '" + key + "': " + ex.getMessage());
 			return null;
 		}
 	}

@@ -1,9 +1,13 @@
 package modforge.backend.model;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Getter
+@lombok.extern.slf4j.Slf4j
 public enum Language {
 	ENGLISH("English", "English", "en"),
 	GERMAN("German", "Deutsch", "de"),
@@ -20,9 +24,9 @@ public enum Language {
 	JAPANESE("Japanese", "日本語", "ja"),
 	KOREAN("Korean", "한국어", "ko");
 	
-	private final String name;        // English name (e.g., "German")
+	private final String name; // English name (e.g., "German")
 	private final String displayName; // Real/native name (e.g., "Deutsch")
-	private final String isoCode;
+	private final String isoCode; // iso code ...
 	
 	Language(String name, String displayName, String isoCode) {
 		this.name = name;
@@ -79,18 +83,4 @@ public enum Language {
 		return Arrays.stream(values()).map(lang -> lang.getIsoCode() + " - " + lang.getName()).collect(Collectors.toSet());
 	}
 	
-	/**
-	 * Get English name
-	 */
-	public String getName() {
-		return name;
-	}
-	
-	public String getDisplayName() {
-		return displayName;
-	}
-	
-	public String getIsoCode() {
-		return isoCode;
-	}
 }

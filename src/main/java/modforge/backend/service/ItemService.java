@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -25,19 +26,37 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
+@lombok.extern.slf4j.Slf4j
 public final class ItemService {
-	private static final Logger log = Logger.getLogger(ItemService.class.getName());
 	
 	private final UserConfig userConfig;
 	
 	public ItemService(UserConfig userConfig) {
 		this.userConfig = userConfig;
 	}
+	
+	
+	private static final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
+		XMLInputFactory f = XMLInputFactory.newInstance();
+		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
+		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
+		// these for speed
+		f.setProperty(XMLInputFactory.IS_COALESCING, true);
+		if (false /*get class for "jackson-dataformat-xml"*/)
+			f.setProperty("com.ctc.wstx.maxElementDepth", 5); // should be fine on 3 but left it
+		else {
+			// JAXP00010003 — individual entity size
+			f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
+			// JAXP00010004 — accumulated entity size across the whole document
+			f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
+		}
+		return f;
+	});
 	
 	static Document parseXml(InputStream is) {
 		try {
@@ -53,13 +72,13 @@ public final class ItemService {
 				return f.newDocumentBuilder().parse(new InputSource(reader));
 			}
 		} catch (final ParserConfigurationException e) {
-			log.warning("Could not configure the parser");
+			log.warn("Could not configure the parser");
 			return null;
 		} catch (final SAXException e) {
-			log.warning("Could not parse the file");
+			log.warn("Could not parse the file");
 			return null;
 		} catch (final IOException e) {
-			log.warning("Could access the file");
+			log.warn("Could access the file");
 			return null;
 		}
 	}
@@ -187,11 +206,11 @@ public final class ItemService {
 				try (var is = zf.getInputStream(entry)) {
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
 				} catch (final Exception ex) {
-					log.warning("Parse error in %s from %s: %s".formatted(entryName, pakFile.getFileName(), ex.getMessage()));
+					log.warn("Parse error in %s from %s: %s".formatted(entryName, pakFile.getFileName(), ex.getMessage()));
 				}
 			}
 		} catch (IOException e) {
-			log.severe("Cannot open PAK file: %s - %s".formatted(pakFile, e.getMessage()));
+			log.error("Cannot open PAK file: %s - %s".formatted(pakFile, e.getMessage()));
 		}
 		return items.stream();
 	}
@@ -252,7 +271,7 @@ public final class ItemService {
 			game.setItems(this.loadItems(Path.of(gameDir, "Data")));
 			log.info(String.format("XML read done items=%d", game.getItems().size()));
 		} catch (Exception ex) {
-			log.severe("Game Data read failed: " + ex.getMessage());
+			log.error("Game Data read failed: " + ex.getMessage());
 		}
 		System.out.printf("Game ItemData Load took: %dms%n", System.currentTimeMillis() - start);
 	}
@@ -278,7 +297,7 @@ public final class ItemService {
 			try {
 				writeModItem(gameDir, modData, item);
 			} catch (final Exception e) {
-				log.severe("writeModItem failed for " + item.getClass().getSimpleName() + ": " + e.getMessage());
+				log.error("writeModItem failed for " + item.getClass().getSimpleName() + ": " + e.getMessage());
 			}
 		}
 	}
@@ -287,9 +306,9 @@ public final class ItemService {
 	 * Load mod items from all PAK files in the mod's Data folder.
 	 * Processes PAK files and their XML entries in parallel for maximum throughput.
 	 */
-	public Set<ModItem> loadItems(Path modPath) {
+	public static Set<ModItem> loadItems(Path modPath) {
 		if (! Files.exists(modPath)) {
-			log.warning("PAK directory does not exist: " + modPath);
+			log.warn("PAK directory does not exist: " + modPath);
 			return Set.of();
 		}
 		
@@ -297,7 +316,7 @@ public final class ItemService {
 			final var pakFiles = stream.filter(excludeNonDataPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
-				log.fine("No PAK files found in: " + modPath);
+				log.info("No PAK files found in: " + modPath);
 				return Set.of();
 			}
 			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
@@ -307,7 +326,7 @@ public final class ItemService {
 			return result;
 			
 		} catch (final IOException e) {
-			log.severe("Failed to list PAK folder: " + modPath + " - " + e.getMessage());
+			log.error("Failed to list PAK folder: " + modPath + " - " + e.getMessage());
 			return Set.of();
 		}
 	}

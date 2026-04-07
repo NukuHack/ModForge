@@ -12,8 +12,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 // =============================================================================
-//  MODS PAGE  (ModCollection list with real data)
+//  MODS PAGE
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class ModsPage extends BasePage {
 	
 	private final JList<ModData> modList;
@@ -122,7 +123,7 @@ public class ModsPage extends BasePage {
 				}
 			} catch (Exception e) {
 				window.snackbar.show("Import failed: " + e.getMessage(), BarManager.Type.ERROR);
-				log.severe("Import error: " + e);
+				log.error("Import error: " + e);
 			}
 		}
 	}

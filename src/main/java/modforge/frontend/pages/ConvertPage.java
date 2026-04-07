@@ -10,18 +10,9 @@ import java.awt.*;
 import java.util.concurrent.CompletableFuture;
 
 // =============================================================================
-//  CONVERT PAGE  (DDS ↔ PNG batch converter)
-//
-//    ┌───────────────────────────────────────────────────────┐
-//    │  Convert Textures                                     │  ← header
-//    ├───────────────────────────────────────────────────────┤
-//    │                                                       │
-//    │   [ Browse… ]  /path/to/selected/folder              │  ← picker row
-//    │                                                       │
-//    │   [ ⇄ DDS → PNG ]          [ GO ]                    │  ← action row
-//    │                                                       │
-//    └───────────────────────────────────────────────────────┘
+//  IMAGE CONVERT PAGE
 // =============================================================================
+@lombok.extern.slf4j.Slf4j
 public class ConvertPage extends BasePage {
 	
 	// ── UI refs ──────────────────────────────────────────────────────────────

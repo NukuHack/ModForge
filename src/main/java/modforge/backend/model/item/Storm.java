@@ -1,5 +1,7 @@
 package modforge.backend.model.item;
 
+import lombok.Getter;
+import lombok.Setter;
 import modforge.backend.model.BaseModItem;
 import modforge.backend.model.storm.StormData;
 
@@ -17,20 +19,15 @@ import modforge.backend.model.storm.StormData;
  * populated separately by {@link modforge.backend.service.StormService} after the
  * PAK scan.</p>
  */
+@lombok.extern.slf4j.Slf4j
 public class Storm extends BaseModItem {
 	
 	/** Fully-parsed Storm file contents. May be {@code null} if not yet loaded. */
+	@Getter
+	@Setter
 	private StormData stormData;
 	
 	public Storm() {
-	}
-	
-	public StormData getStormData() {
-		return stormData;
-	}
-	
-	public void setStormData(StormData stormData) {
-		this.stormData = stormData;
 	}
 	
 	@Override
