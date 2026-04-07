@@ -1,10 +1,12 @@
 package modforge.frontend;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class LoadingScreen extends JWindow {
 	public LoadingScreen() {
 		setSize(500, 340);

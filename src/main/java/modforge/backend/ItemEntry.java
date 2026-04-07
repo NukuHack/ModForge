@@ -3,7 +3,6 @@ package modforge.backend;
 import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.item.I;
-import modforge.backend.model.item.Storm;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -99,7 +98,7 @@ public enum ItemEntry {
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", true),
 	
 	// ── Storm ────────────────────────────────────────────────────────────────
-	STORM(Storm.class, "id", "storm", "storm", true);
+	STORM(I.Storm.class, "id", "storm", "storm", true);
 	
 	// ────────────────────────────────────────────────────────────────────────
 	// Fields

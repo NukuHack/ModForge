@@ -2,13 +2,13 @@ package modforge.frontend.pages;
 
 import modforge.Singleton;
 import modforge.Util;
+import modforge.backend.model.item.E.Language;
 import modforge.backend.service.UserConfig;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
-import modforge.backend.model.item.E.Language;
 
 // =============================================================================
 //  SETTINGS PAGE

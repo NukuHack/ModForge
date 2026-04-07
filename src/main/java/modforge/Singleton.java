@@ -50,7 +50,7 @@ public enum Singleton {
 			if (Files.exists(dir))
 				return;
 			Files.createDirectories(dir);
-			System.out.println("Created config directory: " + dir);
+			log.info("Created config directory: {}", dir);
 		} catch (final IOException e) {
 			log.error("Failed to create config directory: {}", dir, e);
 		}

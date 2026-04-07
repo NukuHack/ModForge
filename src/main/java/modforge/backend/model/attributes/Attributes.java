@@ -6,7 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -19,7 +22,7 @@ public final class Attributes {
 	public static final Map<String, Class<?>> TYPE_MAP = new ConcurrentHashMap<>();
 	
 	static {
-		TYPE_MAP.put("buff_params", BuffParam.class);
+		TYPE_MAP.put("buff_params", Attribute.BuffParam.class);
 	}
 	
 	/**
@@ -94,7 +97,7 @@ public final class Attributes {
 					log.warn("found list with unsupported type: {} type: {}", list.stream().limit(20).toList(), f.getClass());
 			return sb.toString();
 		}
-		if (v instanceof BuffParam b) {
+		if (v instanceof Attribute.BuffParam b) {
 			return b.toAttrString();
 		} else if (v instanceof Enum<?> e) {
 			return String.valueOf(e.ordinal());
@@ -118,27 +121,27 @@ public final class Attributes {
 	 */
 	public static Attribute create(final String name, String value) {
 		if (value == null || (value = value.trim()).isEmpty())
-			return new StringAttribute(name, "");
+			return new Attribute.StringAttribute(name, "");
 		final Class<?> type = TYPE_MAP.getOrDefault(name, String.class);
 		
 		try {
-			if (type == BuffParam.class) {
-				return BuffParam.BuffParams.parse(name, value);
+			if (type == Attribute.BuffParam.class) {
+				return Attribute.BuffParam.BuffParams.parse(name, value);
 			} else if (type == List.class) {
-				return new ListAttribute<>(name, List.of(value.split("\\s+")));
+				return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
 			} else if (type == Boolean.class) {
-				return new BooleanAttribute(name, Boolean.parseBoolean(value));
+				return new Attribute.BooleanAttribute(name, Boolean.parseBoolean(value));
 			} else if (type == Double.class) {
-				return new DoubleAttribute(name, Double.parseDouble(value));
+				return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
 			} else if (type.isEnum()) {
 				@SuppressWarnings("unchecked")
 				Class<? extends Enum> enumType = (Class<? extends Enum>) type;
-				return new EnumAttribute(name, Enum.valueOf(enumType, value));
+				return new Attribute.EnumAttribute(name, Enum.valueOf(enumType, value));
 			}
 		} catch (Exception ex) {
 			log.warn("Cannot parse attribute '{}'='{}': {}", name, value, ex.getMessage());
 		}
 		// fallback -> all of it is string
-		return new StringAttribute(name, value);
+		return new Attribute.StringAttribute(name, value);
 	}
 }

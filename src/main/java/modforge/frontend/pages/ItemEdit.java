@@ -2,7 +2,7 @@ package modforge.frontend.pages;
 
 import modforge.Util;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.attributes.*;
+import modforge.backend.model.attributes.Attribute;
 import modforge.backend.service.ModItemBuilder;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
@@ -302,13 +302,13 @@ public class ItemEdit extends BaseEditPage {
 	
 	@SuppressWarnings("unchecked")
 	private <T> T extractValue(JComponent comp, Attribute<T> attr) {
-		if (attr instanceof BooleanAttribute && comp instanceof JCheckBox cb)
+		if (attr instanceof Attribute.BooleanAttribute && comp instanceof JCheckBox cb)
 			return (T) Boolean.valueOf(cb.isSelected());
-		if (attr instanceof DoubleAttribute && comp instanceof JSpinner sp)
+		if (attr instanceof Attribute.DoubleAttribute && comp instanceof JSpinner sp)
 			return (T) sp.getValue();  // SpinnerNumberModel already stores Double
-		if (attr instanceof StringAttribute && comp instanceof JTextField tf)
+		if (attr instanceof Attribute.StringAttribute && comp instanceof JTextField tf)
 			return (T) tf.getText();
-		if (attr instanceof ListAttribute<?> && comp instanceof JScrollPane sp && sp.getViewport().getView() instanceof JTextArea ta)
+		if (attr instanceof Attribute.ListAttribute<?> && comp instanceof JScrollPane sp && sp.getViewport().getView() instanceof JTextArea ta)
 			return (T) List.of(ta.getText().split("\\s+"));
 		
 		// fallback for unknown string-backed attributes
@@ -321,7 +321,7 @@ public class ItemEdit extends BaseEditPage {
 	// ── Component factories ───────────────────────────────────────────────────
 	
 	private JComponent createEditorForAttribute(Attribute attr) {
-		if (attr instanceof BooleanAttribute boolAttr) {
+		if (attr instanceof Attribute.BooleanAttribute boolAttr) {
 			JCheckBox cb = new JCheckBox();
 			cb.setSelected(boolAttr.getValue());
 			cb.setBackground(MainWindow.SURFACE);
@@ -329,21 +329,21 @@ public class ItemEdit extends BaseEditPage {
 			cb.addActionListener(e -> markChanged());
 			return cb;
 		}
-		if (attr instanceof DoubleAttribute doubleAttr) {
+		if (attr instanceof Attribute.DoubleAttribute doubleAttr) {
 			JSpinner sp = new JSpinner(new SpinnerNumberModel((Number) doubleAttr.getValue(), - Double.MAX_VALUE, Double.MAX_VALUE, 1.0));
 			sp.setEditor(new JSpinner.NumberEditor(sp, "#.####"));
 			styleSpinner(sp);
 			sp.addChangeListener(e -> markChanged());
 			return sp;
 		}
-		if (attr instanceof StringAttribute) {
+		if (attr instanceof Attribute.StringAttribute) {
 			JTextField tf = new JTextField(String.valueOf(attr.getValue()));
 			styleTextField(tf);
 			addChangeListeners(tf.getDocument());
 			return tf;
 		}
-		if (attr instanceof ListAttribute<?> listAttr) {
-			@SuppressWarnings("unchecked") ListAttribute<Object> la = (ListAttribute<Object>) listAttr;
+		if (attr instanceof Attribute.ListAttribute<?> listAttr) {
+			@SuppressWarnings("unchecked") Attribute.ListAttribute<Object> la = (Attribute.ListAttribute<Object>) listAttr;
 			JTextArea ta = new JTextArea(la.getValue().toString());
 			ta.setRows(3);
 			ta.setBackground(new Color(0x313244));

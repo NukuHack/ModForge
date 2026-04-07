@@ -67,7 +67,7 @@ public final class LocalService {
 		} catch (Exception ex) {
 			log.error("Localisation read failed: {}", ex.getMessage());
 		}
-		System.out.printf("Game Localization Load took: %dms%n", System.currentTimeMillis() - start);
+		log.info("Game Localization Load took: {}", System.currentTimeMillis() - start);
 	}
 	
 	/**

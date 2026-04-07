@@ -1,11 +1,15 @@
 package modforge.frontend;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@RequiredArgsConstructor
 public class BarManager {
 	private static final int VISIBLE_MS = 3000;
 	private static final int BAR_HEIGHT = 44;
@@ -13,10 +17,6 @@ public class BarManager {
 	private static final int PAD = 12;
 	private final JFrame owner;
 	private final List<JWindow> active = new ArrayList<>();
-	
-	BarManager(JFrame owner) {
-		this.owner = owner;
-	}
 	
 	public void show(String message, Type type) {
 		Color bg = type.c;

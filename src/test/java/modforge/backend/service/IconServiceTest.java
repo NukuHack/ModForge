@@ -2,9 +2,8 @@ package modforge.backend.service;
 
 import image.DDSUtil;
 import modforge.backend.ModData;
-import modforge.backend.model.BaseModItem;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.attributes.StringAttribute;
+import modforge.backend.model.attributes.Attribute;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -608,7 +607,7 @@ class IconServiceTest extends BaseServiceTest {
 		private ModItem itemWithIconId(String iconId) {
 			ModItem item = new BaseModItem() {
 			};
-			item.setAttribute(List.of(new StringAttribute("icon_id", iconId)));
+			item.setAttribute(List.of(new Attribute.StringAttribute("icon_id", iconId)));
 			return item;
 		}
 	}

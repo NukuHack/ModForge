@@ -2,6 +2,7 @@ package modforge.frontend;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.pages.*;
 
@@ -15,7 +16,7 @@ import java.awt.event.MouseEvent;
 // =============================================================================
 //  MAIN WINDOW
 // =============================================================================
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class MainWindow extends JFrame {
 	// ── palette ──────────────────────────────────────────────────────────────
 	public static final Color BG = new Color(0x1e1e2e);

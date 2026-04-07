@@ -274,7 +274,7 @@ public final class ItemService {
 		} catch (Exception ex) {
 			log.error("Game Data read failed: {}", ex.getMessage());
 		}
-		System.out.printf("Game ItemData Load took: %dms%n", System.currentTimeMillis() - start);
+		log.info("Game ItemData Load took: {}", System.currentTimeMillis() - start);
 	}
 	
 	/**

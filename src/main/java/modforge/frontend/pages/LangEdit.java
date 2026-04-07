@@ -4,6 +4,7 @@ import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
+import modforge.backend.model.item.E.Language;
 import modforge.backend.service.LocalService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
@@ -19,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static modforge.Util.escHtml;
-import modforge.backend.model.item.E.Language;
 
 // =============================================================================
 //  LANG EDIT PAGE

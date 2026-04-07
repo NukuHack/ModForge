@@ -2,6 +2,7 @@ package modforge;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import modforge.backend.model.item.E.Language;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
@@ -28,8 +29,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import modforge.backend.model.item.E.Language;
-
 /**
  * Utility class providing common file operations, path handling, XML/JSON escaping,
  * PAK file packing, and cross-platform directory utilities for the ModForge application.
@@ -46,6 +45,19 @@ public final class Util {
 	
 	/** Operating system name (lowercase) for cross-platform detection */
 	public static final String os = System.getProperty("os.name").toLowerCase();
+	
+	/** Username cross-platform */
+	public static final String username;
+	static {
+		String user = System.getenv("USERNAME"); // Windows
+		if (user == null) {
+			user = System.getenv("USER"); // Linux/Mac
+		}
+		if (user == null) {
+			user = System.getProperty("user.name");
+		}
+		username = user;
+	}
 	
 	// ================================================================================
 	// GAME FILE CONSTANTS - Modify if game file names change
@@ -106,7 +118,7 @@ public final class Util {
 	/**
 	 * Capitalizes the first character of a string and lowercases the rest.
 	 *
-	 * @param s Input string (may be null or empty)
+	 * @param s Input string (maybe null or empty)
 	 * @return String with first letter capitalized, or original if null/empty
 	 */
 	public static String capitalStart(String s) {
@@ -449,7 +461,7 @@ public final class Util {
 	/**
 	 * Unescapes common XML entities back to their original characters.
 	 *
-	 * @param s XML-escaped string (may be null)
+	 * @param s XML-escaped string (maybe null)
 	 * @return Unescaped string, or null if input is null
 	 */
 	public static String unescapeXml(String s) {
@@ -544,7 +556,7 @@ public final class Util {
 			}
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(w, "Failed to open game directory:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-			log.warn("IOException: " + ex);
+			log.warn("IOException while chosing folder", ex);
 		}
 	}
 	
@@ -586,16 +598,17 @@ public final class Util {
 	 * @example Linux: ~/.config/modforge
 	 */
 	public static Path getConfigDir() {
+		var home = System.getProperty("user.home");
 		if (os.contains("win")) {
 			// Windows: %APPDATA%\ {APP_NAME}
 			String appData = System.getenv("APPDATA");
 			if (appData == null || appData.isBlank()) {
-				appData = System.getProperty("user.home") + "\\AppData\\Roaming";
+				appData = home + "\\AppData\\Roaming";
 			}
 			return Paths.get(appData, APP_NAME);
 		} else if (os.contains("mac")) {
 			// macOS: ~/Library/Application Support/ {APP_NAME}
-			return Paths.get(System.getProperty("user.home"), "Library", "Application Support", APP_NAME);
+			return Paths.get(home, "Library", "Application Support", APP_NAME);
 		} else {
 			// Linux/Unix: ~/.config/ {APP_NAME} (XDG Base Directory Specification)
 			String xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
@@ -603,7 +616,7 @@ public final class Util {
 				return Paths.get(xdgConfigHome, APP_NAME.toLowerCase());
 			}
 			// Fallback to ~/.config/ {APP_NAME}
-			return Paths.get(System.getProperty("user.home"), ".config", APP_NAME.toLowerCase());
+			return Paths.get(home, ".config", APP_NAME.toLowerCase());
 		}
 	}
 	
@@ -624,7 +637,7 @@ public final class Util {
 	 */
 	public static boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
 		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
-			log.warn("Source folder does not exist: " + sourceFolder);
+			log.warn("Source folder does not exist: {}", sourceFolder);
 			return false;
 		}
 		final FileTime ft = FileTime.fromMillis(0);
@@ -632,7 +645,7 @@ public final class Util {
 			Files.createDirectories(destPakFile.getParent());
 			Files.deleteIfExists(destPakFile);
 		} catch (final IOException e) {
-			log.error("PAK creation failed: " + e.getMessage());
+			log.error("PAK creation failed", e);
 			return false;
 		}
 		try (var fos = new FileOutputStream(destPakFile.toFile()); var out = new ZipOutputStream(fos); var walk = Files.walk(sourceFolder)) {
@@ -654,17 +667,17 @@ public final class Util {
 					Files.copy(file, out);
 					out.closeEntry();
 					
-					log.info("Added to PAK: " + relPath);
+					log.info("Added to PAK: {}", relPath);
 				} catch (IOException e) {
-					log.warn("Cannot add to pak: " + file + " - " + e.getMessage());
+					log.warn("Cannot add to pak: {} - {}", file, e.getMessage());
 				}
 			});
 		} catch (IOException e) {
-			log.error("PAK creation failed: " + e.getMessage());
+			log.error("PAK creation failed", e);
 			return false;
 		}
 		
-		log.info("PAK created: " + destPakFile);
+		log.info("PAK created: {}", destPakFile);
 		return true;
 	}
 	
@@ -732,7 +745,7 @@ public final class Util {
 				}
 			});
 		} catch (IOException ex) {
-			log.info("Could not delete file/folder " + path + " : " + ex);
+			log.info("Could not delete file/folder {}", path, ex);
 		}
 	}
 }

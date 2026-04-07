@@ -1,17 +1,17 @@
 package modforge.frontend;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@RequiredArgsConstructor
 class MouseAdapter extends java.awt.event.MouseAdapter {
 	private final JFrame frame;
 	private Point origin;
-	
-	MouseAdapter(JFrame f) {
-		this.frame = f;
-	}
 	
 	@Override
 	public void mousePressed(MouseEvent e) {

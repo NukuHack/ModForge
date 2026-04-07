@@ -2,6 +2,7 @@ package modforge;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
@@ -9,18 +10,37 @@ import modforge.frontend.MainWindow;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * <p> ███╗   ███╗ ██████╗ ██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗</p>
+ * <p> ████╗ ████║██╔═══██╗██╔══██╗██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝</p>
+ * <p> ██╔████╔██║██║   ██║██║  ██║█████╗  ██║   ██║██████╔╝██║  ███╗█████╗  </p>
+ * <p> ██║╚██╔╝██║██║   ██║██║  ██║██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝  </p>
+ * <p> ██║ ╚═╝ ██║╚██████╔╝██████╔╝██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗</p>
+ * <p> ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</p>
+ * main class - start here
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class Main {
-	static void main(String[] args) {
-		// Configure console logging
+	private static final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	public static void main(String[] args) {
+		// looks better in green but the logger logs it in red :(
+		log.info("""
+        
+        ███╗   ███╗ ██████╗ ██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
+        ████╗ ████║██╔═══██╗██╔══██╗██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
+        ██╔████╔██║██║   ██║██║  ██║█████╗  ██║   ██║██████╔╝██║  ███╗█████╗
+        ██║╚██╔╝██║██║   ██║██║  ██║██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
+        ██║ ╚═╝ ██║╚██████╔╝██████╔╝██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
+        ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+        
+        🚀 ModForge Backend | {} | Profile: {}
+        """, LocalDateTime.now().format(fmt), Util.username);
+		
 		applyTheme();
-		
-		System.out.println("ModForge Java - starting...");
-		log.info("Startup at {}", LocalDateTime.now());
-		
 		SwingUtilities.invokeLater(() -> {
 			// Show loading splash while services boot
 			final var splash = new LoadingScreen();
@@ -35,7 +55,6 @@ public class Main {
 				}
 				//  should be made a bit nicer, for now most of the stuff is stored inside a String - should make data storage for more specific attributes
 				final var registry = Singleton.INSTANCE.getRegistry();
-				//System.out.println(AttributeFactory.getTypeMap());
 				final MainWindow window = new MainWindow(registry);
 				Singleton.INSTANCE.setMainWindow(window);
 				window.setVisible(true);
@@ -66,18 +85,18 @@ public class Main {
 		}
 	}
 	
-	///  just to make korean chars actually display
+	///  just to make Korean chars actually display
 	private static void setNicerFont() {
 		for (var fontName : new String[] { "Noto Sans CJK KR", "Nanum Gothic", "SansSerif" }) {
 			Font testFont = new Font(fontName, Font.PLAIN, 12);
 			if (testFont.canDisplay('한')) { // Test with a Korean character
 				// Set as default font
 				UIManager.put("defaultFont", testFont);
-				System.out.println("Using font: " + fontName);
+				log.info("Using font: {}", fontName);
 				return;
 			}
 		}
 		
-		System.out.println("Warning: No good font found");
+		log.warn("Warning: No good font found");
 	}
 }

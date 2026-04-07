@@ -1,9 +1,9 @@
 package modforge.backend.model.item;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import modforge.backend.model.BaseModItem;
+import modforge.backend.model.ModItem.BaseModItem;
+import modforge.backend.model.storm.StormData;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
@@ -105,5 +105,31 @@ public final class I {
 	}
 	
 	public static class PerkExclusivity extends BaseModItem {
+	}
+	
+	
+	/**
+	 * {@code ModItem} representation of a Storm script entry.
+	 *
+	 * <p>Previously this was a flat item with a {@code HashMap}, which broke as soon
+	 * as selectors/operations needed to be nested more than one level deep. Now it
+	 * carries a fully-parsed {@link modforge.backend.model.storm.StormData} object that supports arbitrary tree
+	 * depth for both selectors and operations.</p>
+	 *
+	 * <p>The base-class {@code id} / {@code attributes} fields are still populated
+	 * by {@link modforge.backend.service.ModItemBuilder} for the normal item-list
+	 * display pipeline (search, filter, etc.).  The rich {@link modforge.backend.model.storm.StormData} payload is
+	 * populated separately by {@link modforge.backend.service.StormService} after the
+	 * PAK scan.</p>
+	 */
+	@ToString
+	@NoArgsConstructor
+	@Slf4j
+	public static class Storm extends BaseModItem {
+		
+		/** Fully-parsed Storm file contents. May be {@code null} if not yet loaded. */
+		@Getter
+		@Setter
+		private StormData stormData;
 	}
 }
