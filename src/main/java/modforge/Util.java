@@ -2,7 +2,7 @@ package modforge;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import modforge.backend.model.item.E.Language;
+import modforge.backend.model.E.Language;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;

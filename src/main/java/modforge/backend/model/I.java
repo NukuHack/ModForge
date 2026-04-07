@@ -1,10 +1,14 @@
-package modforge.backend.model.item;
+package modforge.backend.model;
 
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.ModItem.BaseModItem;
 import modforge.backend.model.storm.StormData;
 
+/**
+ * I -> Item
+ * Contains all the item-types stored in the database
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
 public final class I {

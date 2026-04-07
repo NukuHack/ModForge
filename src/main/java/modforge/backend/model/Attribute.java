@@ -1,10 +1,10 @@
-package modforge.backend.model.attributes;
+package modforge.backend.model;
 
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import modforge.backend.model.item.E.MathOperation;
+import modforge.backend.model.E.MathOperation;
 
 import java.util.*;
 import java.util.regex.Pattern;

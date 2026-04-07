@@ -5,10 +5,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import modforge.backend.ItemType;
-import modforge.backend.model.attributes.Attribute;
 
 import java.util.*;
 
+/**
+ * Interface - generic item...
+ */
 public interface ModItem {
 	// ── Attribute names that hold localization keys (checked case-insensitively)
 	// TODO : right now you can only filter on actual items and since we don't have any item with like straight "UIName" because that si a special item, we can't filter on them
@@ -19,7 +21,12 @@ public interface ModItem {
 	
 	void setId(final String id);
 	
-	String getIdKey();
+	/**
+	 * @return ID key for Element mapping from XML data
+	 */
+	default String getIdKey() {
+		return ItemType.getIdKey(this.getClass());
+	}
 	
 	String getPath();
 	
@@ -93,11 +100,6 @@ public interface ModItem {
 		@Getter
 		@Setter
 		private String path;
-		
-		@Override
-		public String getIdKey() {
-			return ItemType.getIdKey(this.getClass());
-		}
 		
 		@Override
 		public List<Attribute> getAttributes() {

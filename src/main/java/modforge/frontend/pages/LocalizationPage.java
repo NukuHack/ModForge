@@ -5,7 +5,7 @@ import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.item.E.Language;
+import modforge.backend.model.E.Language;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;

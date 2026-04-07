@@ -7,7 +7,7 @@ import lombok.Setter;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
-import modforge.backend.model.item.E.Language;
+import modforge.backend.model.E.Language;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

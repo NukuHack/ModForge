@@ -1,4 +1,4 @@
-package modforge.backend.model.item;
+package modforge.backend.model;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -13,6 +13,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * E -> Enum
+ * Contains all the Enums stored in database, nice
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
 public class E {

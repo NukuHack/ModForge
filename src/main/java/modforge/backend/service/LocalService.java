@@ -6,7 +6,7 @@ import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.item.E.Language;
+import modforge.backend.model.E.Language;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;

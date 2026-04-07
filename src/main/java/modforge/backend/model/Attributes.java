@@ -1,4 +1,4 @@
-package modforge.backend.model.attributes;
+package modforge.backend.model;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

@@ -2,7 +2,7 @@ package modforge.backend;
 
 import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.item.I;
+import modforge.backend.model.I;
 
 import java.util.Arrays;
 import java.util.Locale;

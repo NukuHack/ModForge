@@ -5,8 +5,8 @@ import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.attributes.Attribute;
-import modforge.backend.model.attributes.Attributes;
+import modforge.backend.model.Attribute;
+import modforge.backend.model.Attributes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

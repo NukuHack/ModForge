@@ -3,7 +3,7 @@ package modforge.backend.service;
 import modforge.Util;
 import modforge.backend.DataPoint;
 import modforge.backend.ModData;
-import modforge.backend.model.item.I.Storm;
+import modforge.backend.model.I.Storm;
 import modforge.backend.model.storm.*;
 import org.w3c.dom.*;
 
@@ -652,6 +652,7 @@ public final class StormService {
 		// -------------------------------------------------------------------------
 		
 		private static void parseOperations(Element operationsEl, StormRule rule) {
+			// TODO : check if self closing tag of operations actually work or not
 			forEachElement(operationsEl, child -> rule.getOperations().add(parseOperation(child)));
 		}
 		

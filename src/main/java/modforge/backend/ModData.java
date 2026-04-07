@@ -3,7 +3,7 @@ package modforge.backend;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import modforge.backend.model.ModItem;
-import modforge.backend.model.item.E.Language;
+import modforge.backend.model.E.Language;
 
 import java.util.*;
 
