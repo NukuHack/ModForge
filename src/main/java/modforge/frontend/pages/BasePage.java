@@ -157,12 +157,12 @@ public abstract class BasePage extends JPanel {
 		}
 		
 		// ── Linked IDs ────────────────────────────────────────────────────
-		if (! item.getLinkedIds().isEmpty()) {
+		if (! item.getLinkedItems().isEmpty()) {
 			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 			html.append("<span style='color:#6c6f85;font-size:10px;'>LINKED ITEMS</span><br/><br/>");
-			for (String linkedId : item.getLinkedIds()) {
+			for (var linkedId : item.getLinkedItems()) {
 				html.append("<div style='margin-bottom:6px;'>");
-				html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(linkedId)).append("</span>");
+				html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(linkedId.toString())).append("</span>");
 				html.append("</div>");
 			}
 		}

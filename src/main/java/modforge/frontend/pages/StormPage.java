@@ -87,7 +87,7 @@ public class StormPage extends BasePage {
 	private static String xmlToHtml(String xml) {
 		String escaped = xml.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 		// Basic syntax coloring
-		escaped = escaped.replaceAll("(&lt;[/]?)([a-zA-Z_][a-zA-Z0-9_]*)", "$1<font color='#89b4fa'>$2</font>").replaceAll("([a-zA-Z_][a-zA-Z0-9_]*)=&quot;", "<font color='#89dceb'>$1</font>=<font color='#a6e3a1'>&quot;").replaceAll("&quot;(?=[^=])", "&quot;</font>");
+		escaped = escaped.replaceAll("(&lt;/?)([a-zA-Z_][a-zA-Z0-9_]*)", "$1<font color='#89b4fa'>$2</font>").replaceAll("([a-zA-Z_][a-zA-Z0-9_]*)=&quot;", "<font color='#89dceb'>$1</font>=<font color='#a6e3a1'>&quot;").replaceAll("&quot;(?=[^=])", "&quot;</font>");
 		return "<html><body style='background:#11111b;color:#cdd6f4;font-family:monospace;font-size:11px;padding:8px;white-space:pre;'>" + escaped + "</body></html>";
 	}
 	
@@ -518,7 +518,7 @@ public class StormPage extends BasePage {
 		
 		String modId = choice.split(" \\| ")[0];
 		mods.stream().filter(m -> m.id.equals(modId)).findFirst().ifPresent(mod -> {
-			String gameDir = window.getRegistry().userConfig.gameDirectory;
+			String gameDir = window.getRegistry().userConfig.getGameDirectory();
 			boolean ok = StormService.writeStormFile(gameDir, modId, currentStorm);
 			if (ok)
 				window.snackbar.show("Storm file saved to mod: " + mod.name, BarManager.Type.SUCCESS);
@@ -882,7 +882,6 @@ public class StormPage extends BasePage {
 			JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
 			row.setOpaque(false);
 			for (int i = 0; i < STEP_TITLES.length; i++) {
-				final int idx = i;
 				JLabel dot = new JLabel("●");
 				dot.setName("step_dot_" + i);
 				dot.setForeground(i == 0 ? MainWindow.ACCENT : MainWindow.MUTED);

@@ -3,7 +3,6 @@
 package modforge.backend.service;
 
 import modforge.Util;
-import modforge.backend.model.Language;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +30,8 @@ public abstract class BaseServiceTest {
 	
 	protected static Path tmp;
 	
-	// Make this non-static to avoid static mock issues, or remove if not needed
-	// @Mock
-	// protected static UserService userService;  // Static mocks cause problems
-	
 	protected void assumeResourcesOutputWritable() {
-		var _ = RESOURCES_OUTPUT;
+		var out = RESOURCES_OUTPUT;
 	}
 	
 	protected static final Path RESOURCES_OUTPUT = Paths.get("src/test/resources/out");
@@ -89,7 +84,8 @@ public abstract class BaseServiceTest {
 	
 	protected boolean resourceExists(String resourceName) {
 		try (InputStream is = BaseServiceTest.class.getClassLoader().getResourceAsStream(resourceName)) {
-			if (is != null) return true;
+			if (is != null)
+				return true;
 		} catch (IOException e) {
 			// fall through
 		}
@@ -118,7 +114,8 @@ public abstract class BaseServiceTest {
 	
 	@BeforeEach
 	protected void loadCommonResources() throws IOException {
-		if (commonResourcesLoaded) return;
+		if (commonResourcesLoaded)
+			return;
 		modCfgBytes = readResourceBytes("cfg/mod.cfg");
 		autoexecCfgBytes = readResourceBytes("cfg/autoexec.cfg");
 		itemXmlBytes = readResourceBytes("item_xml/item__lootinfo.xml");
@@ -134,16 +131,16 @@ public abstract class BaseServiceTest {
 	// ================================================================
 	
 	protected UserConfig createStubUserService(String gameDir) {
-		UserConfig us = new UserConfig();
-		us.gameDirectory = gameDir;
-		us.language = Language.ENGLISH;
+		UserConfig us = new UserConfig.UserConfigImpl();
+		us.setGameDirectory(gameDir);
+		us.setLanguage(Language.ENGLISH);
 		return us;
 	}
 	
 	protected UserConfig createStubUserService(String gameDir, Language language) {
-		UserConfig us = new UserConfig();
-		us.gameDirectory = gameDir;
-		us.language = language;
+		UserConfig us = new UserConfig.UserConfigImpl();
+		us.setGameDirectory(gameDir);
+		us.setLanguage(language);
 		return us;
 	}
 	
@@ -170,9 +167,7 @@ public abstract class BaseServiceTest {
 	
 	protected void assertDirectoryContainsExtension(Path dir, String extension) throws IOException {
 		assertTrue(Files.exists(dir), "Directory does not exist: " + dir);
-		long count = Files.list(dir)
-							 .filter(p -> p.getFileName().toString().endsWith(extension))
-							 .count();
+		long count = Files.list(dir).filter(p -> p.getFileName().toString().endsWith(extension)).count();
 		assertTrue(count > 0, "Directory " + dir + " contains no files with extension " + extension);
 	}
 	
@@ -184,9 +179,5 @@ public abstract class BaseServiceTest {
 	protected <K, V> void assertNonEmptyMap(Map<K, V> map, String message) {
 		assertNotNull(map, message + " - map is null");
 		assertFalse(map.isEmpty(), message + " - map is empty");
-	}
-	
-	protected void cleanUp() {
-		// Default: no-op
 	}
 }

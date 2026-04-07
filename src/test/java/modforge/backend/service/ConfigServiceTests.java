@@ -47,13 +47,13 @@ class ConfigServiceTests extends BaseServiceTest {
 	@DisplayName("comments and blank lines are stripped")
 	void commentsStripped() throws Exception {
 		final var content = """
-                ; top-level comment
-                # hash comment
-                
-                key1 = value1
-                ; inline comment line
-                key2 = value2 ; trailing comment
-                """;
+				; top-level comment
+				# hash comment
+				
+				key1 = value1
+				; inline comment line
+				key2 = value2 ; trailing comment
+				""";
 		Map<String, String> cfg = parseConfigString(content);
 		assertEquals(2, cfg.size());
 		assertEquals("value1", cfg.get("key1"));

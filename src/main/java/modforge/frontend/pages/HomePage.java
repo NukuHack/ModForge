@@ -14,7 +14,7 @@ public class HomePage extends BasePage {
 	
 	public HomePage(MainWindow w) {
 		super(w);
-		final String gameDir = w.getRegistry().userConfig.gameDirectory;
+		final String gameDir = w.getRegistry().userConfig.getGameDirectory();
 		
 		// Use GridBagLayout for perfect centering
 		setLayout(new GridBagLayout());

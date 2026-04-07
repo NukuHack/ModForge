@@ -1,13 +1,17 @@
 package modforge;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.LoadingScreen;
 import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @lombok.extern.slf4j.Slf4j
 public class Main {
 	static void main(String[] args) {
@@ -15,6 +19,7 @@ public class Main {
 		applyTheme();
 		
 		System.out.println("ModForge Java - starting...");
+		log.info("Startup at {}", LocalDateTime.now());
 		
 		SwingUtilities.invokeLater(() -> {
 			// Show loading splash while services boot

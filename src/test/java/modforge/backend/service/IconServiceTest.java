@@ -94,7 +94,7 @@ class IconServiceTest extends BaseServiceTest {
 	void setUp() {
 		testMod = new ModData();
 		testMod.id = "test_mod";
-		userConfig = new UserConfig();
+		userConfig = new UserConfig.UserConfigImpl();
 		iconService = new IconService(userConfig);
 	}
 	
@@ -449,12 +449,7 @@ class IconServiceTest extends BaseServiceTest {
 					Files.write(outputPath, recompressedDds);
 					
 					successCount++;
-					System.out.printf("  ✓ %-40s → %s (original: %d bytes, recompressed: %d bytes)%n",
-							archivePath,
-							outputPath.getFileName(),
-							ddsBytes.length,
-							recompressedDds.length
-					);
+					System.out.printf("  ✓ %-40s → %s (original: %d bytes, recompressed: %d bytes)%n", archivePath, outputPath.getFileName(), ddsBytes.length, recompressedDds.length);
 					
 					// Clean up temporary PNG
 					Files.deleteIfExists(tempPng);
@@ -468,41 +463,26 @@ class IconServiceTest extends BaseServiceTest {
 			
 			// Step 4: Verify results
 			assertTrue(successCount > 0, "At least one DDS entry must be successfully processed");
-			assertEquals(indexedDds.size(), successCount + failureCount,
-					"All entries must be either successful or failed");
+			assertEquals(indexedDds.size(), successCount + failureCount, "All entries must be either successful or failed");
 			
 			// Step 5: Verify output directory structure and files
-			long outputFileCount = Files.walk(outputRoot)
-										   .filter(Files::isRegularFile)
-										   .filter(p -> p.toString().endsWith(".dds"))
-										   .count();
+			long outputFileCount = Files.walk(outputRoot).filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".dds")).count();
 			
-			assertEquals(successCount, outputFileCount,
-					"Number of output DDS files must match number of successfully processed entries");
+			assertEquals(successCount, outputFileCount, "Number of output DDS files must match number of successfully processed entries");
 			
 			// Optional: Verify that each output DDS can be read back as a valid image
-			System.out.printf("%nSummary: %d successful, %d failed, %d output files in %s%n",
-					successCount, failureCount, outputFileCount, outputRoot);
+			System.out.printf("%nSummary: %d successful, %d failed, %d output files in %s%n", successCount, failureCount, outputFileCount, outputRoot);
 			
 			// Spot-check: Try to read back the first output DDS to ensure it's valid
 			if (outputFileCount > 0) {
-				Path firstOutput = Files.walk(outputRoot)
-										   .filter(Files::isRegularFile)
-										   .filter(p -> p.toString().endsWith(".dds"))
-										   .findFirst()
-										   .orElseThrow();
+				Path firstOutput = Files.walk(outputRoot).filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".dds")).findFirst().orElseThrow();
 				
 				byte[] outputDds = Files.readAllBytes(firstOutput);
 				BufferedImage roundTripImage = IconService.convertToImage(outputDds);
 				assertNotNull(roundTripImage, "Round-tripped DDS must be decodable");
-				assertTrue(roundTripImage.getWidth() > 0 && roundTripImage.getHeight() > 0,
-						"Round-tripped image must have valid dimensions");
+				assertTrue(roundTripImage.getWidth() > 0 && roundTripImage.getHeight() > 0, "Round-tripped image must have valid dimensions");
 				
-				System.out.printf("%nValidation: Successfully decoded round-tripped DDS: %s (%dx%d)%n",
-						firstOutput.getFileName(),
-						roundTripImage.getWidth(),
-						roundTripImage.getHeight()
-				);
+				System.out.printf("%nValidation: Successfully decoded round-tripped DDS: %s (%dx%d)%n", firstOutput.getFileName(), roundTripImage.getWidth(), roundTripImage.getHeight());
 			}
 		}
 	}
@@ -525,7 +505,7 @@ class IconServiceTest extends BaseServiceTest {
 			Files.createDirectories(modData);
 			Files.copy(TEST_PAK, modData.resolve("test.pak"));
 			
-			Map<String, byte[]> loaded = iconService.loadModIcons(modData);
+			Map<String, byte[]> loaded = IconService.loadModIcons(modData);
 			
 			assertNotNull(loaded, "result must not be null");
 			assertFalse(loaded.isEmpty(), "should have loaded at least one icon");
@@ -537,7 +517,7 @@ class IconServiceTest extends BaseServiceTest {
 		@Test
 		@DisplayName("returns empty map for a non-existent mod path – no exception")
 		void returnsEmptyMapForMissingModPath() {
-			Map<String, byte[]> result = iconService.loadModIcons(tempDir.resolve("nonexistent/Data"));
+			Map<String, byte[]> result = IconService.loadModIcons(tempDir.resolve("nonexistent/Data"));
 			assertNotNull(result);
 			assertTrue(result.isEmpty(), "missing path must yield an empty map");
 		}
@@ -549,7 +529,7 @@ class IconServiceTest extends BaseServiceTest {
 			Files.createDirectories(emptyData);
 			// Intentionally leave the folder empty
 			
-			Map<String, byte[]> result = iconService.loadModIcons(emptyData);
+			Map<String, byte[]> result = IconService.loadModIcons(emptyData);
 			assertNotNull(result);
 			assertTrue(result.isEmpty(), "folder with no PAKs must yield an empty map");
 		}

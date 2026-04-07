@@ -3,7 +3,6 @@ package modforge.frontend.pages;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
-import modforge.backend.model.Language;
 import modforge.backend.model.ModItem;
 import modforge.backend.service.LocalService;
 import modforge.frontend.BarManager;
@@ -20,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static modforge.Util.escHtml;
+import modforge.backend.model.item.E.Language;
 
 // =============================================================================
 //  LANG EDIT PAGE
@@ -99,7 +99,7 @@ public class LangEdit extends BaseEditPage {
 		langSelector = new JComboBox<>();
 		for (String name : Language.getAllDisplayNames())
 			langSelector.addItem(name);
-		final var defLang = window.getRegistry().userConfig.language;
+		final var defLang = window.getRegistry().userConfig.getLanguage();
 		if (defLang != null)
 			langSelector.setSelectedItem(defLang.getDisplayName());
 		styleCombo(langSelector);
@@ -388,7 +388,7 @@ public class LangEdit extends BaseEditPage {
 	}
 	
 	private void refreshLangSelector() {
-		final var defLang = window.getRegistry().userConfig.language;
+		final var defLang = window.getRegistry().userConfig.getLanguage();
 		if (defLang != null)
 			langSelector.setSelectedItem(defLang.getDisplayName());
 	}

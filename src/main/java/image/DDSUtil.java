@@ -166,11 +166,11 @@ public class DDSUtil {
 		try {
 			data = readHeader(dis, true);
 		} catch (Exception ex) {
-			log.warn("DDS header LE failed: " + ex);
+			log.warn("DDS header LE failed: {}", String.valueOf(ex));
 			try {
 				data = readHeader(dis, false);
 			} catch (Exception ex2) {
-				log.warn("DDS header BE failed: " + ex2);
+				log.warn("DDS header BE failed: {}", String.valueOf(ex2));
 				return null;
 			}
 		}
@@ -649,6 +649,10 @@ public class DDSUtil {
 			tbl[6] = 0;
 			tbl[7] = 255;
 		}
+		return getBest(alpha, tbl);
+	}
+	
+	static int getBest(int alpha, int[] tbl) {
 		int best = 0, bestD = Integer.MAX_VALUE;
 		for (int i = 0; i < 8; i++) {
 			int d = Math.abs(alpha - tbl[i]);
@@ -676,8 +680,7 @@ public class DDSUtil {
 	
 	/** Write a standard 128-byte DDS header for DXT1/3/5. */
 	private static void writeDDSHeader(OutputStream out, int w, int h, int fourCC) throws IOException {
-		byte[] hdr = new byte[128];
-		ByteBuffer buf = ByteBuffer.wrap(hdr).order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuffer buf = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
 		int blockSize = (fourCC == PixelFormat.FOURCC_DXT1) ? 8 : 16;
 		
 		buf.putInt(DDS_MAGIC);
@@ -688,13 +691,12 @@ public class DDSUtil {
 		buf.putInt(blocksWide(w) * blocksHigh(h) * blockSize); // linearSize
 		buf.putInt(0);
 		buf.putInt(0); // depth, mipmaps
-		writeHeaderBuffer(out, hdr, buf, fourCC);
+		writeHeaderBuffer(out, buf, fourCC);
 	}
 	
 	/** Write a 128-byte DDS header + 20-byte DX10 extension. */
 	private static void writeDX10Header(OutputStream out, int w, int h, int linearSize, int dxgiFormat) throws IOException {
-		byte[] hdr = new byte[128];
-		ByteBuffer buf = ByteBuffer.wrap(hdr).order(ByteOrder.LITTLE_ENDIAN);
+		var buf = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
 		
 		buf.putInt(DDS_MAGIC);
 		buf.putInt(124);
@@ -704,19 +706,12 @@ public class DDSUtil {
 		buf.putInt(linearSize);
 		buf.putInt(0);
 		buf.putInt(0);
-		writeHeaderBuffer(out, hdr, buf, PixelFormat.FOURCC_DX10);
+		writeHeaderBuffer(out, buf, PixelFormat.FOURCC_DX10);
 		
-		byte[] ext = new byte[20];
-		ByteBuffer x = ByteBuffer.wrap(ext).order(ByteOrder.LITTLE_ENDIAN);
-		x.putInt(dxgiFormat);
-		x.putInt(3); // D3D10_RESOURCE_DIMENSION_TEXTURE2D
-		x.putInt(0);
-		x.putInt(1);
-		x.putInt(0);
-		out.write(ext);
+		TextureImporter.writeSimpleHeaderBuffer(out, dxgiFormat);
 	}
 	
-	private static void writeHeaderBuffer(OutputStream out, byte[] hdr, ByteBuffer buf, int dx104cc) throws IOException {
+	static void writeHeaderBuffer(OutputStream out, ByteBuffer buf, int dx104cc) throws IOException {
 		buf.position(buf.position() + 44);
 		buf.putInt(32);
 		buf.putInt(0x00000004); // DDPF_FOURCC
@@ -727,7 +722,7 @@ public class DDSUtil {
 		buf.putInt(0);
 		buf.putInt(0);
 		buf.putInt(0x00001000);
-		out.write(hdr);
+		out.write(buf.array());
 	}
 	
 	// ── Bit I/O helpers ─────────────────────────────────────────────────────

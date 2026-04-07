@@ -1,11 +1,13 @@
 package modforge.backend.model.attributes;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@lombok.extern.slf4j.Slf4j
-public non-sealed class ListAttribute<M> extends BaseAttribute<List<M>> {
+@Slf4j
+public class ListAttribute<M> extends BaseAttribute<List<M>> {
 	public ListAttribute(String name, List<M> value) {
 		super(name, value);
 	}
@@ -23,15 +25,16 @@ public non-sealed class ListAttribute<M> extends BaseAttribute<List<M>> {
 	/**
 	 * Helper method to deep clone nested lists
 	 */
-	private <O> List<O> deepCloneList(List<O> list) {
-		if (list == null) return null;
+	private List<M> deepCloneList(List<M> list) {
+		if (list == null)
+			return null;
 		
-		List<O> clonedList = new ArrayList<>(list.size());
-		for (O e : list) {
-			if (e instanceof Attribute) {
-				throw new IllegalArgumentException("No nesting inside attributes");
+		List<M> clonedList = new ArrayList<>(list.size());
+		for (M e : list) {
+			if (e instanceof Attribute<?> a) {
+				clonedList.add((M) a.deepClone());
 			} else if (e instanceof Collection<?>) {
-				throw new IllegalArgumentException("No nesting inside attributes");
+				throw new IllegalArgumentException("No nesting inside attributes, Use ListAttribute for that");
 			} else {
 				clonedList.add(e);
 			}

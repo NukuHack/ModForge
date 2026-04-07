@@ -80,7 +80,7 @@ class ItemServiceTests extends BaseServiceTest {
 	void loadItemsMissingDir() {
 		var us = createStubUserService(tmp.toString());
 		var svc = new ItemService(us);
-		var items = svc.loadItems(tmp.resolve("nonexistent"));
+		var items = ItemService.loadItems(tmp.resolve("nonexistent"));
 		assertTrue(items.isEmpty());
 	}
 	
@@ -91,7 +91,7 @@ class ItemServiceTests extends BaseServiceTest {
 		Files.createDirectories(dataDir);
 		var us = createStubUserService(tmp.toString());
 		var svc = new ItemService(us);
-		var items = svc.loadItems(dataDir);
+		var items = ItemService.loadItems(dataDir);
 		assertTrue(items.isEmpty());
 	}
 	
@@ -104,7 +104,7 @@ class ItemServiceTests extends BaseServiceTest {
 		
 		var us = createStubUserService(tmp.toString());
 		var svc = new ItemService(us);
-		var items = svc.loadItems(dataDir);
+		var items = ItemService.loadItems(dataDir);
 		assertFalse(items.isEmpty(), "Should load at least one item from perk-data.pak");
 	}
 	
@@ -133,7 +133,7 @@ class ItemServiceTests extends BaseServiceTest {
 		var us = createStubUserService(outBase.toString());
 		var svc = new ItemService(us);
 		
-		var items = svc.loadItems(dataDir);
+		var items = ItemService.loadItems(dataDir);
 		assertFalse(items.isEmpty());
 		
 		var mod = new ModData();

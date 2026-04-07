@@ -1,19 +1,17 @@
 package modforge.backend;
 
-import java.util.Objects;
+import lombok.NonNull;
+import lombok.Value;
 
+@Value
 @lombok.extern.slf4j.Slf4j
-public record DataPoint(String path, String endpoint, Class<?> type) {
-	public DataPoint(String path, String endpoint, Class<?> type) {
-		this.path = Objects.requireNonNull(path, "path");
-		this.endpoint = Objects.requireNonNull(endpoint, "endpoint");
-		this.type = Objects.requireNonNull(type, "type");
-	}
-	
+public class DataPoint {
+	@NonNull String path;
+	@NonNull String endpoint;
+	@NonNull Class<?> type;
 	
 	@Override
 	public String toString() {
 		return "DataPoint{type=" + type.getSimpleName() + ", endpoint=" + endpoint + ", path=" + path + "}";
 	}
 }
-

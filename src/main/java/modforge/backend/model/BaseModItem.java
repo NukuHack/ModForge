@@ -1,17 +1,19 @@
 package modforge.backend.model;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import modforge.backend.ItemType;
 import modforge.backend.model.attributes.Attribute;
 
 import java.util.*;
 
-
+@NoArgsConstructor
 @lombok.extern.slf4j.Slf4j
 public abstract class BaseModItem implements ModItem {
 	private final List<Attribute> attributes = new ArrayList<>();
-	private final List<String> linkedIds = new ArrayList<>();
+	private final List<ModItem> linkedItems = new ArrayList<>();
 	// TODO change the ID from string to a nicer object
 	// - can not do since we have id of 0 and id of -1 ... LOL
 	@Getter
@@ -53,24 +55,24 @@ public abstract class BaseModItem implements ModItem {
 	}
 	
 	@Override
-	public List<String> getLinkedIds() {
-		return Collections.unmodifiableList(this.linkedIds);
+	public List<ModItem> getLinkedItems() {
+		return Collections.unmodifiableList(this.linkedItems);
 	}
 	
 	@Override
-	public void setLinkedId(final Collection<String> linkedIds) {
-		this.linkedIds.clear();
-		this.linkedIds.addAll(linkedIds);
+	public void setLinkedItem(final Collection<ModItem> linkedItems) {
+		this.linkedItems.clear();
+		this.linkedItems.addAll(linkedItems);
 	}
 	
 	@Override
-	public void addLinkedId(final String linkedId) {
-		this.linkedIds.add(linkedId);
+	public void addLinkedItem(final ModItem linkedItem) {
+		this.linkedItems.add(linkedItem);
 	}
 	
 	@Override
-	public void addLinkedId(final Collection<String> linkedId) {
-		this.linkedIds.addAll(linkedId);
+	public void addLinkedItem(final Collection<ModItem> linkedItem) {
+		this.linkedItems.addAll(linkedItem);
 	}
 	
 	@Override
@@ -92,5 +94,11 @@ public abstract class BaseModItem implements ModItem {
 	public Optional<Attribute> findAttr(final String candidate) {
 		final String lo = candidate.toLowerCase(Locale.ROOT);
 		return this.attributes.stream().filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo)).findFirst();
+	}
+	
+	
+	@Override
+	public String toString() {
+		return this.getClass().getName() + "{attributes=" + attributes + ", linkedItems=" + linkedItems + ", id='" + id + '\'' + ", path='" + path + '\'' + '}';
 	}
 }

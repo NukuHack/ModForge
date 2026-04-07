@@ -18,7 +18,7 @@ public final class ServiceRegistry {
 	public final ModService modService;
 	
 	public ServiceRegistry() {
-		userConfig = new UserConfig();
+		userConfig = new UserConfig.UserConfigImpl();
 		userConfig.load();
 		
 		configService = new ConfigService(userConfig);

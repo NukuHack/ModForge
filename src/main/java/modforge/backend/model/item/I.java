@@ -1,12 +1,13 @@
 package modforge.backend.model.item;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.BaseModItem;
 
-@lombok.extern.slf4j.Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Slf4j
 public final class I {
-	private I() {
-	}
-	
 	public static class Ammo extends BaseModItem {
 	}
 	
@@ -56,6 +57,12 @@ public final class I {
 	}
 	
 	public static class Key extends BaseModItem {
+	}
+	
+	public static class Ointment extends BaseModItem {
+	}
+	
+	public static class AlchemyBase extends BaseModItem {
 	}
 	
 	public static class ItemAlias extends BaseModItem {

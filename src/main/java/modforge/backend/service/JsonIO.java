@@ -27,7 +27,7 @@ public final class JsonIO {
 				return JsonValue.parse(content);
 			}
 		} catch (Exception e) {
-			log.error("Config load error: " + e.getMessage());
+			log.error("Config load error: {}", e.getMessage());
 		}
 		return null;
 	}
@@ -44,7 +44,7 @@ public final class JsonIO {
 			Files.writeString(target, arr.toJsonString(), StandardCharsets.UTF_8);
 			return true;
 		} catch (IOException e) {
-			log.warn("JSON write failed: " + e.getMessage());
+			log.warn("JSON write failed: {}", e.getMessage());
 		}
 		return false;
 	}
@@ -61,7 +61,7 @@ public final class JsonIO {
 			Files.writeString(target, item.toJsonString(), StandardCharsets.UTF_8);
 			return true;
 		} catch (IOException e) {
-			log.warn("JSON write failed: " + e.getMessage());
+			log.warn("JSON write failed: {}", e.getMessage());
 		}
 		return false;
 	}
@@ -144,8 +144,8 @@ public final class JsonIO {
 		}
 	}
 	
-	@Getter
 	public static class JsonString extends JsonValue {
+		@Getter
 		private final String value;
 		
 		public JsonString(String value) {
@@ -158,8 +158,8 @@ public final class JsonIO {
 		}
 	}
 	
-	@Getter
 	public static class JsonNumber extends JsonValue {
+		@Getter
 		private final Number value;
 		
 		public JsonNumber(Number value) {
@@ -172,9 +172,12 @@ public final class JsonIO {
 		}
 	}
 	
-	@Getter
 	public static class JsonBoolean extends JsonValue {
 		private final boolean value;
+		
+		public boolean getValue() {
+			return value;
+		}
 		
 		public JsonBoolean(boolean value) {
 			this.value = value;
@@ -292,7 +295,8 @@ public final class JsonIO {
 				}
 				if (c == '\\') {
 					pos++;
-					if (pos >= json.length()) break;
+					if (pos >= json.length())
+						break;
 					sb.append(switch (json.charAt(pos)) {
 						case '"' -> '"';
 						case '\\' -> '\\';

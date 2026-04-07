@@ -11,15 +11,30 @@ import java.util.List;
  *
  * <p>Custom operations can expose "mod attributes" that describe how
  * a stat can be modified (min/max mod values).</p>
+ *
+ * <p>Example XML:</p>
+ * <pre>{@code
+ * <customOperations>
+ *   <operation name="myOp" mode="add">
+ *     <attribute stat="Strength" minMod="0" maxMod="1"/>
+ *   </operation>
+ * </customOperations>
+ * }</pre>
  */
+@Getter
 @lombok.extern.slf4j.Slf4j
 public final class CustomStormOperation {
 	
 	/** Attribute ranges exposed by this operation. */
-	@Getter
 	private final List<ModAttribute> modAttributes = new ArrayList<>();
-	@Getter
+	
 	private String name = "";
+	
+	/**
+	 * Optional mode string from the {@code mode} XML attribute (e.g. {@code "add"},
+	 * {@code "set"}). Empty string when absent.
+	 */
+	private String mode = "";
 	
 	// -------------------------------------------------------------------------
 	
@@ -27,9 +42,14 @@ public final class CustomStormOperation {
 		this.name = name == null ? "" : name;
 	}
 	
+	public void setMode(String mode) {
+		this.mode = mode == null ? "" : mode;
+	}
+	
 	@Override
 	public String toString() {
-		return "CustomStormOperation{name='" + name + "', modAttrs=" + modAttributes.size() + "}";
+		return "CustomStormOperation{name='" + name + "', mode='" + mode
+					   + "', modAttrs=" + modAttributes.size() + "}";
 	}
 	
 	// -------------------------------------------------------------------------

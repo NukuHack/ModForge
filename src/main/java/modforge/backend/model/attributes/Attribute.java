@@ -1,10 +1,14 @@
 package modforge.backend.model.attributes;
 
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 
-public sealed interface Attribute<T> permits BaseAttribute {
+public interface Attribute<T> {
 	String getName();
 	
 	T getValue();
@@ -14,17 +18,14 @@ public sealed interface Attribute<T> permits BaseAttribute {
 	Attribute<T> deepClone(T newValue);
 }
 
-@lombok.extern.slf4j.Slf4j
-abstract sealed class BaseAttribute<T> implements Attribute<T> permits BooleanAttribute, BuffParam, DoubleAttribute, ListAttribute, StringAttribute {
-	@Getter
+@Getter
+@Slf4j
+@RequiredArgsConstructor
+abstract class BaseAttribute<T> implements Attribute<T> {
+	@NonNull
 	protected final String name;
-	@Getter
+	@NonNull
 	protected final T value;
-	
-	public BaseAttribute(String name, T value) {
-		this.name = Objects.requireNonNull(name);
-		this.value = Objects.requireNonNull(value);
-	}
 	
 	public String toString() {
 		return name + "=" + value;

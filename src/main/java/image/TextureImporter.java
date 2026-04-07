@@ -1,5 +1,7 @@
 package image;
 
+import lombok.Value;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -238,10 +240,14 @@ public class TextureImporter {
 	private static DecodeResult decodeLegacyFourcc(int fourCC, int pfFlags, byte[] pixelData, int w, int h, TextureImportResult.Builder result) throws IOException {
 		
 		return switch (fourCC) {
-			case 0x31545844 -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x31545844, false), "BC1 / DXT1 (4bpp, no real alpha)", w, h);
-			case 0x33545844 -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x33545844, false), "BC2 / DXT3 (8bpp, explicit alpha)", w, h);
-			case 0x35545844 -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x35545844, false), "BC3 / DXT5 (8bpp, interpolated alpha)", w, h);
-			case 0x37434200 -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x37434200, false), "BC7 (8bpp, high-quality RGBA)", w, h);
+			case 0x31545844 ->
+					decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x31545844, false), "BC1 / DXT1 (4bpp, no real alpha)", w, h);
+			case 0x33545844 ->
+					decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x33545844, false), "BC2 / DXT3 (8bpp, explicit alpha)", w, h);
+			case 0x35545844 ->
+					decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x35545844, false), "BC3 / DXT5 (8bpp, interpolated alpha)", w, h);
+			case 0x37434200 ->
+					decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x37434200, false), "BC7 (8bpp, high-quality RGBA)", w, h);
 			// ATI1 / ATI2 — alternate names for BC4 / BC5
 			case 0x31495441, 0x55344342, 0x53344342 -> decodeBC4(pixelData, w, h, result, false); // ATI1 / BC4U / BC4S
 			case 0x32495441, 0x55354342, 0x53354342 -> decodeBC5(pixelData, w, h, result); // ATI2 / BC5U / BC5S
@@ -261,9 +267,12 @@ public class TextureImporter {
 	private static DecodeResult decodeDxgi(int dxgi, byte[] pixelData, int w, int h, TextureImportResult.Builder result) throws IOException {
 		
 		return switch (dxgi) {
-			case DXGI_BC1_UNORM -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x31545844, false), "BC1 / DXT1 (DXGI)", w, h);
-			case DXGI_BC2_UNORM -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x33545844, false), "BC2 / DXT3 (DXGI)", w, h);
-			case DXGI_BC3_UNORM -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x35545844, false), "BC3 / DXT5 (DXGI)", w, h);
+			case DXGI_BC1_UNORM ->
+					decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x31545844, false), "BC1 / DXT1 (DXGI)", w, h);
+			case DXGI_BC2_UNORM ->
+					decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x33545844, false), "BC2 / DXT3 (DXGI)", w, h);
+			case DXGI_BC3_UNORM ->
+					decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0x35545844, false), "BC3 / DXT5 (DXGI)", w, h);
 			case DXGI_BC7_UNORM -> decodeViaDDSUtil(buildMinimalDds(pixelData, w, h, 0, true), "BC7 (DXGI)", w, h);
 			case DXGI_BC4_UNORM -> decodeBC4(pixelData, w, h, result, false);
 			case DXGI_BC4_SNORM -> decodeBC4(pixelData, w, h, result, true);
@@ -469,10 +478,10 @@ public class TextureImporter {
 		}
 		
 		// Write DX10-header DDS with DXGI_BC5_UNORM (83)
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(148 + blocks.length);
-		writeDx10Dds(baos, w, h, DXGI_BC5_UNORM, bw * bh * 16);
-		baos.write(blocks);
-		return baos.toByteArray();
+		ByteArrayOutputStream bas = new ByteArrayOutputStream(148 + blocks.length);
+		writeDx10Dds(bas, w, h, DXGI_BC5_UNORM, bw * bh * 16);
+		bas.write(blocks);
+		return bas.toByteArray();
 	}
 	
 	/** Encode 16 [0..255] values into one 8-byte BC4_UNORM block. */
@@ -497,15 +506,7 @@ public class TextureImporter {
 	
 	private static int bc4ClosestIndex8(int val, int e0, int e1) {
 		int[] table = { e0, e1, (6 * e0 + e1) / 7, (5 * e0 + 2 * e1) / 7, (4 * e0 + 3 * e1) / 7, (3 * e0 + 4 * e1) / 7, (2 * e0 + 5 * e1) / 7, (e0 + 6 * e1) / 7 };
-		int best = 0, bestD = Integer.MAX_VALUE;
-		for (int i = 0; i < 8; i++) {
-			int d = Math.abs(val - table[i]);
-			if (d < bestD) {
-				bestD = d;
-				best = i;
-			}
-		}
-		return best;
+		return DDSUtil.getBest(val, table);
 	}
 	
 	// =========================================================================
@@ -519,21 +520,25 @@ public class TextureImporter {
 	private static byte[] buildMinimalDds(byte[] pixelData, int w, int h, int fourCC, boolean bc7) throws IOException {
 		if (bc7) {
 			// BC7 needs DX10 header
-			ByteArrayOutputStream baos = new ByteArrayOutputStream(148 + pixelData.length);
-			writeDx10Dds(baos, w, h, DXGI_BC7_UNORM, pixelData.length);
-			baos.write(pixelData);
-			return baos.toByteArray();
+			ByteArrayOutputStream bas = new ByteArrayOutputStream(148 + pixelData.length);
+			writeDx10Dds(bas, w, h, DXGI_BC7_UNORM, pixelData.length);
+			bas.write(pixelData);
+			return bas.toByteArray();
 		}
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(128 + pixelData.length);
-		writeLegacyDds(baos, w, h, fourCC, pixelData.length);
-		baos.write(pixelData);
-		return baos.toByteArray();
+		ByteArrayOutputStream bas = new ByteArrayOutputStream(128 + pixelData.length);
+		writeLegacyDds(bas, w, h, fourCC, pixelData.length);
+		bas.write(pixelData);
+		return bas.toByteArray();
 	}
 	
 	/** Write a standard 128-byte DDS header (legacy FourCC). */
 	private static void writeLegacyDds(OutputStream out, int w, int h, int fourCC, int dataSize) throws IOException {
-		byte[] hdr = new byte[128];
-		ByteBuffer buf = ByteBuffer.wrap(hdr).order(ByteOrder.LITTLE_ENDIAN);
+		var buf = writeHeaderTop(out, w, h, dataSize);
+		DDSUtil.writeHeaderBuffer(out, buf, fourCC);
+	}
+	
+	static ByteBuffer writeHeaderTop(OutputStream out, int w, int h, int dataSize) {
+		ByteBuffer buf = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(DDS_MAGIC);
 		buf.putInt(124);
 		buf.putInt(0x00081007); // DDSD flags
@@ -542,31 +547,12 @@ public class TextureImporter {
 		buf.putInt(dataSize);
 		buf.putInt(0); // depth
 		buf.putInt(1); // mipCount
-		buf.position(buf.position() + 44); // reserved
-		buf.putInt(32); // pixel format size
-		buf.putInt(0x00000004); // DDPF_FOURCC
-		buf.putInt(fourCC);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0x00001000); // DDSCAPS_TEXTURE
-		out.write(hdr);
+		return buf;
 	}
 	
 	/** Write a 128-byte DDS header + 20-byte DX10 extension. */
 	private static void writeDx10Dds(OutputStream out, int w, int h, int dxgiFormat, int dataSize) throws IOException {
-		byte[] hdr = new byte[128];
-		ByteBuffer buf = ByteBuffer.wrap(hdr).order(ByteOrder.LITTLE_ENDIAN);
-		buf.putInt(DDS_MAGIC);
-		buf.putInt(124);
-		buf.putInt(0x00081007);
-		buf.putInt(h);
-		buf.putInt(w);
-		buf.putInt(dataSize);
-		buf.putInt(0);
-		buf.putInt(1); // depth, mipCount
+		var buf = writeHeaderTop(out, w, h, dataSize);
 		buf.position(buf.position() + 44);
 		buf.putInt(32);
 		buf.putInt(0x00000004); // DDPF_FOURCC
@@ -577,8 +563,12 @@ public class TextureImporter {
 		buf.putInt(0);
 		buf.putInt(0);
 		buf.putInt(0x00001000);
-		out.write(hdr);
+		out.write(buf.array());
 		
+		writeSimpleHeaderBuffer(out, dxgiFormat);
+	}
+	
+	static void writeSimpleHeaderBuffer(OutputStream out, int dxgiFormat) throws IOException {
 		byte[] ext = new byte[20];
 		ByteBuffer x = ByteBuffer.wrap(ext).order(ByteOrder.LITTLE_ENDIAN);
 		x.putInt(dxgiFormat);
@@ -670,7 +660,8 @@ public class TextureImporter {
 	// Internal data holder
 	// =========================================================================
 	
-	private record DecodeResult(byte[] rgba, int width, int height, String sourceFormatDescription,
-								boolean isNormalMapLike) {
+	@Value
+	private static class DecodeResult {
+		byte[] rgba; int width; int height; String sourceFormatDescription;	boolean isNormalMapLike;
 	}
 }

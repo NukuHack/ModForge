@@ -1,5 +1,9 @@
 package modforge.backend;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.Value;
 import modforge.backend.model.ModItem;
 
 import java.nio.file.Path;
@@ -8,6 +12,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @lombok.extern.slf4j.Slf4j
 public final class ItemType {
 	// ── Static indexes built once from ItemEntry.values() ───────────────────
@@ -30,29 +35,29 @@ public final class ItemType {
 		List<ITDisplay> displays = new ArrayList<>();
 		Set<String> epKeys = new HashSet<>();
 		
-		displays.add(new ITDisplay("All Types", _ -> true));
+		displays.add(new ITDisplay("All Types", i -> true));
 		
 		for (final var e : ItemEntry.values()) {
 			// id key (first registration wins – ItemEntry order is the priority)
 			idMap.put(e.clazz, e.idKey);
-			specs.add(new HandlerSpec(e.clazz, e.idKey, e.simpleName()));
+			specs.add(new HandlerSpec(e.clazz, e.idKey, e.objName));
 			
 			// endpoint key set
-			epKeys.add(e.endpointKey);
+			epKeys.add(e.fileName);
 			
 			// display dropdown
 			if (e.showInDisplay)
 				displays.add(new ITDisplay(e.displayName(), e.matcher()));
 		}
 		
-		displays.sort(Comparator.comparing(ITDisplay::displayName));
+		displays.sort(Comparator.comparing(ITDisplay::getDisplayName));
 		// Ensure "All Types" stays first after sorting
 		displays.sort((a, b) -> {
-			if ("All Types".equals(a.displayName()))
+			if ("All Types".equals(a.getDisplayName()))
 				return - 1;
-			if ("All Types".equals(b.displayName()))
+			if ("All Types".equals(b.getDisplayName()))
 				return 1;
-			return a.displayName().compareTo(b.displayName());
+			return a.getDisplayName().compareTo(b.getDisplayName());
 		});
 		
 		ID_KEYS = Collections.unmodifiableMap(idMap);
@@ -79,12 +84,12 @@ public final class ItemType {
 	public static Predicate<ModItem> matchesItemType(String selectedType) {
 		if (selectedType == null)
 			return null;
-		return DISPLAYS.stream().filter(d -> d.displayName().equals(selectedType)).findFirst().map(ITDisplay::matcher).orElse(null);
+		return DISPLAYS.stream().filter(d -> d.displayName.equals(selectedType)).findFirst().map(ITDisplay::getMatcher).orElse(null);
 	}
 	
 	/** All display names for the frontend type dropdown. */
 	public static Collection<String> getAllTypes() {
-		return DISPLAYS.stream().map(ITDisplay::displayName).collect(Collectors.toCollection(LinkedHashSet::new));
+		return DISPLAYS.stream().map(ITDisplay::getDisplayName).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 	
 	/** The XML attribute name used as the primary ID for a given item class. */
@@ -103,10 +108,17 @@ public final class ItemType {
 	// ── Nested types (public API – unchanged) ─────────────────────────────────
 	
 	/** Pair of a concrete item class and the XML attribute name that holds its ID. */
-	public record HandlerSpec(Class<? extends ModItem> clazz, String idKey, String name) {
+	@Value
+	public static class HandlerSpec {
+		@NonNull Class<? extends ModItem> clazz;
+		@NonNull String idKey;
+		@NonNull String name;
 	}
 	
 	/** Display entry for the frontend type dropdown. */
-	private record ITDisplay(String displayName, Predicate<ModItem> matcher) {
+	@Value
+	private static class ITDisplay {
+		@NonNull String displayName;
+		@NonNull Predicate<ModItem> matcher;
 	}
 }

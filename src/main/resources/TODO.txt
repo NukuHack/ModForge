@@ -6,13 +6,8 @@ Make storm work - from main ModForge
 
 parse other files (adb - animation database)
 
-IMPLEMENT OTHER ITEMS
-
-add new attributetype - enum - from main ModForge
-
 rename project to - com.nukuhack.modforge
-might be too lazy to do sutch thing ...
-
+might be too lazy to do such thing ...
 
 
 TODO : Make these Model -  perk_soul_abilitys, key_type, key_subtype, npc_tool_type, dice_badge_type, food_subtype, events, combat, game_over_type, rpg_context_type, player_damage, item_category, firearms,

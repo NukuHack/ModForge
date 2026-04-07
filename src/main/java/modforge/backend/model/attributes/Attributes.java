@@ -1,24 +1,25 @@
 package modforge.backend.model.attributes;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Attributes {
 	/**
 	 * Discovered at runtime by scanning XML documents.
 	 * Concurrent, since we now use multithreading
 	 */
-	private static final Map<String, Class<?>> TYPE_MAP = new ConcurrentHashMap<>();
+	public static final Map<String, Class<?>> TYPE_MAP = new ConcurrentHashMap<>();
 	
 	static {
 		TYPE_MAP.put("buff_params", BuffParam.class);
-	}
-	
-	private Attributes() {
 	}
 	
 	/**
@@ -83,30 +84,32 @@ public final class Attributes {
 		if (attr instanceof List<?> list) {
 			if (list.isEmpty())
 				return "";
-			if (list.getFirst() instanceof String)
+			if (list.get(0) instanceof String)
 				return String.join(",", list.stream().map(Object::toString).toList());
 			var sb = new StringBuilder();
 			for (var f : list)
 				if (f instanceof Attribute<?> a)
 					sb.append(serializeValue(a)).append(',');
 				else
-					log.warn("found list with unsupported type: " + (list.stream().limit(20).toList()) + " type: " + f.getClass());
+					log.warn("found list with unsupported type: {} type: {}", list.stream().limit(20).toList(), f.getClass());
 			return sb.toString();
 		}
-		return switch (v) {
-			case BuffParam b -> b.toAttrString();
-			case Enum<?> e -> String.valueOf(e.ordinal());
-			case Boolean b -> b.toString().toLowerCase(Locale.ROOT);
-			case Double d -> {
-				if (Double.isInfinite(d) || Double.isNaN(d))
-					yield "-1";
-				long rounded = Math.round(d);
-				if (Math.abs(d - rounded) < 1e-8)
-					yield String.valueOf(rounded);
-				yield d.toString();
-			}
-			default -> v.toString();
-		};
+		if (v instanceof BuffParam b) {
+			return b.toAttrString();
+		} else if (v instanceof Enum<?> e) {
+			return String.valueOf(e.ordinal());
+		} else if (v instanceof Boolean b) {
+			return b.toString().toLowerCase(Locale.ROOT);
+		} else if (v instanceof Double d) {
+			if (Double.isInfinite(d) || Double.isNaN(d))
+				return "-1";
+			long rounded = Math.round(d);
+			if (Math.abs(d - rounded) < 1e-8)
+				return String.valueOf(rounded);
+			return d.toString();
+		} else {
+			return v.toString();
+		}
 	}
 	
 	/**
@@ -120,22 +123,22 @@ public final class Attributes {
 		
 		try {
 			if (type == BuffParam.class) {
-				return new ListAttribute<>(name, BuffParam.parse(value));
+				return BuffParam.BuffParams.parse(name, value);
 			} else if (type == List.class) {
 				return new ListAttribute<>(name, List.of(value.split("\\s+")));
 			} else if (type == Boolean.class) {
 				return new BooleanAttribute(name, Boolean.parseBoolean(value));
 			} else if (type == Double.class) {
 				return new DoubleAttribute(name, Double.parseDouble(value));
+			} else if (type.isEnum()) {
+				@SuppressWarnings("unchecked")
+				Class<? extends Enum> enumType = (Class<? extends Enum>) type;
+				return new EnumAttribute(name, Enum.valueOf(enumType, value));
 			}
 		} catch (Exception ex) {
-			log.warn("Cannot parse attribute '" + name + "'='" + value + "': " + ex.getMessage());
+			log.warn("Cannot parse attribute '{}'='{}': {}", name, value, ex.getMessage());
 		}
 		// fallback -> all of it is string
 		return new StringAttribute(name, value);
-	}
-	
-	public static Map<String, Class<?>> getTypeMap() {
-		return Collections.unmodifiableMap(TYPE_MAP);
 	}
 }

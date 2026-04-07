@@ -2,13 +2,13 @@ package modforge.frontend.pages;
 
 import modforge.Singleton;
 import modforge.Util;
-import modforge.backend.model.Language;
 import modforge.backend.service.UserConfig;
 import modforge.frontend.BarManager;
 import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
+import modforge.backend.model.item.E.Language;
 
 // =============================================================================
 //  SETTINGS PAGE
@@ -21,6 +21,7 @@ public class SettingsPage extends BasePage {
 	private final JTextField userName = styledField("Your name (used as mod author)");
 	private final JComboBox<Language> langBox = new JComboBox<>(Language.values());
 	private final UserConfig configService;
+	
 	public SettingsPage(MainWindow w) {
 		super(w);
 		configService = w.getRegistry().userConfig;
@@ -65,17 +66,15 @@ public class SettingsPage extends BasePage {
 		card.add(gameDir, gc);
 		gc.gridx = 2;
 		gc.weightx = 0.1;
-		card.add(primaryBtn("Browse…", e ->
-			Util.pickFolderAsync().thenAccept(path -> {
-				if (path != null)
-					SwingUtilities.invokeLater(() -> {
-						gameDir.setText(path);
-						configService.gameDirectory = path;
-						configService.save();
-						w.snackbar.show("Game directory set", BarManager.Type.SUCCESS);
-					});
-			})
-		), gc);
+		card.add(primaryBtn("Browse…", e -> Util.pickFolderAsync().thenAccept(path -> {
+			if (path != null)
+				SwingUtilities.invokeLater(() -> {
+					gameDir.setText(path);
+					configService.setGameDirectory(path);
+					configService.save();
+					w.snackbar.show("Game directory set", BarManager.Type.SUCCESS);
+				});
+		})), gc);
 		
 		// Username row (gridy = 2)
 		gc.gridx = 0;
@@ -108,8 +107,8 @@ public class SettingsPage extends BasePage {
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("Save Settings", e -> {
-			configService.userName = userName.getText();
-			configService.language = selectedLang();
+			configService.setUserName(userName.getText());
+			configService.setLanguage(selectedLang());
 			Singleton.INSTANCE.getRegistry().init();
 			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
 		}), gc);
@@ -119,22 +118,24 @@ public class SettingsPage extends BasePage {
 	
 	private void loadSettings() {
 		// Load game directory if exists
-		if (configService.gameDirectory != null && ! configService.gameDirectory.isEmpty()) {
-			gameDir.setText(configService.gameDirectory);
+		var gameDire = configService.getGameDirectory();
+		if (gameDire != null && ! gameDire.isEmpty()) {
+			gameDir.setText(gameDire);
 			gameDir.setForeground(MainWindow.TEXT);
 		}
 		
 		// Load username if exists
-		if (configService.userName != null && ! configService.userName.isEmpty()) {
-			userName.setText(configService.userName);
+		var userNam = configService.getUserName();
+		if (userNam != null && ! userNam.isEmpty()) {
+			userName.setText(userNam);
 		}
 		
 		// Load language if exists
-		if (configService.language != null) {
-			final var targetLangCode = configService.language;
+		var lang = configService.getLanguage();
+		if (lang != null) {
 			for (int i = 0; i < langBox.getItemCount(); i++) {
 				final var item = langBox.getItemAt(i);
-				if (item != null && item.equals(targetLangCode)) {
+				if (item != null && item.equals(lang)) {
 					langBox.setSelectedIndex(i);
 					break;
 				}

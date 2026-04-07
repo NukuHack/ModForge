@@ -32,6 +32,7 @@ public class ModEditPage extends BasePage {
 	private JTextField createdOnField;
 	private JCheckBox modifiesLevelCheck;
 	private JPanel versionsPanel;
+	
 	public ModEditPage(MainWindow w) {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -288,7 +289,7 @@ public class ModEditPage extends BasePage {
 		}
 		
 		// Write manifest
-		final String gameDir = window.getRegistry().userConfig.gameDirectory;
+		final String gameDir = window.getRegistry().userConfig.getGameDirectory();
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
 		ConfigService.saveModConfig(Util.modFolder(gameDir, currentMod.id), currentMod);
 		
@@ -315,7 +316,7 @@ public class ModEditPage extends BasePage {
 		int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete mod '" + currentMod.name + "'?\nThis will remove the mod folder from your game directory.", "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		
 		if (confirm == JOptionPane.YES_OPTION) {
-			String gameDir = window.getRegistry().userConfig.gameDirectory;
+			String gameDir = window.getRegistry().userConfig.getGameDirectory();
 			Path modPath = Path.of(gameDir, "Mods", currentMod.id);
 			
 			try {

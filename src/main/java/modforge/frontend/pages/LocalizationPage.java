@@ -1,9 +1,10 @@
 package modforge.frontend.pages;
 
+import lombok.Value;
 import modforge.Singleton;
+import modforge.backend.model.item.E.Language;
 import modforge.Util;
 import modforge.backend.ModData;
-import modforge.backend.model.Language;
 import modforge.backend.model.ModItem;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
@@ -26,18 +27,18 @@ import static modforge.Util.unescapeXml;
 @lombok.extern.slf4j.Slf4j
 public class LocalizationPage extends BasePage {
 	
-	// ── Selector: "All Attributes" + one entry per LANG_ATTR_HINTS value ─────
+	// ── Selector: "All Attributes" + one entry per LANG_FIELD_HINTS value ─────
 	private static final String ALL_ATTR_TYPES = "All Attributes";
 	/**
 	 * Sorted list of attribute-hint names shown in the type dropdown.
-	 * Sourced directly from {@link ModItem#LANG_ATTR_HINTS}.
+	 * Sourced directly from {@link ModItem#LANG_FIELD_HINTS}.
 	 */
 	private static final List<String> ATTR_TYPE_OPTIONS;
 	
 	static {
-		List<String> sorted = new ArrayList<>(ModItem.LANG_ATTR_HINTS);
+		List<String> sorted = new ArrayList<>(ModItem.LANG_FIELD_HINTS);
 		Collections.sort(sorted);
-		sorted.addFirst(ALL_ATTR_TYPES);
+		sorted.add(0, ALL_ATTR_TYPES);
 		ATTR_TYPE_OPTIONS = Collections.unmodifiableList(sorted);
 	}
 	
@@ -375,7 +376,7 @@ public class LocalizationPage extends BasePage {
 		langSelector.removeAllItems();
 		
 		// Put the user's configured language first, then the rest
-		final var defLang = window.getRegistry().userConfig.language;
+		final Language defLang = window.getRegistry().userConfig.getLanguage();
 		
 		List<Language> ordered = new ArrayList<>();
 		if (defLang != null)
@@ -490,7 +491,9 @@ public class LocalizationPage extends BasePage {
 	// =========================================================================
 	
 	/** One resolved localization entry. */
-	private record LangEntry(String langKey, String value, String attrName, ModItem item) {
+	@Value
+	static class LangEntry {
+		String langKey; String value; String attrName; ModItem item;
 		public boolean has(String inp) {
 			return langKey.toLowerCase(Locale.ROOT).contains(inp) || value.toLowerCase(Locale.ROOT).contains(inp);
 		}

@@ -119,7 +119,7 @@ public final class ItemService {
 		
 		// ---- Build target paths inside the staging area ----
 		// Structure:  <gameDir>/Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/<type>__<mod.id>.xml
-		final var typeName = ItemEntry.forClass(item.getClass()).simpleName();
+		final var typeName = ItemEntry.forClass(item.getClass()).snakeName();
 		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
 		final var targetDir = dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, dirSuffix);
 		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
@@ -206,11 +206,11 @@ public final class ItemService {
 				try (var is = zf.getInputStream(entry)) {
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
 				} catch (final Exception ex) {
-					log.warn("Parse error in %s from %s: %s".formatted(entryName, pakFile.getFileName(), ex.getMessage()));
+					log.warn("Parse error in {} from {}: {}", entryName, pakFile.getFileName(), ex.getMessage());
 				}
 			}
 		} catch (IOException e) {
-			log.error("Cannot open PAK file: %s - %s".formatted(pakFile, e.getMessage()));
+			log.error("Cannot open PAK file: {} - {}", pakFile, e.getMessage());
 		}
 		return items.stream();
 	}
@@ -242,18 +242,19 @@ public final class ItemService {
 	
 	// TODO : make this kind of data load or ... idk
 	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
+	
 	/**
 	 * Exclude PAKs that don't contain item/table data.
 	 */
 	private static Predicate<Path> excludeNonDataPaks() {
 		return p -> {
-			if (!Files.isRegularFile(p))
+			if (! Files.isRegularFile(p))
 				return false;
 			final var name = p.getFileName().toString().toLowerCase(Locale.ROOT);
-			if (!name.endsWith(".pak"))
+			if (! name.endsWith(".pak"))
 				return false;
 			boolean isIgnored = IGNORED_FILES.contains(name);
-			return !isIgnored;
+			return ! isIgnored;
 		};
 	}
 	
@@ -263,15 +264,15 @@ public final class ItemService {
 	 */
 	public void init() {
 		final long start = System.currentTimeMillis();
-		final String gameDir = userConfig.gameDirectory;
+		final String gameDir = userConfig.getGameDirectory();
 		if (gameDir == null || gameDir.isBlank())
 			return;
 		final var game = Singleton.INSTANCE.getGame();
 		try {
 			game.setItems(loadItems(Path.of(gameDir, "Data")));
-			log.info(String.format("XML read done items=%d", game.getItems().size()));
+			log.info("XML read done items={}", game.getItems().size());
 		} catch (Exception ex) {
-			log.error("Game Data read failed: " + ex.getMessage());
+			log.error("Game Data read failed: {}", ex.getMessage());
 		}
 		System.out.printf("Game ItemData Load took: %dms%n", System.currentTimeMillis() - start);
 	}
@@ -292,12 +293,12 @@ public final class ItemService {
 		final var items = modData.getItems();
 		if (items.isEmpty())
 			return;
-		final String gameDir = userConfig.gameDirectory;
+		final String gameDir = userConfig.getGameDirectory();
 		for (final ModItem item : items) {
 			try {
 				writeModItem(gameDir, modData, item);
 			} catch (final Exception e) {
-				log.error("writeModItem failed for " + item.getClass().getSimpleName() + ": " + e.getMessage());
+				log.error("writeModItem failed for {}: {}", item.getClass().getSimpleName(), e.getMessage());
 			}
 		}
 	}
@@ -308,7 +309,7 @@ public final class ItemService {
 	 */
 	public static Set<ModItem> loadItems(Path modPath) {
 		if (! Files.exists(modPath)) {
-			log.warn("PAK directory does not exist: " + modPath);
+			log.warn("PAK directory does not exist: {}", modPath);
 			return Set.of();
 		}
 		
@@ -316,17 +317,17 @@ public final class ItemService {
 			final var pakFiles = stream.filter(excludeNonDataPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
-				log.info("No PAK files found in: " + modPath);
+				log.info("No PAK files found in: {}", modPath);
 				return Set.of();
 			}
 			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
 			final Set<ModItem> result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
 			
-			log.info("Loaded %d items from %d PAK file(s)".formatted(result.size(), pakFiles.size()));
+			log.info("Loaded {} items from {} PAK file(s)", result.size(), pakFiles.size());
 			return result;
 			
 		} catch (final IOException e) {
-			log.error("Failed to list PAK folder: " + modPath + " - " + e.getMessage());
+			log.error("Failed to list PAK folder: {} - {}", modPath, e.getMessage());
 			return Set.of();
 		}
 	}

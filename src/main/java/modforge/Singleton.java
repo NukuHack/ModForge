@@ -1,6 +1,8 @@
 package modforge;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import modforge.backend.ModData;
 import modforge.backend.service.ServiceRegistry;
@@ -10,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @lombok.extern.slf4j.Slf4j
 public enum Singleton {
 	INSTANCE;
@@ -30,7 +33,7 @@ public enum Singleton {
 		ensureConfigDirExists();
 	}
 	
-	Singleton() {
+	{
 		game.name = "Kingdom Come Deliverance 2";
 		game.description = "The game itself : Kingdom Come Deliverance II";
 		game.author = "warhorse studios";
@@ -49,7 +52,7 @@ public enum Singleton {
 			Files.createDirectories(dir);
 			System.out.println("Created config directory: " + dir);
 		} catch (final IOException e) {
-			throw new RuntimeException("Failed to create config directory: " + dir, e);
+			log.error("Failed to create config directory: {}", dir, e);
 		}
 	}
 }

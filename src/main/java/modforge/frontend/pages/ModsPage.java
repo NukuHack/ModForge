@@ -19,6 +19,7 @@ public class ModsPage extends BasePage {
 	
 	private final JList<ModData> modList;
 	private final DefaultListModel<ModData> listModel;
+	
 	public ModsPage(MainWindow w) {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -89,7 +90,7 @@ public class ModsPage extends BasePage {
 		String timestamp = String.valueOf(System.currentTimeMillis());
 		String defaultId = "new_mod_" + timestamp.substring(timestamp.length() - 6);
 		
-		final ModData newMod = window.getRegistry().modService.createNewMod("New Mod", "Your mod description", window.getRegistry().userConfig.userName, "1.0", java.time.LocalDate.now().toString(), defaultId, false, java.util.List.of("1.0", "1.1", "1.2"));
+		final ModData newMod = window.getRegistry().modService.createNewMod("New Mod", "Your mod description", window.getRegistry().userConfig.getUserName(), "1.0", java.time.LocalDate.now().toString(), defaultId, false, java.util.List.of("1.0", "1.1", "1.2"));
 		
 		window.navigate(MainWindow.Page.MOD_EDIT, newMod);
 	}
@@ -123,7 +124,7 @@ public class ModsPage extends BasePage {
 				}
 			} catch (Exception e) {
 				window.snackbar.show("Import failed: " + e.getMessage(), BarManager.Type.ERROR);
-				log.error("Import error: " + e);
+				log.error("Import error", e);
 			}
 		}
 	}
@@ -173,7 +174,7 @@ public class ModsPage extends BasePage {
 			authorLabel.setText(mod.author != null ? mod.author : "Unknown");
 			
 			// Check if mod is external (read-only)
-			boolean isExternal = mod.author.isBlank() || ! mod.author.equals(Singleton.INSTANCE.getRegistry().userConfig.userName);
+			boolean isExternal = mod.author.isBlank() || ! mod.author.equals(Singleton.INSTANCE.getRegistry().userConfig.getUserName());
 			if (isExternal) {
 				statusLabel.setText("📥 External");
 				statusLabel.setForeground(Color.YELLOW);

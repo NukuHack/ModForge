@@ -12,6 +12,7 @@ public interface ModItem {
 	// ── Attribute names that hold localization keys (checked case-insensitively)
 	// TODO : right now you can only filter on actual items and since we don't have any item with like straight "UIName" because that si a special item, we can't filter on them
 	Set<String> LANG_ATTR_HINTS = Set.of("UIName", "Desc", "UIInfo", "UiSound", "LatinName", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
+	Set<String> LANG_FIELD_HINTS = Set.of("ui_name", "desc", "ui_info", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
 	
 	String getId();
 	
@@ -33,13 +34,13 @@ public interface ModItem {
 	
 	void addAttribute(final Collection<Attribute> attributes);
 	
-	List<String> getLinkedIds();
+	List<ModItem> getLinkedItems();
 	
-	void setLinkedId(final Collection<String> linkedIds);
+	void setLinkedItem(final Collection<ModItem> linkedItems);
 	
-	void addLinkedId(final String linkedId);
+	void addLinkedItem(final ModItem linkedItem);
 	
-	void addLinkedId(final Collection<String> linkedId);
+	void addLinkedItem(final Collection<ModItem> linkedItem);
 	
 	Optional<Attribute> findAttr(final String candidate);
 	
@@ -65,10 +66,10 @@ public interface ModItem {
 		}
 		
 		// Show linked IDs if any
-		if (! this.getLinkedIds().isEmpty()) {
+		if (! this.getLinkedItems().isEmpty()) {
 			sb.append("\nLinked Items:\n");
-			for (String linkedId : this.getLinkedIds()) {
-				sb.append("  • ").append(linkedId).append("\n");
+			for (var linkedItem : this.getLinkedItems()) {
+				sb.append("  • ").append(linkedItem.details()).append("\n");
 			}
 		}
 		

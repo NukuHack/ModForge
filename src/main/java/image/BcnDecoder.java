@@ -249,7 +249,10 @@ public class BcnDecoder {
 	
 	private static int snormToUnorm(int v) {
 		// Map [-128..127] → [0..255]
-		return Math.clamp((v + 128), 0, 255);
+		int clamped = v + 128;
+		if (clamped < 0) return 0;
+		if (clamped > 255) return 255;
+		return clamped;
 	}
 	
 	// -------------------------------------------------------------------------

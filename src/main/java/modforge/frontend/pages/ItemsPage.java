@@ -169,10 +169,7 @@ public class ItemsPage extends BasePage {
 		detailPane.setForeground(MainWindow.TEXT);
 		detailPane.setFont(new Font("Roboto", Font.PLAIN, 12));
 		detailPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
-		detailPane.setText("<html><body style='background:#181825;color:#6c6f85;"
-								   + "font-family:sans-serif;padding:12px;'>"
-								   + "<b style='color:#cdd6f4;'>Select an item</b><br/><br/>"
-								   + "<i>Details will appear here.</i></body></html>");
+		detailPane.setText("<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:12px;'>" + "<b style='color:#cdd6f4;'>Select an item</b><br/><br/>" + "<i>Details will appear here.</i></body></html>");
 		
 		// Double-click → copy ID
 		detailPane.addMouseListener(new MouseAdapter() {

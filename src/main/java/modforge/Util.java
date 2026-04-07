@@ -1,6 +1,7 @@
 package modforge;
 
-import modforge.backend.model.Language;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
@@ -27,10 +28,13 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import modforge.backend.model.item.E.Language;
+
 /**
  * Utility class providing common file operations, path handling, XML/JSON escaping,
  * PAK file packing, and cross-platform directory utilities for the ModForge application.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @lombok.extern.slf4j.Slf4j
 public final class Util {
 	// ================================================================================
@@ -83,17 +87,6 @@ public final class Util {
 	
 	/** Root directory for all mod installations */
 	public static final String MODS_DIR = "Mods";
-	
-	// ================================================================================
-	// PRIVATE STATIC FIELDS
-	// ================================================================================
-	
-	/**
-	 * Private constructor to prevent instantiation - this is a utility class
-	 * with only static methods
-	 */
-	private Util() {
-	}
 	
 	// ================================================================================
 	// STRING UTILITIES

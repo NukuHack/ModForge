@@ -1,55 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>modforge</groupId>
-    <artifactId>mod-forge</artifactId>
-    <version>v0.2</version>
-    <packaging>jar</packaging>
-
-    <name>Mod Forge</name>
-    <description>KDC2 data view and edit</description>
-
-    <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <log4j.version>2.24.3</log4j.version>
-        <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
-    </properties>
-
-    <dependencies>
-        <!-- UI Framework -->
-        <dependency>
-            <groupId>com.formdev</groupId>
-            <artifactId>flatlaf</artifactId>
-            <version>3.4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.formdev</groupId>
-            <artifactId>flatlaf-extras</artifactId>
-            <version>3.4</version>
-        </dependency>
-
-        <!-- XML Processing (included in JDK, but ensure you have JAXB if needed) -->
-        <!-- For Java 11+, you may need: -->
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
-        </dependency>
-
-        <!-- Auto gen code like Rust macros -->
-		<!-- Source: https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<groupId>modforge</groupId>
+	<artifactId>mod-forge</artifactId>
+	<version>v0.2</version>
+	<packaging>jar</packaging>
+	
+	<name>Mod Forge</name>
+	<description>KDC2 data view and edit</description>
+	
+	<properties>
+		<java.version>17</java.version>
+		<!-- Works with any java version from 16 to 25, gpt said 17 is the safest ... -->
+		<maven.compiler.source>${java.version}</maven.compiler.source>
+		<maven.compiler.target>${java.version}</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<log4j.version>2.24.3</log4j.version>
+		<twelvemonkeys.version>3.10.1</twelvemonkeys.version>
+		<mockito.version>5.14.2</mockito.version>
+		<bytebuddy.version>1.15.11</bytebuddy.version>
+	</properties>
+	
+	<dependencies>
+		<!-- UI Framework -->
+		<dependency>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf</artifactId>
+			<version>3.4</version>
+		</dependency>
+		<dependency>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf-extras</artifactId>
+			<version>3.4</version>
+		</dependency>
+		
+		<!-- XML Processing -->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+		
+		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.44</version>
 			<scope>compile</scope>
 		</dependency>
-        <!-- For logging -->
+		
+		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
@@ -60,62 +61,80 @@
 			<artifactId>slf4j-simple</artifactId>
 			<version>2.0.17</version>
 		</dependency>
-
-
-        <!-- TwelveMonkeys ImageIO - TIFF read/write support -->
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-tiff</artifactId>
-            <version>${twelvemonkeys.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-tga</artifactId>
-            <version>${twelvemonkeys.version}</version>
-        </dependency>
-        <!-- TwelveMonkeys core -->
-        <dependency>
-            <groupId>com.twelvemonkeys.common</groupId>
-            <artifactId>common-image</artifactId>
-            <version>${twelvemonkeys.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.common</groupId>
-            <artifactId>common-io</artifactId>
-            <version>${twelvemonkeys.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.common</groupId>
-            <artifactId>common-lang</artifactId>
-            <version>${twelvemonkeys.version}</version>
-        </dependency>
-
-        <!-- Only for testing - dev -->
-        <!-- JUnit 5 -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.13.4</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- Mockito JUnit 5 Integration -->
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-junit-jupiter</artifactId>
-            <version>5.14.2</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
+		
+		<!-- TwelveMonkeys ImageIO -->
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-tiff</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-tga</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.common</groupId>
+			<artifactId>common-image</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.common</groupId>
+			<artifactId>common-io</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.common</groupId>
+			<artifactId>common-lang</artifactId>
+			<version>${twelvemonkeys.version}</version>
+		</dependency>
+		
+		<!-- Testing -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>5.13.4</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- Mockito with explicit Byte Buddy version -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- Explicit Byte Buddy dependency for Java 25 support -->
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>${bytebuddy.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy-agent</artifactId>
+			<version>${bytebuddy.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.13.0</version>
 				<configuration>
-					<source>25</source>
-					<target>25</target>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
@@ -125,29 +144,41 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.3.1</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>modforge.Main</mainClass>
-                                </transformer>
-                            </transformers>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-							<!-- filter -->
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.3.1</version>
+				<configuration>
+					<!-- Add the Java agent properly -->
+					<argLine>
+						-javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${bytebuddy.version}/byte-buddy-agent-${bytebuddy.version}.jar
+						-XX:+EnableDynamicAgentLoading
+						-Djdk.instrument.traceUsage=false
+						<!-- Enable experimental Byte Buddy features for Java 25 -->
+						-Dnet.bytebuddy.experimental=true
+					</argLine>
+					<useModulePath>false</useModulePath>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.5.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>modforge.Main</mainClass>
+								</transformer>
+							</transformers>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
 							<filters>
 								<filter>
 									<artifact>org.projectlombok:lombok</artifact>
@@ -168,10 +199,10 @@
 									</excludes>
 								</filter>
 							</filters>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

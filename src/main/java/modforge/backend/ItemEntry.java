@@ -1,5 +1,6 @@
 package modforge.backend;
 
+import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.item.I;
 import modforge.backend.model.item.Storm;
@@ -22,79 +23,83 @@ import java.util.function.Predicate;
  * {@link ItemType} references these constants to build its lookup structures;
  * all public methods on {@code ItemType} are unaffected.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public enum ItemEntry {
 	
 	// ── Weapons ─────────────────────────────────────────────────────────────
-	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", true),
+	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", "", true),
 	
-	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", true),
+	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", "", true),
 	
-	AMMO(I.Ammo.class, "Id", "item", true),
+	AMMO(I.Ammo.class, "Id", "item", "", true),
 	
-	MELEE_WEAPON_CLASS(I.MeleeWeaponClass.class, "id", "weapon_class", false),
+	MELEE_WEAPON_CLASS(I.MeleeWeaponClass.class, "id", "weapon_class", "", false),
 	
-	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", false),
+	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", "", false),
 	
 	// ── Armor ────────────────────────────────────────────────────────────────
-	ARMOR(I.Armor.class, "Id", "item", true),
+	ARMOR(I.Armor.class, "Id", "item", "", true),
 	
-	HELMET(I.Helmet.class, "Id", "item", true),
+	HELMET(I.Helmet.class, "Id", "item", "", true),
 	
-	HOOD(I.Hood.class, "Id", "item", true),
+	HOOD(I.Hood.class, "Id", "item", "", true),
 	
 	// ── Consumables ──────────────────────────────────────────────────────────
-	FOOD(I.Food.class, "Id", "item", true),
+	FOOD(I.Food.class, "Id", "item", "", true),
 	
-	POISON(I.Poison.class, "Id", "item", true),
+	POISON(I.Poison.class, "Id", "item", "", true),
 	
 	// ── Crafting ─────────────────────────────────────────────────────────────
-	HERB(I.Herb.class, "Id", "item", true),
+	HERB(I.Herb.class, "Id", "item", "", true),
 	
-	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", true),
+	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", "", true),
 	
 	// ── Misc ─────────────────────────────────────────────────────────────────
-	NPC_TOOL(I.NPCTool.class, "Id", "item", true),
+	NPC_TOOL(I.NPCTool.class, "Id", "item", "", true),
 	
-	MISC_ITEM(I.MiscItem.class, "Id", "item", true),
+	MISC_ITEM(I.MiscItem.class, "Id", "item", "", true),
 	
-	DOCUMENT(I.Document.class, "Id", "item", true), // ItemClasses version="8" - BlacksmithRecipeId
+	DOCUMENT(I.Document.class, "Id", "item", "", true), // ItemClasses version="8" - BlacksmithRecipeId
 	
-	DIE(I.Die.class, "Id", "item", true),
+	DIE(I.Die.class, "Id", "item", "", true),
 	
-	ITEM_ALIAS(I.ItemAlias.class, "Id", "item", true),
+	ITEM_ALIAS(I.ItemAlias.class, "Id", "item", "", true),
 	
-	QUICK_SLOT_CONTAINER(I.QuickSlotContainer.class, "Id", "item", true),
+	QUICK_SLOT_CONTAINER(I.QuickSlotContainer.class, "Id", "item", "", true),
 	
-	DICE_BADGE(I.DiceBadge.class, "Id", "item", true),
+	DICE_BADGE(I.DiceBadge.class, "Id", "item", "", true),
 	
-	PICKABLE_ITEM(I.PickableItem.class, "Id", "item", true),
+	PICKABLE_ITEM(I.PickableItem.class, "Id", "item", "", true),
 	
-	KEY(I.Key.class, "Id", "item", true),
+	KEY(I.Key.class, "Id", "item", "", true),
 	
-	MONEY(I.Money.class, "Id", "item", true),
+	MONEY(I.Money.class, "Id", "item", "", true),
 	
-	KEY_RING(I.KeyRing.class, "Id", "item", true),
+	KEY_RING(I.KeyRing.class, "Id", "item", "", true),
+	
+	OINTMENT(I.Ointment.class, "Id", "item", "", true),
+	
+	ALCHEMY_BASE(I.AlchemyBase.class, "Id", "item", "", true),
 	
 	// ── Perks / Buffs related ───────────────────────────────────────────────
-	PERK(I.Perk.class, "perk_id", "perk", true),
+	PERK(I.Perk.class, "perk_id", "perk", "", true),
 	
-	BUFF(I.Buff.class, "buff_id", "buff", true),
+	BUFF(I.Buff.class, "buff_id", "buff", "", true),
 	
-	RPG_PARAM(I.RpgParam.class, "rpg_param_key", "rpg_param", true),
+	RPG_PARAM(I.RpgParam.class, "rpg_param_key", "rpg_param", "rpg_param", true),
 	
-	PERK_BUFF(I.PerkBuff.class, "perk_id", "perk_buff", true),
+	PERK_BUFF(I.PerkBuff.class, "perk_id", "perk_buff", "perk_buff", true),
 	
-	PERK_BUFF_OVERRIDE(I.PerkBuffOverride.class, "perk_id", "perk_buff_override", true),
+	PERK_BUFF_OVERRIDE(I.PerkBuffOverride.class, "perk_id", "perk_buff_override", "perk_buff_override", true),
 	
-	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", true),
+	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", "perk_script", true),
 	
-	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParam", true),
+	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParam", "ScriptParam", true),
 	
-	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", true),
+	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", true),
 	
 	// ── Storm ────────────────────────────────────────────────────────────────
-	STORM(Storm.class, "id", "storm", true);
+	STORM(Storm.class, "id", "storm", "storm", true);
 	
 	// ────────────────────────────────────────────────────────────────────────
 	// Fields
@@ -113,7 +118,14 @@ public enum ItemEntry {
 	 * The short XML key used as the endpoint name in zip entries
 	 * (e.g. {@code "item"}, {@code "perk"}, {@code "storm"}).
 	 */
-	public final String endpointKey;
+	public final String fileName;
+	
+	/**
+	 * The short key used to create Object from XML Elements and vice versa
+	 * (e.g. {@code "MeleeWeapon"} → {@code "meleeweapon"},
+	 *  {@code "NPCTool"} → {@code "npctool"}).
+	 */
+	public final String objName;
 	
 	/**
 	 * Whether this class should appear in the frontend item-type dropdown.
@@ -122,14 +134,19 @@ public enum ItemEntry {
 	public final boolean showInDisplay;
 	
 	// ────────────────────────────────────────────────────────────────────────
-	// Constructor
+	// Constructors
 	// ────────────────────────────────────────────────────────────────────────
 	
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String endpointKey, boolean showInDisplay) {
+	/** Constructor with an explicit label override. */
+	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String objName, boolean showInDisplay) {
 		this.clazz = clazz;
 		this.idKey = idKey;
-		this.endpointKey = endpointKey;
+		this.fileName = fileName;
 		this.showInDisplay = showInDisplay;
+		if (objName.isEmpty())
+			this.objName = clazz.getSimpleName().toLowerCase();
+		else
+			this.objName = objName;
 	}
 	
 	// ────────────────────────────────────────────────────────────────────────
@@ -162,12 +179,12 @@ public enum ItemEntry {
 	 * (e.g. {@code "MeleeWeapon"} → {@code "melee_weapon"},
 	 *  {@code "NPCTool"} → {@code "npc_tool"}).
 	 */
-	public String simpleName() {
+	public String snakeName() {
 		return displayName().replaceAll(" ", "_").toLowerCase(Locale.ROOT);
 	}
 	
 	public String parentName() {
-		return simpleName() + "s";
-		// TODO : some of the items have special parent stuffs so ... mehhh
+		return snakeName() + "s";
+		// TODO : some of the items have special parent stuffs so ... I'll do it later
 	}
 }

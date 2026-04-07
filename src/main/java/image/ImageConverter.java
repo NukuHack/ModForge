@@ -1,5 +1,7 @@
 package image;
 
+import lombok.Value;
+
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
@@ -43,15 +45,13 @@ public class ImageConverter {
 	 * @param opts     conversion options
 	 */
 	public static void convertImage(Path filePath, ConversionOptions opts) throws IOException {
-		log.info("Converting: "+ filePath);
+		log.info("Converting: {}", filePath);
 		
 		String stem = stem(filePath);
 		boolean isIdMap = stem.toLowerCase().endsWith("_id");
 		
 		// ── 1. Load + reassemble the split KCD DDS ───────────────────────────
 		LoadedDds loaded = loadGameDds(filePath, opts);
-		if (loaded == null)
-			throw new IOException("Failed to load DDS: " + filePath);
 		
 		DdsFile dds = loaded.dds;
 		DdsFile alphaDds = loaded.alphaDds;
@@ -80,7 +80,7 @@ public class ImageConverter {
 				Path dir = resolveOutputDir(filePath, opts);
 				Path aTif = dir.resolve(stem + "_alpha.tif");
 				saveGrayscaleTiff(alphaChannel, alphaDds.header.width, alphaDds.header.height, aTif);
-				log.info("  → gloss map: "+ aTif);
+				log.info("  → gloss map: {}", aTif);
 			} else {
 				// Merge alpha channel into float RGBA
 				rgba = mergeAlpha(rgba, alphaChannel);
@@ -114,7 +114,7 @@ public class ImageConverter {
 			Files.createDirectories(outTif.getParent());
 		}
 		saveTiff(outImage, outTif);
-		log.info("  → "+ outTif);
+		log.info("  → {}", outTif);
 		
 		// ── 7. Cleanup source files ───────────────────────────────────────────
 		if (opts.deleteSourceFiles) {
@@ -164,7 +164,7 @@ public class ImageConverter {
 				try {
 					convertImage(file, fileOpts);
 				} catch (Exception e) {
-					log.error("Failed to convert "+ file +" "+ e);
+					log.error("Failed to convert {}", file, e);
 					throw new RuntimeException(e);
 				}
 				return null;
@@ -196,7 +196,7 @@ public class ImageConverter {
 		List<Path> mipFiles = new ArrayList<>();
 		List<Path> alphaMipFiles = new ArrayList<>();
 		
-		// Collect colour mip companions (.dds.1 … .dds.63), highest first
+		// Collect color mip companions (.dds.1 … .dds.63), highest first
 		for (int i = 1; i < 64; i++) {
 			Path p = Path.of(base + "." + i);
 			if (! Files.exists(p))
@@ -214,7 +214,7 @@ public class ImageConverter {
 			alphaMipFiles.add(p);
 		}
 		
-		// Read base colour DDS
+		// Read base color DDS
 		DdsFile dds = new DdsFile(base, false);
 		
 		// Prepend mip data then the base DDS pixel data
@@ -232,7 +232,7 @@ public class ImageConverter {
 			Files.createDirectories(dir);
 			Path rawOut = dir.resolve(stem(base) + ".dds");
 			dds.write(rawOut);
-			log.info("  → raw DDS: "+ rawOut);
+			log.info("  → raw DDS: {}", rawOut);
 		}
 		
 		// Read alpha sidecar if present
@@ -355,13 +355,12 @@ public class ImageConverter {
 				out[i * 4] = (byte) Math.ceil(r * 255);
 				out[i * 4 + 1] = (byte) Math.ceil(g * 255);
 				out[i * 4 + 2] = (byte) Math.ceil(b * 255);
-				out[i * 4 + 3] = (byte) Math.floor(a * 255);
 			} else {
 				out[i * 4] = (byte) Math.floor(r * 255);
 				out[i * 4 + 1] = (byte) Math.floor(g * 255);
 				out[i * 4 + 2] = (byte) Math.floor(b * 255);
-				out[i * 4 + 3] = (byte) Math.floor(a * 255);
 			}
+			out[i * 4 + 3] = (byte) Math.floor(a * 255);
 		}
 		return out;
 	}
@@ -430,7 +429,7 @@ public class ImageConverter {
 		saveTiff(img, out);
 	}
 	
-	/** Compute the total pixel data size (all mips combined) in bytes. */
+	/** Compute the total pixel data size (all MIPS combined) in bytes. */
 	static int computePixelDataSize(DxgiFormat fmt, int w, int h, int mipCount) {
 		int total = 0;
 		int mw = w, mh = h;
@@ -500,10 +499,12 @@ public class ImageConverter {
 		try {
 			Files.deleteIfExists(p);
 		} catch (IOException e) {
-			log.warn("Could not delete "+ p +" "+ e);
+			log.warn("Could not delete {}", p, e);
 		}
 	}
 	
-	private record LoadedDds(DdsFile dds, DdsFile alphaDds, List<Path> mipFiles, List<Path> alphaMipFiles) {
+	@Value
+	private static class LoadedDds {
+		DdsFile dds; DdsFile alphaDds; List<Path> mipFiles; List<Path> alphaMipFiles;
 	}
 }

@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="us-ascii"?>
-<database xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="barbora" xsi:noNamespaceSchemaLocation="../database.xsd">
+<database xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="barbora"
+		  xsi:noNamespaceSchemaLocation="../database.xsd">
 	<BlacksmithRecipes version="1">
-		<BlacksmithRecipe Id="r_BascinetOpen03_mTwitch" UIIcon="BascinetOpen03_mTwitch" Category="Other" MinSkillLevel="1" WorkpieceId="axe" PerkId="dea15233-3d1c-4783-8991-3dc910544ddd">
+		<BlacksmithRecipe Id="r_BascinetOpen03_mTwitch" UIIcon="BascinetOpen03_mTwitch" Category="Other"
+						  MinSkillLevel="1" WorkpieceId="axe" PerkId="dea15233-3d1c-4783-8991-3dc910544ddd">
 			<UIName StringName="ui_nm_recipe_BascinetOpen03_mTwitch" Text=";" LoadedOn="21.3.2024 14:19:57"/>
 			<UIDesc StringName="ui_in_recipe_BascinetOpen03_mTwitch" Text="." LoadedOn="21.3.2024 14:19:57"/>
 			<Ingredients>
@@ -16,7 +18,8 @@
 				<BlacksmithRecipeProduct ItemClassId="5eede8e8-686b-4587-85c2-a548d574aaa6" MinimalQuality="70"/>
 			</Products>
 		</BlacksmithRecipe>
-		<BlacksmithRecipe Id="r_BascinetVisorBrunswig_m01" UIIcon="BascinetVisorBrunswig_m01" Category="Other" MinSkillLevel="1" WorkpieceId="axe" PerkId="21b2a1ec-44e9-43ef-a4c8-940a9c625a05">
+		<BlacksmithRecipe Id="r_BascinetVisorBrunswig_m01" UIIcon="BascinetVisorBrunswig_m01" Category="Other"
+						  MinSkillLevel="1" WorkpieceId="axe" PerkId="21b2a1ec-44e9-43ef-a4c8-940a9c625a05">
 			<UIName StringName="ui_nm_recipe_BascinetVisorBrunswig_m01" Text=";" LoadedOn="21.3.2024 14:19:57"/>
 			<UIDesc StringName="ui_in_recipe_BascinetVisorBrunswig_m01" Text="." LoadedOn="21.3.2024 14:19:57"/>
 			<Ingredients>
@@ -29,7 +32,8 @@
 				<BlacksmithRecipeProduct ItemClassId="157697b8-f618-4856-aea2-3b3cba06c1d6" MinimalQuality="70"/>
 			</Products>
 		</BlacksmithRecipe>
-		<BlacksmithRecipe Id="r_Gauntlets08_mTwitch" UIIcon="Gauntlets08_mTwitch" Category="Other" MinSkillLevel="1" WorkpieceId="axe" PerkId="598969ed-efed-4568-ac6c-51e33306c862">
+		<BlacksmithRecipe Id="r_Gauntlets08_mTwitch" UIIcon="Gauntlets08_mTwitch" Category="Other" MinSkillLevel="1"
+						  WorkpieceId="axe" PerkId="598969ed-efed-4568-ac6c-51e33306c862">
 			<UIName StringName="ui_nm_recipe_Gauntlets08_mTwitch" Text=";" LoadedOn="21.3.2024 14:19:57"/>
 			<UIDesc StringName="ui_in_recipe_Gauntlets08_mTwitch" Text="." LoadedOn="21.3.2024 14:19:57"/>
 			<Ingredients>
@@ -45,7 +49,8 @@
 				<BlacksmithRecipeProduct ItemClassId="9403ad41-7eea-451b-836f-32ba034ef3bb" MinimalQuality="70"/>
 			</Products>
 		</BlacksmithRecipe>
-		<BlacksmithRecipe Id="r_LegsPlateBrunswig_m01" UIIcon="LegsPlateBrunswig_m01" Category="Other" MinSkillLevel="1" WorkpieceId="axe" PerkId="4f43d8e5-3ef2-4566-8d27-66b8a6222b6a">
+		<BlacksmithRecipe Id="r_LegsPlateBrunswig_m01" UIIcon="LegsPlateBrunswig_m01" Category="Other" MinSkillLevel="1"
+						  WorkpieceId="axe" PerkId="4f43d8e5-3ef2-4566-8d27-66b8a6222b6a">
 			<UIName StringName="ui_nm_recipe_LegsPlateBrunswig_m01" Text=";" LoadedOn="21.3.2024 14:19:57"/>
 			<UIDesc StringName="ui_in_recipe_LegsPlateBrunswig_m01" Text="." LoadedOn="21.3.2024 14:19:57"/>
 			<Ingredients>

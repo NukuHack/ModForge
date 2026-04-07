@@ -1,7 +1,9 @@
 package modforge.backend.model.item;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import modforge.backend.model.BaseModItem;
 import modforge.backend.model.storm.StormData;
 
@@ -19,6 +21,8 @@ import modforge.backend.model.storm.StormData;
  * populated separately by {@link modforge.backend.service.StormService} after the
  * PAK scan.</p>
  */
+@ToString
+@NoArgsConstructor
 @lombok.extern.slf4j.Slf4j
 public class Storm extends BaseModItem {
 	
@@ -26,12 +30,4 @@ public class Storm extends BaseModItem {
 	@Getter
 	@Setter
 	private StormData stormData;
-	
-	public Storm() {
-	}
-	
-	@Override
-	public String toString() {
-		return "Storm{id='" + getId() + "', parsed=" + (stormData != null) + "}";
-	}
 }

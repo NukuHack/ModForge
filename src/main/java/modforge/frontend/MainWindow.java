@@ -91,7 +91,7 @@ public class MainWindow extends JFrame {
 			
 			if (out != null) {
 				setIconImage(new ImageIcon(out).getImage());
-				log.info("Window icon loaded successfully from: " + out);
+				log.info("Window icon loaded successfully from: {}", out);
 				break;
 			}
 		}
@@ -105,8 +105,7 @@ public class MainWindow extends JFrame {
 				page.setInstance(pageInstance);
 				pageHolder.add(pageInstance, page.name());
 			} catch (Exception e) {
-				log.warn("Failed to create page: " + page.name());
-				log.warn("Ex : " + e);
+				log.warn("Failed to create page: {}", page.name(), e);
 			}
 		}
 	}

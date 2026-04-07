@@ -34,7 +34,7 @@ public class ConvertPage extends BasePage {
 		// ── Top header ──────────────────────────────────────────────────────
 		add(header("Convert Textures"), BorderLayout.NORTH);
 		
-		// ── Centre card ─────────────────────────────────────────────────────
+		// ── Center card ─────────────────────────────────────────────────────
 		// card() uses BorderLayout internally and puts the title in NORTH.
 		// We must NOT override card's layout — instead put our content in CENTER.
 		JPanel card = card("DDS  ↔  PNG");
@@ -158,11 +158,12 @@ public class ConvertPage extends BasePage {
 	private void setBtnEnabled(boolean enabled) {
 		goBtn.setEnabled(enabled);
 		goBtn.setBackground(enabled ? MainWindow.ACCENT : new Color(0x313244));
-		goBtn.setForeground(enabled ? new Color(0x1e1e2e) : new Color(0x6c6f85));
+		Color foreground = enabled ? new Color(0x1e1e2e) : new Color(0x6c6f85);
+		goBtn.setForeground(foreground);
 		
 		folderBtn.setEnabled(enabled);
 		folderBtn.setBackground(enabled ? MainWindow.ACCENT : new Color(0x313244));
-		folderBtn.setForeground(enabled ? new Color(0x1e1e2e) : new Color(0x6c6f85));
+		folderBtn.setForeground(foreground);
 	}
 	
 	/** Opens the selected path in the file manager; if it's a file, opens its parent folder. */

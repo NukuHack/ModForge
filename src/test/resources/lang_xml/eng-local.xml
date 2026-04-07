@@ -1,37 +1,187 @@
 <Table>
-<Row><Cell>ui_hud_butcher_withquestitem</Cell><Cell>Butcher</Cell><Cell>Butcher «»</Cell></Row>
-<Row><Cell>ui_hud_loot_withquestitem</Cell><Cell>Loot</Cell><Cell>Loot «»</Cell></Row>
-<Row><Cell>ui_hud_loot_searched</Cell><Cell>Loot</Cell><Cell>Loot (searched)</Cell></Row>
-<Row><Cell>ui_hud_loot_searched_withquestitem</Cell><Cell>Loot</Cell><Cell>Loot (searched) «»</Cell></Row>
-<Row><Cell>ui_hud_loot_empty</Cell><Cell>Loot</Cell><Cell>Loot (empty)</Cell></Row>
-<Row><Cell>ui_hud_unlock_and_open_withquestitem</Cell><Cell>Unlock and open</Cell><Cell>Unlock and open «»</Cell></Row>
-<Row><Cell>ui_hud_lockpick_withquestitem</Cell><Cell>Lockpick</Cell><Cell>Lockpick «»</Cell></Row>
-<Row><Cell>ui_hud_lockpick_difficulty_1_withquestitem</Cell><Cell>Lockpick (very easy)</Cell><Cell>Lockpick (very easy) «»</Cell></Row>
-<Row><Cell>ui_hud_lockpick_difficulty_2_withquestitem</Cell><Cell>Lockpick (easy)</Cell><Cell>Lockpick (easy) «»</Cell></Row>
-<Row><Cell>ui_hud_lockpick_difficulty_3_withquestitem</Cell><Cell>Lockpick (medium)</Cell><Cell>Lockpick (medium) «»</Cell></Row>
-<Row><Cell>ui_hud_lockpick_difficulty_4_withquestitem</Cell><Cell>Lockpick (hard)</Cell><Cell>Lockpick (hard) «»</Cell></Row>
-<Row><Cell>ui_hud_lockpick_difficulty_5_withquestitem</Cell><Cell>Lockpick (very hard)</Cell><Cell>Lockpick (very hard) «»</Cell></Row>
-<Row><Cell>ui_hud_rob_body_withquestitem</Cell><Cell>Rob</Cell><Cell>Rob «»</Cell></Row>
-<Row><Cell>ui_hud_rob_body_searched</Cell><Cell>Rob</Cell><Cell>Rob (searched)</Cell></Row>
-<Row><Cell>ui_hud_rob_body_searched_withquestitem</Cell><Cell>Rob</Cell><Cell>Rob (searched) «»</Cell></Row>
-<Row><Cell>ui_hud_rob_body_empty</Cell><Cell>Rob</Cell><Cell>Rob (empty)</Cell></Row>
-<Row><Cell>ui_open_nest_withquestitem</Cell><Cell>Examine nest</Cell><Cell>Examine nest «»</Cell></Row>
-<Row><Cell>ui_open_nest_searched</Cell><Cell>Examine nest</Cell><Cell>Examine nest (searched)</Cell></Row>
-<Row><Cell>ui_open_nest_searched_withquestitem</Cell><Cell>Examine nest</Cell><Cell>Examine nest (searched) «»</Cell></Row>
-<Row><Cell>ui_open_nest_empty</Cell><Cell>Examine nest</Cell><Cell>Examine nest (empty)</Cell></Row>
-<Row><Cell>ui_open_stash_withquestitem</Cell><Cell>Open</Cell><Cell>Open «»</Cell></Row>
-<Row><Cell>ui_open_stash_searched</Cell><Cell>Open</Cell><Cell>Open (searched)</Cell></Row>
-<Row><Cell>ui_open_stash_searched_withquestitem</Cell><Cell>Open</Cell><Cell>Open (searched) «»</Cell></Row>
-<Row><Cell>ui_open_stash_empty</Cell><Cell>Open</Cell><Cell>Open (empty)</Cell></Row>
-<Row><Cell>ui_open_stash_henry</Cell><Cell>Open</Cell><Cell>Open my chest</Cell></Row>
-<Row><Cell>ui_open_stash_henry_withquestitem</Cell><Cell>Open</Cell><Cell>Open my chest «»</Cell></Row>
-<Row><Cell>ui_open_stash_henry_empty</Cell><Cell>Open</Cell><Cell>Open my chest (empty)</Cell></Row>
-<Row><Cell>ui_open_stash_crime_withquestitem</Cell><Cell>Rob</Cell><Cell>Rob «»</Cell></Row>
-<Row><Cell>ui_open_stash_crime_searched</Cell><Cell>Rob</Cell><Cell>Rob (searched)</Cell></Row>
-<Row><Cell>ui_open_stash_crime_searched_withquestitem</Cell><Cell>Rob</Cell><Cell>Rob (searched) «»</Cell></Row>
-<Row><Cell>ui_open_stash_crime_empty</Cell><Cell>Rob</Cell><Cell>Rob (empty)</Cell></Row>
-<Row><Cell>ui_lootinfo_config_display_on</Cell><Cell>[Loot Info] Shows quest item icon = ON</Cell><Cell>[Loot Info] Shows quest item icon = ON</Cell></Row>
-<Row><Cell>ui_lootinfo_config_display_off</Cell><Cell>[Loot Info] Shows quest item icon = OFF</Cell><Cell>[Loot Info] Shows quest item icon = OFF</Cell></Row>
-<Row><Cell>ui_nm_lootinfo_config1</Cell><Cell>[Loot Info] Shows quest item icon</Cell><Cell>[Loot Info] Shows quest item icon</Cell></Row>
-<Row><Cell>ui_in_lootinfo_config1</Cell><Cell>[Loot Info] Display quest item icon\n\nThis means that a quest item icon will appear beside open/rob/loot button when a quest item is in the container.\nThis item can also be moved to the horse saddle.\n\nDon't worry, the thing weighs nothing (weight 0) ;-).\n\nIf you want to disable the feature **show quest item icon** due to spoilers or game simplification, move the Config Token item from player inventory to Henry stash.</Cell><Cell>[Loot Info] Display quest item icon\n\nThis means that a quest item icon will appear beside open/rob/loot button when a quest item is in the container.\nThis item can also be moved to the horse saddle.\n\nDon't worry, the thing weighs nothing (weight 0) ;-).\n\nIf you want to disable the feature **show quest item icon** due to spoilers or game simplification, move the Config Token item from player inventory to Henry stash.</Cell></Row>
+	<Row>
+		<Cell>ui_hud_butcher_withquestitem</Cell>
+		<Cell>Butcher</Cell>
+		<Cell>Butcher «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_loot_withquestitem</Cell>
+		<Cell>Loot</Cell>
+		<Cell>Loot «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_loot_searched</Cell>
+		<Cell>Loot</Cell>
+		<Cell>Loot (searched)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_loot_searched_withquestitem</Cell>
+		<Cell>Loot</Cell>
+		<Cell>Loot (searched) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_loot_empty</Cell>
+		<Cell>Loot</Cell>
+		<Cell>Loot (empty)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_unlock_and_open_withquestitem</Cell>
+		<Cell>Unlock and open</Cell>
+		<Cell>Unlock and open «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_lockpick_withquestitem</Cell>
+		<Cell>Lockpick</Cell>
+		<Cell>Lockpick «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_lockpick_difficulty_1_withquestitem</Cell>
+		<Cell>Lockpick (very easy)</Cell>
+		<Cell>Lockpick (very easy) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_lockpick_difficulty_2_withquestitem</Cell>
+		<Cell>Lockpick (easy)</Cell>
+		<Cell>Lockpick (easy) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_lockpick_difficulty_3_withquestitem</Cell>
+		<Cell>Lockpick (medium)</Cell>
+		<Cell>Lockpick (medium) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_lockpick_difficulty_4_withquestitem</Cell>
+		<Cell>Lockpick (hard)</Cell>
+		<Cell>Lockpick (hard) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_lockpick_difficulty_5_withquestitem</Cell>
+		<Cell>Lockpick (very hard)</Cell>
+		<Cell>Lockpick (very hard) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_rob_body_withquestitem</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_rob_body_searched</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob (searched)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_rob_body_searched_withquestitem</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob (searched) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_hud_rob_body_empty</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob (empty)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_nest_withquestitem</Cell>
+		<Cell>Examine nest</Cell>
+		<Cell>Examine nest «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_nest_searched</Cell>
+		<Cell>Examine nest</Cell>
+		<Cell>Examine nest (searched)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_nest_searched_withquestitem</Cell>
+		<Cell>Examine nest</Cell>
+		<Cell>Examine nest (searched) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_nest_empty</Cell>
+		<Cell>Examine nest</Cell>
+		<Cell>Examine nest (empty)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_withquestitem</Cell>
+		<Cell>Open</Cell>
+		<Cell>Open «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_searched</Cell>
+		<Cell>Open</Cell>
+		<Cell>Open (searched)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_searched_withquestitem</Cell>
+		<Cell>Open</Cell>
+		<Cell>Open (searched) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_empty</Cell>
+		<Cell>Open</Cell>
+		<Cell>Open (empty)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_henry</Cell>
+		<Cell>Open</Cell>
+		<Cell>Open my chest</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_henry_withquestitem</Cell>
+		<Cell>Open</Cell>
+		<Cell>Open my chest «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_henry_empty</Cell>
+		<Cell>Open</Cell>
+		<Cell>Open my chest (empty)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_crime_withquestitem</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_crime_searched</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob (searched)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_crime_searched_withquestitem</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob (searched) «»</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_open_stash_crime_empty</Cell>
+		<Cell>Rob</Cell>
+		<Cell>Rob (empty)</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_lootinfo_config_display_on</Cell>
+		<Cell>[Loot Info] Shows quest item icon = ON</Cell>
+		<Cell>[Loot Info] Shows quest item icon = ON</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_lootinfo_config_display_off</Cell>
+		<Cell>[Loot Info] Shows quest item icon = OFF</Cell>
+		<Cell>[Loot Info] Shows quest item icon = OFF</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_nm_lootinfo_config1</Cell>
+		<Cell>[Loot Info] Shows quest item icon</Cell>
+		<Cell>[Loot Info] Shows quest item icon</Cell>
+	</Row>
+	<Row>
+		<Cell>ui_in_lootinfo_config1</Cell>
+		<Cell>[Loot Info] Display quest item icon\n\nThis means that a quest item icon will appear beside open/rob/loot
+			button when a quest item is in the container.\nThis item can also be moved to the horse saddle.\n\nDon't
+			worry, the thing weighs nothing (weight 0) ;-).\n\nIf you want to disable the feature **show quest item
+			icon** due to spoilers or game simplification, move the Config Token item from player inventory to Henry
+			stash.
+		</Cell>
+		<Cell>[Loot Info] Display quest item icon\n\nThis means that a quest item icon will appear beside open/rob/loot
+			button when a quest item is in the container.\nThis item can also be moved to the horse saddle.\n\nDon't
+			worry, the thing weighs nothing (weight 0) ;-).\n\nIf you want to disable the feature **show quest item
+			icon** due to spoilers or game simplification, move the Config Token item from player inventory to Henry
+			stash.
+		</Cell>
+	</Row>
 </Table>

@@ -26,8 +26,8 @@ public final class ModItemBuilder {
 	static {
 		// Build the handler map once at class initialization
 		for (var spec : ItemType.getHandlerSpecs()) {
-			HANDLER_MAP.put(spec.name(), new GBuildHandler<>(spec.clazz(), spec.idKey()));
-			MAKER_MAP.put(spec.clazz(), new GCreateHandler<>(spec.clazz(), spec.idKey()));
+			HANDLER_MAP.put(spec.getName(), new GBuildHandler<>(spec.getClazz(), spec.getIdKey()));
+			MAKER_MAP.put(spec.getClazz(), new GCreateHandler<>(spec.getClazz(), spec.getIdKey()));
 		}
 	}
 	
@@ -55,7 +55,17 @@ public final class ModItemBuilder {
 			return handler.create(element);
 		}
 		
-		log.info("No handler matched element <" + element.getLocalName() + ">");
+		log.info("No handler matched element <{}>", elementName);
+		if (log.isDebugEnabled()) {
+			final var attributes = element.getAttributes();
+			final Map<String, String> map = new HashMap<>();
+			
+			for (int i = 0; i < attributes.getLength(); i++) {
+				var attr = attributes.item(i);
+				map.put(attr.getNodeName(), attr.getNodeValue());
+			}
+			log.debug("No handler matched element {}", map);
+		}
 		return null;
 	}
 	
@@ -67,7 +77,7 @@ public final class ModItemBuilder {
 			return maker.build(document, item);
 		}
 		
-		log.info("No maker matched item <" + item + ">");
+		log.info("No maker matched item <{}>", item);
 		return null;
 	}
 	
@@ -152,7 +162,7 @@ public final class ModItemBuilder {
 				
 				return ModItemBuilder.create(element, item);
 			} catch (final Exception e) {
-				log.warn("Handler failed for " + type.getSimpleName() + ": " + e.getMessage());
+				log.warn("Handler failed for {}: {}", type.getSimpleName(), e.getMessage());
 				return null;
 			}
 		}
@@ -170,7 +180,7 @@ public final class ModItemBuilder {
 		
 		@Override
 		public Element build(final Document document, final ModItem item) {
-			final var typeName = ItemEntry.forClass(item.getClass()).simpleName();
+			final var typeName = ItemEntry.forClass(item.getClass()).snakeName();
 			final var el = document.createElement(typeName);
 			for (Attribute<?> attr : item.getAttributes()) {
 				el.setAttribute(attr.getName(), Attributes.serializeValue(attr));

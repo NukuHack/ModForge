@@ -1,10 +1,13 @@
 package modforge.backend;
 
-import modforge.backend.model.Language;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import modforge.backend.model.ModItem;
+import modforge.backend.model.item.E.Language;
 
 import java.util.*;
 
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
 @lombok.extern.slf4j.Slf4j
 public final class ModData {
 	private final Map<String, ModItem> items = new HashMap<>();
@@ -41,8 +44,20 @@ public final class ModData {
 	}
 	
 	public void setItems(Collection<ModItem> input) {
-		items.clear();
-		input.forEach(i -> items.put(i.getId(), i));
+		this.items.clear();
+		Map<String, List<ModItem>> duplicates = new HashMap<>();
+		input.forEach(i -> {
+			if (log.isDebugEnabled() && this.items.containsKey(i.getId())) {
+				duplicates.computeIfAbsent(i.getId(), k -> new ArrayList<>()).add(this.items.get(i.getId()));
+				duplicates.get(i.getId()).add(i);
+				log.debug("Duplicated item: {}", i);
+			}
+			this.items.put(i.getId(), i);
+		});
+		
+		if (! duplicates.isEmpty()) {
+			log.warn("Found {} duplicate IDs, lost {} items", duplicates.size(), duplicates.values().stream().mapToInt(List::size).sum() - duplicates.size());
+		}
 	}
 	
 	public Map<String, ModItem> items() {

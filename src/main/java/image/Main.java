@@ -39,12 +39,12 @@ public class Main {
 		ConversionOptions opts = new ConversionOptions().saveRawDDS(saveRaw).separateGlossMap(separateGloss).deleteSourceFiles(deleteSource).outputPath(outputStr).isOutputFolder(isOutputFolder);
 		
 		if (Files.isDirectory(inputPath)) {
-			log.info("Batch converting " + inputPath + " isRecursive" + recursive);
+			log.info("Batch converting {} isRecursive{}", inputPath, recursive);
 			var futures = ImageConverter.batchProcess(inputPath, outputPath, opts, recursive);
 			ImageConverter.awaitAll(futures);
 			log.info("Done.");
 		} else if (Files.isRegularFile(inputPath) && inputPath.toString().toLowerCase().endsWith(".dds")) {
-			log.info("Converting single file: " + inputPath);
+			log.info("Converting single file: {}", inputPath);
 			ImageConverter.convertImage(inputPath, opts);
 			log.info("Done.");
 		} else {
