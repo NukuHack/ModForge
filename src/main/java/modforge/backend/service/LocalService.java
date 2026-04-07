@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
 @lombok.extern.slf4j.Slf4j
@@ -60,7 +59,7 @@ public final class LocalService {
 		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank())
 			return;
-		final var game = Singleton.INSTANCE.game();
+		final var game = Singleton.INSTANCE.getGame();
 		try {
 			game.setLocal(this.loadLocalization(gameDir));
 		} catch (Exception ex) {
@@ -97,17 +96,17 @@ public final class LocalService {
 	
 	/** Resolve the display name of a base-game item. */
 	public String getName(ModItem item) {
-		return getName(item, Singleton.INSTANCE.game());
+		return getName(item, Singleton.INSTANCE.getGame());
 	}
 	
 	/** Resolve the description of a base-game item. */
 	public String getDescription(ModItem item) {
-		return getDescription(item, Singleton.INSTANCE.game());
+		return getDescription(item, Singleton.INSTANCE.getGame());
 	}
 	
 	/** Resolve the lore description of a base-game item. */
 	public String getLoreDescription(ModItem item) {
-		return getLoreDescription(item, Singleton.INSTANCE.game());
+		return getLoreDescription(item, Singleton.INSTANCE.getGame());
 	}
 	
 	/**
@@ -117,7 +116,7 @@ public final class LocalService {
 	public String resolve(String key, final ModData mod, final Language lang) {
 		if (key == null || (key = key.trim()).isEmpty())
 			return null;
-		final var game = Singleton.INSTANCE.game();
+		final var game = Singleton.INSTANCE.getGame();
 		// 1. Mod's own strings
 		if (mod != game) {
 			final var modMap = mod.getLocal().get(lang);
@@ -141,7 +140,7 @@ public final class LocalService {
 	 * Look up a raw localization key in the base-game strings only.
 	 */
 	public String resolve(String key) {
-		return resolve(key, Singleton.INSTANCE.game());
+		return resolve(key, Singleton.INSTANCE.getGame());
 	}
 	
 	/**
@@ -302,7 +301,7 @@ public final class LocalService {
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {
 		// Pull the two lang maps once – either may be null if never populated.
-		final var game = Singleton.INSTANCE.game();
+		final var game = Singleton.INSTANCE.getGame();
 		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(userConfig.language) : new HashMap<>();
 		final Map<String, String> baseMap = game.getLocal().get(userConfig.language);
 		

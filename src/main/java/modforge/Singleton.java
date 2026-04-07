@@ -1,5 +1,7 @@
 package modforge;
 
+import lombok.Getter;
+import lombok.Setter;
 import modforge.backend.ModData;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.MainWindow;
@@ -11,11 +13,17 @@ import java.nio.file.Path;
 @lombok.extern.slf4j.Slf4j
 public enum Singleton {
 	INSTANCE;
-	
+	@Getter
 	private static final Path userConfigDir = Util.getConfigDir();
+	@Getter
 	private static final Path userConfig = userConfigDir.resolve("userconfig.json");
+	@Getter
 	private final ModData game = new ModData();
+	@Setter
+	@Getter
 	private ServiceRegistry registry;
+	@Setter
+	@Getter
 	private MainWindow mainWindow;
 	
 	static {
@@ -43,29 +51,5 @@ public enum Singleton {
 		} catch (final IOException e) {
 			throw new RuntimeException("Failed to create config directory: " + dir, e);
 		}
-	}
-	
-	public ServiceRegistry getRegistry() {
-		return registry;
-	}
-	
-	public void setRegistry(ServiceRegistry registry) {
-		this.registry = registry;
-	}
-	
-	public MainWindow getMainWindow() {
-		return mainWindow;
-	}
-	
-	public void setMainWindow(MainWindow mainWindow) {
-		this.mainWindow = mainWindow;
-	}
-	
-	public static Path getUserConfig() {
-		return userConfig;
-	}
-	
-	public ModData game() {
-		return game;
 	}
 }

@@ -4,6 +4,7 @@ package image;
  * BC7 block decoder (all 8 modes) and Mode-6 encoder.
  * Partition tables for multi-subset modes return zeros (single-subset fallback).
  */
+@lombok.extern.slf4j.Slf4j
 class BC7Util {
 	
 	static void decompress(ImgData data, byte[] out) {

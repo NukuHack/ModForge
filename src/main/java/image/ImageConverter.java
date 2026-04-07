@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.logging.Logger;
 
 /**
  * Core DDS → TIFF conversion logic.
@@ -30,9 +29,8 @@ import java.util.logging.Logger;
  * 16-bit-per-channel or 8-bit-per-channel TIFF depending on the source format,
  * using TwelveMonkeys ImageIO.
  */
+@lombok.extern.slf4j.Slf4j
 public class ImageConverter {
-	
-	private static final Logger log = Logger.getLogger(ImageConverter.class.getName());
 	
 	// -------------------------------------------------------------------------
 	// Public API
@@ -166,7 +164,7 @@ public class ImageConverter {
 				try {
 					convertImage(file, fileOpts);
 				} catch (Exception e) {
-					log.severe("Failed to convert "+ file +" "+ e);
+					log.error("Failed to convert "+ file +" "+ e);
 					throw new RuntimeException(e);
 				}
 				return null;
@@ -502,7 +500,7 @@ public class ImageConverter {
 		try {
 			Files.deleteIfExists(p);
 		} catch (IOException e) {
-			log.warning("Could not delete "+ p +" "+ e);
+			log.warn("Could not delete "+ p +" "+ e);
 		}
 	}
 	

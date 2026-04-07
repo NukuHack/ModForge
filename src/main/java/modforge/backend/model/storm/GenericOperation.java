@@ -1,6 +1,7 @@
 package modforge.backend.model.storm;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,12 +36,14 @@ public final class GenericOperation {
 	 * UI-only flag: when {@code true} the operation targets a Stat, otherwise a Skill.
 	 * Only meaningful for {@code setAttribute} / {@code modAttribute}.
 	 */
+	@Setter
 	private boolean isStat = false;
 	
 	/**
 	 * UI-only flag: when {@code true} the operation uses a span (min/max range),
 	 * otherwise a fixed value.
 	 */
+	@Setter
 	private boolean isSpan = false;
 	
 	// -------------------------------------------------------------------------
@@ -64,14 +67,6 @@ public final class GenericOperation {
 	
 	public void putAttribute(String key, String value) {
 		attributes.put(key, value == null ? "" : value);
-	}
-	
-	public void setStat(boolean stat) {
-		isStat = stat;
-	}
-	
-	public void setSpan(boolean span) {
-		isSpan = span;
 	}
 	
 	// -------------------------------------------------------------------------

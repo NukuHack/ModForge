@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 @lombok.extern.slf4j.Slf4j
 public final class ModService {
@@ -356,7 +355,7 @@ public final class ModService {
 	public void loadModItems(ModData mod) {
 		final String gameDir = userConfig.gameDirectory;
 		final Path dataPath = Path.of(Util.modData(gameDir, mod.id));
-		mod.setItems(itemService.loadItems(dataPath));
+		mod.setItems(ItemService.loadItems(dataPath));
 	}
 	
 	private void loadModIcons(ModData mod) {

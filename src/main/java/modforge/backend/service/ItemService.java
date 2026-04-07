@@ -266,9 +266,9 @@ public final class ItemService {
 		final String gameDir = userConfig.gameDirectory;
 		if (gameDir == null || gameDir.isBlank())
 			return;
-		final var game = Singleton.INSTANCE.game();
+		final var game = Singleton.INSTANCE.getGame();
 		try {
-			game.setItems(this.loadItems(Path.of(gameDir, "Data")));
+			game.setItems(loadItems(Path.of(gameDir, "Data")));
 			log.info(String.format("XML read done items=%d", game.getItems().size()));
 		} catch (Exception ex) {
 			log.error("Game Data read failed: " + ex.getMessage());

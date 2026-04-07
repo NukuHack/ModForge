@@ -2,8 +2,6 @@ package modforge.backend.service;
 
 import modforge.Singleton;
 
-import java.util.logging.Logger;
-
 /**
  * Wires all dependencies together in the correct order.
  * Use as the single entry-point for bootstrapping the application.
@@ -45,6 +43,6 @@ public final class ServiceRegistry {
 		iconService.init();
 		stormService.init();
 		modService.init();
-		Singleton.INSTANCE.game().setConfig(configService.loadGameConfig());
+		Singleton.INSTANCE.getGame().setConfig(configService.loadGameConfig());
 	}
 }

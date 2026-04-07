@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
@@ -254,7 +253,7 @@ public final class IconService {
 	 * Only populates the base-game index; mod icons are loaded per-mod.
 	 */
 	public void init() {
-		final var game = Singleton.INSTANCE.game();
+		final var game = Singleton.INSTANCE.getGame();
 		
 		
 		// DISABLING since it uses up over 3gigs of memory, so i will rework it
@@ -346,7 +345,7 @@ public final class IconService {
 	 * Convenience overload for base-game items (no per-mod index to check).
 	 */
 	public BufferedImage getIcon(ModItem item) {
-		return getIcon(item, Singleton.INSTANCE.game());
+		return getIcon(item, Singleton.INSTANCE.getGame());
 	}
 	
 	/**
@@ -365,7 +364,7 @@ public final class IconService {
 		}
 		
 		// 2. Base-game raw DDS index
-		final var game = Singleton.INSTANCE.game();
+		final var game = Singleton.INSTANCE.getGame();
 		if (mod != game) {
 			final byte[] baseDds = game.getIcon().get(key);
 			if (baseDds != null) {
@@ -384,7 +383,7 @@ public final class IconService {
 		if (iconId == null || iconId.isBlank())
 			return false;
 		final String key = iconId.toLowerCase(Locale.ROOT);
-		return (mod != Singleton.INSTANCE.game() && mod.getIcon().containsKey(key));
+		return (mod != Singleton.INSTANCE.getGame() && mod.getIcon().containsKey(key));
 	}
 	
 	/**

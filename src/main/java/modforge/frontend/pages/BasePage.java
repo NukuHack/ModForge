@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.geom.RoundRectangle2D;
-import java.util.logging.Logger;
 
 import static modforge.Util.escHtml;
 

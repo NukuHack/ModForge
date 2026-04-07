@@ -1,5 +1,7 @@
 package modforge.frontend;
 
+import lombok.Getter;
+import lombok.Setter;
 import modforge.backend.service.ServiceRegistry;
 import modforge.frontend.pages.*;
 
@@ -9,7 +11,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.logging.Logger;
 
 // =============================================================================
 //  MAIN WINDOW
@@ -29,6 +30,7 @@ public class MainWindow extends JFrame {
 	private final CardLayout cardLayout = new CardLayout();
 	private final JPanel pageHolder = new JPanel(cardLayout);
 	// backend ---------------
+	@Getter
 	private final ServiceRegistry registry;
 	
 	public MainWindow(ServiceRegistry registry) {
@@ -72,10 +74,6 @@ public class MainWindow extends JFrame {
 		
 		// show home by default
 		navigate(Page.HOME);
-	}
-	
-	public ServiceRegistry getRegistry() {
-		return registry;
 	}
 	
 	/**
@@ -246,11 +244,13 @@ public class MainWindow extends JFrame {
 	}
 	
 	// ── navigation enum ──────────────────────────────────────────────────────
+	@Getter
 	public enum Page {
 		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class), ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class), LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class), LANG("Localizations", LocalizationPage.class), CONVERT("Image convert", ConvertPage.class);
 		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;
+		@Setter
 		private BasePage instance;
 		
 		Page(String displayName, Class<? extends BasePage> pageClass) {
@@ -258,20 +258,5 @@ public class MainWindow extends JFrame {
 			this.pageClass = pageClass;
 		}
 		
-		public String getDisplayName() {
-			return displayName;
-		}
-		
-		public Class<? extends BasePage> getPageClass() {
-			return pageClass;
-		}
-		
-		public BasePage getInstance() {
-			return instance;
-		}
-		
-		public void setInstance(BasePage instance) {
-			this.instance = instance;
-		}
 	}
 }

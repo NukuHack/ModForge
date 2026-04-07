@@ -8,6 +8,7 @@ import java.io.IOException;
  * DDS legacy pixel format structure (DDSPF) — always 32 bytes.
  * Mirrors the C# PixelFormat class exactly.
  */
+@lombok.extern.slf4j.Slf4j
 public class PixelFormat {
 	
 	// DDPF flags

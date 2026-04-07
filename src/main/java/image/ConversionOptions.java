@@ -5,6 +5,7 @@ package image;
  * Mirrors the individual boolean/string parameters threaded through
  * the C# ConvertImage() / BatchProcessFiles() call chains.
  */
+@lombok.extern.slf4j.Slf4j
 public class ConversionOptions {
 	
 	/** Save the assembled raw .dds file alongside the output TIFF. */

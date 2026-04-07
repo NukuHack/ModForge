@@ -9,6 +9,7 @@ import java.io.IOException;
  * the main DDS header when pixelFormat.fourCC == "DX10".
  * Mirrors the C# ExtendedHeader class.
  */
+@lombok.extern.slf4j.Slf4j
 public class ExtendedHeader {
 	
 	public DxgiFormat dxgiFormat = DxgiFormat.UNKNOWN;

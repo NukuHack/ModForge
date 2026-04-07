@@ -1,9 +1,13 @@
 package image;
 
+import lombok.Getter;
+
 /**
  * DXGI_FORMAT values used by DDS textures.
  * Integer values match the DirectX specification exactly.
  */
+@Getter
+@lombok.extern.slf4j.Slf4j
 public enum DxgiFormat {
 	UNKNOWN(0),
 	R32G32B32A32_FLOAT(2),
@@ -47,10 +51,6 @@ public enum DxgiFormat {
 				return f;
 		}
 		return UNKNOWN;
-	}
-	
-	public int getValue() {
-		return value;
 	}
 	
 	/** True for BC-compressed formats */

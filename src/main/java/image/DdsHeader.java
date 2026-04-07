@@ -7,6 +7,7 @@ import java.io.IOException;
 /**
  * DDS_HEADER — the main 124-byte DDS header (after the 4-byte magic).
  */
+@lombok.extern.slf4j.Slf4j
 public class DdsHeader {
 	
 	// dwFlags bits

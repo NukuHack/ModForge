@@ -12,8 +12,9 @@ import java.nio.file.Path;
  * companion files (.dds.1, .dds.2, …) for lower mips, and an optional
  * .dds.a alpha file with matching .dds.a.1, .dds.a.2, … companions.
  * This class handles only the per-file binary layout; the companion-merging
- * logic lives in {@link com.kcdtexture.converter.ImageConverter}.
+ * logic lives in {@link ImageConverter}.
  */
+@lombok.extern.slf4j.Slf4j
 public class DdsFile {
 	
 	public static final int MAGIC = 0x20534444; // "DDS "

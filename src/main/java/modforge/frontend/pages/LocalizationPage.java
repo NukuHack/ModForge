@@ -469,7 +469,7 @@ public class LocalizationPage extends BasePage {
 		int idx = modSelector.getSelectedIndex();
 		if (idx <= 0) {
 			// Base Game
-			return Singleton.INSTANCE.game();
+			return Singleton.INSTANCE.getGame();
 		}
 		var mods = ModService.modCollection;
 		int modIdx = idx - 1;

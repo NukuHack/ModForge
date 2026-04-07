@@ -4,15 +4,13 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.logging.Logger;
 
 /**
  * DDS codec — DXT1/3/5, BC7, and uncompressed RGBA/BGRA.
  * No dependencies. All methods are static.
  */
+@lombok.extern.slf4j.Slf4j
 public class DDSUtil {
-	private static final Logger log = Logger.getLogger(DDSUtil.class.getName());
-	
 	private static final int DDS_MAGIC = 0x20534444;
 	private static final int DXT10_RAW = 0x44315830; // internal raw marker
 	
@@ -168,11 +166,11 @@ public class DDSUtil {
 		try {
 			data = readHeader(dis, true);
 		} catch (Exception ex) {
-			log.warning("DDS header LE failed: " + ex);
+			log.warn("DDS header LE failed: " + ex);
 			try {
 				data = readHeader(dis, false);
 			} catch (Exception ex2) {
-				log.warning("DDS header BE failed: " + ex2);
+				log.warn("DDS header BE failed: " + ex2);
 				return null;
 			}
 		}

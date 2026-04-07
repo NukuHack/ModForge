@@ -19,6 +19,7 @@ import java.util.List;
  * Inspired by the C# KCDTextureExporter's interactive feedback loop, but
  * designed as a pure data object so any frontend (Swing, REST, CLI) can use it.
  */
+@lombok.extern.slf4j.Slf4j
 public class TextureImportResult {
 	
 	// ── Source info ───────────────────────────────────────────────────────────

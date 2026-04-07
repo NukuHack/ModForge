@@ -207,7 +207,7 @@ public class LangEdit extends BaseEditPage {
 		
 		final Language lang = selectedLanguage();
 		final LocalService local = window.getRegistry().localService;
-		final ModData baseGame = Singleton.INSTANCE.game();
+		final ModData baseGame = Singleton.INSTANCE.getGame();
 		
 		// Collect lang-key attributes from the item
 		for (var attr : currentItem.getLangAttributes()) {

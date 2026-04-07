@@ -7,8 +7,6 @@ import modforge.frontend.MainWindow;
 import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @lombok.extern.slf4j.Slf4j
 public class Main {

@@ -1,6 +1,7 @@
 package modforge.backend.model.storm;
 
 import lombok.Getter;
+import lombok.Setter;
 import modforge.backend.DataPoint;
 
 import java.util.ArrayList;
@@ -53,8 +54,10 @@ public final class StormData {
 	 * Optional category grouping (derived from the file path or a {@code category}
 	 * attribute on the root element). {@code null} means "Miscellaneous".
 	 */
+	@Setter
 	private String category = null;
 	/** Source file information (path inside a PAK, endpoint tag, type). */
+	@Setter
 	private DataPoint dataPoint;
 	
 	// -------------------------------------------------------------------------
@@ -63,14 +66,6 @@ public final class StormData {
 	
 	public void setId(String id) {
 		this.id = id == null ? "" : id;
-	}
-	
-	public void setCategory(String cat) {
-		this.category = cat;
-	}
-	
-	public void setDataPoint(DataPoint dp) {
-		this.dataPoint = dp;
 	}
 	
 	@Override

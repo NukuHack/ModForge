@@ -13,6 +13,7 @@ import java.nio.ByteOrder;
  * References:
  *   - https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-block-compression
  */
+@lombok.extern.slf4j.Slf4j
 public class BcnDecoder {
 	
 	private BcnDecoder() {

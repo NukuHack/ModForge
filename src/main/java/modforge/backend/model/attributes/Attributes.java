@@ -5,7 +5,6 @@ import org.w3c.dom.Element;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 @lombok.extern.slf4j.Slf4j
 public final class Attributes {

@@ -1,12 +1,12 @@
 package modforge.backend.service;
 
 import modforge.Util;
-import modforge.backend.model.attributes.Attributes;
 import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
 import modforge.backend.model.attributes.Attribute;
+import modforge.backend.model.attributes.Attributes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Logger;
 
 @lombok.extern.slf4j.Slf4j
 public final class ModItemBuilder {
@@ -133,8 +132,8 @@ public final class ModItemBuilder {
 	 * Generic build handler: recognizes elements whose local name matches the
 	 * simple class name (case-insensitive) and populates a configurable ID attribute.
 	 */
+	@lombok.extern.slf4j.Slf4j
 	protected static final class GBuildHandler<M extends ModItem> implements BuildHandler {
-		private static final Logger log = Logger.getLogger(GBuildHandler.class.getName());
 		private final Class<M> type;
 		private final String idAttrKey;
 		
@@ -153,14 +152,14 @@ public final class ModItemBuilder {
 				
 				return ModItemBuilder.create(element, item);
 			} catch (final Exception e) {
-				log.warning("Handler failed for " + type.getSimpleName() + ": " + e.getMessage());
+				log.warn("Handler failed for " + type.getSimpleName() + ": " + e.getMessage());
 				return null;
 			}
 		}
 	}
 	
+	@lombok.extern.slf4j.Slf4j
 	protected static final class GCreateHandler<M extends ModItem> implements CreateHandler {
-		private static final Logger log = Logger.getLogger(GCreateHandler.class.getName());
 		private final Class<M> type;
 		private final String idAttrKey;
 		

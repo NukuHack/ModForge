@@ -347,7 +347,7 @@ public class ItemsPage extends BasePage {
 		Collection<ModItem> temp;
 		if (activeSource == null) {
 			// Base Game
-			temp = Singleton.INSTANCE.game().getItems();
+			temp = Singleton.INSTANCE.getGame().getItems();
 		} else {
 			// Specific mod
 			temp = activeSource.getItems();

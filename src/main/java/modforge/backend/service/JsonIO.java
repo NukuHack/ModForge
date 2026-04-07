@@ -1,11 +1,12 @@
 package modforge.backend.service;
 
+import lombok.Getter;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static modforge.Util.escapeJson;
 
@@ -143,15 +144,12 @@ public final class JsonIO {
 		}
 	}
 	
+	@Getter
 	public static class JsonString extends JsonValue {
 		private final String value;
 		
 		public JsonString(String value) {
 			this.value = value;
-		}
-		
-		public String getValue() {
-			return value;
 		}
 		
 		@Override
@@ -160,15 +158,12 @@ public final class JsonIO {
 		}
 	}
 	
+	@Getter
 	public static class JsonNumber extends JsonValue {
 		private final Number value;
 		
 		public JsonNumber(Number value) {
 			this.value = value;
-		}
-		
-		public Number getValue() {
-			return value;
 		}
 		
 		@Override
@@ -177,15 +172,12 @@ public final class JsonIO {
 		}
 	}
 	
+	@Getter
 	public static class JsonBoolean extends JsonValue {
 		private final boolean value;
 		
 		public JsonBoolean(boolean value) {
 			this.value = value;
-		}
-		
-		public boolean getValue() {
-			return value;
 		}
 		
 		@Override

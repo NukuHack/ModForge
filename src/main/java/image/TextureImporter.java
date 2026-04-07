@@ -8,9 +8,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.logging.Logger;
 
 /**
  * Entry point for importing <em>any</em> texture into the KCD2 mod pipeline.
@@ -45,9 +42,8 @@ import java.util.logging.Logger;
  * }
  * }</pre>
  */
+@lombok.extern.slf4j.Slf4j
 public class TextureImporter {
-	
-	private static final Logger log = Logger.getLogger(TextureImporter.class.getName());
 	
 	// DXGI values not covered by the original DDSUtil
 	private static final int DXGI_BC4_UNORM = 80;
