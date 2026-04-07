@@ -92,22 +92,19 @@ class StormServiceTest {
 							<selectors>
 								<isMan/>
 							</selectors>
-							<operations>
-							</operations>
+							<operations/>
 						</rule>
 						<rule name="underwear_woman">
 							<selectors>
 								<isWoman/>
 							</selectors>
-							<operations>
-							</operations>
+							<operations/>
 						</rule>
 						<rule name="underwear_papezskyLegat_rozaNaked">
 							<selectors>
 								<hasName Name="papezskyLegat_cin_rozaNaked"/>
 							</selectors>
-							<operations>
-							</operations>
+							<operations/>
 						</rule>
 						<rule name="underwear_tarasMura_taras">
 							<selectors>
@@ -279,9 +276,8 @@ class StormServiceTest {
 		void parseRealXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(realStormXml().getBytes(StandardCharsets.UTF_8))) {
 				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "full/id");
-				System.out.println(data);
 				var raw = StormService.StormParser.serialize(data);
-				System.out.println(raw);
+				assertEquals(realStormXml().replaceAll("(?m)^\\s+|\\s+$", "").replaceAll("\\n{3,}", "\n\n"), raw.replaceAll("(?m)^\\s+|\\s+$", "").replaceAll("\\n{3,}", "\n\n"));
 			}
 		}
 		

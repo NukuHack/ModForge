@@ -8,11 +8,14 @@ import modforge.backend.model.storm.*;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -148,7 +151,7 @@ public final class StormService {
 	 */
 	private static Map<String, StormData> indexStormFromPakToMap(String pakPath) {
 		final File pakFile = new File(pakPath);
-		if (!pakFile.exists())
+		if (! pakFile.exists())
 			return Map.of();
 		
 		final Map<String, StormData> result = new LinkedHashMap<>();
@@ -159,9 +162,9 @@ public final class StormService {
 				final var entry = entries.nextElement();
 				final String name = entry.getName().replace('\\', '/');
 				
-				if (!name.toLowerCase(Locale.ROOT).contains(STORM_PATH_PREFIX.toLowerCase(Locale.ROOT)))
+				if (! name.toLowerCase(Locale.ROOT).contains(STORM_PATH_PREFIX.toLowerCase(Locale.ROOT)))
 					continue;
-				if (!name.toLowerCase(Locale.ROOT).endsWith(Util.DATA_FORMAT))
+				if (! name.toLowerCase(Locale.ROOT).endsWith(Util.DATA_FORMAT))
 					continue;
 				
 				final String id = entryToId(name);
@@ -236,13 +239,11 @@ public final class StormService {
 			return;
 		
 		final Path dataFolder = Util.gameDataDir(gameDir);
-		if (!Files.exists(dataFolder))
+		if (! Files.exists(dataFolder))
 			return;
 		
 		try (var stream = Files.list(dataFolder)) {
-			stream.filter(Files::isRegularFile)
-					.filter(p -> p.toString().endsWith(".pak"))
-					.forEach(pak -> indexStormFromPak(pak.toString()));
+			stream.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".pak")).forEach(pak -> indexStormFromPak(pak.toString()));
 		} catch (IOException e) {
 			log.warn("Cannot list game Data folder for Storm scan: {}", e.getMessage());
 		}
@@ -263,25 +264,23 @@ public final class StormService {
 	public void loadForMod(ModData mod) {
 		final String gameDir = userConfig.getGameDirectory();
 		final Path dataFolder = Path.of(Util.modData(gameDir, mod.id));
-		if (!Files.exists(dataFolder))
+		if (! Files.exists(dataFolder))
 			return;
 		
 		final Map<String, StormData> modIndex = new LinkedHashMap<>();
 		
 		try (var stream = Files.list(dataFolder)) {
-			stream.filter(Files::isRegularFile)
-					.filter(p -> p.toString().endsWith(".pak"))
-					.forEach(pak -> {
-						Map<String, StormData> fromPak = indexStormFromPakToMap(pak.toString());
-						modIndex.putAll(fromPak);
-					});
+			stream.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".pak")).forEach(pak -> {
+				Map<String, StormData> fromPak = indexStormFromPakToMap(pak.toString());
+				modIndex.putAll(fromPak);
+			});
 		} catch (IOException e) {
 			log.warn("Cannot list Data folder for Storm mod {}: {}", mod.id, e.getMessage());
 		}
 		
 		// Attach parsed StormData to the Storm ModItems that belong to this mod
 		for (var item : mod.getItems()) {
-			if (!(item instanceof Storm stormItem))
+			if (! (item instanceof Storm stormItem))
 				continue;
 			final String itemId = stormItem.getId();
 			if (itemId == null)
@@ -318,9 +317,7 @@ public final class StormService {
 	 * Return all Storm entries that match the given category.
 	 */
 	public List<StormData> getByCategory(String category) {
-		return stormIndex.values().stream()
-					   .filter(sd -> Objects.equals(sd.getCategory(), category))
-					   .toList();
+		return stormIndex.values().stream().filter(sd -> Objects.equals(sd.getCategory(), category)).toList();
 	}
 	
 	/**
@@ -347,7 +344,7 @@ public final class StormService {
 	// =========================================================================
 	
 	/**
-	 * Parses and serialises STORM XML files.
+	 * Parses and serializes STORM XML files.
 	 *
 	 * <p>The actual on-disk format uses {@code <storm>} as root and lowercase
 	 * section tags: {@code <rules>}, {@code <selectors>}, {@code <operations>},
@@ -392,7 +389,7 @@ public final class StormService {
 				
 				// Optional category stored as a root attribute
 				final String catAttr = root.getAttribute("category");
-				if (!catAttr.isEmpty())
+				if (! catAttr.isEmpty())
 					data.setCategory(catAttr);
 				
 				parseAllSections(root, data);
@@ -419,16 +416,16 @@ public final class StormService {
 		private static void parseAllSections(Element root, StormData data) {
 			final NodeList children = root.getChildNodes();
 			for (int i = 0; i < children.getLength(); i++) {
-				if (!(children.item(i) instanceof Element section))
+				if (! (children.item(i) instanceof Element section))
 					continue;
 				final String tag = section.getLocalName().toLowerCase(Locale.ROOT);
 				
 				switch (tag) {
-					case "common"           -> parseCommon(section, data);
-					case "tasks"            -> parseTasks(section, data);
-					case "customselectors"  -> parseCustomSelectors(section, data);
+					case "common" -> parseCommon(section, data);
+					case "tasks" -> parseTasks(section, data);
+					case "customselectors" -> parseCustomSelectors(section, data);
 					case "customoperations" -> parseCustomOperations(section, data);
-					case "rules"            -> parseRules(section, data);
+					case "rules" -> parseRules(section, data);
 					// Unknown top-level sections are silently skipped.
 				}
 			}
@@ -455,7 +452,7 @@ public final class StormService {
 					String path = child.getAttribute("path");
 					if (path.isBlank())
 						path = child.getTextContent().trim();
-					if (!path.isBlank())
+					if (! path.isBlank())
 						data.getCommonSources().add(path);
 				}
 			});
@@ -481,8 +478,7 @@ public final class StormService {
 				final var cs = new CustomStormSelector();
 				cs.setName(child.getAttribute("name"));
 				cs.setComment(child.getAttribute("comment"));
-				forEachElement(child, attrEl ->
-											  cs.getAttributeNames().add(attrEl.getAttribute("name")));
+				forEachElement(child, attrEl -> cs.getAttributeNames().add(attrEl.getAttribute("name")));
 				data.getCustomSelectors().add(cs);
 			});
 		}
@@ -535,7 +531,7 @@ public final class StormService {
 		 */
 		private static void parseTasks(Element section, StormData data) {
 			forEachElement(section, child -> {
-				if (!child.getLocalName().equalsIgnoreCase("task"))
+				if (! child.getLocalName().equalsIgnoreCase("task"))
 					return;
 				
 				final var task = new StormTask();
@@ -551,12 +547,12 @@ public final class StormService {
 						String path = sourceEl.getAttribute("path");
 						if (path.isBlank())
 							path = sourceEl.getTextContent().trim();
-						if (!path.isBlank())
+						if (! path.isBlank())
 							sourcePaths.add(path);
 					}
 				});
 				
-				if (!sourcePaths.isEmpty()) {
+				if (! sourcePaths.isEmpty()) {
 					task.setSources(String.join(",", sourcePaths));
 				} else {
 					// Flat attribute fallback
@@ -585,7 +581,7 @@ public final class StormService {
 		 */
 		private static void parseRules(Element section, StormData data) {
 			forEachElement(section, ruleEl -> {
-				if (!ruleEl.getLocalName().equalsIgnoreCase("rule"))
+				if (! ruleEl.getLocalName().equalsIgnoreCase("rule"))
 					return;
 				
 				final var rule = new StormRule();
@@ -598,7 +594,7 @@ public final class StormService {
 					switch (partTag) {
 						// Actual format uses "selectors" (also accept legacy "conditions")
 						case "selectors", "conditions" -> parseSelectors(part, rule);
-						case "operations"              -> parseOperations(part, rule);
+						case "operations" -> parseOperations(part, rule);
 					}
 				});
 				
@@ -622,7 +618,7 @@ public final class StormService {
 		 *       their child elements as nested selectors.</li>
 		 *   <li>All other tags (e.g. {@code isMan}, {@code hasName}) are leaf
 		 *       selectors; their XML attributes populate the attribute map.</li>
-		 *   <li>Attribute names are normalised to lower-camel-case so that
+		 *   <li>Attribute names are normalized to lower-camel-case so that
 		 *       {@code Name} and {@code name} both resolve to {@code name}.</li>
 		 * </ul>
 		 *
@@ -638,7 +634,7 @@ public final class StormService {
 			final String tag = el.getLocalName().toLowerCase(Locale.ROOT);
 			final var sel = new GenericSelector(tag);
 			
-			// Copy XML attributes; normalise "Name" → "name" to handle mixed casing in files
+			// Copy XML attributes; normalize "Name" → "name" to handle mixed casing in files
 			copyXmlAttrs(el, sel.getAttributes(), true);
 			
 			// Recurse into children for both combinators and any exotic nested selectors
@@ -652,7 +648,6 @@ public final class StormService {
 		// -------------------------------------------------------------------------
 		
 		private static void parseOperations(Element operationsEl, StormRule rule) {
-			// TODO : check if self closing tag of operations actually work or not
 			forEachElement(operationsEl, child -> rule.getOperations().add(parseOperation(child)));
 		}
 		
@@ -698,7 +693,7 @@ public final class StormService {
 			doc.appendChild(root);
 			
 			// <common>
-			if (!data.getCommonSources().isEmpty()) {
+			if (! data.getCommonSources().isEmpty()) {
 				final Element common = doc.createElement("common");
 				for (var path : data.getCommonSources()) {
 					final Element src = doc.createElement("source");
@@ -709,23 +704,23 @@ public final class StormService {
 			}
 			
 			// <tasks>
-			if (!data.getTasks().isEmpty()) {
+			if (! data.getTasks().isEmpty()) {
 				final Element tasks = doc.createElement("tasks");
 				for (var t : data.getTasks()) {
 					final Element task = doc.createElement("task");
-					if (!t.getName().isBlank())
+					if (! t.getName().isBlank())
 						task.setAttribute("name", t.getName());
-					if (!t.getTaskClass().isBlank())
+					if (! t.getTaskClass().isBlank())
 						task.setAttribute("class", t.getTaskClass());
-					if (!t.getComment().isBlank())
+					if (! t.getComment().isBlank())
 						task.setAttribute("comment", t.getComment());
 					
 					// Write sources as child elements if comma-separated, else single element
 					final String sources = t.getSources();
-					if (sources != null && !sources.isBlank()) {
+					if (sources != null && ! sources.isBlank()) {
 						for (var srcPath : sources.split(",")) {
 							final String trimmed = srcPath.trim();
-							if (!trimmed.isBlank()) {
+							if (! trimmed.isBlank()) {
 								final Element src = doc.createElement("source");
 								src.setAttribute("path", trimmed);
 								task.appendChild(src);
@@ -738,12 +733,12 @@ public final class StormService {
 			}
 			
 			// <customSelectors>
-			if (!data.getCustomSelectors().isEmpty()) {
+			if (! data.getCustomSelectors().isEmpty()) {
 				final Element cs = doc.createElement("customSelectors");
 				for (var cSel : data.getCustomSelectors()) {
 					final Element sel = doc.createElement("selector");
 					sel.setAttribute("name", cSel.getName());
-					if (!cSel.getComment().isBlank())
+					if (! cSel.getComment().isBlank())
 						sel.setAttribute("comment", cSel.getComment());
 					for (var attrName : cSel.getAttributeNames()) {
 						final Element a = doc.createElement("attribute");
@@ -756,12 +751,12 @@ public final class StormService {
 			}
 			
 			// <customOperations>
-			if (!data.getCustomOperations().isEmpty()) {
+			if (! data.getCustomOperations().isEmpty()) {
 				final Element co = doc.createElement("customOperations");
 				for (var cop : data.getCustomOperations()) {
 					final Element op = doc.createElement("operation");
 					op.setAttribute("name", cop.getName());
-					if (!cop.getMode().isBlank())
+					if (! cop.getMode().isBlank())
 						op.setAttribute("mode", cop.getMode());
 					for (var ma : cop.getModAttributes()) {
 						final Element a = doc.createElement("attribute");
@@ -776,7 +771,7 @@ public final class StormService {
 			}
 			
 			// <rules>
-			if (!data.getRules().isEmpty()) {
+			if (! data.getRules().isEmpty()) {
 				final Element rules = doc.createElement("rules");
 				for (var r : data.getRules()) {
 					rules.appendChild(serializeRule(doc, r));
@@ -789,11 +784,11 @@ public final class StormService {
 		
 		private static Element serializeRule(Document doc, StormRule rule) {
 			final Element el = doc.createElement("rule");
-			if (!rule.getName().isBlank())
+			if (! rule.getName().isBlank())
 				el.setAttribute("name", rule.getName());
-			if (!rule.getMode().isBlank())
+			if (! rule.getMode().isBlank())
 				el.setAttribute("mode", rule.getMode());
-			if (!rule.getComment().isBlank())
+			if (! rule.getComment().isBlank())
 				el.setAttribute("comment", rule.getComment());
 			
 			// Always emit <selectors> and <operations> elements (even if empty),
@@ -862,9 +857,7 @@ public final class StormService {
 				final var a = (Attr) xmlAttrs.item(i);
 				if (a.getLocalName() == null)
 					continue;
-				final String key = normaliseCase
-										   ? a.getLocalName().toLowerCase(Locale.ROOT)
-										   : a.getLocalName();
+				final String key = normaliseCase ? a.getLocalName().toLowerCase(Locale.ROOT) : a.getLocalName();
 				target.put(key, a.getValue());
 			}
 		}
@@ -890,13 +883,11 @@ public final class StormService {
 		}
 		
 		private static String docToString(Document doc) throws Exception {
-			var tf = javax.xml.transform.TransformerFactory.newInstance().newTransformer();
-			tf.setOutputProperty(javax.xml.transform.OutputKeys.ENCODING, "UTF-8");
-			tf.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
-			tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-			var sw = new java.io.StringWriter();
-			tf.transform(new DOMSource(doc), new StreamResult(sw));
-			return sw.toString();
+			final var tf = TransformerFactory.newInstance().newTransformer();
+			tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+			final var writer = new StringWriter();
+			tf.transform(new DOMSource(doc), new StreamResult(writer));
+			return Util.indentXml(Util.normalizeXml(writer.toString()));
 		}
 		
 		/**
