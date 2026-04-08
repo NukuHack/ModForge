@@ -1,5 +1,6 @@
 package modforge.frontend;
 
+import modforge.frontend.pages.KCDConverterGUI;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -148,20 +149,7 @@ public class MainWindow extends JFrame {
 		b.setFocusPainted(false);
 		b.setFont(new Font("Roboto", Font.PLAIN, 13));
 		b.setPreferredSize(new Dimension(36, 28));
-		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		b.addActionListener(action);
-		b.addMouseListener(new java.awt.event.MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				b.setBackground(new Color(0x313244));
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-				b.setBackground(TITLEBAR);
-			}
-		});
-		return b;
+		return getJButton(action, b, TITLEBAR);
 	}
 	
 	// ── sidebar ───────────────────────────────────────────────────────────────
@@ -175,16 +163,17 @@ public class MainWindow extends JFrame {
 		side.add(Box.createVerticalStrut(8));
 		
 		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.CONVERT }) {
-			side.add(navBtn(page.getDisplayName(), page));
+			side.add(navBtn(page.getDisplayName(), e -> navigate(page)));
 		}
+		side.add(navBtn("KCD2 image", e -> SwingUtilities.invokeLater(() -> new KCDConverterGUI().setVisible(true))));
 		
 		side.add(Box.createVerticalGlue());
-		side.add(navBtn(Page.SETTINGS.getDisplayName(), Page.SETTINGS));
+		side.add(navBtn(Page.SETTINGS.getDisplayName(), e -> navigate(Page.SETTINGS)));
 		
 		return side;
 	}
 	
-	private JButton navBtn(String text, Page page) {
+	private JButton navBtn(String text, ActionListener event) {
 		final JButton b = new JButton(text);
 		b.setAlignmentX(Component.LEFT_ALIGNMENT);
 		b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
@@ -195,8 +184,12 @@ public class MainWindow extends JFrame {
 		b.setFocusPainted(false);
 		b.setFont(new Font("Roboto", Font.PLAIN, 13));
 		b.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+		return getJButton(event, b, SURFACE);
+	}
+	
+	private JButton getJButton(ActionListener event, JButton b, Color surface) {
 		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		b.addActionListener(e -> navigate(page));
+		b.addActionListener(event);
 		b.addMouseListener(new java.awt.event.MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
@@ -205,7 +198,7 @@ public class MainWindow extends JFrame {
 			
 			@Override
 			public void mouseExited(MouseEvent e) {
-				b.setBackground(SURFACE);
+				b.setBackground(surface);
 			}
 		});
 		return b;

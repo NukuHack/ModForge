@@ -147,7 +147,7 @@ public class ImageConverter {
 		}
 		
 		if (ddsFiles.isEmpty())
-			throw new IOException("No .dds files found in: " + inputFolder);
+			return List.of();
 		
 		ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
 		

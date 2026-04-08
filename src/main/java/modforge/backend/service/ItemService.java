@@ -186,7 +186,8 @@ public final class ItemService {
 			fileName = "apple.txt";
 		
 		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
-		return dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, dirSuffix, fileName);
+		// Capitalize the L in Libs
+		return dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, Util.capitalStart(dirSuffix), fileName);
 	}
 	
 	private static Document makeDocument(final File outFile, final ModItem item, final String groupName) throws Exception {

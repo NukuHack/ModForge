@@ -6,6 +6,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.E.Language;
 import modforge.backend.model.ModItem;
+import modforge.backend.service.IconService;
 
 import java.util.*;
 
@@ -22,7 +23,7 @@ public final class ModData {
 	 * Per-mod icon store: icon stem (lowercase, no extension) -> raw DDS bytes.
 	 * Populated by IconService.loadModIconsForMod() from the mod's own PAK files.
 	 */
-	private final Map<String, byte[]> iconIndex = new HashMap<>();
+	private final Map<String, IconService.Icon> iconIndex = new HashMap<>();
 	public String id = "";
 	public String name = "";
 	public String description = "";
@@ -107,11 +108,11 @@ public final class ModData {
 		localizations.put(language, map);
 	}
 	
-	public Map<String, byte[]> getIcon() {
+	public Map<String, IconService.Icon> getIcon() {
 		return Collections.unmodifiableMap(iconIndex);
 	}
 	
-	public void setIcon(Map<String, byte[]> input) {
+	public void setIcon(Map<String, IconService.Icon> input) {
 		iconIndex.clear();
 		iconIndex.putAll(input);
 	}

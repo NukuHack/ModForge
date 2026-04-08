@@ -447,11 +447,8 @@ public class LocalizationPage extends BasePage {
 		int count = 0;
 		for (int i = 0; i < allEntries.size(); i++) {
 			final LangEntry entry = allEntries.get(i);
-			if (! allAttrs && ! attrFilter.equalsIgnoreCase(entry.attrName))
-				continue;
-			if (! noSearch && ! entry.has(rawSearch))
-				continue;
-			indices[count++] = i;
+			if ((allAttrs || entry.attrName.startsWith(attrFilter)) && (noSearch || entry.has(rawSearch)))
+				indices[count++] = i;
 		}
 		filteredIndices = Arrays.copyOf(indices, count);
 		

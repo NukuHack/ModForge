@@ -53,98 +53,6 @@ public final class LocalService {
 	}
 	
 	/**
-	 * (Re-)load from disk. Call after the user sets a new game directory.
-	 */
-	public void init() {
-		final long start = System.currentTimeMillis();
-		final String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank())
-			return;
-		final var game = Singleton.INSTANCE.getGame();
-		try {
-			game.setLocal(loadLocalization(gameDir));
-		} catch (Exception ex) {
-			log.error("Localisation read failed: {}", ex.getMessage());
-		}
-		log.info("Game Localization Load took: {}", System.currentTimeMillis() - start);
-	}
-	
-	/**
-	 * Resolve the display name of {@code item}, checking {@code mod}'s own
-	 * localizations before falling back to the base-game strings.
-	 */
-	public String getName(ModItem item, ModData mod) {
-		return resolve(item, mod, "ui_name", "UIName", "name");
-	}
-	
-	/**
-	 * Resolve the description of {@code item} with mod-then-base fallback.
-	 */
-	public String getDescription(ModItem item, ModData mod) {
-		return resolve(item, mod, "ui_desc", "UIInfo");
-	}
-	
-	// ------------------------------------------------------------------
-	// Convenience overloads for base-game items (no per-mod map)
-	// ------------------------------------------------------------------
-	
-	/**
-	 * Resolve the lore description of {@code item} with mod-then-base fallback.
-	 */
-	public String getLoreDescription(ModItem item, ModData mod) {
-		return resolve(item, mod, "ui_lore_desc");
-	}
-	
-	/** Resolve the display name of a base-game item. */
-	public String getName(ModItem item) {
-		return getName(item, Singleton.INSTANCE.getGame());
-	}
-	
-	/** Resolve the description of a base-game item. */
-	public String getDescription(ModItem item) {
-		return getDescription(item, Singleton.INSTANCE.getGame());
-	}
-	
-	/** Resolve the lore description of a base-game item. */
-	public String getLoreDescription(ModItem item) {
-		return getLoreDescription(item, Singleton.INSTANCE.getGame());
-	}
-	
-	/**
-	 * Look up a raw localization key in the mod's strings, then the base game.
-	 * Returns {@code null} if not found in either.
-	 */
-	public String resolve(String key, final ModData mod, final Language lang) {
-		if (key == null || (key = key.trim()).isEmpty())
-			return null;
-		final var game = Singleton.INSTANCE.getGame();
-		// 1. Mod's own strings
-		if (mod != game) {
-			final var modMap = mod.getLocal().get(lang);
-			if (modMap != null && modMap.containsKey(key))
-				return modMap.get(key);
-		}
-		
-		// 2. Base-game strings
-		final var baseMap = game.getLocal().get(lang);
-		if (baseMap != null && baseMap.containsKey(key))
-			return baseMap.get(key);
-		
-		return null;
-	}
-	
-	public String resolve(String key, ModData mod) {
-		return resolve(key, mod, userConfig.getLanguage());
-	}
-	
-	/**
-	 * Look up a raw localization key in the base-game strings only.
-	 */
-	public String resolve(String key) {
-		return resolve(key, Singleton.INSTANCE.getGame());
-	}
-	
-	/**
 	 * Read all localisation paks from the game directory.
 	 * Returns: Language enum -> (string-key -> localized-value)
 	 */
@@ -241,12 +149,14 @@ public final class LocalService {
 	 */
 	public static void writeModLocalization(ModData mod, String gameDir) {
 		boolean ok = writeModLocalizationFiles(gameDir, mod.id, mod.getLocal());
-		if (ok) {
-			log.info("Localization written for mod: {}", mod.id);
-		} else {
+		if (! ok) {
 			log.warn("Localization write had errors for mod: {}", mod.id);
 		}
 	}
+	
+	// ------------------------------------------------------------------
+	// Convenience overloads for base-game items (no per-mod map)
+	// ------------------------------------------------------------------
 	
 	/**
 	 * Write mod-specific localization files into the mod's Localization directory.
@@ -293,6 +203,94 @@ public final class LocalService {
 	}
 	
 	/**
+	 * (Re-)load from disk. Call after the user sets a new game directory.
+	 */
+	public void init() {
+		final long start = System.currentTimeMillis();
+		final String gameDir = userConfig.getGameDirectory();
+		if (gameDir == null || gameDir.isBlank())
+			return;
+		final var game = Singleton.INSTANCE.getGame();
+		try {
+			game.setLocal(loadLocalization(gameDir));
+		} catch (Exception ex) {
+			log.error("Localisation read failed: {}", ex.getMessage());
+		}
+		log.info("Game Localization Load took: {}", System.currentTimeMillis() - start);
+	}
+	
+	/**
+	 * Resolve the display name of {@code item}, checking {@code mod}'s own
+	 * localizations before falling back to the base-game strings.
+	 */
+	public String getName(ModItem item, ModData mod) {
+		return resolve(item, mod, "ui_name", "UIName", "name");
+	}
+	
+	/**
+	 * Resolve the description of {@code item} with mod-then-base fallback.
+	 */
+	public String getDescription(ModItem item, ModData mod) {
+		return resolve(item, mod, "ui_desc", "UIInfo");
+	}
+	
+	/**
+	 * Resolve the lore description of {@code item} with mod-then-base fallback.
+	 */
+	public String getLoreDescription(ModItem item, ModData mod) {
+		return resolve(item, mod, "ui_lore_desc");
+	}
+	
+	/** Resolve the display name of a base-game item. */
+	public String getName(ModItem item) {
+		return getName(item, Singleton.INSTANCE.getGame());
+	}
+	
+	/** Resolve the description of a base-game item. */
+	public String getDescription(ModItem item) {
+		return getDescription(item, Singleton.INSTANCE.getGame());
+	}
+	
+	/** Resolve the lore description of a base-game item. */
+	public String getLoreDescription(ModItem item) {
+		return getLoreDescription(item, Singleton.INSTANCE.getGame());
+	}
+	
+	/**
+	 * Look up a raw localization key in the mod's strings, then the base game.
+	 * Returns {@code null} if not found in either.
+	 */
+	public String resolve(String key, final ModData mod, final Language lang) {
+		if (key == null || (key = key.trim()).isEmpty())
+			return null;
+		final var game = Singleton.INSTANCE.getGame();
+		// 1. Mod's own strings
+		if (mod != game) {
+			final var modMap = mod.getLocal().get(lang);
+			if (modMap != null && modMap.containsKey(key))
+				return modMap.get(key);
+		}
+		
+		// 2. Base-game strings
+		final var baseMap = game.getLocal().get(lang);
+		if (baseMap != null && baseMap.containsKey(key))
+			return baseMap.get(key);
+		
+		return null;
+	}
+	
+	public String resolve(String key, ModData mod) {
+		return resolve(key, mod, userConfig.getLanguage());
+	}
+	
+	/**
+	 * Look up a raw localization key in the base-game strings only.
+	 */
+	public String resolve(String key) {
+		return resolve(key, Singleton.INSTANCE.getGame());
+	}
+	
+	/**
 	 * Resolve one of several candidate attribute names on {@code item} to a
 	 * localized string. Resolution order for each candidate key found:
 	 *   1. mod's own localizations for the current language
@@ -331,10 +329,10 @@ public final class LocalService {
 	}
 	
 	record LangPak(@NonNull Language language, @NonNull String pakPath) {
-			static LangPak c(String l) {
-				final var base = new File(l).getName();
-				final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
-				return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
-			}
+		static LangPak c(String l) {
+			final var base = new File(l).getName();
+			final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
+			return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
 		}
+	}
 }

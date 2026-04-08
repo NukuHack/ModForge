@@ -1,10 +1,13 @@
 package image;
 
+import image.DDSUtil.BitReader;
+import image.DDSUtil.BitWriter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 /**
  * Pure-Java BCn block codec — decompressors and compressors for all formats
@@ -18,7 +21,7 @@ import java.nio.ByteOrder;
  * <h3>Compression (encode path)</h3>
  * <ul>
  *   <li>{@link #compressBC5(byte[], int, int)} — BC5_UNORM, two-channel RG normal map</li>
- *   <li>{@link #compressBC7(byte[], int, int)} — BC7 Mode-6, full RGBA</li>
+ *   <li>{@link #compressBC7(byte[], int, int)} — BC7 full RGBA</li>
  * </ul>
  *
  * <p>BC5 stores two independent BC4 blocks per 4×4 tile — one for R, one for G.
@@ -44,6 +47,37 @@ public class BCUtil {
 	// Public decompression entry point
 	// =========================================================================
 	
+	// BC7 weight tables
+	private static final int[] W2 = { 0, 21, 43, 64 };
+	private static final int[] W3 = { 0, 9, 18, 27, 37, 46, 55, 64 };
+	
+	// =========================================================================
+	// BC1 (DXT1) decode — 4 bpp, RGB + optional 1-bit alpha
+	// =========================================================================
+	private static final int[] W4 = { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
+	// Partition tables: 64 entries of 16 bytes each
+	private static final int[][] PARTITION2 = new int[64][16];
+	private static final int[][] PARTITION3 = new int[64][16];
+	// Anchor index tables for second and third subsets
+	private static final int[] ANCHOR_SECOND_SUBSET = new int[64];
+	private static final int[] ANCHOR_THIRD_SUBSET_1 = new int[64];
+	private static final int[] ANCHOR_THIRD_SUBSET_2 = new int[64];
+	
+	// =========================================================================
+	// BC2 (DXT3) decode — explicit 4-bit alpha + BC1 colour
+	// =========================================================================
+	
+	static {
+		// Initialize partition tables from C++ data
+		initPartition2();
+		initPartition3();
+		initAnchorTables();
+	}
+	
+	// =========================================================================
+	// BC3 (DXT5) decode — BC4 alpha block + BC1 colour
+	// =========================================================================
+	
 	/**
 	 * Decompress a BCn-compressed image to raw RGBA8 pixels.
 	 *
@@ -67,16 +101,16 @@ public class BCUtil {
 		};
 	}
 	
+	// =========================================================================
+	// BC4 decode — single channel (R)
+	// =========================================================================
+	
 	public static byte[] decompress(byte[] src, int width, int height, int format) {
 		DxgiFormat fmt = DxgiFormat.fromValue(format);
 		if (fmt == null)
 			throw new UnsupportedOperationException("Unknown DDS format code: 0x" + Integer.toHexString(format));
 		return decompress(src, width, height, fmt);
 	}
-	
-	// =========================================================================
-	// BC1 (DXT1) decode — 4 bpp, RGB + optional 1-bit alpha
-	// =========================================================================
 	
 	private static byte[] decodeBC1(byte[] src, int w, int h) {
 		byte[] dst = new byte[w * h * 4];
@@ -108,12 +142,20 @@ public class BCUtil {
 		return c;
 	}
 	
+	// =========================================================================
+	// BC5 decode — two channels (RG), used for normal maps
+	// =========================================================================
+	
 	private static int[] rgb565ToRgba(int v, int a) {
 		int r = (v >> 11) & 0x1F;
 		int g = (v >> 5) & 0x3F;
 		int b = v & 0x1F;
 		return new int[] { (r << 3) | (r >> 2), (g << 2) | (g >> 4), (b << 3) | (b >> 2), a };
 	}
+	
+	// =========================================================================
+	// BC7 decode — all 8 modes; multi-subset partition tables stub to zeros
+	// =========================================================================
 	
 	private static int[] lerp3(int[] a, int[] b) {
 		return new int[] { (2 * a[0] + b[0]) / 3, (2 * a[1] + b[1]) / 3, (2 * a[2] + b[2]) / 3, 255 };
@@ -138,10 +180,6 @@ public class BCUtil {
 			}
 		}
 	}
-	
-	// =========================================================================
-	// BC2 (DXT3) decode — explicit 4-bit alpha + BC1 colour
-	// =========================================================================
 	
 	private static byte[] decodeBC2(byte[] src, int w, int h) {
 		byte[] dst = new byte[w * h * 4];
@@ -173,10 +211,6 @@ public class BCUtil {
 		return dst;
 	}
 	
-	// =========================================================================
-	// BC3 (DXT5) decode — BC4 alpha block + BC1 colour
-	// =========================================================================
-	
 	private static byte[] decodeBC3(byte[] src, int w, int h) {
 		byte[] dst = new byte[w * h * 4];
 		ByteBuffer buf = ByteBuffer.wrap(src).order(ByteOrder.LITTLE_ENDIAN);
@@ -205,10 +239,6 @@ public class BCUtil {
 		}
 		return dst;
 	}
-	
-	// =========================================================================
-	// BC4 decode — single channel (R)
-	// =========================================================================
 	
 	private static byte[] decodeBC4(byte[] src, int w, int h, boolean signed) {
 		byte[] dst = new byte[w * h * 4];
@@ -284,14 +314,8 @@ public class BCUtil {
 		int clamped = v + 128;
 		if (clamped < 0)
 			return 0;
-		if (clamped > 255)
-			return 255;
-		return clamped;
+		return Math.min(clamped, 255);
 	}
-	
-	// =========================================================================
-	// BC5 decode — two channels (RG), used for normal maps
-	// =========================================================================
 	
 	private static byte[] decodeBC5(byte[] src, int w, int h, boolean signed) {
 		byte[] dst = new byte[w * h * 4];
@@ -318,33 +342,28 @@ public class BCUtil {
 		return dst;
 	}
 	
-	// =========================================================================
-	// BC7 decode — all 8 modes; multi-subset partition tables stub to zeros
-	// =========================================================================
-	
 	private static byte[] decodeBC7(byte[] src, int w, int h) {
 		byte[] dst = new byte[w * h * 4];
-		int bw = (w + 3) / 4, bh = (h + 3) / 4;
-		
+		int bw = (w + 3) / 4;
+		int bh = (h + 3) / 4;
 		for (int by = 0; by < bh; by++) {
 			for (int bx = 0; bx < bw; bx++) {
 				int off = (by * bw + bx) * 16;
 				if (off + 16 > src.length)
 					break;
-				
 				int[] decoded = decodeBC7Block(src, off);
-				
 				for (int py = 0; py < 4; py++) {
 					for (int px = 0; px < 4; px++) {
-						int x = bx * 4 + px, y = by * 4 + py;
-						if (x < w && y < h) {
-							int oi = (y * w + x) * 4;
-							int c = decoded[py * 4 + px];
-							dst[oi] = (byte) ((c >> 16) & 0xFF);     // R
-							dst[oi + 1] = (byte) ((c >> 8) & 0xFF);  // G
-							dst[oi + 2] = (byte) (c & 0xFF);         // B
-							dst[oi + 3] = (byte) ((c >> 24) & 0xFF); // A
-						}
+						int x = bx * 4 + px;
+						int y = by * 4 + py;
+						if (x >= w || y >= h)
+							continue;
+						int c = decoded[py * 4 + px];
+						int outOff = (y * w + x) * 4;
+						dst[outOff] = (byte) ((c >> 16) & 0xFF); // R
+						dst[outOff + 1] = (byte) ((c >> 8) & 0xFF);  // G
+						dst[outOff + 2] = (byte) (c & 0xFF);         // B
+						dst[outOff + 3] = (byte) ((c >> 24) & 0xFF); // A
 					}
 				}
 			}
@@ -352,37 +371,34 @@ public class BCUtil {
 		return dst;
 	}
 	
-	static void decompressBC7(Dds.ImgData data, byte[] out) {
-		byte[] src = data.data;
-		int w = data.w, h = data.h, bw = (w + 3) / 4;
+	private static int detectBC7Mode(byte firstByte) {
+		// BC7 mode is determined by the first byte's bit pattern
 		
-		for (int by = 0; by < (h + 3) / 4; by++) {
-			for (int bx = 0; bx < bw; bx++) {
-				int off = (by * bw + bx) * 16;
-				if (off + 16 > src.length)
-					break;
-				
-				int[] decoded = decodeBC7Block(src, off);
-				
-				for (int py = 0; py < 4; py++) {
-					for (int px = 0; px < 4; px++) {
-						int x = bx * 4 + px, y = by * 4 + py;
-						if (x < w && y < h) {
-							int oi = (y * w + x) * 4, c = decoded[py * 4 + px];
-							out[oi] = (byte) ((c >> 16) & 0xFF);
-							out[oi + 1] = (byte) ((c >> 8) & 0xFF);
-							out[oi + 2] = (byte) (c & 0xFF);
-							out[oi + 3] = (byte) ((c >> 24) & 0xFF);
-						}
-					}
-				}
-			}
-		}
+		if ((firstByte & 0x01) != 0)
+			return 0;  // .... ...1
+		if ((firstByte & 0x02) != 0)
+			return 1;  // .... ..1.
+		if ((firstByte & 0x04) != 0)
+			return 2;  // .... .1..
+		if ((firstByte & 0x08) != 0)
+			return 3;  // .... 1...
+		if ((firstByte & 0x10) != 0)
+			return 4;  // ...1 ....
+		if ((firstByte & 0x20) != 0)
+			return 5;  // ..1. ....
+		if ((firstByte & 0x40) != 0)
+			return 6;  // .1.. ....
+		if ((firstByte & 0x80) != 0)
+			return 7;  // 1... ....
+		
+		// For mode 8+ (theoretically invalid for BC7)
+		return - 1;
 	}
 	
 	private static int[] decodeBC7Block(byte[] src, int off) {
-		DDSUtil.BitReader br = new DDSUtil.BitReader(java.util.Arrays.copyOfRange(src, off, off + 16));
+		BitReader br = new BitReader(Arrays.copyOfRange(src, off, off + 16));
 		
+		// Detect mode
 		int mode = - 1;
 		for (int i = 0; i < 8; i++) {
 			if (br.read(1) == 1) {
@@ -392,9 +408,271 @@ public class BCUtil {
 		}
 		if (mode < 0) {
 			int[] e = new int[16];
-			java.util.Arrays.fill(e, 0xFF000000);
+			Arrays.fill(e, 0xFF000000);
 			return e;
 		}
+		mode = detectBC7Mode((byte) (src[off] & 0xFF));
+		
+		// for now force it to be 6
+		mode = 6;
+		// TODO : make this work, check other modes, etc
+		
+		return switch (mode) {
+			case 0, 2 -> decodeBC7Mode0_2(mode, br);
+			case 1, 3, 7 -> decodeBC7Mode1_3_7(mode, br);
+			case 4, 5 -> decodeBC7Mode4_5(mode, br);
+			case 6 -> decodeBC7BlockMode6(mode, br);
+			default -> new int[16];
+		};
+	}
+	
+	// =========================================================================
+	// BC5 encode — two-channel RG normal map
+	// =========================================================================
+	
+	private static int[] decodeBC7Mode0_2(int mode, BitReader br) {
+		int subsets = 3;
+		int partBits = (mode == 0) ? 4 : 6;
+		int endpointBits = (mode == 0) ? 4 : 5;
+		int weightBits = (mode == 0) ? 3 : 2;
+		int pbits = (mode == 0) ? 6 : 0;
+		
+		int partIdx = br.read(partBits);
+		int[] part = PARTITION3[partIdx];
+		
+		// Read endpoints (R,G,B only)
+		int[][][] ep = new int[subsets][2][3];
+		for (int c = 0; c < 3; c++) {
+			for (int s = 0; s < subsets; s++) {
+				for (int e = 0; e < 2; e++) {
+					ep[s][e][c] = br.read(endpointBits);
+				}
+			}
+		}
+		
+		// Read P-bits
+		int[] p = new int[pbits];
+		for (int i = 0; i < pbits; i++)
+			p[i] = br.read(1);
+		
+		// Read weights
+		int[] weights = new int[16];
+		int anchor1 = ANCHOR_THIRD_SUBSET_1[partIdx];
+		int anchor2 = ANCHOR_THIRD_SUBSET_2[partIdx];
+		for (int i = 0; i < 16; i++) {
+			int bits = weightBits;
+			if (i == 0 || i == anchor1 || i == anchor2)
+				bits--;
+			weights[i] = br.read(bits);
+		}
+		
+		// Dequantize endpoints
+		for (int s = 0; s < subsets; s++) {
+			for (int e = 0; e < 2; e++) {
+				for (int c = 0; c < 3; c++) {
+					if (pbits > 0) {
+						ep[s][e][c] = bc7Dequant(ep[s][e][c], p[s * 2 + e], endpointBits);
+					} else {
+						ep[s][e][c] = bc7Dequant(ep[s][e][c], endpointBits);
+					}
+				}
+			}
+		}
+		
+		// Interpolate colors
+		int[][] colors = new int[subsets][1 << weightBits];
+		for (int s = 0; s < subsets; s++) {
+			for (int i = 0; i < (1 << weightBits); i++) {
+				int r = bc7Interp(ep[s][0][0], ep[s][1][0], i, weightBits);
+				int g = bc7Interp(ep[s][0][1], ep[s][1][1], i, weightBits);
+				int b = bc7Interp(ep[s][0][2], ep[s][1][2], i, weightBits);
+				colors[s][i] = 0xFF000000 | (r << 16) | (g << 8) | b;
+			}
+		}
+		
+		int[] out = new int[16];
+		for (int i = 0; i < 16; i++) {
+			out[i] = colors[part[i]][weights[i]];
+		}
+		return out;
+	}
+	
+	private static int[] decodeBC7Mode1_3_7(int mode, BitReader br) {
+		int subsets = 2;
+		int partBits = 6;
+		int endpointBits = (mode == 7) ? 5 : ((mode == 1) ? 6 : 7);
+		int weightBits = (mode == 1) ? 3 : 2;
+		int comps = (mode == 7) ? 4 : 3;
+		int pbits = (mode == 1) ? 2 : 4;
+		boolean sharedP = (mode == 1);
+		
+		int partIdx = br.read(partBits);
+		int[] part = PARTITION2[partIdx];
+		
+		// Read endpoints
+		int[][][] ep = new int[subsets][2][comps];
+		for (int c = 0; c < comps; c++) {
+			for (int s = 0; s < subsets; s++) {
+				for (int e = 0; e < 2; e++) {
+					ep[s][e][c] = br.read(endpointBits);
+				}
+			}
+		}
+		
+		// Read P-bits
+		int[] p = new int[pbits];
+		for (int i = 0; i < pbits; i++)
+			p[i] = br.read(1);
+		
+		// Read weights
+		int[] weights = new int[16];
+		int anchor = ANCHOR_SECOND_SUBSET[partIdx];
+		for (int i = 0; i < 16; i++) {
+			int bits = weightBits;
+			if (i == 0 || i == anchor)
+				bits--;
+			weights[i] = br.read(bits);
+		}
+		
+		// Dequantize and interpolate
+		for (int s = 0; s < subsets; s++) {
+			for (int e = 0; e < 2; e++) {
+				for (int c = 0; c < comps; c++) {
+					int pb = sharedP ? p[s] : p[s * 2 + e];
+					ep[s][e][c] = bc7Dequant(ep[s][e][c], pb, endpointBits);
+				}
+			}
+		}
+		
+		int[][] colors = new int[subsets][1 << weightBits];
+		for (int s = 0; s < subsets; s++) {
+			for (int i = 0; i < (1 << weightBits); i++) {
+				int r = (comps > 0) ? bc7Interp(ep[s][0][0], ep[s][1][0], i, weightBits) : 0;
+				int g = (comps > 1) ? bc7Interp(ep[s][0][1], ep[s][1][1], i, weightBits) : 0;
+				int b = (comps > 2) ? bc7Interp(ep[s][0][2], ep[s][1][2], i, weightBits) : 0;
+				int a = (comps > 3) ? bc7Interp(ep[s][0][3], ep[s][1][3], i, weightBits) : 255;
+				colors[s][i] = (a << 24) | (r << 16) | (g << 8) | b;
+			}
+		}
+		
+		int[] out = new int[16];
+		for (int i = 0; i < 16; i++) {
+			out[i] = colors[part[i]][weights[i]];
+		}
+		return out;
+	}
+	
+	// =========================================================================
+	// BC7 encode — Mode-6 only (single-subset, full RGBA, 4-bpp)
+	// =========================================================================
+	
+	private static int[] decodeBC7Mode4_5(int mode, BitReader br) {
+		int rot = br.read(2);
+		int idxMode = (mode == 4) ? br.read(1) : 0;
+		
+		int epBitsC = (mode == 4) ? 5 : 7;
+		int epBitsA = (mode == 4) ? 6 : 8;
+		int weightBitsC = 2;
+		int weightBitsA = (mode == 4) ? 3 : 2;
+		
+		// Read endpoints
+		int[][] ep = new int[2][4]; // [0/1][R,G,B,A]
+		for (int c = 0; c < 3; c++) {
+			for (int e = 0; e < 2; e++) {
+				ep[e][c] = br.read(epBitsC);
+			}
+		}
+		for (int e = 0; e < 2; e++) {
+			ep[e][3] = br.read(epBitsA);
+		}
+		
+		// Read weights
+		int[] wC = new int[16];
+		int[] wA = new int[16];
+		int bits1 = idxMode == 0 ? weightBitsC : weightBitsA;
+		int bits2 = idxMode == 0 ? weightBitsA : weightBitsC;
+		
+		for (int i = 0; i < 16; i++) {
+			int bits = bits1;
+			if (i == 0)
+				bits--;
+			(idxMode == 0 ? wA : wC)[i] = br.read(bits);
+		}
+		for (int i = 0; i < 16; i++) {
+			int bits = bits2;
+			if (i == 0)
+				bits--;
+			(idxMode == 0 ? wC : wA)[i] = br.read(bits);
+		}
+		
+		// Dequantize
+		for (int e = 0; e < 2; e++) {
+			for (int c = 0; c < 3; c++) {
+				ep[e][c] = bc7Dequant(ep[e][c], epBitsC);
+			}
+			ep[e][3] = bc7Dequant(ep[e][3], epBitsA);
+		}
+		
+		// Build palettes
+		int[] palC = new int[1 << bits1];
+		for (int i = 0; i < palC.length; i++) {
+			int r = bc7Interp(ep[0][0], ep[1][0], i, bits1);
+			int g = bc7Interp(ep[0][1], ep[1][1], i, bits1);
+			int b = bc7Interp(ep[0][2], ep[1][2], i, bits1);
+			palC[i] = (r << 16) | (g << 8) | b;
+		}
+		int[] palA = new int[1 << bits2];
+		for (int i = 0; i < palA.length; i++) {
+			palA[i] = bc7Interp(ep[0][3], ep[1][3], i, bits2);
+		}
+		
+		int[] out = new int[16];
+		for (int i = 0; i < 16; i++) {
+			int c = palC[idxMode == 0 ? wC[i] : wA[i]];
+			int a = palA[idxMode == 0 ? wA[i] : wC[i]];
+			out[i] = (a << 24) | c;
+			// Apply component rotation
+			if (rot == 1) {
+				int t = a;
+				a = (out[i] >> 16) & 0xFF;
+				out[i] = (out[i] & 0xFF00FFFF) | (t << 16);
+			} else if (rot == 2) {
+				int t = a;
+				a = (out[i] >> 8) & 0xFF;
+				out[i] = (out[i] & 0xFFFF00FF) | (t << 8);
+			} else if (rot == 3) {
+				int t = a;
+				a = out[i] & 0xFF;
+				out[i] = (out[i] & 0xFFFFFF00) | t;
+			}
+		}
+		return out;
+	}
+	
+	// Helper methods
+	private static int bc7Dequant(int val, int pbit, int valBits) {
+		int totalBits = valBits + 1;
+		val = (val << 1) | pbit;
+		val <<= (8 - totalBits);
+		val |= (val >> totalBits);
+		return val & 0xFF;
+	}
+	
+	private static int bc7Dequant(int val, int valBits) {
+		val <<= (8 - valBits);
+		val |= (val >> valBits);
+		return val & 0xFF;
+	}
+	
+	private static int bc7Interp(int e0, int e1, int idx, int bits) {
+		int[] w = (bits == 2) ? W2 : (bits == 3) ? W3 : W4;
+		int weight = w[idx];
+		return ((64 - weight) * e0 + weight * e1 + 32) >> 6;
+	}
+	
+	private static int[] decodeBC7BlockMode6(int mode, BitReader br) {
+		// Mode 6 uses a fixed layout; we can read bits directly
+		// This is a placeholder; integrate new Mode 6 decode here.
 		
 		final int[] nSubsets = { 3, 2, 3, 2, 1, 1, 1, 2 };
 		final int[] partBits = { 4, 6, 6, 6, 0, 0, 0, 6 };
@@ -458,7 +736,7 @@ public class BCUtil {
 			}
 		}
 		
-		int[] part = bc7Partition(ns, pi);
+		int[] part = new int[16];
 		int[] anchors = bc7Anchors(part, ns);
 		int[] ci = new int[16], ai = new int[16];
 		
@@ -515,14 +793,6 @@ public class BCUtil {
 		};
 	}
 	
-	private static int bc7Interp(int e0, int e1, int idx, int bits) {
-		final int[] W2 = { 0, 21, 43, 64 };
-		final int[] W3 = { 0, 9, 18, 27, 37, 46, 55, 64 };
-		final int[] W4 = { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
-		int w = (bits == 2) ? W2[idx] : (bits == 3) ? W3[idx] : W4[idx];
-		return ((64 - w) * e0 + w * e1 + 32) >> 6;
-	}
-	
 	private static int[] bc7Anchors(int[] part, int ns) {
 		int[] anc = new int[ns]; // anc[0] = 0 always
 		if (ns > 1)
@@ -539,15 +809,6 @@ public class BCUtil {
 				}
 		return anc;
 	}
-	
-	/** Multi-subset partition tables are not implemented; single-subset (all 0) returned. */
-	private static int[] bc7Partition(int ns, int idx) {
-		return new int[16];
-	}
-	
-	// =========================================================================
-	// BC5 encode — two-channel RG normal map
-	// =========================================================================
 	
 	/**
 	 * Compress RGBA8 pixels to raw BC5_UNORM block data (no DDS header).
@@ -614,10 +875,6 @@ public class BCUtil {
 			out[off + 2 + i] = (byte) ((bits >> (8 * i)) & 0xFF);
 	}
 	
-	// =========================================================================
-	// BC7 encode — Mode-6 only (single-subset, full RGBA, 4-bpp)
-	// =========================================================================
-	
 	static byte[] compressBC7(byte[] argb, int w, int h) {
 		int bw = (w + 3) / 4, bh = (h + 3) / 4;
 		byte[] out = new byte[bw * bh * 16];
@@ -640,6 +897,15 @@ public class BCUtil {
 			}
 		}
 		return out;
+	}
+	
+	private static void encodeBC7Mode5(int[] block, byte[] out, int off) {
+		// Similar to Mode 6 but:
+		// - color endpoints: 7 bits (no p-bit) -> values 0..127, expanded to 8-bit
+		// - alpha endpoints: 8 bits
+		// - rotation bits (2), index mode bit (1) similar to decoder
+		// - weights: 2 bits for color, 2 bits for alpha (or 3 for one if index mode)
+		// This is more complex; refer to BC7 specification.
 	}
 	
 	private static void encodeBC7Mode6(int[] block, byte[] out, int off) {
@@ -688,7 +954,7 @@ public class BCUtil {
 		for (int i = 0; i < 16; i++)
 			idx[i] = closestIdx4(block[i], e0r8, e0g8, e0b8, e0a8, e1r8, e1g8, e1b8, e1a8, W4);
 		
-		DDSUtil.BitWriter bw = new DDSUtil.BitWriter(out, off);
+		BitWriter bw = new BitWriter(out, off);
 		bw.write(0x40, 7); // mode 6 marker (bit 6 set)
 		bw.write(e0r, 7);
 		bw.write(e1r, 7);
@@ -730,5 +996,30 @@ public class BCUtil {
 		int db = (a & 0xFF) - (b & 0xFF);
 		int da = ((a >> 24) & 0xFF) - ((b >> 24) & 0xFF);
 		return dr * dr + dg * dg + db * db + da * da;
+	}
+	
+	private static void initPartition2() {
+		int[] raw = { 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1 };
+		for (int i = 0; i < 64; i++) {
+			PARTITION2[i] = Arrays.copyOfRange(raw, i * 16, (i + 1) * 16);
+		}
+	}
+	
+	private static void initPartition3() {
+		int[] raw = { 0, 0, 1, 1, 0, 0, 1, 1, 0, 2, 2, 1, 2, 2, 2, 2, 0, 0, 0, 1, 0, 0, 1, 1, 2, 2, 1, 1, 2, 2, 2, 1, 0, 0, 0, 0, 2, 0, 0, 1, 2, 2, 1, 1, 2, 2, 1, 1, 0, 2, 2, 2, 0, 0, 2, 2, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 2, 2, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 1, 2, 0, 1, 2, 2, 0, 1, 2, 2, 0, 1, 2, 2, 0, 1, 2, 2, 0, 0, 1, 1, 0, 1, 1, 2, 1, 1, 2, 2, 1, 2, 2, 2, 0, 0, 1, 1, 2, 0, 0, 1, 2, 2, 0, 0, 2, 2, 2, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 2, 1, 1, 2, 2, 0, 1, 1, 1, 0, 0, 1, 1, 2, 0, 0, 1, 2, 2, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 2, 2, 2, 0, 2, 2, 2, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 2, 1, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 2, 2, 0, 1, 2, 2, 0, 0, 0, 0, 1, 1, 0, 0, 2, 2, 1, 0, 2, 2, 1, 0, 0, 1, 2, 2, 0, 1, 2, 2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 0, 1, 1, 0, 1, 2, 2, 1, 1, 2, 2, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 2, 2, 1, 1, 2, 2, 1, 0, 0, 2, 2, 1, 1, 0, 2, 1, 1, 0, 2, 0, 0, 2, 2, 0, 1, 1, 0, 0, 1, 1, 0, 2, 0, 0, 2, 2, 2, 2, 2, 0, 0, 1, 1, 0, 1, 2, 2, 0, 1, 2, 2, 0, 0, 1, 1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 2, 1, 1, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 2, 2, 1, 2, 2, 2, 0, 2, 2, 2, 0, 0, 2, 2, 0, 0, 1, 2, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 2, 0, 0, 2, 2, 0, 2, 2, 2, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 1, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 0, 1, 2, 0, 2, 0, 1, 2, 1, 2, 0, 1, 0, 1, 2, 0, 0, 0, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 2, 2, 1, 1, 2, 2, 0, 0, 2, 2, 1, 1, 2, 2, 0, 0, 2, 2, 0, 0, 1, 1, 0, 0, 2, 2, 0, 0, 1, 1, 0, 2, 2, 0, 1, 2, 2, 1, 0, 2, 2, 0, 1, 2, 2, 1, 0, 1, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 0, 1, 0, 0, 0, 0, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 2, 2, 2, 2, 0, 2, 2, 2, 0, 1, 1, 1, 0, 2, 2, 2, 0, 1, 1, 1, 0, 0, 0, 2, 1, 1, 1, 2, 0, 0, 0, 2, 1, 1, 1, 2, 0, 0, 0, 0, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 0, 2, 2, 2, 0, 1, 1, 1, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 2, 1, 1, 1, 2, 1, 1, 1, 2, 0, 0, 0, 2, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 2, 2, 1, 1, 2, 0, 1, 1, 0, 0, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 2, 0, 0, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 2, 2, 2, 1, 2, 2, 2, 0, 2, 2, 2, 1, 2, 2, 2, 0, 1, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 2, 0, 1, 1, 2, 2, 0, 1, 2, 2, 2, 0 };
+		for (int i = 0; i < 64; i++) {
+			PARTITION3[i] = Arrays.copyOfRange(raw, i * 16, (i + 1) * 16);
+		}
+	}
+	
+	private static void initAnchorTables() {
+		int[] second = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 2, 8, 2, 2, 8, 8, 15, 2, 8, 2, 2, 8, 8, 2, 2, 15, 15, 6, 8, 2, 8, 15, 15, 2, 8, 2, 2, 2, 15, 15, 6, 6, 2, 6, 8, 15, 15, 2, 2, 15, 15, 15, 15, 15, 2, 2, 15 };
+		System.arraycopy(second, 0, ANCHOR_SECOND_SUBSET, 0, 64);
+		
+		int[] third1 = { 3, 3, 15, 15, 8, 3, 15, 15, 8, 8, 6, 6, 6, 5, 3, 3, 3, 3, 8, 15, 3, 3, 6, 10, 5, 8, 8, 6, 8, 5, 15, 15, 8, 15, 3, 5, 6, 10, 8, 15, 15, 3, 15, 5, 15, 15, 15, 15, 3, 15, 5, 5, 5, 8, 5, 10, 5, 10, 8, 13, 15, 12, 3, 3 };
+		System.arraycopy(third1, 0, ANCHOR_THIRD_SUBSET_1, 0, 64);
+		
+		int[] third2 = { 15, 8, 8, 3, 15, 15, 3, 8, 15, 15, 15, 15, 15, 15, 15, 8, 15, 8, 15, 3, 15, 8, 15, 8, 3, 15, 6, 10, 15, 15, 10, 8, 15, 3, 15, 10, 10, 8, 9, 10, 6, 15, 8, 15, 3, 6, 6, 8, 15, 3, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 3, 15, 15, 8 };
+		System.arraycopy(third2, 0, ANCHOR_THIRD_SUBSET_2, 0, 64);
 	}
 }

@@ -124,6 +124,11 @@ public final class Util {
 	public static String capitalStart(String s) {
 		if (s == null || s.isEmpty())
 			return s;
+		return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+	}
+	public static String capitalStartOnly(String s) {
+		if (s == null || s.isEmpty())
+			return s;
 		return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT);
 	}
 	
@@ -655,7 +660,7 @@ public final class Util {
 					Files.copy(file, out);
 					out.closeEntry();
 					
-					log.info("Added to PAK: {}", relPath);
+					log.trace("Added to PAK: {}", relPath);
 				} catch (IOException e) {
 					log.warn("Cannot add to pak: {} - {}", file, e.getMessage());
 				}
@@ -665,7 +670,7 @@ public final class Util {
 			return false;
 		}
 		
-		log.info("PAK created: {}", destPakFile);
+		log.debug("PAK created: {}", destPakFile);
 		return true;
 	}
 	

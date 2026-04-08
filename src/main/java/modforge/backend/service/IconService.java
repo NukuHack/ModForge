@@ -1,6 +1,8 @@
 package modforge.backend.service;
 
 import image.DDSUtil;
+import lombok.NonNull;
+import lombok.Value;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
@@ -26,6 +28,12 @@ public final class IconService {
 	
 	private final UserConfig userConfig;
 	
+	@Value
+	public static class Icon {
+		@NonNull byte[] data;
+		@NonNull String path;
+	}
+	
 	
 	// =====================================================================
 	// Construction & lifecycle
@@ -39,15 +47,16 @@ public final class IconService {
 	 * Scan a single PAK file for DDS textures under {@value #TEXTURES_ROOT} and
 	 * add them to {@code target}. Returns the number of entries indexed.
 	 */
-	private static Map<String, byte[]> indexDdsFromPak(String pakPath) {
+	private static Map<String, Icon> indexDdsFromPak(String pakPath) {
 		final var pakFile = Path.of(pakPath);
+		final var pak = pakFile.getFileName().toString();
 		
 		if (! pakFile.toFile().exists()) {
 			log.info("PAK not found – skipping icon scan: {}", pakPath);
 			return new HashMap<>();
 		}
 		
-		final Map<String, byte[]> map = new HashMap<>();
+		final Map<String, Icon> map = new HashMap<>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
 			for (final var entry : zf.stream().filter(ze -> {
 				final String name = ze.getName();
@@ -60,7 +69,7 @@ public final class IconService {
 					final String stem = Util.stemOf(name);
 					if (stem.isBlank())
 						continue;
-					map.put(stem, is.readAllBytes());
+					map.put(stem, new Icon(is.readAllBytes(), pak+':'+name));
 				} catch (Exception ex) {
 					log.info("Could not read icon entry {}: {}", name, ex.getMessage());
 				}
@@ -73,8 +82,6 @@ public final class IconService {
 	
 	static BufferedImage convertToImage(byte[] ddsBytes) throws IOException {
 		final var ddsImage = DDSUtil.decode(ddsBytes);
-		if (ddsImage == null)
-			throw new IOException("Failed to decode DDS image");
 		return ddsImage.toBufferedImage();
 	}
 	
@@ -263,7 +270,7 @@ public final class IconService {
 	 * Only populates the base-game index; mod icons are loaded per-mod.
 	 */
 	public void init() {
-		final var game = Singleton.INSTANCE.getGame();
+		final ModData game = Singleton.INSTANCE.getGame();
 		
 		final String gameDir = userConfig.getGameDirectory();
 		if (gameDir == null || gameDir.isBlank())
@@ -279,13 +286,13 @@ public final class IconService {
 	 * <p/>
 	 * Call this from ModService.fillCollection() after the mod's items are loaded.
 	 */
-	public static Map<String, byte[]> loadModIcons(Path modPath) {
+	public static Map<String, Icon> loadModIcons(Path modPath) {
 		if (! Files.exists(modPath)) {
 			log.warn("PAK directory does not exist: {}", modPath);
 			return Map.of();
 		}
 		
-		final Map<String, byte[]> map = new HashMap<>();
+		final Map<String, Icon> map = new HashMap<>();
 		try (var stream = Files.list(modPath)) {
 			final var pakFiles = stream.filter(excludeNonIconPaks()).collect(Collectors.toSet());
 			
@@ -359,17 +366,17 @@ public final class IconService {
 		final String key = iconId.toLowerCase(Locale.ROOT);
 		
 		// 1. Mod's raw DDS index
-		final byte[] modDds = mod.getIcon().get(key);
+		final var modDds = mod.getIcon().get(key);
 		if (modDds != null) {
-			return convert(key, modDds);
+			return convert(key, modDds.data);
 		}
 		
 		// 2. Base-game raw DDS index
 		final var game = Singleton.INSTANCE.getGame();
 		if (mod != game) {
-			final byte[] baseDds = game.getIcon().get(key);
+			final var baseDds = game.getIcon().get(key);
 			if (baseDds != null) {
-				return convert(key, baseDds);
+				return convert(key, baseDds.data);
 			}
 		}
 		
@@ -404,19 +411,24 @@ public final class IconService {
 		final var icons = mod.getIcon();
 		if (icons.isEmpty())
 			return;
-		for (final var icon : icons.entrySet()) {
+		try {
+			Files.createDirectories(Util.modStaging(gameDir, mod.id));
+		} catch (Exception e) {
+			log.warn("Could not create directory for for Icons");
+			return;
+		}
+		for (final var icon : icons.values()) {
+			final Path path = ItemService.getOutputFile(gameDir, icon.path, mod);
 			try {
-				final Path path = ItemService.getOutputFile(gameDir, icon.getKey(), mod);
-				final byte[] ddsBytes;
-				if (false)
-					ddsBytes = DDSUtil.encodeBC7(/*icon.getValue()*/ null);
-				else
-					ddsBytes = icon.getValue();
-				Files.write(path, ddsBytes);
-				log.debug("Succeed in writing an icon to: {}", path);
+				Path parentDir = path.getParent();
+				if (parentDir != null)
+					Files.createDirectories(parentDir);
+				
+				Files.write(path, icon.data);
 			} catch (final Exception e) {
-				log.error("writeModItem failed for {}: {}", icon.getKey(), e.getMessage());
+				log.error("writeModIcon failed for {}", path, e);
 			}
 		}
+		log.trace("Icons written for mod: {}", mod.id);
 	}
 }

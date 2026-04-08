@@ -1,10 +1,11 @@
-package image;
+package modforge.frontend.pages;
 
+import image.ConversionOptions;
+import image.ImageConverter;
 import lombok.extern.slf4j.Slf4j;
 import modforge.Util;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -27,7 +28,7 @@ public class KCDConverterGUI extends JFrame {
     
     public KCDConverterGUI() {
         setTitle("KCD Texture Exporter");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         
         // Main panel with padding

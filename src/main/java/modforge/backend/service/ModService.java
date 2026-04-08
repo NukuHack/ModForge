@@ -1,5 +1,6 @@
 package modforge.backend.service;
 
+import lombok.extern.slf4j.Slf4j;
 import modforge.Util;
 import modforge.backend.ModData;
 import org.w3c.dom.Document;
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class ModService {
 	public static final List<ModData> modCollection = new ArrayList<>();
 	public final UserConfig userConfig;
@@ -248,11 +249,11 @@ public final class ModService {
 		 * Create one Data PAK per origin PAK stem
 		 * this also paks the Icons
 		 */
-		//createModPaks(gameDir, mod);
+		createModPaks(gameDir, mod);
 		/**
 		 * Create Localization PAKs (one per language)
 		 */
-		//packLocalization(gameDir, mod);
+		packLocalization(gameDir, mod);
 		
 		log.info("Mod export completed: {}", mod.id);
 	}
@@ -295,7 +296,7 @@ public final class ModService {
 			final var destPak = Path.of(dataDir, stageDir.getName() + ".pak");
 			final var ok = Util.packFolderExcludingSelf(stageDir.toPath(), destPak);
 			if (ok) {
-				log.info("PAK created: {}", destPak.getFileName());
+				log.trace("PAK created: {}", destPak.getFileName());
 			} else {
 				log.warn("PAK creation failed for stem '{}'.", stageDir);
 				allOk = false;
@@ -305,9 +306,8 @@ public final class ModService {
 		// Clean up the staging tree regardless of individual failures
 		Util.deleteRecursively(stageRoot);
 		
-		if (allOk) {
-			log.info("All PAKs created for mod {} ({} PAK(s)).", mod.id, pakList.length);
-		}
+		if (allOk)
+			log.trace("All PAKs created for mod {} ({} PAK(s)).", mod.id, pakList.length);
 	}
 	
 	/**
@@ -339,7 +339,6 @@ public final class ModService {
 			boolean ok = Util.packFolder(langFolder, destPak);
 			
 			if (ok) {
-				log.info("Localization packed: {}", destPak);
 				Util.deleteRecursively(langFolder);
 			} else {
 				log.warn("Failed to pack localization: {}", file);

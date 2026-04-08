@@ -2,12 +2,14 @@ package image;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 /**
  * DDS codec — single public API for all supported formats.
@@ -36,7 +38,7 @@ public class DDSUtil {
 	static final int DXGI_BC5S = DxgiFormat.BC5_SNORM.getValue();
 	static final int DXGI_BC7 = DxgiFormat.BC7_UNORM.getValue();
 	static final int DXGI_RGBA = DxgiFormat.R8G8B8A8_UNORM.getValue();
-	static final int DXGI_BGRA =  DxgiFormat.B8G8R8A8_UNORM.getValue();
+	static final int DXGI_BGRA = DxgiFormat.B8G8R8A8_UNORM.getValue();
 	
 	// ── DDS / FourCC constants ───────────────────────────────────────────────
 	static final int FOURCC_DXT1 = 0x31545844;
@@ -186,7 +188,7 @@ public class DDSUtil {
 	 * Compress a {@link BufferedImage} to a BC7 DDS byte array (DX10 header).
 	 *
 	 * <p>BC7 is the highest-quality block format and supports full RGBA.
-	 * The encoder uses Mode 6 (single-subset, best quality per block).
+	 * The encoder uses Mode 6 (single-subset, the best quality per block).
 	 */
 	public static byte[] encodeBC7(BufferedImage image) throws IOException {
 		DDSImage i = DDSImage.fromBufferedImage(image);
@@ -261,13 +263,16 @@ public class DDSUtil {
 		byte[] rgba = new byte[data.w * data.h * 4];
 		
 		switch (data.code) {
-			case FOURCC_DXT1 -> decompressDXT1(data, rgba);
-			case FOURCC_DXT3 -> decompressDXT3(data, rgba);
-			case FOURCC_DXT5 -> decompressDXT5(data, rgba);
-			case FOURCC_BC7 -> BCUtil.decompressBC7(data, rgba);
-			case CODE_RAW_RGBA -> System.arraycopy(data.data, 0, rgba, 0, Math.min(data.data.length, rgba.length));
+			case FOURCC_DXT1: decompressDXT1(data, rgba);
+			break;
+			case FOURCC_DXT3: decompressDXT3(data, rgba);
+			break;
+			case FOURCC_DXT5: decompressDXT5(data, rgba);
+			break;
+			case CODE_RAW_RGBA: System.arraycopy(data.data, 0, rgba, 0, Math.min(data.data.length, rgba.length));
+			break;
 			// Route all remaining BCn formats through BCUtil
-			default -> rgba = BCUtil.decompress(data.data, data.w, data.h, data.code);
+			case FOURCC_BC7: default: rgba = BCUtil.decompress(data.data, data.w, data.h, data.code);
 			
 		}
 		return new DDSImage(data.w, data.h, rgba);
@@ -781,23 +786,7 @@ public class DDSUtil {
 	 * Package-private so codec helpers can reuse it.
 	 */
 	static void writeDx10Header(OutputStream out, int w, int h, int dxgiFormat, int linearSize) throws IOException {
-		ByteBuffer buf = buildBaseHeader(w, h, linearSize);
-		// pixel-format block pointing to DX10 extension
-		buf.putInt(32);
-		buf.putInt(0x00000004);  // DDPF_FOURCC
-		buf.putInt(FOURCC_DX10);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		// caps
-		buf.putInt(0x00001000);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		buf.putInt(0);
-		out.write(buf.array());
+		writeLegacyHeader(out, w, h, FOURCC_DX10, linearSize);
 		
 		// DX10 extended header (20 bytes)
 		ByteBuffer ext = ByteBuffer.wrap(new byte[20]).order(ByteOrder.LITTLE_ENDIAN);
@@ -875,13 +864,10 @@ public class DDSUtil {
 	}
 	
 	/** LSB-first bit reader over a fixed byte array. Package-private for BC7Util. */
+	@RequiredArgsConstructor
 	static class BitReader {
 		private final byte[] data;
 		private int pos;
-		
-		BitReader(byte[] data) {
-			this.data = data;
-		}
 		
 		int read(int n) {
 			if (n == 0)
@@ -899,14 +885,15 @@ public class DDSUtil {
 	}
 	
 	/** LSB-first bit writer over a fixed byte array region. Package-private for BC7Util. */
+	@RequiredArgsConstructor
 	static class BitWriter {
 		private final byte[] data;
 		private int pos;
 		
 		BitWriter(byte[] data, int byteOffset) {
-			this.data = data;
+			this(data);
 			this.pos = byteOffset * 8;
-			java.util.Arrays.fill(data, byteOffset, byteOffset + 16, (byte) 0);
+			Arrays.fill(data, byteOffset, byteOffset + 16, (byte) 0);
 		}
 		
 		void write(int val, int n) {
