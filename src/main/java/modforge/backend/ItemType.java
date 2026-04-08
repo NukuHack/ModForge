@@ -70,9 +70,15 @@ public final class ItemType {
 	
 	/** Item selector dropdown filter – used by the Item page (frontend). */
 	public static boolean excludeNonEndpoints(final ZipEntry ze) {
-		final String name = ze.getName().toLowerCase(Locale.ROOT);
-		if (! name.endsWith(".xml"))
+		if (ze.isDirectory())
 			return false;
+		final String name = ze.getName().toLowerCase(Locale.ROOT);
+		final var isData = name.endsWith(".xml") || name.endsWith(".adb");
+		if (! isData)
+			return false;
+		// AHH STUPID STORM
+		if (name.startsWith("libs/storm/"))
+			return true;
 		final Path p = Path.of(name);
 		final String fileName = p.getFileName().toString();
 		final int delimiter = fileName.indexOf("__");

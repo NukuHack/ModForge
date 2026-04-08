@@ -175,7 +175,7 @@ public final class Util {
 	 * @return Path to Storm staging directory
 	 */
 	public static Path modStormStaging(String gameDir, String modId) {
-		return Path.of(Util.modStaging(gameDir, modId).toString(), DATA_DIR);
+		return Path.of(Util.modStaging(gameDir, modId).toString(), DATA_DIR, "_Storm");
 	}
 	
 	/**
@@ -361,29 +361,6 @@ public final class Util {
 	}
 	
 	/**
-	 * Applies pretty-printing indentation to XML content.
-	 *
-	 * @param input Raw XML string
-	 * @return Indented XML with 2-space indentation
-	 * @throws RuntimeException If XML transformation fails
-	 */
-	public static String indentXml(String input) {
-		try {
-			final var transformer = TransformerFactory.newInstance().newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-			
-			final var result = new StringWriter();
-			transformer.transform(new StreamSource(new StringReader(input)), new StreamResult(result));
-			// Literally glued together
-			return result.toString().replaceFirst("\\?>", "?>\n").replaceAll("\\n\\s*\\n", "\n");
-		} catch (TransformerException e) {
-			throw new RuntimeException("Failed to indent XML", e);
-		}
-	}
-	
-	/**
 	 * Writes normalized and indented XML to a file.
 	 * Creates parent directories if they don't exist.
 	 *
@@ -397,7 +374,7 @@ public final class Util {
 		
 		// Write the cleaned output
 		try (var fileWriter = new FileWriter(outFile.toFile(), StandardCharsets.UTF_8)) {
-			fileWriter.write(Util.indentXml(result));
+			fileWriter.write(result);
 		}
 	}
 	
@@ -747,5 +724,26 @@ public final class Util {
 		} catch (IOException ex) {
 			log.info("Could not delete file/folder {}", path, ex);
 		}
+	}
+	
+	/**
+	 * Low n bits of nanoTime → 8 hex chars, e.g. "a3f9c012"
+	 * @param n number of bits to use (must be multiple of 4, max 32)
+	 */
+	public static String getRandomString(int n) {
+		if (n <= 0 || n > 32) {
+			throw new IllegalArgumentException("n must be between 1 and 32");
+		}
+		
+		int chars = n / 4; // each hex char = 4 bits
+		if (n % 4 != 0) {
+			chars++; // round up for non-multiple of 4
+		}
+		
+		long nanoTime = System.nanoTime();
+		long mask = (1L << n) - 1;
+		long value = nanoTime & mask;
+		
+		return String.format("%0" + chars + "x", value);
 	}
 }

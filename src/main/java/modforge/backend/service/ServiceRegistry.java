@@ -14,23 +14,26 @@ public final class ServiceRegistry {
 	public final LocalService localService;
 	public final ItemService itemService;
 	public final IconService iconService;
-	public final StormService stormService;
 	public final ModService modService;
 	
 	public ServiceRegistry() {
 		userConfig = new UserConfig.UserConfigImpl();
-		userConfig.load();
-		
 		configService = new ConfigService(userConfig);
 		localService = new LocalService(userConfig);
-		localService.init();
 		itemService = new ItemService(userConfig);
-		itemService.init();
 		iconService = new IconService(userConfig);
-		iconService.init();
-		stormService = new StormService(userConfig);
-		
 		modService = new ModService(this);
+		
+		// used to load main game data
+		userConfig.load();
+		localService.init();
+		itemService.init();
+		// DISABLING since it uses up over 3gigs of memory, so i will rework it
+		// TODO : rework
+		//iconService.init();
+		
+		// used to load mod data
+		modService.init();
 	}
 	
 	/**
@@ -38,10 +41,12 @@ public final class ServiceRegistry {
 	 */
 	public void init() {
 		userConfig.save();
+		
 		localService.init();
 		itemService.init();
-		iconService.init();
-		stormService.init();
+		// TODO : rework
+		//iconService.init();
+		
 		modService.init();
 		Singleton.INSTANCE.getGame().setConfig(configService.loadGameConfig());
 	}

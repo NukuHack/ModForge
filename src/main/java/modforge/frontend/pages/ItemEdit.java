@@ -1,8 +1,8 @@
 package modforge.frontend.pages;
 
 import modforge.Util;
-import modforge.backend.model.ModItem;
 import modforge.backend.model.Attribute;
+import modforge.backend.model.ModItem;
 import modforge.backend.service.ModItemBuilder;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;

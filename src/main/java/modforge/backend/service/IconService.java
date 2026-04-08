@@ -239,8 +239,7 @@ public final class IconService {
 		final String stem = dot > 0 ? filename.substring(0, dot) : filename;
 		final String ext = dot > 0 ? filename.substring(dot) : "";
 		
-		// Low 32 bits of nanoTime → 8 hex chars, e.g. "a3f9c012"
-		final String suffix = String.format("%08x", (int) System.nanoTime());
+		final String suffix = Util.getRandomString(32);
 		final Path backupPath = backupDir.resolve(stem + "_" + suffix + ext);
 		
 		Files.move(path, backupPath);
@@ -254,15 +253,6 @@ public final class IconService {
 	 */
 	public void init() {
 		final var game = Singleton.INSTANCE.getGame();
-		
-		
-		// DISABLING since it uses up over 3gigs of memory, so i will rework it
-		// TODO : rework
-		if (1 == 1) {
-			return;
-		}
-		// to not get unreachable compile time exception
-		
 		
 		final String gameDir = userConfig.getGameDirectory();
 		if (gameDir == null || gameDir.isBlank())

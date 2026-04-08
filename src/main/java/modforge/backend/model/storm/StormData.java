@@ -2,6 +2,7 @@ package modforge.backend.model.storm;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import modforge.backend.DataPoint;
 
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ import java.util.List;
  * </pre>
  */
 @Getter
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class StormData {
 	
 	private final List<String> commonSources = new ArrayList<>();
@@ -54,6 +55,7 @@ public final class StormData {
 	private final List<StormRule> rules = new ArrayList<>();
 	
 	/** Stable identifier derived from the file path (used for navigation). */
+	@Setter
 	private String id = "";
 	
 	/**
@@ -62,24 +64,10 @@ public final class StormData {
 	 */
 	@Setter
 	private String category = null;
-	
-	/** Source file information (path inside a PAK, endpoint tag, type). */
-	@Setter
-	private DataPoint dataPoint;
-	
-	// -------------------------------------------------------------------------
-	// Accessors
-	// -------------------------------------------------------------------------
-	
-	public void setId(String id) {
-		this.id = id == null ? "" : id;
-	}
-	
+		
 	@Override
 	public String toString() {
-		return "StormData{id='" + id + "', category=" + category
-					   + ", commonSources=" + commonSources.size()
-					   + ", rules=" + rules.size()
-					   + ", tasks=" + tasks.size() + "}";
+		return String.format("StormData{id='%s', category=%s, commonSources=%d, rules=%d, tasks=%d}",
+				id, category, commonSources.size(), rules.size(), tasks.size());
 	}
 }

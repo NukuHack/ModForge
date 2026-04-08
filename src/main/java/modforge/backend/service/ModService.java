@@ -30,7 +30,6 @@ public final class ModService {
 	public final UserConfig userConfig;
 	public final ConfigService configService;
 	public final LocalService localService;
-	//public final ModItemBuilder builder;
 	public final ItemService itemService;
 	public final IconService iconService;
 	
@@ -39,9 +38,7 @@ public final class ModService {
 		this.iconService = registry.iconService;
 		this.userConfig = registry.userConfig;
 		this.localService = registry.localService;
-		//this.builder = registry.builder;
 		this.configService = registry.configService;
-		init();
 	}
 	
 	// ------------------------------------------------------------------

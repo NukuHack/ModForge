@@ -2,13 +2,15 @@ package modforge.backend;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import modforge.backend.model.ModItem;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.E.Language;
+import modforge.backend.model.ModItem;
 
 import java.util.*;
 
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class ModData {
 	private final Map<String, ModItem> items = new HashMap<>();
 	private final Map<String, String> config = new HashMap<>();
@@ -39,11 +41,11 @@ public final class ModData {
 		items.put(item.getId(), item);
 	}
 	
-	public Collection<ModItem> getItems() {
+	public @NonNull Collection<ModItem> getItems() {
 		return Collections.unmodifiableCollection(items.values());
 	}
 	
-	public void setItems(Collection<ModItem> input) {
+	public void setItems(@NonNull Collection<ModItem> input) {
 		this.items.clear();
 		Map<String, List<ModItem>> duplicates = new HashMap<>();
 		input.forEach(i -> {
@@ -60,7 +62,7 @@ public final class ModData {
 		}
 	}
 	
-	public Map<String, ModItem> items() {
+	public @NonNull Map<String, ModItem> items() {
 		return Collections.unmodifiableMap(items);
 	}
 	

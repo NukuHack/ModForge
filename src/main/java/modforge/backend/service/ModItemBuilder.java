@@ -1,33 +1,44 @@
 package modforge.backend.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import modforge.Util;
 import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
-import modforge.backend.model.ModItem;
 import modforge.backend.model.Attribute;
 import modforge.backend.model.Attributes;
+import modforge.backend.model.I.Storm;
+import modforge.backend.model.ModItem;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class ModItemBuilder {
 	
 	// O(1) lookup map - element name to handler
-	private static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
-	private static final Map<Class<? extends ModItem>, CreateHandler> MAKER_MAP = new HashMap<>();
+	static final Set<String> FILE_PARSERS = new HashSet<>();
+	static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
+	static final Map<Class<? extends ModItem>, CreateHandler> MAKER_MAP = new HashMap<>();
 	
 	static {
+		FILE_PARSERS.add("storm");
 		// Build the handler map once at class initialization
 		for (var spec : ItemType.getHandlerSpecs()) {
-			HANDLER_MAP.put(spec.getName(), new GBuildHandler<>(spec.getClazz(), spec.getIdKey()));
-			MAKER_MAP.put(spec.getClazz(), new GCreateHandler<>(spec.getClazz(), spec.getIdKey()));
+			if (! FILE_PARSERS.contains(spec.getName())) {
+				HANDLER_MAP.put(spec.getName(), new GeneralBuilder<>(spec.getClazz(), spec.getIdKey()));
+				MAKER_MAP.put(spec.getClazz(), new GeneralCreater<>(spec.getClazz(), spec.getIdKey()));
+			} else {
+				if (spec.getName().equals("storm")) {
+					HANDLER_MAP.put(spec.getName(), new StormBuilder((Class<Storm>) spec.getClazz(), spec.getIdKey()));
+					MAKER_MAP.put(spec.getClazz(), new StormCreater((Class<Storm>) spec.getClazz(), spec.getIdKey()));
+				} else if (true) {
+					// do future stuff here
+				}
+			}
 		}
 	}
 	
@@ -55,7 +66,7 @@ public final class ModItemBuilder {
 			return handler.create(element);
 		}
 		
-		log.info("No handler matched element <{}>", elementName);
+		log.info("No creater matched element <{}>", elementName);
 		if (log.isDebugEnabled()) {
 			final var attributes = element.getAttributes();
 			final Map<String, String> map = new HashMap<>();
@@ -64,7 +75,7 @@ public final class ModItemBuilder {
 				var attr = attributes.item(i);
 				map.put(attr.getNodeName(), attr.getNodeValue());
 			}
-			log.debug("No handler matched element {}", map);
+			log.debug("No creater matched element data {}", map);
 		}
 		return null;
 	}
@@ -77,7 +88,7 @@ public final class ModItemBuilder {
 			return maker.build(document, item);
 		}
 		
-		log.info("No maker matched item <{}>", item);
+		log.info("No builder matched item <{}>", item);
 		return null;
 	}
 	
@@ -142,22 +153,18 @@ public final class ModItemBuilder {
 	 * Generic build handler: recognizes elements whose local name matches the
 	 * simple class name (case-insensitive) and populates a configurable ID attribute.
 	 */
-	@lombok.extern.slf4j.Slf4j
-	protected static final class GBuildHandler<M extends ModItem> implements BuildHandler {
+	@Slf4j
+	@RequiredArgsConstructor
+	protected static final class GeneralBuilder<M extends ModItem> implements BuildHandler {
 		private final Class<M> type;
-		private final String idAttrKey;
-		
-		public GBuildHandler(Class<M> type, String idAttrKey) {
-			this.type = type;
-			this.idAttrKey = idAttrKey;
-		}
+		private final String IdKey;
 		
 		@Override
 		public ModItem create(final Element element) {
 			try {
 				final M item = type.getDeclaredConstructor().newInstance();
 				
-				final String idValue = element.getAttribute(idAttrKey);
+				final String idValue = element.getAttribute(IdKey);
 				item.setId(idValue.isBlank() ? null : idValue);
 				
 				return ModItemBuilder.create(element, item);
@@ -168,24 +175,61 @@ public final class ModItemBuilder {
 		}
 	}
 	
-	@lombok.extern.slf4j.Slf4j
-	protected static final class GCreateHandler<M extends ModItem> implements CreateHandler {
+	@Slf4j
+	@RequiredArgsConstructor
+	protected static final class GeneralCreater<M extends ModItem> implements CreateHandler {
 		private final Class<M> type;
-		private final String idAttrKey;
-		
-		public GCreateHandler(Class<M> type, String idAttrKey) {
-			this.type = type;
-			this.idAttrKey = idAttrKey;
-		}
+		private final String IdKey;
 		
 		@Override
 		public Element build(final Document document, final ModItem item) {
-			final var typeName = ItemEntry.forClass(item.getClass()).snakeName();
+			final var typeName = ItemEntry.forClass(item.getClass()).fileName;
 			final var el = document.createElement(typeName);
 			for (Attribute<?> attr : item.getAttributes()) {
 				el.setAttribute(attr.getName(), Attributes.serializeValue(attr));
 			}
 			return el;
+		}
+	}
+	
+	@Slf4j
+	@RequiredArgsConstructor
+	protected static final class StormBuilder implements BuildHandler {
+		private final Class<Storm> type;
+		private final String IdKey;
+		
+		@Override
+		public ModItem create(final Element element) {
+			try {
+				final Storm item = type.getDeclaredConstructor().newInstance();
+				
+				item.setId("storm_" + Util.getRandomString(32));
+				
+				var data = StormService.parse(element);
+				item.setStormData(data);
+				
+				return item;
+			} catch (final Exception e) {
+				log.warn("Handler failed for {}: {}", type.getSimpleName(), e.getMessage());
+				return null;
+			}
+		}
+	}
+	
+	@Slf4j
+	@RequiredArgsConstructor
+	protected static final class StormCreater implements CreateHandler {
+		private final Class<Storm> type;
+		private final String IdKey;
+		
+		@Override
+		public Element build(final Document document, final ModItem item) {
+			try {
+				return StormService.serialize(((Storm) item).getStormData(), document);
+			} catch (final Exception e) {
+				log.warn("Creating Storm xml failed for {}: {}", item, e.getMessage());
+				return null;
+			}
 		}
 	}
 }

@@ -6,15 +6,15 @@ import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -33,12 +33,20 @@ import java.util.zip.ZipFile;
 @lombok.extern.slf4j.Slf4j
 public final class ItemService {
 	
-	private final UserConfig userConfig;
+	final static DocumentBuilder docBuilder;
 	
-	public ItemService(UserConfig userConfig) {
-		this.userConfig = userConfig;
+	static {
+		try {
+			var f = DocumentBuilderFactory.newInstance();
+			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			f.setFeature("http://xml.org/sax/features/validation", false);
+			f.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			docBuilder = f.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			throw new RuntimeException(e);
+		}
 	}
-	
 	
 	private static final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
 		XMLInputFactory f = XMLInputFactory.newInstance();
@@ -57,6 +65,17 @@ public final class ItemService {
 		}
 		return f;
 	});
+	// TODO : make this kind of data load or ... idk
+	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
+	private final UserConfig userConfig;
+	
+	public ItemService(UserConfig userConfig) {
+		this.userConfig = userConfig;
+	}
+	
+	// ==================================================================
+	// PRIVATE HELPERS
+	// ==================================================================
 	
 	static Document parseXml(InputStream is) {
 		try {
@@ -67,9 +86,34 @@ public final class ItemService {
 			f.setFeature("http://xml.org/sax/features/external-general-entities", false);
 			f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
 			
+			
+			// Wrap in BufferedInputStream if not already marked-supported
+			if (! is.markSupported()) {
+				is = new BufferedInputStream(is);
+			}
+			
+			// Read and skip BOM if present
+			is.mark(3);
+			int b1 = is.read();
+			int b2 = is.read();
+			int b3 = is.read();
+			
+			if (b1 == 0xEF && b2 == 0xBB && b3 == 0xBF) {
+				// BOM found, we already skipped it, continue with stream position after BOM
+				// Don't reset, just continue
+			} else {
+				// No BOM, reset the stream to the beginning
+				is.reset();
+			}
+			// If BOM present, we already skipped it, continue with stream position after BOM
+			
 			// Use a proper encoding-aware reader
 			try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-				return f.newDocumentBuilder().parse(new InputSource(reader));
+				var doc = f.newDocumentBuilder();
+				return doc.parse(new InputSource(reader));
+			} catch (final ParserConfigurationException e) {
+				log.warn("Could not create document builder");
+				return null;
 			}
 		} catch (final ParserConfigurationException e) {
 			log.warn("Could not configure the parser");
@@ -78,20 +122,9 @@ public final class ItemService {
 			log.warn("Could not parse the file");
 			return null;
 		} catch (final IOException e) {
-			log.warn("Could access the file");
+			log.warn("Could not access the file");
 			return null;
 		}
-	}
-	
-	// ==================================================================
-	// PRIVATE HELPERS
-	// ==================================================================
-	
-	private static void writeXml(Document doc, File outFile) throws Exception {
-		final var tf = TransformerFactory.newInstance().newTransformer();
-		final var writer = new StringWriter();
-		tf.transform(new DOMSource(doc), new StreamResult(writer));
-		Util.writeXml(writer.toString(), outFile.toPath());
 	}
 	
 	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod) {
@@ -119,31 +152,28 @@ public final class ItemService {
 		
 		// ---- Build target paths inside the staging area ----
 		// Structure:  <gameDir>/Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/<type>__<mod.id>.xml
-		final var typeName = ItemEntry.forClass(item.getClass()).snakeName();
+		final var typeName = ItemEntry.forClass(item.getClass()).fileName;
 		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
 		final var targetDir = dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, dirSuffix);
 		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
 		return outFile.toFile();
 	}
 	
-	private static Document makeDocument(final File outFile, final ModItem item) throws Exception {
-		final var factory = DocumentBuilderFactory.newInstance();
-		final var docBuilder = factory.newDocumentBuilder();
-		final var groupName = ModItemBuilder.groupName(item);
-		final Document doc;
+	private static Document makeDocument(final File outFile, final ModItem item, final String groupName) throws Exception {
+		final Document document;
 		
 		if (outFile.exists()) {
-			doc = docBuilder.parse(outFile);
-			Element group = (Element) doc.getElementsByTagName(groupName).item(0);
+			document = docBuilder.parse(outFile);
+			Element group = (Element) document.getElementsByTagName(groupName).item(0);
 			if (group == null) {
-				group = doc.createElement(groupName);
+				group = document.createElement(groupName);
 				group.setAttribute("version", "1");
-				doc.getDocumentElement().appendChild(group);
+				document.getDocumentElement().appendChild(group);
 			}
 			
-			final var newEl = ModItemBuilder.build(doc, item);
+			final var newEl = ModItemBuilder.build(document, item);
 			if (newEl == null)
-				return doc;
+				return document;
 			final String idKey = item.getIdKey();
 			final String idVal = newEl.getAttribute(idKey);
 			
@@ -164,20 +194,20 @@ public final class ItemService {
 				group.appendChild(newEl);
 			}
 		} else {
-			doc = docBuilder.newDocument();
-			final var root = doc.createElement("database");
-			root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-			root.setAttribute("name", "barbora");
-			root.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
-			doc.appendChild(root);
-			
-			final var group = doc.createElement(groupName);
+			document = docBuilder.newDocument();
+			final Element temp = document.createElement("database");
+			temp.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+			temp.setAttribute("name", "barbora");
+			temp.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
+			document.appendChild(temp);
+			final Element group = document.createElement(groupName);
 			group.setAttribute("version", "1");
-			root.appendChild(group);
-			final var newEl = ModItemBuilder.build(doc, item);
+			temp.appendChild(group);
+			
+			final var newEl = ModItemBuilder.build(document, item);
 			group.appendChild(newEl);
 		}
-		return doc;
+		return document;
 	}
 	
 	/**
@@ -193,9 +223,36 @@ public final class ItemService {
 		final File outFile = getOutputFile(gameDir, item, mod);
 		Files.createDirectories(outFile.toPath().getParent());
 		
-		final Document doc = makeDocument(outFile, item);
+		final var groupName = ModItemBuilder.groupName(item);
+		final Document doc;
+		if (groupName.startsWith("storm")) {
+			// Create DOCTYPE properly
+			var domImpl = docBuilder.getDOMImplementation();
+			var doctype = domImpl.createDocumentType("storm", null, "storm.dtd");
+			// Create a new document with the DOCTYPE
+			doc = domImpl.createDocument(null, "storm", doctype);
+			final Element group = doc.getDocumentElement();
+			
+			group.appendChild(ModItemBuilder.build(doc, item));
+		}
+		else
+			doc = makeDocument(outFile, item, groupName);
 		
 		writeXml(doc, outFile);
+	}
+	
+	private static void writeXml(Document doc, File outFile) throws Exception {
+		final var tf = TransformerFactory.newInstance().newTransformer();
+		// <?xml version="1.0" encoding="UTF-8"?>
+		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+		tf.setOutputProperty(OutputKeys.INDENT, "yes");
+		tf.setOutputProperty(OutputKeys.STANDALONE, "yes");
+		tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+		tf.setOutputProperty(OutputKeys.METHOD, "xml");
+		tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		final var writer = new StringWriter();
+		tf.transform(new DOMSource(doc), new StreamResult(writer));
+		Util.writeXml(writer.toString(), outFile.toPath());
 	}
 	
 	private static Stream<ModItem> extractItemsFromPak(final Path pakFile) {
@@ -217,13 +274,25 @@ public final class ItemService {
 	
 	private static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) {
 		final var doc = parseXml(is);
-		if (doc == null)
+		if (doc == null) {
+			log.debug("Parse failed for : {}", sourcePath);
 			return;
+		}
 		final var root = doc.getDocumentElement();
+		if (ModItemBuilder.FILE_PARSERS.contains(root.getTagName())) {
+			final ModItem item = ModItemBuilder.create(root);
+			if (item == null || item.getId() == null)
+				return;
+			
+			item.setPath(sourcePath);
+			sink.add(item);
+			return;
+		}
 		final var tableNodes = root.getChildNodes();
 		for (int i = 0; i < tableNodes.getLength(); i++) {
 			if (! (tableNodes.item(i) instanceof Element tableEl))
 				continue;
+			
 			
 			final var items = tableEl.getChildNodes();
 			for (int j = 0; j < items.getLength(); j++) {
@@ -240,9 +309,6 @@ public final class ItemService {
 		}
 	}
 	
-	// TODO : make this kind of data load or ... idk
-	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
-	
 	/**
 	 * Exclude PAKs that don't contain item/table data.
 	 */
@@ -256,6 +322,35 @@ public final class ItemService {
 			boolean isIgnored = IGNORED_FILES.contains(name);
 			return ! isIgnored;
 		};
+	}
+	
+	/**
+	 * Load mod items from all PAK files in the mod's Data folder.
+	 * Processes PAK files and their XML entries in parallel for maximum throughput.
+	 */
+	public static Set<ModItem> loadItems(Path modPath) {
+		if (! Files.exists(modPath)) {
+			log.warn("PAK directory does not exist: {}", modPath);
+			return Set.of();
+		}
+		
+		try (var stream = Files.list(modPath)) {
+			final var pakFiles = stream.filter(excludeNonDataPaks()).collect(Collectors.toSet());
+			
+			if (pakFiles.isEmpty()) {
+				log.info("No PAK files found in: {}", modPath);
+				return Set.of();
+			}
+			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
+			final Set<ModItem> result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
+			
+			log.info("Loaded {} items from {} PAK file(s)", result.size(), pakFiles.size());
+			return result;
+			
+		} catch (final IOException e) {
+			log.error("Failed to list PAK folder: {} - {}", modPath, e.getMessage());
+			return Set.of();
+		}
 	}
 	
 	/**
@@ -300,35 +395,6 @@ public final class ItemService {
 			} catch (final Exception e) {
 				log.error("writeModItem failed for {}: {}", item.getClass().getSimpleName(), e.getMessage());
 			}
-		}
-	}
-	
-	/**
-	 * Load mod items from all PAK files in the mod's Data folder.
-	 * Processes PAK files and their XML entries in parallel for maximum throughput.
-	 */
-	public static Set<ModItem> loadItems(Path modPath) {
-		if (! Files.exists(modPath)) {
-			log.warn("PAK directory does not exist: {}", modPath);
-			return Set.of();
-		}
-		
-		try (var stream = Files.list(modPath)) {
-			final var pakFiles = stream.filter(excludeNonDataPaks()).collect(Collectors.toSet());
-			
-			if (pakFiles.isEmpty()) {
-				log.info("No PAK files found in: {}", modPath);
-				return Set.of();
-			}
-			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
-			final Set<ModItem> result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
-			
-			log.info("Loaded {} items from {} PAK file(s)", result.size(), pakFiles.size());
-			return result;
-			
-		} catch (final IOException e) {
-			log.error("Failed to list PAK folder: {} - {}", modPath, e.getMessage());
-			return Set.of();
 		}
 	}
 }

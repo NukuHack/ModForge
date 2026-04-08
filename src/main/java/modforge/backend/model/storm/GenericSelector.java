@@ -1,6 +1,7 @@
 package modforge.backend.model.storm;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
@@ -24,7 +25,7 @@ import java.util.*;
  * </pre>
  */
 @Getter
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class GenericSelector {
 	
 	/**

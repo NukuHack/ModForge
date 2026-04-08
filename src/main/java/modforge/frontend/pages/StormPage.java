@@ -374,7 +374,7 @@ public class StormPage extends BasePage {
 		clearRuleDetail();
 		
 		if (currentStorm == null) {
-			breadcrumbLabel.setText("Storm  ›  (no file selected)");
+			breadcrumbLabel.setText("Storm  › ");
 			categoryLabel.setText("Category: —");
 			fileIdLabel.setText("ID: —");
 			setStatus("Select a Storm file from the Items page.", new Color(0x6c6f85));
@@ -382,7 +382,7 @@ public class StormPage extends BasePage {
 			return;
 		}
 		
-		breadcrumbLabel.setText("Storm  ›  " + currentStorm.getId());
+		breadcrumbLabel.setText("Storm  › ");
 		categoryLabel.setText("Category: " + (currentStorm.getCategory() != null ? currentStorm.getCategory() : "Miscellaneous"));
 		fileIdLabel.setText("ID: " + currentStorm.getId());
 		
@@ -487,7 +487,7 @@ public class StormPage extends BasePage {
 			return;
 		}
 		try {
-			String xml = StormService.StormParser.serialize(currentStorm);
+			String xml = StormService.serialize(currentStorm);
 			xmlPreviewPane.setText(xmlToHtml(xml));
 			xmlPreviewPane.setCaretPosition(0);
 		} catch (Exception ex) {
@@ -518,12 +518,7 @@ public class StormPage extends BasePage {
 		
 		String modId = choice.split(" \\| ")[0];
 		mods.stream().filter(m -> m.id.equals(modId)).findFirst().ifPresent(mod -> {
-			String gameDir = window.getRegistry().userConfig.getGameDirectory();
-			boolean ok = StormService.writeStormFile(gameDir, modId, currentStorm);
-			if (ok)
-				window.snackbar.show("Storm file saved to mod: " + mod.name, BarManager.Type.SUCCESS);
-			else
-				window.snackbar.show("Failed to save Storm file", BarManager.Type.ERROR);
+		
 		});
 	}
 	
@@ -561,7 +556,7 @@ public class StormPage extends BasePage {
 			window.snackbar.show("Open a Storm file first", BarManager.Type.WARNING);
 			return;
 		}
-		RuleWizardDialog dlg = new RuleWizardDialog((Frame) SwingUtilities.getWindowAncestor(this), existingRule, window.getRegistry().stormService);
+		RuleWizardDialog dlg = new RuleWizardDialog((Frame) SwingUtilities.getWindowAncestor(this), existingRule);
 		
 		dlg.setVisible(true);
 		StormRule result = dlg.getResult();
@@ -697,7 +692,7 @@ public class StormPage extends BasePage {
 		private JButton backBtn;
 		private JButton nextBtn;
 		
-		RuleWizardDialog(Frame owner, StormRule existing, StormService stormService) {
+		RuleWizardDialog(Frame owner, StormRule existing) {
 			super(owner, existing == null ? "New Rule" : "Edit Rule — " + existing.getName(), true);
 			
 			// Clone or create working rule

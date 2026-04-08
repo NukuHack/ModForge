@@ -1,5 +1,6 @@
 package modforge.backend.service;
 
+import lombok.NonNull;
 import modforge.Util;
 import modforge.backend.ModData;
 
@@ -155,7 +156,7 @@ public final class ConfigService {
 	 *
 	 * @return Map of config keys to their values
 	 */
-	public Map<String, String> loadGameConfig() {
+	public @NonNull Map<String, String> loadGameConfig() {
 		String gameDir = userConfig.getGameDirectory();
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warn("Game directory not configured - cannot load game config.");

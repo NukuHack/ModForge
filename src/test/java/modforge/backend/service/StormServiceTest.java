@@ -49,7 +49,6 @@ class StormServiceTest {
 	
 	@BeforeEach
 	void setUp() {
-		stormService = new StormService(userConfig);
 	}
 	
 	// -------------------------------------------------------------------------
@@ -260,7 +259,7 @@ class StormServiceTest {
 		@Test
 		void parseMinimalXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(minimalStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "test/id");
+				StormData data = StormService.parse(is, dummyDataPoint);
 				assertNotNull(data);
 				assertEquals("test/id", data.getId());
 				assertNull(data.getCategory());
@@ -275,8 +274,8 @@ class StormServiceTest {
 		@Test
 		void parseRealXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(realStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "full/id");
-				var raw = StormService.StormParser.serialize(data);
+				StormData data = StormService.parse(is, dummyDataPoint);
+				var raw = StormService.serialize(data);
 				assertEquals(realStormXml().replaceAll("(?m)^\\s+|\\s+$", "").replaceAll("\\n{3,}", "\n\n"), raw.replaceAll("(?m)^\\s+|\\s+$", "").replaceAll("\\n{3,}", "\n\n"));
 			}
 		}
@@ -284,7 +283,7 @@ class StormServiceTest {
 		@Test
 		void parseFullXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(fullStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "full/id");
+				StormData data = StormService.parse(is, dummyDataPoint);
 				assertNotNull(data);
 				assertEquals("full/id", data.getId());
 				assertEquals("TestCat", data.getCategory());
@@ -368,7 +367,7 @@ class StormServiceTest {
 		@Test
 		void parseMixedCaseXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(mixedCaseStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "mixed/id");
+				StormData data = StormService.parse(is, dummyDataPoint);
 				assertNotNull(data);
 				assertEquals("mixed/id", data.getId());
 				
@@ -424,7 +423,7 @@ class StormServiceTest {
 		void parseMalformedXmlReturnsEmptyData() throws Exception {
 			String malformed = "<?xml version=\"1.0\"?><storm><unclosed>";
 			try (InputStream is = new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "bad/id");
+				StormData data = StormService.parse(is, dummyDataPoint);
 				assertNotNull(data);
 				assertEquals("bad/id", data.getId());
 				assertTrue(data.getCommonSources().isEmpty());
@@ -447,7 +446,7 @@ class StormServiceTest {
 					</storm>
 					""";
 			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "flat/id");
+				StormData data = StormService.parse(is, dummyDataPoint);
 				assertEquals(1, data.getTasks().size());
 				StormTask task = data.getTasks().get(0);
 				assertEquals("file1.xml,file2.xml", task.getSources());
@@ -468,7 +467,7 @@ class StormServiceTest {
 					</storm>
 					""";
 			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.StormParser.parse(is, dummyDataPoint, "child/id");
+				StormData data = StormService.parse(is, dummyDataPoint);
 				assertEquals(1, data.getTasks().size());
 				StormTask task = data.getTasks().get(0);
 				// Should be joined with commas
@@ -526,7 +525,7 @@ class StormServiceTest {
 			original.getRules().add(rule);
 			
 			// Serialize
-			String serialized = StormService.StormParser.serialize(original);
+			String serialized = StormService.serialize(original);
 			assertNotNull(serialized);
 			// Normalize whitespace for structural checks
 			String compact = serialized.replaceAll(">\\s+<", "><").trim();
@@ -557,7 +556,7 @@ class StormServiceTest {
 			
 			// Parse back
 			try (InputStream is = new ByteArrayInputStream(serialized.getBytes(StandardCharsets.UTF_8))) {
-				StormData parsed = StormService.StormParser.parse(is, dummyDataPoint, "roundtrip/id");
+				StormData parsed = StormService.parse(is, dummyDataPoint);
 				assertEquals(original.getId(), parsed.getId());
 				assertEquals(original.getCategory(), parsed.getCategory());
 				assertEquals(original.getCommonSources(), parsed.getCommonSources());

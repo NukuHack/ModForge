@@ -5,8 +5,8 @@ import lombok.Value;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
-import modforge.backend.model.ModItem;
 import modforge.backend.model.E.Language;
+import modforge.backend.model.ModItem;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -267,8 +267,7 @@ public final class LocalService {
 			final Path locPath = Util.locExport(gameDirectory, language, modId);
 			
 			try {
-				final var xmlString = makeLocalizationXml(translations);
-				Util.writeXml(xmlString, locPath);
+				Util.writeXml(makeLocalizationXml(translations), locPath);
 				log.info("Localization written: {} ({} entries)", locPath, translations.size());
 			} catch (final Exception ex) {
 				log.warn("Failed to write localization for {}: {}", language, ex.getMessage());
@@ -280,12 +279,12 @@ public final class LocalService {
 	
 	public String makeLocalizationXml(Map<String, String> entries) {
 		var sb = new StringBuilder();
-		sb.append("<Table>\n");
+		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Table>\n");
 		
 		for (var entry : entries.entrySet()) {
 			final var key = entry.getKey();
 			if (! key.isBlank())
-				sb.append("<Row>\n").append("<Cell>").append(Util.escapeXml(key)).append("</Cell>\n").append("<Cell/>\n").append("<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n").append("</Row>\n");
+				sb.append("\t<Row>\n").append("\t\t<Cell>").append(Util.escapeXml(key)).append("</Cell>\n").append("\t\t<Cell/>\n").append("\t\t<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n").append("\t</Row>\n");
 		}
 		
 		sb.append("</Table>\n");
