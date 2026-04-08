@@ -11,9 +11,8 @@ import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -47,6 +46,41 @@ public final class Util {
 	
 	/** Username cross-platform */
 	public static final String username;
+	/** Main game tables PAK file containing game data tables */
+	public static final String TABLES = "Tables.pak";
+	
+	// ================================================================================
+	// GAME FILE CONSTANTS - Modify if game file names change
+	// ================================================================================
+	/** Storm engine PAK file containing core engine resources */
+	public static final String STORM = "Storm.pak";
+	/** Standard compression/archive format extension for game files */
+	public static final String COMP_FORMAT = ".pak";
+	/** Standard data file format extension for XML configuration files */
+	public static final String DATA_FORMAT = ".xml";
+	/** Icons and UI graphics PAK file */
+	public static final String ICONS = "IPL_GameData.pak";
+	/** Directory name for localization/language files */
+	public static final String LOCALIZATION_DIR = "Localization";
+	
+	// ================================================================================
+	// DIRECTORY STRUCTURE CONSTANTS - Modify to change folder organization
+	// ================================================================================
+	/** Suffix added to language names for localization PAK files (e.g., "en_xml") */
+	public static final String LOCALIZATION_EXTRA = "_xml";
+	/** Main game data directory containing core game assets */
+	public static final String DATA_DIR = "Data";
+	/** Directory containing game libraries/dependencies */
+	public static final String LIBS_DIR = "Libs";
+	/** Directory containing game table definitions */
+	public static final String TABLES_DIR = "Tables";
+	/** Root directory for all mod installations */
+	public static final String MODS_DIR = "Mods";
+	private static final FileTime EPOCH = FileTime.fromMillis(0);
+	
+	// ================================================================================
+	// STRING UTILITIES
+	// ================================================================================
 	
 	static {
 		String user = System.getenv("USERNAME"); // Windows
@@ -58,51 +92,6 @@ public final class Util {
 		}
 		username = user;
 	}
-	
-	// ================================================================================
-	// GAME FILE CONSTANTS - Modify if game file names change
-	// ================================================================================
-	
-	/** Main game tables PAK file containing game data tables */
-	public static final String TABLES = "Tables.pak";
-	
-	/** Storm engine PAK file containing core engine resources */
-	public static final String STORM = "Storm.pak";
-	
-	/** Standard compression/archive format extension for game files */
-	public static final String COMP_FORMAT = ".pak";
-	
-	/** Standard data file format extension for XML configuration files */
-	public static final String DATA_FORMAT = ".xml";
-	
-	/** Icons and UI graphics PAK file */
-	public static final String ICONS = "IPL_GameData.pak";
-	
-	// ================================================================================
-	// DIRECTORY STRUCTURE CONSTANTS - Modify to change folder organization
-	// ================================================================================
-	
-	/** Directory name for localization/language files */
-	public static final String LOCALIZATION_DIR = "Localization";
-	
-	/** Suffix added to language names for localization PAK files (e.g., "en_xml") */
-	public static final String LOCALIZATION_EXTRA = "_xml";
-	
-	/** Main game data directory containing core game assets */
-	public static final String DATA_DIR = "Data";
-	
-	/** Directory containing game libraries/dependencies */
-	public static final String LIBS_DIR = "Libs";
-	
-	/** Directory containing game table definitions */
-	public static final String TABLES_DIR = "Tables";
-	
-	/** Root directory for all mod installations */
-	public static final String MODS_DIR = "Mods";
-	
-	// ================================================================================
-	// STRING UTILITIES
-	// ================================================================================
 	
 	/**
 	 * Reads all text from an input stream using UTF-8 encoding.
@@ -126,15 +115,16 @@ public final class Util {
 			return s;
 		return Character.toUpperCase(s.charAt(0)) + s.substring(1);
 	}
+	
+	// ================================================================================
+	// PATH CONSTRUCTION METHODS - All paths are built using constants above
+	// ================================================================================
+	
 	public static String capitalStartOnly(String s) {
 		if (s == null || s.isEmpty())
 			return s;
 		return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT);
 	}
-	
-	// ================================================================================
-	// PATH CONSTRUCTION METHODS - All paths are built using constants above
-	// ================================================================================
 	
 	/**
 	 * Returns the game data directory path.
@@ -290,6 +280,10 @@ public final class Util {
 		return Arrays.stream(Language.values()).map(l -> locImport(root, l)).collect(Collectors.toSet());
 	}
 	
+	// ================================================================================
+	// PATH JOINING UTILITIES
+	// ================================================================================
+	
 	/**
 	 * Returns the icons PAK file path.
 	 * Structure: {gameDataDir}/{ICONS}
@@ -300,10 +294,6 @@ public final class Util {
 	public static Path icons(String gameDir) {
 		return Util.joinP(dataDir(gameDir), ICONS);
 	}
-	
-	// ================================================================================
-	// PATH JOINING UTILITIES
-	// ================================================================================
 	
 	/**
 	 * Join path segments using OS-based separators.
@@ -334,6 +324,10 @@ public final class Util {
 		return Path.of(join(parts));
 	}
 	
+	// ================================================================================
+	// XML PROCESSING UTILITIES
+	// ================================================================================
+	
 	/**
 	 * Join a base Path with additional segments.
 	 *
@@ -344,10 +338,6 @@ public final class Util {
 	public static Path joinP(Path base, String... parts) {
 		return Path.of(base.toString(), join(parts));
 	}
-	
-	// ================================================================================
-	// XML PROCESSING UTILITIES
-	// ================================================================================
 	
 	/**
 	 * Writes normalized and indented XML to a file.
@@ -369,6 +359,10 @@ public final class Util {
 		}
 	}
 	
+	// ================================================================================
+	// STRING ESCAPING UTILITIES
+	// ================================================================================
+	
 	private static String removeEmpty(String inp) {
 		var nL = "\n";
 		var sb = new StringBuilder();
@@ -377,10 +371,6 @@ public final class Util {
 				sb.append(line).append(nL);
 		return sb.toString();
 	}
-	
-	// ================================================================================
-	// STRING ESCAPING UTILITIES
-	// ================================================================================
 	
 	/**
 	 * Escapes special characters for JSON string compatibility.
@@ -435,6 +425,10 @@ public final class Util {
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
 	}
 	
+	// ================================================================================
+	// CLIPBOARD AND UI UTILITIES
+	// ================================================================================
+	
 	/**
 	 * Unescapes common XML entities back to their original characters.
 	 *
@@ -447,10 +441,6 @@ public final class Util {
 		}
 		return s.replace("&nbsp;", " ").replace("&apos;", "'").replace("&quot;", "\"").replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&");
 	}
-	
-	// ================================================================================
-	// CLIPBOARD AND UI UTILITIES
-	// ================================================================================
 	
 	/**
 	 * Copies text to the system clipboard.
@@ -477,6 +467,7 @@ public final class Util {
 	public static CompletableFuture<String> pickFileAsync() {
 		return pickAsync("Pick a file", JFileChooser.FILES_ONLY, null, "yes");
 	}
+	
 	public static CompletableFuture<String> pickFileAsync(String title, String extension, String description) {
 		return pickAsync(title, JFileChooser.FILES_ONLY, extension, description);
 	}
@@ -484,6 +475,7 @@ public final class Util {
 	public static CompletableFuture<String> pickFolderAsync() {
 		return pickAsync("Select target folder", JFileChooser.DIRECTORIES_ONLY, null, "yes");
 	}
+	
 	public static CompletableFuture<String> pickFolderAsync(String title, String extension, String description) {
 		return pickAsync(title, JFileChooser.DIRECTORIES_ONLY, extension, description);
 	}
@@ -509,6 +501,10 @@ public final class Util {
 		});
 		return future;
 	}
+	
+	// ================================================================================
+	// FILE TYPE DETECTION
+	// ================================================================================
 	
 	/**
 	 * Opens a directory in the operating system's file explorer.
@@ -554,7 +550,7 @@ public final class Util {
 	}
 	
 	// ================================================================================
-	// FILE TYPE DETECTION
+	// CONFIGURATION DIRECTORY - Platform-specific paths using APP_NAME constant
 	// ================================================================================
 	
 	/**
@@ -577,7 +573,7 @@ public final class Util {
 	}
 	
 	// ================================================================================
-	// CONFIGURATION DIRECTORY - Platform-specific paths using APP_NAME constant
+	// PAK FILE PACKING UTILITIES
 	// ================================================================================
 	
 	/**
@@ -613,108 +609,61 @@ public final class Util {
 		}
 	}
 	
-	// ================================================================================
-	// PAK FILE PACKING UTILITIES
-	// ================================================================================
-	
-	/**
-	 * Pack a source folder into a destination PAK file.
-	 * The PAK will contain the contents of the source folder as the root,
-	 * maintaining the relative directory structure.
-	 *
-	 * @param sourceFolder   The folder to pack (its contents become the PAK root)
-	 * @param destPakFile    The output PAK file path
-	 * @param fileFilter     Optional filter to exclude certain files (can be null to include all)
-	 * @param stripMetadata  If true, removes timestamps and other metadata from ZIP entries
-	 * @return true if packing succeeded, false otherwise
-	 */
 	public static boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
-		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
+		if (!Files.exists(sourceFolder) || !Files.isDirectory(sourceFolder)) {
 			log.warn("Source folder does not exist: {}", sourceFolder);
 			return false;
 		}
-		final FileTime ft = FileTime.fromMillis(0);
+		
+		final Path absoluteSource = sourceFolder.toAbsolutePath().normalize();
+		final Path absoluteDest   = destPakFile.toAbsolutePath().normalize();
+		
 		try {
-			Files.createDirectories(destPakFile.getParent());
-			Files.deleteIfExists(destPakFile);
-		} catch (final IOException e) {
-			log.error("PAK creation failed", e);
+			Files.createDirectories(absoluteDest.getParent());
+			Files.deleteIfExists(absoluteDest);
+		} catch (IOException e) {
+			log.error("PAK creation failed – cannot prepare output", e);
 			return false;
 		}
-		try (var fos = new FileOutputStream(destPakFile.toFile()); var out = new ZipOutputStream(fos); var walk = Files.walk(sourceFolder)) {
+		
+		try (FileOutputStream fos = new FileOutputStream(absoluteDest.toFile());
+			 ZipOutputStream   zos = new ZipOutputStream(fos);
+			 var walk = Files.walk(absoluteSource)) {
 			
-			// Optionally set the ZipOutputStream comment to empty or fixed
-			if (stripMetadata) {
-				out.setComment(""); // Remove any comments
-			}
+			zos.setLevel(9);
+			if (stripMetadata) zos.setComment("");
 			
-			walk.filter(Files::isRegularFile).filter(path -> fileFilter == null || fileFilter.test(path)).forEach(file -> {
-				try {
-					// Get the path relative to the source folder
-					final String relPath = sourceFolder.relativize(file).toString().replace('\\', '/');
-					
-					// Create ZipEntry with a fixed timestamp to strip metadata
-					final var entry = getZipEntry(relPath, ft, stripMetadata);
-					
-					out.putNextEntry(entry);
-					Files.copy(file, out);
-					out.closeEntry();
-					
-					log.trace("Added to PAK: {}", relPath);
-				} catch (IOException e) {
-					log.warn("Cannot add to pak: {} - {}", file, e.getMessage());
-				}
-			});
+			walk.filter(Files::isRegularFile)
+					.filter(p -> !p.toAbsolutePath().normalize().equals(absoluteDest))   // never include self
+					.filter(p -> fileFilter == null || fileFilter.test(p))
+					.forEach(file -> {
+						try {
+							String   entryName = absoluteSource.relativize(file).toString().replace('\\', '/');
+							ZipEntry entry     = new ZipEntry(entryName);
+							
+							if (stripMetadata) {
+								entry.setTime(0L);
+								// *** KEY FIX: wipe the extra-field that Java adds automatically ***
+								entry.setExtra(new byte[0]);
+							} else {
+								entry.setTime(Files.getLastModifiedTime(file).toMillis());
+							}
+							
+							zos.putNextEntry(entry);
+							Files.copy(file, zos);
+							zos.closeEntry();
+							
+						} catch (IOException e) {
+							log.warn("Cannot add to pak: {} – {}", file, e.getMessage());
+						}
+					});
+			
+			return true;
+			
 		} catch (IOException e) {
 			log.error("PAK creation failed", e);
 			return false;
 		}
-		
-		log.debug("PAK created: {}", destPakFile);
-		return true;
-	}
-	
-	/**
-	 * Creates a ZipEntry with optional metadata stripping.
-	 *
-	 * @param relPath Relative path inside the ZIP
-	 * @param ft Fixed FileTime to use when stripping metadata
-	 * @param stripMetadata Whether to strip timestamps and metadata
-	 * @return Configured ZipEntry
-	 */
-	private static ZipEntry getZipEntry(final String relPath, final FileTime ft, final boolean stripMetadata) {
-		final var entry = new ZipEntry(relPath);
-		
-		if (stripMetadata) {
-			// Set a fixed timestamp (Unix epoch, or any constant value)
-			// This prevents storing the actual file modification time
-			entry.setTime(0L); // Jan 1 1970 00:00:00 UTC
-			
-			// Set other metadata to fixed/default values
-			entry.setCreationTime(ft);
-			entry.setLastAccessTime(ft);
-			entry.setLastModifiedTime(ft);
-			
-			// Optionally set compression method and level
-			entry.setMethod(ZipEntry.DEFLATED);
-		}
-		return entry;
-	}
-	
-	/**
-	 * Pack a source folder into a destination PAK file.
-	 * Convenience method with no file filter and metadata stripping enabled.
-	 */
-	public static boolean packFolder(Path sourceFolder, Path destPakFile) {
-		return packFolder(sourceFolder, destPakFile, null, true);
-	}
-	
-	/**
-	 * Pack a source folder into a destination PAK file, excluding the PAK file itself.
-	 * Useful when packing from a folder that might contain the target PAK.
-	 */
-	public static boolean packFolderExcludingSelf(Path sourceFolder, Path destPakFile) {
-		return packFolder(sourceFolder, destPakFile, path -> ! path.equals(destPakFile), true);
 	}
 	
 	// ================================================================================

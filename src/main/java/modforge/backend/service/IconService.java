@@ -429,6 +429,6 @@ public final class IconService {
 				log.error("writeModIcon failed for {}", path, e);
 			}
 		}
-		log.trace("Icons written for mod: {}", mod.id);
+		log.info("Icons written for mod: {}", mod.id);
 	}
 }

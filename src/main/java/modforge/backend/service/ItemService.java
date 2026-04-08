@@ -414,16 +414,17 @@ public final class ItemService {
 	 * Returns the set of PAK names that were written (without extension),
 	 * so the caller knows which staging dirs to pack.
 	 */
-	public static void writeModItems(ModData modData, String gameDir) {
-		final var items = modData.getItems();
+	public static void writeModItems(ModData mod, String gameDir) {
+		final var items = mod.getItems();
 		if (items.isEmpty())
 			return;
 		for (final ModItem item : items) {
 			try {
-				writeModItem(gameDir, modData, item);
+				writeModItem(gameDir, mod, item);
 			} catch (final Exception e) {
 				log.error("writeModItem failed for {}: {}", item.getClass().getSimpleName(), e.getMessage());
 			}
 		}
+		log.error("ModItem written to {}", Util.modStaging(gameDir, mod.id));
 	}
 }

@@ -294,7 +294,7 @@ public final class ModService {
 			}
 			final var dataDir = Util.modData(gameDir, mod.id);
 			final var destPak = Path.of(dataDir, stageDir.getName() + ".pak");
-			final var ok = Util.packFolderExcludingSelf(stageDir.toPath(), destPak);
+			final var ok = Util.packFolder(stageDir.toPath(), destPak, null, true);
 			if (ok) {
 				log.trace("PAK created: {}", destPak.getFileName());
 			} else {
@@ -336,7 +336,7 @@ public final class ModService {
 			var langFolder = file.toPath();
 			// The PAK should be named like "German_xml.pak" and placed in the game root
 			final Path destPak = Path.of(langFolder + Util.COMP_FORMAT);
-			boolean ok = Util.packFolder(langFolder, destPak);
+			boolean ok = Util.packFolder(langFolder, destPak, null, true);
 			
 			if (ok) {
 				Util.deleteRecursively(langFolder);
