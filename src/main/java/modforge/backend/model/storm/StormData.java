@@ -3,7 +3,6 @@ package modforge.backend.model.storm;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import modforge.backend.DataPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +63,9 @@ public final class StormData {
 	 */
 	@Setter
 	private String category = null;
-		
+	
 	@Override
 	public String toString() {
-		return String.format("StormData{id='%s', category=%s, commonSources=%d, rules=%d, tasks=%d}",
-				id, category, commonSources.size(), rules.size(), tasks.size());
+		return String.format("StormData{id='%s', category=%s, commonSources=%d, rules=%d, tasks=%d}", id, category, commonSources.size(), rules.size(), tasks.size());
 	}
 }

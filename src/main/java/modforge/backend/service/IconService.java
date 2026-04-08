@@ -72,7 +72,7 @@ public final class IconService {
 	}
 	
 	static BufferedImage convertToImage(byte[] ddsBytes) throws IOException {
-		final DDSUtil.DDSImage ddsImage = DDSUtil.decodeWithInfo(ddsBytes);
+		final var ddsImage = DDSUtil.decode(ddsBytes);
 		if (ddsImage == null)
 			throw new IOException("Failed to decode DDS image");
 		return ddsImage.toBufferedImage();
@@ -198,26 +198,29 @@ public final class IconService {
 		final String stem = srcName.substring(0, srcName.length() - srcExt.length());
 		final Path dstPath = outputDir.resolve(stem + dstExt);
 		
-		try {
-			backupIfExists(dstPath);
-			
-			if (toPng) {
+		backupIfExists(dstPath);
+		if (toPng) {
+			try {
 				// DDS → PNG
 				final byte[] ddsBytes = Files.readAllBytes(src);
 				final BufferedImage img = convertToImage(ddsBytes);
 				ImageIO.write(img, "png", dstPath.toFile());
 				log.info("DDS→PNG: {} → {}", src, dstPath);
-			} else {
+			} catch (IOException ex) {
+				log.warn("Conversion failed for '{}': {}", src, ex.getMessage());
+			}
+		} else {
+			try {
 				// caller gets a clear error rather than silent data loss.
 				final BufferedImage img = ImageIO.read(src.toFile());
 				if (img == null)
 					throw new IOException("ImageIO could not read PNG: " + src);
-				final byte[] ddsBytes = DDSUtil.compressToBC7(img);
+				final byte[] ddsBytes = DDSUtil.encodeBC7(img);
 				Files.write(dstPath, ddsBytes);
 				log.info("PNG→DDS: {} → {}", src, dstPath);
+			} catch (IOException ex) {
+				log.warn("Conversion failed for '{}': {}", src, ex.getMessage());
 			}
-		} catch (IOException ex) {
-			log.warn("Conversion failed for '{}': {}", src, ex.getMessage());
 		}
 	}
 	
@@ -227,12 +230,16 @@ public final class IconService {
 	 * The 8-char suffix is the low 32 bits of {@link System#nanoTime()} in hex –
 	 * effectively unique without any extra file-existence checks.
 	 */
-	private static void backupIfExists(Path path) throws IOException {
+	private static void backupIfExists(Path path) {
 		if (! Files.exists(path))
 			return;
 		
 		final Path backupDir = path.getParent().resolve("image_backup");
-		Files.createDirectories(backupDir);
+		try {
+			Files.createDirectories(backupDir);
+		} catch (Exception e) {
+			log.warn("could not create backup dir");
+		}
 		
 		final String filename = path.getFileName().toString();
 		final int dot = filename.lastIndexOf('.');
@@ -242,7 +249,11 @@ public final class IconService {
 		final String suffix = Util.getRandomString(32);
 		final Path backupPath = backupDir.resolve(stem + "_" + suffix + ext);
 		
-		Files.move(path, backupPath);
+		try {
+			Files.move(path, backupPath);
+		} catch (Exception e) {
+			log.warn("could not backup images, overriding");
+		}
 		log.info("Backed up existing file: {} → {}", path, backupPath);
 	}
 	
@@ -315,7 +326,7 @@ public final class IconService {
 	 * @param mod  The mod that owns the item (maybe {@code Singleton.INSTANCE.game()}).
 	 * @return the image.
 	 */
-	public BufferedImage getIcon(ModItem item, ModData mod) {
+	public static BufferedImage getIcon(ModItem item, ModData mod) {
 		if (item == null || item.getAttributes() == null)
 			return null;
 		
@@ -334,7 +345,7 @@ public final class IconService {
 	/**
 	 * Convenience overload for base-game items (no per-mod index to check).
 	 */
-	public BufferedImage getIcon(ModItem item) {
+	public static BufferedImage getIcon(ModItem item) {
 		return getIcon(item, Singleton.INSTANCE.getGame());
 	}
 	
@@ -344,7 +355,7 @@ public final class IconService {
 	 * @param mod    The owning mod; pass {@code Singleton.INSTANCE.game()} for game items.
 	 * @return the image.
 	 */
-	private BufferedImage getBase64Icon(String iconId, ModData mod) {
+	private static BufferedImage getBase64Icon(String iconId, ModData mod) {
 		final String key = iconId.toLowerCase(Locale.ROOT);
 		
 		// 1. Mod's raw DDS index
@@ -369,7 +380,7 @@ public final class IconService {
 	/**
 	 * Return true if the named icon exists in the mod's index or the base-game index.
 	 */
-	public boolean hasIcon(String iconId, ModData mod) {
+	public static boolean hasIcon(String iconId, ModData mod) {
 		if (iconId == null || iconId.isBlank())
 			return false;
 		final String key = iconId.toLowerCase(Locale.ROOT);
@@ -380,12 +391,32 @@ public final class IconService {
 	 * Convert raw DDS bytes to a PNG data-URI, store in {@code cache}, and return it.
 	 * Returns {@code null} if conversion fails.
 	 */
-	private BufferedImage convert(String key, byte[] ddsBytes) {
+	private static BufferedImage convert(String key, byte[] ddsBytes) {
 		try {
 			return convertToImage(ddsBytes);
 		} catch (IOException ex) {
 			log.warn("DDS→PNG conversion failed for '{}': {}", key, ex.getMessage());
 			return null;
+		}
+	}
+	
+	public static void writeModIcons(ModData mod, String gameDir) {
+		final var icons = mod.getIcon();
+		if (icons.isEmpty())
+			return;
+		for (final var icon : icons.entrySet()) {
+			try {
+				final Path path = ItemService.getOutputFile(gameDir, icon.getKey(), mod);
+				final byte[] ddsBytes;
+				if (false)
+					ddsBytes = DDSUtil.encodeBC7(/*icon.getValue()*/ null);
+				else
+					ddsBytes = icon.getValue();
+				Files.write(path, ddsBytes);
+				log.debug("Succeed in writing an icon to: {}", path);
+			} catch (final Exception e) {
+				log.error("writeModItem failed for {}: {}", icon.getKey(), e.getMessage());
+			}
 		}
 	}
 }

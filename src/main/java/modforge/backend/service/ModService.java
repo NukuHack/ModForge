@@ -2,7 +2,6 @@ package modforge.backend.service;
 
 import modforge.Util;
 import modforge.backend.ModData;
-import modforge.frontend.BarManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -15,7 +14,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -232,17 +230,29 @@ public final class ModService {
 	 * Enhanced export method that packs both Data and Localization.
 	 * This matches the extraction logic (one language folder -> one PAK).
 	 */
-	public void exportMod(ModData mod) {
-		final String gameDir = userConfig.getGameDirectory();
+	public static void exportMod(ModData mod, String gameDir) {
 		
-		// Write items to XML files; returns the set of PAK stems that were written
-		itemService.writeModItems(mod);
-		// Write localization XML files
-		localService.writeModLocalization(mod);
-		// Create one Data PAK per origin PAK stem
-		createModPaks(gameDir, mod);
-		// Create Localization PAKs (one per language)
-		packLocalization(gameDir, mod);
+		/**
+		 * Write items to XML files; returns the set of PAK stems that were written
+		 */
+		ItemService.writeModItems(mod, gameDir);
+		/**
+		 * Write icons to dds files; if possible from the un-decoded data, so no quality loss
+		 */
+		IconService.writeModIcons(mod, gameDir);
+		/**
+		 * Write localization XML files
+		 */
+		LocalService.writeModLocalization(mod, gameDir);
+		/**
+		 * Create one Data PAK per origin PAK stem
+		 * this also paks the Icons
+		 */
+		//createModPaks(gameDir, mod);
+		/**
+		 * Create Localization PAKs (one per language)
+		 */
+		//packLocalization(gameDir, mod);
 		
 		log.info("Mod export completed: {}", mod.id);
 	}
@@ -258,7 +268,7 @@ public final class ModService {
 	 * <p/>
 	 * The _stage folder is removed on success.
 	 */
-	private void createModPaks(String gameDir, ModData mod) {
+	private static void createModPaks(String gameDir, ModData mod) {
 		if (mod.getItems().isEmpty()) {
 			log.info("No items for mod {} – skipping PAK creation.", mod.id);
 			return;
@@ -308,10 +318,10 @@ public final class ModService {
 	 * @param gameDir The game directory path
 	 * @param mod     The mod data containing localizations
 	 */
-	private boolean packLocalization(String gameDir, ModData mod) {
+	private static void packLocalization(String gameDir, ModData mod) {
 		if (mod.getLocal().isEmpty()) {
 			log.info("No localizations to pack for mod {}", mod.id);
-			return true;
+			return;
 		}
 		
 		final var success = new AtomicBoolean(true);
@@ -319,7 +329,7 @@ public final class ModService {
 		final var langPaks = Util.allLocPaths(modRoot).stream().map(File::new).filter(File::exists).filter(File::isDirectory).toList();
 		if (langPaks.isEmpty()) {
 			log.info("No Localization folder found for folder {}", modRoot);
-			return true;
+			return;
 		}
 		
 		langPaks.forEach(file -> {
@@ -337,7 +347,7 @@ public final class ModService {
 			}
 		});
 		
-		return success.get();
+		success.get();
 	}
 	
 	public static ModData loadModManifest(Path modPath) {

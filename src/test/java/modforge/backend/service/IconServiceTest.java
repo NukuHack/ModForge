@@ -63,13 +63,11 @@ class IconServiceTest extends BaseServiceTest {
 	@TempDir
 	Path tempDir;
 	
-	private IconService iconService;
 	private ModData testMod;
-	private UserConfig userConfig;
 	
 	/**
 	 * Produces a real, decodable DDS by compressing a 64×64 gradient image via
-	 * {@link image.DDSUtil#compressToBC7} — the same path the production code uses for
+	 * {@link image.DDSUtil#encodeBC7} — the same path the production code uses for
 	 * PNG → DDS conversion.
 	 */
 	private static byte[] realDdsBytes() throws IOException {
@@ -83,7 +81,7 @@ class IconServiceTest extends BaseServiceTest {
 				img.setRGB(x, y, (0xFF << 24) | (r << 16) | (g << 8) | b);
 			}
 		}
-		return DDSUtil.compressToBC7(img);
+		return DDSUtil.encodeBC7(img);
 	}
 	
 	// =========================================================================
@@ -94,8 +92,6 @@ class IconServiceTest extends BaseServiceTest {
 	void setUp() {
 		testMod = new ModData();
 		testMod.id = "test_mod";
-		userConfig = new UserConfig.UserConfigImpl();
-		iconService = new IconService(userConfig);
 	}
 	
 	// =========================================================================
@@ -126,7 +122,7 @@ class IconServiceTest extends BaseServiceTest {
 	 * genuinely decodable DDS entries so that every PAK-dependent test can run.
 	 *
 	 * <p>Each entry is a real BC7-compressed DDS produced by
-	 * {@link DDSUtil#compressToBC7} from a tiny 64×64 {@link BufferedImage}.
+	 * {@link DDSUtil#encodeBC7} from a tiny 64×64 {@link BufferedImage}.
 	 * This is the same codec path used by the production PNG→DDS conversion, so
 	 * {@link IconService#convertToImage} will decode them without errors.
 	 *
@@ -437,7 +433,7 @@ class IconServiceTest extends BaseServiceTest {
 					ImageIO.write(image, "png", tempPng.toFile());
 					
 					// Step 3c: Convert PNG → DDS using DDSUtil
-					byte[] recompressedDds = DDSUtil.compressToBC7(image);
+					byte[] recompressedDds = DDSUtil.encodeBC7(image);
 					assertNotNull(recompressedDds, "Failed to compress PNG to DDS: " + archivePath);
 					assertTrue(recompressedDds.length > 0, "Recompressed DDS is empty: " + archivePath);
 					
@@ -550,7 +546,7 @@ class IconServiceTest extends BaseServiceTest {
 			String firstKey = icons.keySet().iterator().next();
 			ModItem item = itemWithIconId(firstKey);
 			
-			BufferedImage result = iconService.getIcon(item, testMod);
+			BufferedImage result = IconService.getIcon(item, testMod);
 			
 			assertNotNull(result, "icon must be resolved");
 			assertTrue(result.getWidth() > 0, "resolved icon must have positive width");
@@ -565,13 +561,13 @@ class IconServiceTest extends BaseServiceTest {
 			ModItem item = new BaseModItem() {
 			};
 			// No attributes set
-			assertNull(iconService.getIcon(item, testMod), "item with no icon_id must return null");
+			assertNull(IconService.getIcon(item, testMod), "item with no icon_id must return null");
 		}
 		
 		@Test
 		@DisplayName("returns null for a null item")
 		void returnsNullForNullItem() {
-			assertNull(iconService.getIcon(null, testMod), "null item must return null");
+			assertNull(IconService.getIcon(null, testMod), "null item must return null");
 		}
 		
 		@Test
@@ -579,28 +575,28 @@ class IconServiceTest extends BaseServiceTest {
 		void fallbackIconIdZeroDoesNotThrow() {
 			ModItem item = itemWithIconId("0");
 			// The fallback icon may not exist in the test environment; null is acceptable.
-			assertDoesNotThrow(() -> iconService.getIcon(item, testMod), "fallback icon resolution must not throw");
+			assertDoesNotThrow(() -> IconService.getIcon(item, testMod), "fallback icon resolution must not throw");
 		}
 		
 		@Test
 		@DisplayName("icon_id='replaceme' triggers fallback resolution without throwing")
 		void fallbackIconIdReplaceMe() {
 			ModItem item = itemWithIconId("replaceme");
-			assertDoesNotThrow(() -> iconService.getIcon(item, testMod));
+			assertDoesNotThrow(() -> IconService.getIcon(item, testMod));
 		}
 		
 		@Test
 		@DisplayName("hasIcon returns false when key is absent from mod index")
 		void hasIconReturnsFalseForMissingKey() {
-			assertFalse(iconService.hasIcon("definitely_not_there", testMod));
+			assertFalse(IconService.hasIcon("definitely_not_there", testMod));
 		}
 		
 		@Test
 		@DisplayName("hasIcon returns false for null / blank icon id")
 		void hasIconReturnsFalseForBlankId() {
-			assertFalse(iconService.hasIcon(null, testMod));
-			assertFalse(iconService.hasIcon("", testMod));
-			assertFalse(iconService.hasIcon("  ", testMod));
+			assertFalse(IconService.hasIcon(null, testMod));
+			assertFalse(IconService.hasIcon("", testMod));
+			assertFalse(IconService.hasIcon("  ", testMod));
 		}
 		
 		// ── helper ────────────────────────────────────────────────────────────

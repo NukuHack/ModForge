@@ -19,15 +19,21 @@ import java.util.stream.Collectors;
 public interface UserConfig {
 	
 	String getGameDirectory();
+	
 	Language getLanguage();
+	
 	String getUserName();
+	
 	void setGameDirectory(String gameDirectory);
+	
 	void setLanguage(Language language);
+	
 	void setUserName(String username);
 	
 	void load();
+	
 	void save();
-
+	
 	
 	@NoArgsConstructor(access = AccessLevel.PUBLIC)
 	@lombok.extern.slf4j.Slf4j

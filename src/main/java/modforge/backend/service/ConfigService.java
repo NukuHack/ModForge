@@ -1,7 +1,6 @@
 package modforge.backend.service;
 
 import lombok.NonNull;
-import modforge.Util;
 import modforge.backend.ModData;
 
 import java.io.BufferedReader;

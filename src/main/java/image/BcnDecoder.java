@@ -1,5 +1,8 @@
 package image;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -13,11 +16,8 @@ import java.nio.ByteOrder;
  * References:
  *   - https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-block-compression
  */
-@lombok.extern.slf4j.Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BcnDecoder {
-	
-	private BcnDecoder() {
-	}
 	
 	// -------------------------------------------------------------------------
 	// Public entry point
@@ -250,8 +250,10 @@ public class BcnDecoder {
 	private static int snormToUnorm(int v) {
 		// Map [-128..127] → [0..255]
 		int clamped = v + 128;
-		if (clamped < 0) return 0;
-		if (clamped > 255) return 255;
+		if (clamped < 0)
+			return 0;
+		if (clamped > 255)
+			return 255;
 		return clamped;
 	}
 	

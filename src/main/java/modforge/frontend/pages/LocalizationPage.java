@@ -1,6 +1,5 @@
 package modforge.frontend.pages;
 
-import lombok.Value;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
@@ -491,11 +490,9 @@ public class LocalizationPage extends BasePage {
 	// =========================================================================
 	
 	/** One resolved localization entry. */
-	@Value
-	static class LangEntry {
-		String langKey; String value; String attrName; ModItem item;
-		public boolean has(String inp) {
-			return langKey.toLowerCase(Locale.ROOT).contains(inp) || value.toLowerCase(Locale.ROOT).contains(inp);
+	record LangEntry(String langKey, String value, String attrName, ModItem item) {
+			public boolean has(String inp) {
+				return langKey.toLowerCase(Locale.ROOT).contains(inp) || value.toLowerCase(Locale.ROOT).contains(inp);
+			}
 		}
-	}
 }

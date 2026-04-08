@@ -1,5 +1,7 @@
 package image;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -12,10 +14,10 @@ import java.util.List;
  * When called without arguments the process prints usage and exits; your
  * frontend should wire up to {@link ImageConverter} directly.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class Main {
 	
-	static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {
 		List<String> argList = Arrays.asList(args);
 		
 		if (! argList.contains("--input") || ! argList.contains("--output")) {
@@ -36,21 +38,20 @@ public class Main {
 		Path inputPath = Path.of(inputStr);
 		Path outputPath = Path.of(outputStr);
 		
-		ConversionOptions opts = new ConversionOptions().saveRawDDS(saveRaw).separateGlossMap(separateGloss).deleteSourceFiles(deleteSource).outputPath(outputStr).isOutputFolder(isOutputFolder);
+		var opts = new ConversionOptions().saveRawDDS(saveRaw).separateGlossMap(separateGloss).deleteSourceFiles(deleteSource).outputPath(outputStr).isOutputFolder(isOutputFolder);
 		
 		if (Files.isDirectory(inputPath)) {
 			log.info("Batch converting {} isRecursive{}", inputPath, recursive);
 			var futures = ImageConverter.batchProcess(inputPath, outputPath, opts, recursive);
 			ImageConverter.awaitAll(futures);
-			log.info("Done.");
 		} else if (Files.isRegularFile(inputPath) && inputPath.toString().toLowerCase().endsWith(".dds")) {
 			log.info("Converting single file: {}", inputPath);
 			ImageConverter.convertImage(inputPath, opts);
-			log.info("Done.");
 		} else {
 			System.err.println("ERROR: Input path is not a .dds file or a directory: " + inputPath);
-			System.exit(2);
+			return;
 		}
+		log.info("Done.");
 	}
 	
 	private static String getArg(List<String> args, String key) {

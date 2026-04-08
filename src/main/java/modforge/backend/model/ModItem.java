@@ -85,8 +85,6 @@ public interface ModItem {
 	}
 	
 	
-	
-	
 	@NoArgsConstructor
 	@Slf4j
 	abstract class BaseModItem implements ModItem {

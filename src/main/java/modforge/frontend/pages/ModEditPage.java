@@ -50,7 +50,7 @@ public class ModEditPage extends BasePage {
 		// Bottom buttons
 		JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
 		bottomBar.setOpaque(false);
-		bottomBar.add(primaryBtn("Save Manifest", e -> saveManifest()));
+		bottomBar.add(primaryBtn("Save Manifest", e -> saveManifest(window.getRegistry().userConfig.getGameDirectory())));
 		bottomBar.add(primaryBtn("Export to PAK", e -> exportMod()));
 		bottomBar.add(primaryBtn("Delete Mod", e -> deleteMod()));
 		bottomBar.add(primaryBtn("Back", e -> window.navigate(MainWindow.Page.MODS)));
@@ -259,7 +259,7 @@ public class ModEditPage extends BasePage {
 		versionsPanel.repaint();
 	}
 	
-	private void saveManifest() {
+	private void saveManifest(String gameDir) {
 		// Validate required fields
 		if (nameField.getText().isBlank()) {
 			window.snackbar.show("Mod name is required", BarManager.Type.ERROR);
@@ -289,7 +289,6 @@ public class ModEditPage extends BasePage {
 		}
 		
 		// Write manifest
-		final String gameDir = window.getRegistry().userConfig.getGameDirectory();
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
 		ConfigService.saveModConfig(Util.modFolder(gameDir, currentMod.id), currentMod);
 		
@@ -302,8 +301,9 @@ public class ModEditPage extends BasePage {
 	
 	private void exportMod() {
 		try {
-			saveManifest();
-			window.getRegistry().modService.exportMod(currentMod);
+			final String gameDir = window.getRegistry().userConfig.getGameDirectory();
+			saveManifest(gameDir);
+			ModService.exportMod(currentMod, gameDir);
 			window.snackbar.show("Mod exported to PAK: " + currentMod.id + ".pak", BarManager.Type.SUCCESS);
 		} catch (final Exception ex) {
 			window.snackbar.show("Failed to export mod", BarManager.Type.ERROR);

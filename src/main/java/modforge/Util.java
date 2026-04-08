@@ -7,11 +7,6 @@ import modforge.backend.model.E.Language;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.*;
@@ -52,6 +47,7 @@ public final class Util {
 	
 	/** Username cross-platform */
 	public static final String username;
+	
 	static {
 		String user = System.getenv("USERNAME"); // Windows
 		if (user == null) {
@@ -145,6 +141,7 @@ public final class Util {
 	public static Path dataDir(String root) {
 		return joinP(root, DATA_DIR);
 	}
+	
 	public static Path dataDir(Path root) {
 		return joinP(root, DATA_DIR);
 	}
@@ -358,15 +355,15 @@ public final class Util {
 	public static void writeXml(String inp, Path outFile) throws IOException {
 		Files.createDirectories(outFile.getParent());
 		inp = removeEmpty(inp);
-		log.debug("entire xml after cleanup\n{}", inp);
 		if (! inp.startsWith(XML_HEADER))
-			inp = XML_HEADER+"\n"+inp;
+			inp = XML_HEADER + "\n" + inp;
 		
 		// Write the cleaned output
 		try (var fileWriter = new FileWriter(outFile.toFile(), StandardCharsets.UTF_8)) {
 			fileWriter.write(inp);
 		}
 	}
+	
 	private static String removeEmpty(String inp) {
 		var nL = "\n";
 		var sb = new StringBuilder();

@@ -28,13 +28,13 @@ public final class ModItemBuilder {
 		FILE_PARSERS.add("storm");
 		// Build the handler map once at class initialization
 		for (var spec : ItemType.getHandlerSpecs()) {
-			if (! FILE_PARSERS.contains(spec.getName())) {
-				HANDLER_MAP.put(spec.getName(), new GeneralBuilder<>(spec.getClazz(), spec.getIdKey()));
-				MAKER_MAP.put(spec.getClazz(), new GeneralCreater<>(spec.getClazz(), spec.getIdKey()));
+			if (! FILE_PARSERS.contains(spec.name())) {
+				HANDLER_MAP.put(spec.name(), new GeneralBuilder<>(spec.clazz(), spec.idKey()));
+				MAKER_MAP.put(spec.clazz(), new GeneralCreater<>(spec.clazz(), spec.idKey()));
 			} else {
-				if (spec.getName().equals("storm")) {
-					HANDLER_MAP.put(spec.getName(), new StormBuilder((Class<Storm>) spec.getClazz(), spec.getIdKey()));
-					MAKER_MAP.put(spec.getClazz(), new StormCreater((Class<Storm>) spec.getClazz(), spec.getIdKey()));
+				if (spec.name().equals("storm")) {
+					HANDLER_MAP.put(spec.name(), new StormBuilder((Class<Storm>) spec.clazz(), spec.idKey()));
+					MAKER_MAP.put(spec.clazz(), new StormCreater((Class<Storm>) spec.clazz(), spec.idKey()));
 				} else if (true) {
 					// do future stuff here
 				}

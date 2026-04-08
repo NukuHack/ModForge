@@ -1,205 +1,291 @@
 package image;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * DDS codec — DXT1/3/5, BC7, and uncompressed RGBA/BGRA.
- * No dependencies. All methods are static.
+ * DDS codec — single public API for all supported formats.
+ *
+ * <p><b>Supported decode:</b> DXT1 / DXT3 / DXT5 / BC4 / BC5 / BC7 / uncompressed RGBA·BGRA.
+ * <p><b>Supported encode:</b> DXT1 / DXT3 / DXT5 / BC5 / BC7 / uncompressed RGBA·BGRA.
+ *
+ * <p>All format-specific codec work is delegated to package-private helpers
+ * ({@link BC7Util}, {@link Bc5Util}, {@link BcnDecoder}) — callers never need
+ * to know which codec is active.
+ *
+ * <p>All methods are static; this class cannot be instantiated.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DDSUtil {
+	
+	// ── DXGI format constants ────────────────────────────────────────────────
+	
+	static final int DXGI_BC1 = 71;
+	static final int DXGI_BC2 = 74;
+	static final int DXGI_BC3 = 77;
+	static final int DXGI_BC4U = 80;
+	static final int DXGI_BC4S = 81;
+	static final int DXGI_BC5U = 83;
+	static final int DXGI_BC5S = 84;
+	static final int DXGI_BC7 = 98;
+	static final int DXGI_RGBA = 28;   // R8G8B8A8_UNORM
+	static final int DXGI_BGRA = 87;   // B8G8R8A8_UNORM
+	
+	// ── DDS / FourCC constants ───────────────────────────────────────────────
+	static final int FOURCC_DXT1 = 0x31545844;
+	static final int FOURCC_DXT3 = 0x33545844;
+	static final int FOURCC_DXT5 = 0x35545844;
+	static final int FOURCC_ATI1 = 0x31495441;
+	static final int FOURCC_ATI2 = 0x32495441;
+	static final int FOURCC_BC4U = 0x55344342;
+	static final int FOURCC_BC4S = 0x53344342;
+	
+	// ── ATI / BC4 / BC5 legacy FourCC values ────────────────────────────────
+	static final int FOURCC_BC5U = 0x55354342;
+	static final int FOURCC_BC5S = 0x53354342;
 	private static final int DDS_MAGIC = 0x20534444;
-	private static final int DXT10_RAW = 0x44315830; // internal raw marker
+	private static final int FOURCC_DX10 = 0x30315844;
+	/** Internal marker: DX10 format that is raw RGBA (no block decode needed). */
+	private static final int CODE_RAW_RGBA = 0xDEAD0001;
+	/** Legacy BC7 FourCC used by some encoders (not official, but seen in the wild). */
+	private static final int FOURCC_BC7 = 0x37434200;
 	
-	private static final int DXGI_BC7 = 98;
-	private static final int DXGI_RGBA = 28;
-	private static final int DXGI_BGRA = 87;
+	// =========================================================================
+	// Public decode API
+	// =========================================================================
 	
-	private DDSUtil() {
+	/**
+	 * Decode a DDS file from raw bytes.
+	 *
+	 * @param data full DDS file bytes (including magic + header)
+	 * @return decoded image, or {@code null} if the header cannot be parsed
+	 */
+	public static DDSImage decode(byte[] data) throws IOException {
+		return decode(new ByteArrayInputStream(data));
 	}
 	
-	// ── Public decode API ───────────────────────────────────────────────────
-	
-	/** Decode DDS bytes into a {@link DDSImage}. */
-	public static DDSImage decodeWithInfo(byte[] data) throws IOException {
-		return decodeWithInfo(new ByteArrayInputStream(data));
-	}
-	
-	/** Decode a DDS stream into a {@link DDSImage}. */
-	public static DDSImage decodeWithInfo(InputStream is) throws IOException {
+	/**
+	 * Decode a DDS file from an {@link InputStream}.
+	 *
+	 * @param is stream positioned at the start of the DDS file
+	 * @return decoded image, or {@code null} if the header cannot be parsed
+	 */
+	public static DDSImage decode(InputStream is) throws IOException {
 		try (DataInputStream dis = new DataInputStream(is)) {
-			return decode(dis);
+			return decodeInternal(dis);
 		}
 	}
 	
-	// ── Public compress API ─────────────────────────────────────────────────
+	// =========================================================================
+	// Public encode API
+	// =========================================================================
 	
-	/** Compress a {@link BufferedImage} to DXT1 DDS bytes. */
-	public static byte[] compressToDXT1(BufferedImage image) throws IOException {
+	// ── DXT1 (BC1) ──────────────────────────────────────────────────────────
+	
+	/** Compress a {@link BufferedImage} to a DXT1 DDS byte array. */
+	public static byte[] encodeDXT1(BufferedImage image) throws IOException {
 		DDSImage i = DDSImage.fromBufferedImage(image);
-		return compressToDXT1(i.pixels, i.width, i.height);
+		return encodeDXT1(i.pixels, i.width, i.height);
 	}
 	
-	/** Compress ARGB bytes to DXT1 DDS bytes. */
-	public static byte[] compressToDXT1(byte[] argb, int w, int h) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(128 + blocksSize(w, h, 8));
-		compressToDXT1(argb, w, h, baos);
-		return baos.toByteArray();
+	/** Compress RGBA8 pixels to a DXT1 DDS byte array. */
+	public static byte[] encodeDXT1(byte[] rgba, int w, int h) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(128 + blocksSize(w, h, 8));
+		encodeDXT1(rgba, w, h, out);
+		return out.toByteArray();
 	}
 	
-	/** Compress and write DXT1 DDS directly to an {@link OutputStream}. */
-	public static void compressToDXT1(byte[] argb, int w, int h, OutputStream out) throws IOException {
-		writeDDSHeader(out, w, h, PixelFormat.FOURCC_DXT1);
-		out.write(compressBlocksDXT1(argb, w, h));
+	/** Compress RGBA8 pixels and write a DXT1 DDS directly to an {@link OutputStream}. */
+	public static void encodeDXT1(byte[] rgba, int w, int h, OutputStream out) throws IOException {
+		writeLegacyHeader(out, w, h, FOURCC_DXT1, blocksSize(w, h, 8));
+		out.write(compressBlocksDXT1(rgba, w, h));
 	}
 	
-	/** Compress a {@link BufferedImage} to DXT3 DDS bytes. */
-	public static byte[] compressToDXT3(BufferedImage image) throws IOException {
+	// ── DXT3 (BC2) ──────────────────────────────────────────────────────────
+	
+	/** Compress a {@link BufferedImage} to a DXT3 DDS byte array. */
+	public static byte[] encodeDXT3(BufferedImage image) throws IOException {
 		DDSImage i = DDSImage.fromBufferedImage(image);
-		return compressToDXT3(i.pixels, i.width, i.height);
+		return encodeDXT3(i.pixels, i.width, i.height);
 	}
 	
-	/** Compress ARGB bytes to DXT3 DDS bytes. */
-	public static byte[] compressToDXT3(byte[] argb, int w, int h) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(128 + blocksSize(w, h, 16));
-		compressToDXT3(argb, w, h, baos);
-		return baos.toByteArray();
+	/** Compress RGBA8 pixels to a DXT3 DDS byte array. */
+	public static byte[] encodeDXT3(byte[] rgba, int w, int h) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(128 + blocksSize(w, h, 16));
+		encodeDXT3(rgba, w, h, out);
+		return out.toByteArray();
 	}
 	
-	/** Compress and write DXT3 DDS directly to an {@link OutputStream}. */
-	public static void compressToDXT3(byte[] argb, int w, int h, OutputStream out) throws IOException {
-		writeDDSHeader(out, w, h, PixelFormat.FOURCC_DXT3);
-		out.write(compressBlocksDXT3(argb, w, h));
+	/** Compress RGBA8 pixels and write a DXT3 DDS directly to an {@link OutputStream}. */
+	public static void encodeDXT3(byte[] rgba, int w, int h, OutputStream out) throws IOException {
+		writeLegacyHeader(out, w, h, FOURCC_DXT3, blocksSize(w, h, 16));
+		out.write(compressBlocksDXT3(rgba, w, h));
 	}
 	
-	/** Compress a {@link BufferedImage} to DXT5 DDS bytes. */
-	public static byte[] compressToDXT5(BufferedImage image) throws IOException {
+	// ── DXT5 (BC3) ──────────────────────────────────────────────────────────
+	
+	/** Compress a {@link BufferedImage} to a DXT5 DDS byte array. */
+	public static byte[] encodeDXT5(BufferedImage image) throws IOException {
 		DDSImage i = DDSImage.fromBufferedImage(image);
-		return compressToDXT5(i.pixels, i.width, i.height);
+		return encodeDXT5(i.pixels, i.width, i.height);
 	}
 	
-	/** Compress ARGB bytes to DXT5 DDS bytes. */
-	public static byte[] compressToDXT5(byte[] argb, int w, int h) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(128 + blocksSize(w, h, 16));
-		compressToDXT5(argb, w, h, baos);
-		return baos.toByteArray();
+	/** Compress RGBA8 pixels to a DXT5 DDS byte array. */
+	public static byte[] encodeDXT5(byte[] rgba, int w, int h) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(128 + blocksSize(w, h, 16));
+		encodeDXT5(rgba, w, h, out);
+		return out.toByteArray();
 	}
 	
-	/** Compress and write DXT5 DDS directly to an {@link OutputStream}. */
-	public static void compressToDXT5(byte[] argb, int w, int h, OutputStream out) throws IOException {
-		writeDDSHeader(out, w, h, PixelFormat.FOURCC_DXT5);
-		out.write(compressBlocksDXT5(argb, w, h));
+	/** Compress RGBA8 pixels and write a DXT5 DDS directly to an {@link OutputStream}. */
+	public static void encodeDXT5(byte[] rgba, int w, int h, OutputStream out) throws IOException {
+		writeLegacyHeader(out, w, h, FOURCC_DXT5, blocksSize(w, h, 16));
+		out.write(compressBlocksDXT5(rgba, w, h));
 	}
 	
-	/** Compress a {@link BufferedImage} to BC7 DDS bytes (DX10 header). */
-	public static byte[] compressToBC7(BufferedImage image) throws IOException {
+	// ── BC5 (normal / specular maps) ─────────────────────────────────────────
+	
+	/**
+	 * Compress a {@link BufferedImage} to a BC5_UNORM DDS byte array (DX10 header).
+	 *
+	 * <p>Only the R and G channels are stored; B and A are discarded.
+	 * The engine reconstructs the Z channel at runtime from X·Y.
+	 */
+	public static byte[] encodeBC5(BufferedImage image) throws IOException {
 		DDSImage i = DDSImage.fromBufferedImage(image);
-		return compressToBC7(i.pixels, i.width, i.height);
+		return encodeBC5(i.pixels, i.width, i.height);
 	}
 	
-	/** Compress ARGB bytes to BC7 DDS bytes. */
-	public static byte[] compressToBC7(byte[] argb, int w, int h) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(148 + blocksSize(w, h, 16));
-		compressToBC7(argb, w, h, baos);
-		return baos.toByteArray();
+	/**
+	 * Compress RGBA8 pixels to a BC5_UNORM DDS byte array (DX10 header).
+	 *
+	 * <p>Only the R and G channels are stored; B and A are discarded.
+	 */
+	public static byte[] encodeBC5(byte[] rgba, int w, int h) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(148 + blocksSize(w, h, 16));
+		encodeBC5(rgba, w, h, out);
+		return out.toByteArray();
 	}
 	
-	/** Compress and write BC7 DDS directly to an {@link OutputStream}. */
-	public static void compressToBC7(byte[] argb, int w, int h, OutputStream out) throws IOException {
-		writeDX10Header(out, w, h, blocksSize(w, h, 16), DXGI_BC7);
-		out.write(BC7Util.compress(argb, w, h));
+	/** Compress RGBA8 pixels and write a BC5_UNORM DDS directly to an {@link OutputStream}. */
+	public static void encodeBC5(byte[] rgba, int w, int h, OutputStream out) throws IOException {
+		writeDx10Header(out, w, h, DXGI_BC5U, blocksSize(w, h, 16));
+		out.write(Bc5Util.compress(rgba, w, h));
 	}
 	
-	/** Wrap ARGB bytes in an uncompressed RGBA DDS (DX10 header). */
-	public static byte[] compressToUncompressedRGBA(BufferedImage image) throws IOException {
+	// ── BC7 ─────────────────────────────────────────────────────────────────
+	
+	/**
+	 * Compress a {@link BufferedImage} to a BC7 DDS byte array (DX10 header).
+	 *
+	 * <p>BC7 is the highest-quality block format and supports full RGBA.
+	 * The encoder uses Mode 6 (single-subset, best quality per block).
+	 */
+	public static byte[] encodeBC7(BufferedImage image) throws IOException {
 		DDSImage i = DDSImage.fromBufferedImage(image);
-		return compressToUncompressedRGBA(i.pixels, i.width, i.height);
+		return encodeBC7(i.pixels, i.width, i.height);
 	}
 	
-	/** Wrap ARGB bytes in an uncompressed RGBA DDS (DX10 header). */
-	public static byte[] compressToUncompressedRGBA(byte[] argb, int w, int h) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(148 + argb.length);
-		compressToUncompressedRGBA(argb, w, h, baos);
-		return baos.toByteArray();
+	/** Compress RGBA8 pixels to a BC7 DDS byte array (DX10 header). */
+	public static byte[] encodeBC7(byte[] rgba, int w, int h) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(148 + blocksSize(w, h, 16));
+		encodeBC7(rgba, w, h, out);
+		return out.toByteArray();
 	}
 	
-	/** Wrap and write an uncompressed RGBA DDS directly to an {@link OutputStream}. */
-	public static void compressToUncompressedRGBA(byte[] argb, int w, int h, OutputStream out) throws IOException {
-		writeDX10Header(out, w, h, w * h * 4, DXGI_RGBA);
-		out.write(argb);
+	/** Compress RGBA8 pixels and write a BC7 DDS directly to an {@link OutputStream}. */
+	public static void encodeBC7(byte[] rgba, int w, int h, OutputStream out) throws IOException {
+		writeDx10Header(out, w, h, DXGI_BC7, blocksSize(w, h, 16));
+		out.write(BC7Util.compress(rgba, w, h));
 	}
 	
-	/** Wrap ARGB bytes in an uncompressed BGRA DDS (DX10 header). */
-	public static byte[] compressToUncompressedBGRA(BufferedImage image) throws IOException {
+	// ── Uncompressed RGBA ────────────────────────────────────────────────────
+	
+	/** Wrap a {@link BufferedImage} as uncompressed RGBA8 DDS (DX10 header). */
+	public static byte[] encodeUncompressedRGBA(BufferedImage image) throws IOException {
 		DDSImage i = DDSImage.fromBufferedImage(image);
-		return compressToUncompressedBGRA(i.pixels, i.width, i.height);
+		return encodeUncompressedRGBA(i.pixels, i.width, i.height);
 	}
 	
-	/** Wrap ARGB bytes in an uncompressed BGRA DDS (DX10 header). */
-	public static byte[] compressToUncompressedBGRA(byte[] argb, int w, int h) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(148 + argb.length);
-		compressToUncompressedBGRA(argb, w, h, baos);
-		return baos.toByteArray();
+	/** Wrap RGBA8 pixels as uncompressed RGBA8 DDS (DX10 header). */
+	public static byte[] encodeUncompressedRGBA(byte[] rgba, int w, int h) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(148 + rgba.length);
+		encodeUncompressedRGBA(rgba, w, h, out);
+		return out.toByteArray();
 	}
 	
-	/** Convert RGBA→BGRA and write an uncompressed DDS directly to an {@link OutputStream}. */
-	public static void compressToUncompressedBGRA(byte[] argb, int w, int h, OutputStream out) throws IOException {
-		byte[] bgra = new byte[argb.length];
-		for (int i = 0, n = argb.length / 4; i < n; i++) {
-			int p = i * 4;
-			bgra[p] = argb[p + 2];
-			bgra[p + 1] = argb[p + 1];
-			bgra[p + 2] = argb[p];
-			bgra[p + 3] = argb[p + 3];
-		}
-		writeDX10Header(out, w, h, w * h * 4, DXGI_BGRA);
+	/** Wrap RGBA8 pixels and write an uncompressed RGBA DDS directly to an {@link OutputStream}. */
+	public static void encodeUncompressedRGBA(byte[] rgba, int w, int h, OutputStream out) throws IOException {
+		writeDx10Header(out, w, h, DXGI_RGBA, w * h * 4);
+		out.write(rgba);
+	}
+	
+	// ── Uncompressed BGRA ────────────────────────────────────────────────────
+	
+	/** Wrap a {@link BufferedImage} as uncompressed BGRA8 DDS (DX10 header). */
+	public static byte[] encodeUncompressedBGRA(BufferedImage image) throws IOException {
+		DDSImage i = DDSImage.fromBufferedImage(image);
+		return encodeUncompressedBGRA(i.pixels, i.width, i.height);
+	}
+	
+	/** Convert RGBA→BGRA and wrap as uncompressed BGRA8 DDS (DX10 header). */
+	public static byte[] encodeUncompressedBGRA(byte[] rgba, int w, int h) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream(148 + rgba.length);
+		encodeUncompressedBGRA(rgba, w, h, out);
+		return out.toByteArray();
+	}
+	
+	/** Convert RGBA→BGRA and write an uncompressed BGRA DDS directly to an {@link OutputStream}. */
+	public static void encodeUncompressedBGRA(byte[] rgba, int w, int h, OutputStream out) throws IOException {
+		byte[] bgra = rgbaToBgra(rgba);
+		writeDx10Header(out, w, h, DXGI_BGRA, w * h * 4);
 		out.write(bgra);
 	}
 	
-	// ── Decode internals ────────────────────────────────────────────────────
+	// =========================================================================
+	// Decode internals
+	// =========================================================================
 	
-	private static DDSImage decode(DataInputStream dis) throws IOException {
-		ImgData data;
-		try {
-			data = readHeader(dis, true);
-		} catch (Exception ex) {
-			log.warn("DDS header LE failed: {}", String.valueOf(ex));
-			try {
-				data = readHeader(dis, false);
-			} catch (Exception ex2) {
-				log.warn("DDS header BE failed: {}", String.valueOf(ex2));
-				return null;
-			}
-		}
-		System.out.println("header found");
-		
-		data.data = new byte[data.length];
-		dis.readFully(data.data);
+	private static DDSImage decodeInternal(DataInputStream dis) throws IOException {
+		// Try little-endian first (all retail DDS files), fall back to big-endian
+		byte[] raw = dis.readAllBytes();
+		Dds.ImgData data = parseHeader(raw);
 		
 		byte[] rgba = new byte[data.w * data.h * 4];
+		
 		switch (data.code) {
-			case PixelFormat.FOURCC_DXT1 -> decompressDXT1(data, rgba);
-			case PixelFormat.FOURCC_DXT3 -> decompressDXT3(data, rgba);
-			case PixelFormat.FOURCC_DXT5 -> decompressDXT5(data, rgba);
-			case 0x37434200 -> BC7Util.decompress(data, rgba);
-			case DXT10_RAW -> System.arraycopy(data.data, 0, rgba, 0, Math.min(data.data.length, rgba.length));
-			default -> throw new UnsupportedOperationException("Unknown format: " + data.code);
+			case FOURCC_DXT1 -> decompressDXT1(data, rgba);
+			case FOURCC_DXT3 -> decompressDXT3(data, rgba);
+			case FOURCC_DXT5 -> decompressDXT5(data, rgba);
+			case FOURCC_BC7 -> BC7Util.decompress(data, rgba);
+			case CODE_RAW_RGBA -> System.arraycopy(data.data, 0, rgba, 0, Math.min(data.data.length, rgba.length));
+			default -> {
+				// Route all remaining BCn formats through BcnDecoder
+				DxgiFormat fmt = dxgiCodeToFormat(data.code);
+				if (fmt == null)
+					throw new UnsupportedOperationException("Unknown DDS format code: 0x" + Integer.toHexString(data.code));
+				rgba = BcnDecoder.decompress(data.data, data.w, data.h, fmt);
+			}
 		}
 		return new DDSImage(data.w, data.h, rgba);
 	}
 	
-	private static ImgData readHeader(DataInputStream dis, boolean littleEndian) throws IOException {
-		byte[] hdr = new byte[128];
-		if (dis.read(hdr) < 128)
-			throw new IOException("DDS header too short");
-		
-		ByteBuffer buf = ByteBuffer.wrap(hdr).order(littleEndian ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
+	/**
+	 * Parse DDS magic + header, read all remaining bytes into {@link image.Dds.ImgData}.
+	 * Handles both legacy FourCC and DX10-extended headers.
+	 */
+	private static Dds.ImgData parseHeader(byte[] raw) throws IOException {
+		ByteBuffer buf = ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN);
 		
 		if (buf.getInt() != DDS_MAGIC)
-			throw new IOException("Not a DDS file");
+			throw new IOException("Not a DDS file (bad magic)");
 		if (buf.getInt() != 124)
 			throw new IOException("DDS header size invalid");
 		
@@ -212,62 +298,93 @@ public class DDSUtil {
 		buf.position(buf.position() + 44); // skip 11 reserved ints
 		
 		if (buf.getInt() != 32)
-			throw new IOException("Pixel format size invalid");
-		buf.getInt();                       // pfFlags
+			throw new IOException("DDS pixel-format size invalid");
+		buf.getInt();                       // pfFlags  (unused here)
 		int fourCC = buf.getInt();
-		// remaining pixel-format + caps fields unused
+		// remaining pixel-format + caps fields are not needed for decode
 		
-		int format;
-		ExtendedHeader dx10 = null;
+		int pixelDataOffset;
+		int code;
 		
-		if (fourCC == PixelFormat.FOURCC_DXT1) {
-			format = PixelFormat.FOURCC_DXT1;
-		} else if (fourCC == PixelFormat.FOURCC_DXT3) {
-			format = PixelFormat.FOURCC_DXT3;
-		} else if (fourCC == PixelFormat.FOURCC_DXT5) {
-			format = PixelFormat.FOURCC_DXT5;
-		} else if (fourCC == 0x37434200) {
-			format = 0x37434200;
-		} else if (fourCC == PixelFormat.FOURCC_DX10) {
-			// ExtendedHeader.read() takes a DataInput — pass dis directly
-			dx10 = new ExtendedHeader();
-			dx10.read(dis);
-			
-			// dxgiFormat is now a DxgiFormat enum, so switch on the enum
-			format = switch (dx10.dxgiFormat) {
-				case BC1_UNORM, BC1_UNORM_SRGB -> PixelFormat.FOURCC_DXT1;
-				case BC2_UNORM, BC2_UNORM_SRGB -> PixelFormat.FOURCC_DXT3;
-				case BC3_UNORM, BC3_UNORM_SRGB -> PixelFormat.FOURCC_DXT5;
-				case BC7_UNORM, BC7_UNORM_SRGB -> 0x37434200;
-				case R8G8B8A8_UNORM, R8G8B8A8_UNORM_SRGB -> DXT10_RAW;
-				// DXGI 87 (BGRA) doesn't have an enum value in your DxgiFormat,
-				// so it falls through to UNKNOWN and hits the default
-				default -> throw new IOException("Unsupported DXGI format: " + dx10.dxgiFormat);
-			};
+		if (fourCC == FOURCC_DX10) {
+			// Jump past the rest of the main header, then read the DX10 block
+			buf.position(128);              // start of DX10 extended header
+			int dxgi = buf.getInt();
+			buf.getInt();                   // resourceDimension
+			buf.getInt();                   // miscFlag
+			buf.getInt();                   // arraySize
+			buf.getInt();                   // miscFlags2
+			pixelDataOffset = 148;          // 128 + 20
+			code = dxgiToCode(dxgi);
 		} else {
-			throw new IOException("Unsupported DDS fourCC: 0x" + Integer.toHexString(fourCC));
+			pixelDataOffset = 128;
+			code = legacyFourccToCode(fourCC);
 		}
 		
-		int blockSize = switch (format) {
-			case PixelFormat.FOURCC_DXT1 -> 8;
-			case DXT10_RAW -> 4;
-			default -> 16;
-		};
-		int dataSize = blocksWide(width) * blocksHigh(height) * blockSize;
-		return new ImgData(height, width, format, dataSize, dx10);
+		int dataLen = raw.length - pixelDataOffset;
+		if (dataLen < 0)
+			dataLen = 0;
+		byte[] pixelData = new byte[dataLen];
+		System.arraycopy(raw, pixelDataOffset, pixelData, 0, dataLen);
+		
+		int blockSize = (code == FOURCC_DXT1) ? 8 : (code == CODE_RAW_RGBA) ? 4 : 16;
+		int expectedSize = blocksWide(width) * blocksHigh(height) * blockSize;
+		return new Dds.ImgData(height, width, code, expectedSize, pixelData);
 	}
 	
-	// ── DXT decompression ───────────────────────────────────────────────────
+	/** Map a DXGI integer to our internal code (either a FourCC or a special constant). */
+	private static int dxgiToCode(int dxgi) throws IOException {
+		return switch (dxgi) {
+			case DXGI_BC1 -> FOURCC_DXT1;
+			case DXGI_BC2 -> FOURCC_DXT3;
+			case DXGI_BC3 -> FOURCC_DXT5;
+			case DXGI_BC7 -> FOURCC_BC7;
+			case DXGI_RGBA -> CODE_RAW_RGBA;
+			// All other DXGI formats are passed through numerically so
+			// decodeInternal can route them to BcnDecoder.
+			case DXGI_BC4U, DXGI_BC4S, DXGI_BC5U, DXGI_BC5S -> dxgi;
+			default -> throw new IOException("Unsupported DXGI format: " + dxgi);
+		};
+	}
 	
-	private static void decompressDXT1(ImgData data, byte[] out) {
+	/** Map a legacy DDS FourCC to our internal code. */
+	private static int legacyFourccToCode(int fourCC) throws IOException {
+		return switch (fourCC) {
+			case FOURCC_DXT1 -> FOURCC_DXT1;
+			case FOURCC_DXT3 -> FOURCC_DXT3;
+			case FOURCC_DXT5 -> FOURCC_DXT5;
+			case FOURCC_BC7 -> FOURCC_BC7;
+			case FOURCC_ATI1, FOURCC_BC4U -> DXGI_BC4U;
+			case FOURCC_BC4S -> DXGI_BC4S;
+			case FOURCC_ATI2, FOURCC_BC5U -> DXGI_BC5U;
+			case FOURCC_BC5S -> DXGI_BC5S;
+			default -> throw new IOException("Unsupported DDS FourCC: 0x" + Integer.toHexString(fourCC));
+		};
+	}
+	
+	/** Map a numeric DXGI code back to a {@link DxgiFormat} enum for BcnDecoder. */
+	private static DxgiFormat dxgiCodeToFormat(int code) {
+		return switch (code) {
+			case DXGI_BC4U -> DxgiFormat.BC4_UNORM;
+			case DXGI_BC4S -> DxgiFormat.BC4_SNORM;
+			case DXGI_BC5U -> DxgiFormat.BC5_UNORM;
+			case DXGI_BC5S -> DxgiFormat.BC5_SNORM;
+			default -> null;
+		};
+	}
+	
+	// =========================================================================
+	// DXT decompression (DXT1 / DXT3 / DXT5)
+	// =========================================================================
+	
+	private static void decompressDXT1(Dds.ImgData data, byte[] out) {
 		byte[] src = data.data;
 		int w = data.w, h = data.h, bw = blocksWide(w);
 		
 		for (int by = 0, y = 0; y < h; by++, y += 4) {
 			for (int bx = 0, x = 0; x < w; bx++, x += 4) {
 				int bi = (by * bw + bx) * 8;
-				int c0 = u16le(src, bi);
-				int c1 = u16le(src, bi + 2);
+				int c0 = u16le(src, bi), c1 = u16le(src, bi + 2);
 				int[] colors = expandDXT1(c0, c1);
 				long bits = u32le(src, bi + 4);
 				writeBlock4(out, colors, bits, x, y, w, h);
@@ -275,7 +392,7 @@ public class DDSUtil {
 		}
 	}
 	
-	private static void decompressDXT3(ImgData data, byte[] out) {
+	private static void decompressDXT3(Dds.ImgData data, byte[] out) {
 		byte[] src = data.data;
 		int w = data.w, h = data.h, bw = blocksWide(w);
 		
@@ -283,8 +400,7 @@ public class DDSUtil {
 			for (int bx = 0, x = 0; x < w; bx++, x += 4) {
 				int bi = (by * bw + bx) * 16;
 				long alphaBits = u64le(src, bi);
-				int c0 = u16le(src, bi + 8);
-				int c1 = u16le(src, bi + 10);
+				int c0 = u16le(src, bi + 8), c1 = u16le(src, bi + 10);
 				int[] colors = expandDXT3(c0, c1);
 				long bits = u32le(src, bi + 12);
 				
@@ -305,7 +421,7 @@ public class DDSUtil {
 		}
 	}
 	
-	private static void decompressDXT5(ImgData data, byte[] out) {
+	private static void decompressDXT5(Dds.ImgData data, byte[] out) {
 		byte[] src = data.data;
 		int w = data.w, h = data.h, bw = blocksWide(w);
 		
@@ -314,8 +430,7 @@ public class DDSUtil {
 				int bi = (by * bw + bx) * 16;
 				int a0 = src[bi] & 0xFF, a1 = src[bi + 1] & 0xFF;
 				long aBits = u48le(src, bi + 2);
-				int c0 = u16le(src, bi + 8);
-				int c1 = u16le(src, bi + 10);
+				int c0 = u16le(src, bi + 8), c1 = u16le(src, bi + 10);
 				int[] colors = expandDXT5(c0, c1);
 				long bits = u32le(src, bi + 12);
 				
@@ -335,7 +450,6 @@ public class DDSUtil {
 		}
 	}
 	
-	/** Write a decoded 4-color block to the output buffer. */
 	private static void writeBlock4(byte[] out, int[] colors, long bits, int x, int y, int w, int h) {
 		for (int py = 0; py < 4 && y + py < h; py++) {
 			for (int px = 0; px < 4 && x + px < w; px++) {
@@ -349,7 +463,7 @@ public class DDSUtil {
 		}
 	}
 	
-	// ── Color helpers ───────────────────────────────────────────────────────
+	// ── Color helpers ────────────────────────────────────────────────────────
 	
 	private static int[] expandDXT1(int c0, int c1) {
 		int[] c = new int[4];
@@ -420,54 +534,53 @@ public class DDSUtil {
 		};
 	}
 	
-	// ── DXT compression ─────────────────────────────────────────────────────
+	// =========================================================================
+	// DXT compression (DXT1 / DXT3 / DXT5)
+	// =========================================================================
 	
-	private static byte[] compressBlocksDXT1(byte[] argb, int w, int h) {
+	private static byte[] compressBlocksDXT1(byte[] rgba, int w, int h) {
 		int bw = blocksWide(w), bh = blocksHigh(h);
 		byte[] out = new byte[bw * bh * 8];
 		int[] block = new int[16];
 		for (int by = 0; by < bh; by++)
 			for (int bx = 0; bx < bw; bx++) {
-				extractBlock(argb, bx, by, w, h, block, true);
+				extractBlock(rgba, bx, by, w, h, block, true);
 				compressDXT1Block(block, out, (by * bw + bx) * 8);
 			}
 		return out;
 	}
 	
-	private static byte[] compressBlocksDXT3(byte[] argb, int w, int h) {
+	private static byte[] compressBlocksDXT3(byte[] rgba, int w, int h) {
 		int bw = blocksWide(w), bh = blocksHigh(h);
 		byte[] out = new byte[bw * bh * 16];
-		int[] colors = new int[16];
-		int[] alphas = new int[16];
+		int[] colors = new int[16], alphas = new int[16];
 		for (int by = 0; by < bh; by++)
 			for (int bx = 0; bx < bw; bx++) {
-				extractBlockSplit(argb, bx, by, w, h, colors, alphas);
+				extractBlockSplit(rgba, bx, by, w, h, colors, alphas);
 				compressDXT3Block(colors, alphas, out, (by * bw + bx) * 16);
 			}
 		return out;
 	}
 	
-	private static byte[] compressBlocksDXT5(byte[] argb, int w, int h) {
+	private static byte[] compressBlocksDXT5(byte[] rgba, int w, int h) {
 		int bw = blocksWide(w), bh = blocksHigh(h);
 		byte[] out = new byte[bw * bh * 16];
-		int[] colors = new int[16];
-		int[] alphas = new int[16];
+		int[] colors = new int[16], alphas = new int[16];
 		for (int by = 0; by < bh; by++)
 			for (int bx = 0; bx < bw; bx++) {
-				extractBlockSplit(argb, bx, by, w, h, colors, alphas);
+				extractBlockSplit(rgba, bx, by, w, h, colors, alphas);
 				compressDXT5Block(colors, alphas, out, (by * bw + bx) * 16);
 			}
 		return out;
 	}
 	
-	/** Extract a 4×4 block as packed ARGB ints (alpha in bits 31–24). */
-	private static void extractBlock(byte[] argb, int bx, int by, int w, int h, int[] out, boolean packAlpha) {
+	private static void extractBlock(byte[] rgba, int bx, int by, int w, int h, int[] out, boolean packAlpha) {
 		for (int py = 0, i = 0; py < 4; py++) {
 			for (int px = 0; px < 4; px++, i++) {
 				int x = bx * 4 + px, y = by * 4 + py;
 				if (x < w && y < h) {
 					int p = (y * w + x) * 4;
-					int r = argb[p] & 0xFF, g = argb[p + 1] & 0xFF, b = argb[p + 2] & 0xFF, a = argb[p + 3] & 0xFF;
+					int r = rgba[p] & 0xFF, g = rgba[p + 1] & 0xFF, b = rgba[p + 2] & 0xFF, a = rgba[p + 3] & 0xFF;
 					out[i] = packAlpha ? ((a << 24) | (r << 16) | (g << 8) | b) : ((r << 16) | (g << 8) | b);
 				} else {
 					out[i] = 0;
@@ -476,15 +589,14 @@ public class DDSUtil {
 		}
 	}
 	
-	/** Extract a 4×4 block into separate color (RGB) and alpha arrays. */
-	private static void extractBlockSplit(byte[] argb, int bx, int by, int w, int h, int[] colors, int[] alphas) {
+	private static void extractBlockSplit(byte[] rgba, int bx, int by, int w, int h, int[] colors, int[] alphas) {
 		for (int py = 0, i = 0; py < 4; py++) {
 			for (int px = 0; px < 4; px++, i++) {
 				int x = bx * 4 + px, y = by * 4 + py;
 				if (x < w && y < h) {
 					int p = (y * w + x) * 4;
-					colors[i] = ((argb[p] & 0xFF) << 16) | ((argb[p + 1] & 0xFF) << 8) | (argb[p + 2] & 0xFF);
-					alphas[i] = argb[p + 3] & 0xFF;
+					colors[i] = ((rgba[p] & 0xFF) << 16) | ((rgba[p + 1] & 0xFF) << 8) | (rgba[p + 2] & 0xFF);
+					alphas[i] = rgba[p + 3] & 0xFF;
 				} else {
 					colors[i] = 0;
 					alphas[i] = 0;
@@ -527,12 +639,11 @@ public class DDSUtil {
 			int best = (((colors[i] >> 24) & 0xFF) < 128 && c0 <= c1) ? 3 : nearestColor(colors[i], pal);
 			bits |= (long) best << (i * 2);
 		}
-		
 		out[off] = (byte) (c0 & 0xFF);
 		out[off + 1] = (byte) (c0 >> 8);
 		out[off + 2] = (byte) (c1 & 0xFF);
 		out[off + 3] = (byte) (c1 >> 8);
-		out[off + 4] = (byte) (bits & 0xFF);
+		out[off + 4] = (byte) bits;
 		out[off + 5] = (byte) (bits >> 8);
 		out[off + 6] = (byte) (bits >> 16);
 		out[off + 7] = (byte) (bits >> 24);
@@ -544,7 +655,6 @@ public class DDSUtil {
 			aBits |= (long) Math.min(15, alphas[i] / 17) << (i * 4);
 		for (int i = 0; i < 8; i++)
 			out[off + i] = (byte) ((aBits >> (i * 8)) & 0xFF);
-		
 		int[] c0c1 = minMaxColors(colors);
 		int c0 = c0c1[0], c1 = c0c1[1];
 		if (c0 <= c1) {
@@ -552,9 +662,8 @@ public class DDSUtil {
 			c0 = c1;
 			c1 = t;
 		}
-		
 		int[] pal = expandDXT3(c0, c1);
-		compressColor(colors, out, off, c0, c1, pal);
+		compressColorBlock(colors, out, off, c0, c1, pal);
 	}
 	
 	private static void compressDXT5Block(int[] colors, int[] alphas, byte[] out, int off) {
@@ -566,16 +675,13 @@ public class DDSUtil {
 				aMax = a;
 		}
 		int a0 = aMax, a1 = aMin;
-		
 		long aBits = 0;
 		for (int i = 0; i < 16; i++)
 			aBits |= (long) alphaCode(alphas[i], a0, a1) << (i * 3);
-		
 		out[off] = (byte) a0;
 		out[off + 1] = (byte) a1;
 		for (int i = 0; i < 6; i++)
 			out[off + 2 + i] = (byte) ((aBits >> (i * 8)) & 0xFF);
-		
 		int[] c0c1 = minMaxColors(colors);
 		int c0 = c0c1[0], c1 = c0c1[1];
 		if (c0 <= c1) {
@@ -583,25 +689,22 @@ public class DDSUtil {
 			c0 = c1;
 			c1 = t;
 		}
-		
 		int[] pal = expandDXT5(c0, c1);
-		compressColor(colors, out, off, c0, c1, pal);
+		compressColorBlock(colors, out, off, c0, c1, pal);
 	}
 	
-	private static void compressColor(int[] colors, byte[] out, int off, int c0, int c1, int[] pal) {
+	private static void compressColorBlock(int[] colors, byte[] out, int off, int c0, int c1, int[] pal) {
 		long bits = buildColorBits(colors, pal);
-		
 		out[off + 8] = (byte) (c0 & 0xFF);
 		out[off + 9] = (byte) (c0 >> 8);
 		out[off + 10] = (byte) (c1 & 0xFF);
 		out[off + 11] = (byte) (c1 >> 8);
-		out[off + 12] = (byte) (bits & 0xFF);
+		out[off + 12] = (byte) bits;
 		out[off + 13] = (byte) (bits >> 8);
 		out[off + 14] = (byte) (bits >> 16);
 		out[off + 15] = (byte) (bits >> 24);
 	}
 	
-	/** Returns [c0_565, c1_565] for max/min RGB of the block. */
 	private static int[] minMaxColors(int[] colors) {
 		int mn = colors[0], mx = colors[0];
 		for (int c : colors) {
@@ -620,7 +723,6 @@ public class DDSUtil {
 		return bits;
 	}
 	
-	/** Find the palette index (0–3) closest to {@code color}. */
 	private static int nearestColor(int color, int[] pal) {
 		int best = 0, bestD = Integer.MAX_VALUE;
 		for (int j = 0; j < pal.length; j++) {
@@ -633,7 +735,6 @@ public class DDSUtil {
 		return best;
 	}
 	
-	/** Find the 3-bit DXT5 alpha code closest to {@code alpha}. */
 	private static int alphaCode(int alpha, int a0, int a1) {
 		int[] tbl = new int[8];
 		if (a0 > a1) {
@@ -649,13 +750,14 @@ public class DDSUtil {
 			tbl[6] = 0;
 			tbl[7] = 255;
 		}
-		return getBest(alpha, tbl);
+		return closestIndex(alpha, tbl);
 	}
 	
-	static int getBest(int alpha, int[] tbl) {
+	/** Package-private: used by Bc5Util for BC4 block encoding. */
+	static int closestIndex(int val, int[] table) {
 		int best = 0, bestD = Integer.MAX_VALUE;
-		for (int i = 0; i < 8; i++) {
-			int d = Math.abs(alpha - tbl[i]);
+		for (int i = 0; i < table.length; i++) {
+			int d = Math.abs(val - table[i]);
 			if (d < bestD) {
 				bestD = d;
 				best = i;
@@ -668,7 +770,6 @@ public class DDSUtil {
 		return (((rgb >> 16) & 0xFF) >> 3) << 11 | (((rgb >> 8) & 0xFF) >> 2) << 5 | ((rgb & 0xFF) >> 3);
 	}
 	
-	/** RGB-only squared distance (ignores alpha). */
 	private static int colorDist(int a, int b) {
 		int dr = ((a >> 16) & 0xFF) - ((b >> 16) & 0xFF);
 		int dg = ((a >> 8) & 0xFF) - ((b >> 8) & 0xFF);
@@ -676,56 +777,116 @@ public class DDSUtil {
 		return dr * dr + dg * dg + db * db;
 	}
 	
-	// ── DDS header writing ──────────────────────────────────────────────────
+	// =========================================================================
+	// DDS header writing (all header logic lives here — no other class writes headers)
+	// =========================================================================
 	
-	/** Write a standard 128-byte DDS header for DXT1/3/5. */
-	private static void writeDDSHeader(OutputStream out, int w, int h, int fourCC) throws IOException {
-		ByteBuffer buf = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
-		int blockSize = (fourCC == PixelFormat.FOURCC_DXT1) ? 8 : 16;
-		
-		buf.putInt(DDS_MAGIC);
-		buf.putInt(124);         // header size
-		buf.putInt(0x00081007);  // flags: caps|height|width|pixelformat|linearsize
-		buf.putInt(h);
-		buf.putInt(w);
-		buf.putInt(blocksWide(w) * blocksHigh(h) * blockSize); // linearSize
-		buf.putInt(0);
-		buf.putInt(0); // depth, mipmaps
-		writeHeaderBuffer(out, buf, fourCC);
-	}
-	
-	/** Write a 128-byte DDS header + 20-byte DX10 extension. */
-	private static void writeDX10Header(OutputStream out, int w, int h, int linearSize, int dxgiFormat) throws IOException {
-		var buf = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
-		
-		buf.putInt(DDS_MAGIC);
-		buf.putInt(124);
-		buf.putInt(0x00081007);
-		buf.putInt(h);
-		buf.putInt(w);
-		buf.putInt(linearSize);
-		buf.putInt(0);
-		buf.putInt(0);
-		writeHeaderBuffer(out, buf, PixelFormat.FOURCC_DX10);
-		
-		TextureImporter.writeSimpleHeaderBuffer(out, dxgiFormat);
-	}
-	
-	static void writeHeaderBuffer(OutputStream out, ByteBuffer buf, int dx104cc) throws IOException {
-		buf.position(buf.position() + 44);
-		buf.putInt(32);
-		buf.putInt(0x00000004); // DDPF_FOURCC
-		buf.putInt(dx104cc);
+	/**
+	 * Write a standard 128-byte DDS header using a legacy FourCC (DXT1/DXT3/DXT5).
+	 * Package-private so codec helpers can reuse it.
+	 */
+	static void writeLegacyHeader(OutputStream out, int w, int h, int fourCC, int linearSize) throws IOException {
+		ByteBuffer buf = buildBaseHeader(w, h, linearSize);
+		// pixel-format block
+		buf.putInt(32);          // struct size
+		buf.putInt(0x00000004);  // DDPF_FOURCC
+		buf.putInt(fourCC);
 		buf.putInt(0);
 		buf.putInt(0);
 		buf.putInt(0);
 		buf.putInt(0);
 		buf.putInt(0);
-		buf.putInt(0x00001000);
+		// caps
+		buf.putInt(0x00001000); // DDSCAPS_TEXTURE
+		buf.putInt(0);
+		buf.putInt(0);
+		buf.putInt(0);
+		buf.putInt(0);
 		out.write(buf.array());
 	}
 	
-	// ── Bit I/O helpers ─────────────────────────────────────────────────────
+	/**
+	 * Write a 128-byte DDS header + 20-byte DX10 extended header.
+	 * Used for BC5, BC7, and uncompressed RGBA/BGRA.
+	 * Package-private so codec helpers can reuse it.
+	 */
+	static void writeDx10Header(OutputStream out, int w, int h, int dxgiFormat, int linearSize) throws IOException {
+		ByteBuffer buf = buildBaseHeader(w, h, linearSize);
+		// pixel-format block pointing to DX10 extension
+		buf.putInt(32);
+		buf.putInt(0x00000004);  // DDPF_FOURCC
+		buf.putInt(FOURCC_DX10);
+		buf.putInt(0);
+		buf.putInt(0);
+		buf.putInt(0);
+		buf.putInt(0);
+		buf.putInt(0);
+		// caps
+		buf.putInt(0x00001000);
+		buf.putInt(0);
+		buf.putInt(0);
+		buf.putInt(0);
+		buf.putInt(0);
+		out.write(buf.array());
+		
+		// DX10 extended header (20 bytes)
+		ByteBuffer ext = ByteBuffer.wrap(new byte[20]).order(ByteOrder.LITTLE_ENDIAN);
+		ext.putInt(dxgiFormat);
+		ext.putInt(3);  // D3D10_RESOURCE_DIMENSION_TEXTURE2D
+		ext.putInt(0);  // miscFlag
+		ext.putInt(1);  // arraySize
+		ext.putInt(0);  // miscFlags2
+		out.write(ext.array());
+	}
+	
+	private static ByteBuffer buildBaseHeader(int w, int h, int linearSize) {
+		ByteBuffer buf = ByteBuffer.wrap(new byte[128]).order(ByteOrder.LITTLE_ENDIAN);
+		buf.putInt(DDS_MAGIC);
+		buf.putInt(124);        // header size
+		buf.putInt(0x00081007); // DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_LINEARSIZE
+		buf.putInt(h);
+		buf.putInt(w);
+		buf.putInt(linearSize);
+		buf.putInt(0);          // depth
+		buf.putInt(1);          // mipMapCount
+		buf.position(buf.position() + 44); // 11 reserved ints
+		return buf;
+	}
+	
+	// =========================================================================
+	// Pixel utilities
+	// =========================================================================
+	
+	private static byte[] rgbaToBgra(byte[] src) {
+		byte[] out = new byte[src.length];
+		for (int i = 0, n = src.length / 4; i < n; i++) {
+			out[i * 4] = src[i * 4 + 2];  // B→R
+			out[i * 4 + 1] = src[i * 4 + 1];  // G
+			out[i * 4 + 2] = src[i * 4];    // R→B
+			out[i * 4 + 3] = src[i * 4 + 3];  // A
+		}
+		return out;
+	}
+	
+	// =========================================================================
+	// Block size helpers
+	// =========================================================================
+	
+	static int blocksWide(int w) {
+		return Math.max(1, (w + 3) / 4);
+	}
+	
+	static int blocksHigh(int h) {
+		return Math.max(1, (h + 3) / 4);
+	}
+	
+	static int blocksSize(int w, int h, int bs) {
+		return blocksWide(w) * blocksHigh(h) * bs;
+	}
+	
+	// =========================================================================
+	// Bit I/O helpers (used by BC7Util / Bc5Util)
+	// =========================================================================
 	
 	private static int u16le(byte[] b, int i) {
 		return (b[i] & 0xFF) | ((b[i + 1] & 0xFF) << 8);
@@ -736,69 +897,14 @@ public class DDSUtil {
 	}
 	
 	private static long u48le(byte[] b, int i) {
-		return (b[i] & 0xFFL) | ((b[i + 1] & 0xFFL) << 8) | ((b[i + 2] & 0xFFL) << 16) | ((b[i + 3] & 0xFFL) << 24) | ((b[i + 4] & 0xFFL) << 32) | ((b[i + 5] & 0xFFL) << 40);
+		return u32le(b, i) | ((b[i + 4] & 0xFFL) << 32) | ((b[i + 5] & 0xFFL) << 40);
 	}
 	
 	private static long u64le(byte[] b, int i) {
-		return (b[i] & 0xFFL) | ((b[i + 1] & 0xFFL) << 8) | ((b[i + 2] & 0xFFL) << 16) | ((b[i + 3] & 0xFFL) << 24) | ((b[i + 4] & 0xFFL) << 32) | ((b[i + 5] & 0xFFL) << 40) | ((b[i + 6] & 0xFFL) << 48) | ((b[i + 7] & 0xFFL) << 56);
+		return u48le(b, i) | ((b[i + 6] & 0xFFL) << 48) | ((b[i + 7] & 0xFFL) << 56);
 	}
 	
-	private static int blocksWide(int w) {
-		return Math.max(1, (w + 3) / 4);
-	}
-	
-	private static int blocksHigh(int h) {
-		return Math.max(1, (h + 3) / 4);
-	}
-	
-	private static int blocksSize(int w, int h, int bs) {
-		return blocksWide(w) * blocksHigh(h) * bs;
-	}
-	
-	// ── Public result type ──────────────────────────────────────────────────
-	
-	/** Decoded DDS image: RGBA bytes, 4 bytes per pixel (R, G, B, A order). */
-	public static class DDSImage {
-		public final int width, height;
-		public final byte[] pixels;
-		
-		private DDSImage(int width, int height, byte[] pixels) {
-			this.width = width;
-			this.height = height;
-			this.pixels = pixels;
-		}
-		
-		/** Extract RGBA pixel data from a {@link BufferedImage}. */
-		public static DDSImage fromBufferedImage(BufferedImage image) {
-			int w = image.getWidth(), h = image.getHeight();
-			int[] rgb = image.getRGB(0, 0, w, h, null, 0, w);
-			byte[] px = new byte[w * h * 4];
-			for (int i = 0; i < rgb.length; i++) {
-				int p = rgb[i];
-				px[i * 4] = (byte) ((p >> 16) & 0xFF);
-				px[i * 4 + 1] = (byte) ((p >> 8) & 0xFF);
-				px[i * 4 + 2] = (byte) (p & 0xFF);
-				px[i * 4 + 3] = (byte) ((p >> 24) & 0xFF);
-			}
-			return new DDSImage(w, h, px);
-		}
-		
-		/** Convert pixels to a {@link BufferedImage}. */
-		public BufferedImage toBufferedImage() {
-			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			int[] argb = new int[width * height];
-			for (int i = 0; i < argb.length; i++) {
-				int b = i * 4;
-				argb[i] = ((pixels[b + 3] & 0xFF) << 24) | ((pixels[b] & 0xFF) << 16) | ((pixels[b + 1] & 0xFF) << 8) | (pixels[b + 2] & 0xFF);
-			}
-			img.setRGB(0, 0, width, height, argb, 0, width);
-			return img;
-		}
-	}
-	
-	// ── Bit-level I/O used by BC7 ───────────────────────────────────────────
-	
-	/** LSB-first bit reader over a fixed byte array. */
+	/** LSB-first bit reader over a fixed byte array. Package-private for BC7Util. */
 	static class BitReader {
 		private final byte[] data;
 		private int pos;
@@ -822,7 +928,7 @@ public class DDSUtil {
 		}
 	}
 	
-	/** LSB-first bit writer over a fixed byte array region. */
+	/** LSB-first bit writer over a fixed byte array region. Package-private for BC7Util. */
 	static class BitWriter {
 		private final byte[] data;
 		private int pos;
@@ -841,19 +947,52 @@ public class DDSUtil {
 			}
 		}
 	}
-}
-
-
-class ImgData {
-	final int h, w, code, length;
-	final ExtendedHeader header;
-	byte[] data;
 	
-	ImgData(int h, int w, int code, int length, ExtendedHeader header) {
-		this.h = h;
-		this.w = w;
-		this.code = code;
-		this.length = length;
-		this.header = header;
+	// =========================================================================
+	// Public result types
+	// =========================================================================
+	
+	/**
+	 * A decoded DDS image: raw RGBA8 pixels (4 bytes per pixel: R, G, B, A).
+	 */
+	public static class DDSImage {
+		public final int width, height;
+		public final byte[] pixels;
+		
+		DDSImage(int width, int height, byte[] pixels) {
+			this.width = width;
+			this.height = height;
+			this.pixels = pixels;
+		}
+		
+		/** Build a {@link DDSImage} from a {@link BufferedImage}. */
+		public static DDSImage fromBufferedImage(BufferedImage image) {
+			int w = image.getWidth(), h = image.getHeight();
+			int[] rgb = image.getRGB(0, 0, w, h, null, 0, w);
+			byte[] px = new byte[w * h * 4];
+			for (int i = 0; i < rgb.length; i++) {
+				int p = rgb[i];
+				px[i * 4] = (byte) ((p >> 16) & 0xFF);
+				px[i * 4 + 1] = (byte) ((p >> 8) & 0xFF);
+				px[i * 4 + 2] = (byte) (p & 0xFF);
+				px[i * 4 + 3] = (byte) ((p >> 24) & 0xFF);
+			}
+			return new DDSImage(w, h, px);
+		}
+		
+		/** Convert this image back to a {@link BufferedImage}. */
+		public BufferedImage toBufferedImage() {
+			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			int[] argb = new int[width * height];
+			for (int i = 0; i < argb.length; i++) {
+				int b = i * 4;
+				argb[i] = ((pixels[b + 3] & 0xFF) << 24) | ((pixels[b] & 0xFF) << 16) | ((pixels[b + 1] & 0xFF) << 8) | (pixels[b + 2] & 0xFF);
+			}
+			img.setRGB(0, 0, width, height, argb, 0, width);
+			return img;
+		}
 	}
 }
+
+// ── Package-private image data carrier ──────────────────────────────────────
+

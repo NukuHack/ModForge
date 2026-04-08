@@ -1,5 +1,7 @@
 package image;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * KCD2 texture format profiles.
  *
@@ -22,7 +24,7 @@ package image;
  *  _id            → ID_MAP         (uncompressed RGBA for exact color IDs)
  *  anything else  → UNKNOWN        (user picks manually)
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public enum FormatProfile {
 	
 	DIFFUSE("Diffuse / Albedo (colour map)", TargetFormat.BC3, true, "sRGB colour texture. Use BC3 (DXT5) for transparency, BC1 (DXT1) for opaque."),         // BC1 when opaque, BC3 when alpha present

@@ -38,7 +38,7 @@ class DDSUtilTest extends BaseServiceTest {
 	@Test
 	void testDecodeDXT1() throws IOException {
 		// Act
-		DDSUtil.DDSImage result = DDSUtil.decodeWithInfo(dxt1Data);
+		DDSUtil.DDSImage result = DDSUtil.decode(dxt1Data);
 		
 		// Assert
 		assertNotNull(result);
@@ -61,7 +61,7 @@ class DDSUtilTest extends BaseServiceTest {
 	@Test
 	void testDecodeDXT5() throws IOException {
 		// Act
-		DDSUtil.DDSImage result = DDSUtil.decodeWithInfo(dxt5Data);
+		DDSUtil.DDSImage result = DDSUtil.decode(dxt5Data);
 		
 		// Assert
 		assertNotNull(result);
@@ -85,7 +85,7 @@ class DDSUtilTest extends BaseServiceTest {
 	void testDecodeFromInputStream() throws IOException {
 		// Act
 		try (InputStream is = new ByteArrayInputStream(dxt1Data)) {
-			DDSUtil.DDSImage result = DDSUtil.decodeWithInfo(is);
+			DDSUtil.DDSImage result = DDSUtil.decode(is);
 			
 			// Assert
 			assertNotNull(result);
@@ -97,7 +97,7 @@ class DDSUtilTest extends BaseServiceTest {
 	@Test
 	void testToBufferedImage() throws IOException {
 		// Arrange
-		DDSUtil.DDSImage ddsImage = DDSUtil.decodeWithInfo(dxt1Data);
+		DDSUtil.DDSImage ddsImage = DDSUtil.decode(dxt1Data);
 		
 		// Act
 		BufferedImage bufferedImage = ddsImage.toBufferedImage();
@@ -116,12 +116,12 @@ class DDSUtilTest extends BaseServiceTest {
 	@Test
 	void testRoundTripDXT1() throws IOException {
 		// Arrange
-		DDSUtil.DDSImage original = DDSUtil.decodeWithInfo(dxt1Data);
+		DDSUtil.DDSImage original = DDSUtil.decode(dxt1Data);
 		BufferedImage originalImage = original.toBufferedImage();
 		
 		// Act - compress and decompress
-		byte[] compressed = DDSUtil.compressToDXT1(originalImage);
-		DDSUtil.DDSImage roundTripped = DDSUtil.decodeWithInfo(compressed);
+		byte[] compressed = DDSUtil.encodeDXT1(originalImage);
+		DDSUtil.DDSImage roundTripped = DDSUtil.decode(compressed);
 		
 		// Assert - basic properties
 		assertNotNull(roundTripped);
@@ -155,12 +155,12 @@ class DDSUtilTest extends BaseServiceTest {
 	@Test
 	void testRoundTripDXT5() throws IOException {
 		// Arrange
-		DDSUtil.DDSImage original = DDSUtil.decodeWithInfo(dxt5Data);
+		DDSUtil.DDSImage original = DDSUtil.decode(dxt5Data);
 		BufferedImage originalImage = original.toBufferedImage();
 		
 		// Act - compress and decompress
-		byte[] compressed = DDSUtil.compressToDXT5(originalImage);
-		DDSUtil.DDSImage roundTripped = DDSUtil.decodeWithInfo(compressed);
+		byte[] compressed = DDSUtil.encodeDXT5(originalImage);
+		DDSUtil.DDSImage roundTripped = DDSUtil.decode(compressed);
 		
 		// Assert
 		assertNotNull(roundTripped);
@@ -195,9 +195,9 @@ class DDSUtilTest extends BaseServiceTest {
 		}
 		
 		// Compress to different DDS formats
-		byte[] dxt1Compressed = DDSUtil.compressToDXT1(originalPNG);
-		byte[] dxt3Compressed = DDSUtil.compressToDXT3(originalPNG);
-		byte[] dxt5Compressed = DDSUtil.compressToDXT5(originalPNG);
+		byte[] dxt1Compressed = DDSUtil.encodeDXT1(originalPNG);
+		byte[] dxt3Compressed = DDSUtil.encodeDXT3(originalPNG);
+		byte[] dxt5Compressed = DDSUtil.encodeDXT5(originalPNG);
 		
 		// Write the DDS files
 		Path dxt1Path = outputDir.resolve("converted-dxt1.dds");
@@ -213,9 +213,9 @@ class DDSUtilTest extends BaseServiceTest {
 		ImageIO.write(originalPNG, "png", pngPath.toFile());
 		
 		// Decode them back to PNG for easy visual comparison
-		DDSUtil.DDSImage dxt1Decoded = DDSUtil.decodeWithInfo(dxt1Compressed);
-		DDSUtil.DDSImage dxt3Decoded = DDSUtil.decodeWithInfo(dxt3Compressed);
-		DDSUtil.DDSImage dxt5Decoded = DDSUtil.decodeWithInfo(dxt5Compressed);
+		DDSUtil.DDSImage dxt1Decoded = DDSUtil.decode(dxt1Compressed);
+		DDSUtil.DDSImage dxt3Decoded = DDSUtil.decode(dxt3Compressed);
+		DDSUtil.DDSImage dxt5Decoded = DDSUtil.decode(dxt5Compressed);
 		
 		BufferedImage dxt1Image = dxt1Decoded.toBufferedImage();
 		BufferedImage dxt3Image = dxt3Decoded.toBufferedImage();
@@ -238,7 +238,7 @@ class DDSUtilTest extends BaseServiceTest {
 		
 		// Also compare alpha differences
 		System.out.println("\n=== Alpha Quality Comparison ===");
-		DDSUtil.DDSImage original = DDSUtil.decodeWithInfo(dxt5Data); // Use original DXT5 as reference
+		DDSUtil.DDSImage original = DDSUtil.decode(dxt5Data); // Use original DXT5 as reference
 		
 		compareAlphaQuality(original, dxt1Decoded, "DXT1");
 		compareAlphaQuality(original, dxt3Decoded, "DXT3");
@@ -269,7 +269,7 @@ class DDSUtilTest extends BaseServiceTest {
 	@Test
 	void testColorDistribution() throws IOException {
 		// This test verifies the decoded image has reasonable color distribution
-		DDSUtil.DDSImage ddsImage = DDSUtil.decodeWithInfo(dxt1Data);
+		DDSUtil.DDSImage ddsImage = DDSUtil.decode(dxt1Data);
 		
 		int[] colorCounts = new int[256]; // Simple histogram of red channel
 		
@@ -291,8 +291,8 @@ class DDSUtilTest extends BaseServiceTest {
 	@Test
 	void testCompareDXT1AndDXT5() throws IOException {
 		// Both DDS files should decode to similar (but not identical) images
-		DDSUtil.DDSImage dxt1 = DDSUtil.decodeWithInfo(dxt1Data);
-		DDSUtil.DDSImage dxt5 = DDSUtil.decodeWithInfo(dxt5Data);
+		DDSUtil.DDSImage dxt1 = DDSUtil.decode(dxt1Data);
+		DDSUtil.DDSImage dxt5 = DDSUtil.decode(dxt5Data);
 		
 		assertEquals(dxt1.width, dxt5.width);
 		assertEquals(dxt1.height, dxt5.height);
@@ -321,7 +321,7 @@ class DDSUtilTest extends BaseServiceTest {
 		
 		// Decode multiple times
 		for (int i = 0; i < 10; i++) {
-			DDSUtil.DDSImage img = DDSUtil.decodeWithInfo(dxt1Data);
+			DDSUtil.DDSImage img = DDSUtil.decode(dxt1Data);
 			assertNotNull(img);
 		}
 		

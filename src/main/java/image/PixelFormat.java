@@ -1,5 +1,8 @@
 package image;
 
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -8,7 +11,8 @@ import java.io.IOException;
  * DDS legacy pixel format structure (DDSPF) — always 32 bytes.
  * Mirrors the C# PixelFormat class exactly.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@NoArgsConstructor
 public class PixelFormat {
 	
 	// DDPF flags
@@ -37,9 +41,6 @@ public class PixelFormat {
 	public int gBitMask;
 	public int bBitMask;
 	public int aBitMask;
-	
-	public PixelFormat() {
-	}
 	
 	/**
 	 * Read from a little-endian DataInput (wraps a LittleEndianDataInputStream).

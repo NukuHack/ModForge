@@ -1,11 +1,15 @@
 package image;
 
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * All parameters that control a single conversion operation.
  * Mirrors the individual boolean/string parameters threaded through
  * the C# ConvertImage() / BatchProcessFiles() call chains.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@NoArgsConstructor
 public class ConversionOptions {
 	
 	/** Save the assembled raw .dds file alongside the output TIFF. */

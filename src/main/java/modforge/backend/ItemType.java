@@ -3,7 +3,6 @@ package modforge.backend;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 import modforge.backend.model.ModItem;
 
 import java.nio.file.Path;
@@ -50,14 +49,14 @@ public final class ItemType {
 				displays.add(new ITDisplay(e.displayName(), e.matcher()));
 		}
 		
-		displays.sort(Comparator.comparing(ITDisplay::getDisplayName));
+		displays.sort(Comparator.comparing(ITDisplay::displayName));
 		// Ensure "All Types" stays first after sorting
 		displays.sort((a, b) -> {
-			if ("All Types".equals(a.getDisplayName()))
+			if ("All Types".equals(a.displayName()))
 				return - 1;
-			if ("All Types".equals(b.getDisplayName()))
+			if ("All Types".equals(b.displayName()))
 				return 1;
-			return a.getDisplayName().compareTo(b.getDisplayName());
+			return a.displayName().compareTo(b.displayName());
 		});
 		
 		ID_KEYS = Collections.unmodifiableMap(idMap);
@@ -90,12 +89,12 @@ public final class ItemType {
 	public static Predicate<ModItem> matchesItemType(String selectedType) {
 		if (selectedType == null)
 			return null;
-		return DISPLAYS.stream().filter(d -> d.displayName.equals(selectedType)).findFirst().map(ITDisplay::getMatcher).orElse(null);
+		return DISPLAYS.stream().filter(d -> d.displayName.equals(selectedType)).findFirst().map(ITDisplay::matcher).orElse(null);
 	}
 	
 	/** All display names for the frontend type dropdown. */
 	public static Collection<String> getAllTypes() {
-		return DISPLAYS.stream().map(ITDisplay::getDisplayName).collect(Collectors.toCollection(LinkedHashSet::new));
+		return DISPLAYS.stream().map(ITDisplay::displayName).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 	
 	/** The XML attribute name used as the primary ID for a given item class. */
@@ -114,17 +113,10 @@ public final class ItemType {
 	// ── Nested types (public API – unchanged) ─────────────────────────────────
 	
 	/** Pair of a concrete item class and the XML attribute name that holds its ID. */
-	@Value
-	public static class HandlerSpec {
-		@NonNull Class<? extends ModItem> clazz;
-		@NonNull String idKey;
-		@NonNull String name;
+		public record HandlerSpec(@NonNull Class<? extends ModItem> clazz, @NonNull String idKey, @NonNull String name) {
 	}
 	
 	/** Display entry for the frontend type dropdown. */
-	@Value
-	private static class ITDisplay {
-		@NonNull String displayName;
-		@NonNull Predicate<ModItem> matcher;
+		private record ITDisplay(@NonNull String displayName, @NonNull Predicate<ModItem> matcher) {
 	}
 }

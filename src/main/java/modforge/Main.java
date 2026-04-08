@@ -26,19 +26,20 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class Main {
 	private static final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	
 	public static void main(String[] args) {
 		// looks better in green but the logger logs it in red :(
 		log.info("""
-        
-        ███╗   ███╗ ██████╗ ██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
-        ████╗ ████║██╔═══██╗██╔══██╗██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
-        ██╔████╔██║██║   ██║██║  ██║█████╗  ██║   ██║██████╔╝██║  ███╗█████╗
-        ██║╚██╔╝██║██║   ██║██║  ██║██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
-        ██║ ╚═╝ ██║╚██████╔╝██████╔╝██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
-        ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-        
-        🚀 ModForge Backend | {} | Profile: {}
-        """, LocalDateTime.now().format(fmt), Util.username);
+				
+				███╗   ███╗ ██████╗ ██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
+				████╗ ████║██╔═══██╗██╔══██╗██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
+				██╔████╔██║██║   ██║██║  ██║█████╗  ██║   ██║██████╔╝██║  ███╗█████╗
+				██║╚██╔╝██║██║   ██║██║  ██║██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
+				██║ ╚═╝ ██║╚██████╔╝██████╔╝██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
+				╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+				
+				🚀 ModForge Backend | {} | Profile: {}
+				""", LocalDateTime.now().format(fmt), Util.username);
 		
 		applyTheme();
 		SwingUtilities.invokeLater(() -> {

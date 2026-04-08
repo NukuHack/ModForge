@@ -40,8 +40,7 @@ class LocalServiceTests extends BaseServiceTest {
 				  <Row><Cell>ui_shield</Cell><Cell/><Cell>Wooden Shield</Cell></Row>
 				</Table>
 				""";
-		var ls = createLocalService(null);
-		var result = ls.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		var result = LocalService.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 		assertEquals("Iron Sword", result.get("ui_sword"));
 		assertEquals("Wooden Shield", result.get("ui_shield"));
 	}
@@ -50,8 +49,7 @@ class LocalServiceTests extends BaseServiceTest {
 	@DisplayName("parseLocalizationXml: empty table returns empty map")
 	void parseEmptyTable() throws Exception {
 		String xml = "<Table></Table>";
-		var ls = createLocalService(null);
-		var result = ls.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		var result = LocalService.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 		assertTrue(result.isEmpty());
 	}
 	
@@ -64,8 +62,7 @@ class LocalServiceTests extends BaseServiceTest {
 				  <Row><Cell>ui_good</Cell><Cell/><Cell>GoodValue</Cell></Row>
 				</Table>
 				""";
-		var ls = createLocalService(null);
-		var result = ls.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		var result = LocalService.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 		assertFalse(result.containsKey(""));
 		assertEquals("GoodValue", result.get("ui_good"));
 	}
@@ -73,8 +70,7 @@ class LocalServiceTests extends BaseServiceTest {
 	@Test
 	@DisplayName("parseLocalizationXml: parses eng-local.xml resource")
 	void parseEngLocalResource() throws Exception {
-		var ls = createLocalService(null);
-		var result = ls.parseLocalizationXml(new ByteArrayInputStream(engLocalXmlBytes));
+		var result = LocalService.parseLocalizationXml(new ByteArrayInputStream(engLocalXmlBytes));
 		assertFalse(result.isEmpty(), "eng-local.xml should contain localization entries");
 	}
 	
@@ -85,10 +81,9 @@ class LocalServiceTests extends BaseServiceTest {
 		entries.put("ui_sword", "Iron Sword");
 		entries.put("ui_potion", "Health <Potion> & Co");
 		
-		var ls = createLocalService(null);
-		String xml = ls.makeLocalizationXml(entries);
+		String xml = LocalService.makeLocalizationXml(entries);
 		
-		var reparsed = ls.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		var reparsed = LocalService.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 		assertEquals("Iron Sword", reparsed.get("ui_sword"));
 		assertEquals("Health <Potion> & Co", reparsed.get("ui_potion"));
 	}
@@ -101,10 +96,9 @@ class LocalServiceTests extends BaseServiceTest {
 		entries.put("   ", "also skipped");
 		entries.put("ui_ok", "Present");
 		
-		var ls = createLocalService(null);
-		String xml = ls.makeLocalizationXml(entries);
+		String xml = LocalService.makeLocalizationXml(entries);
 		
-		var reparsed = ls.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+		var reparsed = LocalService.parseLocalizationXml(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 		assertEquals(1, reparsed.size());
 		assertEquals("Present", reparsed.get("ui_ok"));
 	}
@@ -112,8 +106,7 @@ class LocalServiceTests extends BaseServiceTest {
 	@Test
 	@DisplayName("loadLocalization: returns empty map when game dir is null")
 	void loadLocalizationNullDir() {
-		var ls = createLocalService(null);
-		var result = ls.loadLocalization(null);
+		var result = LocalService.loadLocalization(null);
 		assertTrue(result.isEmpty());
 	}
 	
@@ -124,8 +117,7 @@ class LocalServiceTests extends BaseServiceTest {
 		Files.createDirectories(locDir);
 		Files.write(locDir.resolve("English_xml.pak"), englishPakBytes);
 		
-		var ls = createLocalService(tmp.toString());
-		var result = ls.loadLocalization(tmp.toString());
+		var result = LocalService.loadLocalization(tmp.toString());
 		assertFalse(result.isEmpty(), "Should have loaded at least one language");
 		assertTrue(result.containsKey(Language.ENGLISH));
 		assertFalse(result.get(Language.ENGLISH).isEmpty());
@@ -160,7 +152,7 @@ class LocalServiceTests extends BaseServiceTest {
 	
 	@Test
 	@DisplayName("writeModLocalization: writes per-language files to temp dir")
-	void writeModLocalizationTemp() throws Exception {
+	void writeModLocalizationTemp() {
 		Map<Language, Map<String, String>> local = new EnumMap<>(Language.class);
 		local.put(Language.ENGLISH, new LinkedHashMap<>(Map.of("ui_item", "My Item")));
 		
@@ -168,8 +160,7 @@ class LocalServiceTests extends BaseServiceTest {
 		mod.id = "loc-mod";
 		mod.setLocal(local);
 		
-		var ls = createLocalService(tmp.toString());
-		assertDoesNotThrow(() -> ls.writeModLocalization(mod));
+		assertDoesNotThrow(() -> LocalService.writeModLocalization(mod, tmp.toString()));
 	}
 	
 	@Test
@@ -179,19 +170,16 @@ class LocalServiceTests extends BaseServiceTest {
 		Files.createDirectories(locDir);
 		Files.write(locDir.resolve("English_xml.pak"), englishPakBytes);
 		
-		var ls = createLocalService(tmp.toString());
-		var result = ls.loadLocalization(tmp.toString());
+		var result = LocalService.loadLocalization(tmp.toString());
 		assertFalse(result.isEmpty());
 		
 		var outBase = RESOURCES_OUTPUT;
 		Files.createDirectories(outBase);
 		
-		var us = createStubUserService(outBase.toString());
 		var mod = new ModData();
 		mod.id = "eng-output-mod";
 		mod.setLocal(result);
 		
-		var outLs = new LocalService(us);
-		assertDoesNotThrow(() -> outLs.writeModLocalization(mod));
+		assertDoesNotThrow(() -> LocalService.writeModLocalization(mod, String.valueOf(outBase)));
 	}
 }

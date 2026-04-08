@@ -1,13 +1,18 @@
 package image;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * BC7 block decoder (all 8 modes) and Mode-6 encoder.
  * Partition tables for multi-subset modes return zeros (single-subset fallback).
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 class BC7Util {
 	
-	static void decompress(ImgData data, byte[] out) {
+	static void decompress(Dds.ImgData data, byte[] out) {
 		byte[] src = data.data;
 		int w = data.w, h = data.h, bw = (w + 3) / 4;
 		

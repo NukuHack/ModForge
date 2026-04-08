@@ -2,7 +2,6 @@ package modforge.backend.service;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import modforge.Util;
 import modforge.backend.model.I.Storm;
 import modforge.backend.model.storm.*;
 import org.w3c.dom.*;
@@ -345,7 +344,8 @@ public final class StormService {
 				final String partTag = part.getTagName().toLowerCase(Locale.ROOT);
 				switch (partTag) {
 					// Actual format uses "selectors" (also accept legacy "conditions")
-					case "selectors", "conditions" -> forEachElement(part, child -> rule.getSelectors().add(parseSelector(child)));
+					case "selectors", "conditions" ->
+							forEachElement(part, child -> rule.getSelectors().add(parseSelector(child)));
 					case "operations" -> forEachElement(part, child -> rule.getOperations().add(parseOperation(child)));
 				}
 			});
@@ -590,7 +590,7 @@ public final class StormService {
 			final var a = (Attr) xmlAttrs.item(i);
 			if (a.getName() == null)
 				continue;
-			target.put(toLower? a.getName().toLowerCase() : a.getName(), a.getValue());
+			target.put(toLower ? a.getName().toLowerCase() : a.getName(), a.getValue());
 		}
 	}
 	

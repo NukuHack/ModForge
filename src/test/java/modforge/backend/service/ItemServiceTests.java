@@ -78,8 +78,6 @@ class ItemServiceTests extends BaseServiceTest {
 	@Test
 	@DisplayName("loadItems: returns empty set for non-existent path")
 	void loadItemsMissingDir() {
-		var us = createStubUserService(tmp.toString());
-		var svc = new ItemService(us);
 		var items = ItemService.loadItems(tmp.resolve("nonexistent"));
 		assertTrue(items.isEmpty());
 	}
@@ -89,8 +87,6 @@ class ItemServiceTests extends BaseServiceTest {
 	void loadItemsEmptyDir() throws IOException {
 		var dataDir = tmp.resolve("Data/Empty");
 		Files.createDirectories(dataDir);
-		var us = createStubUserService(tmp.toString());
-		var svc = new ItemService(us);
 		var items = ItemService.loadItems(dataDir);
 		assertTrue(items.isEmpty());
 	}
@@ -102,8 +98,6 @@ class ItemServiceTests extends BaseServiceTest {
 		Files.createDirectories(dataDir);
 		Files.write(dataDir.resolve("perk-data.pak"), perkDataPakBytes);
 		
-		var us = createStubUserService(tmp.toString());
-		var svc = new ItemService(us);
 		var items = ItemService.loadItems(dataDir);
 		assertFalse(items.isEmpty(), "Should load at least one item from perk-data.pak");
 	}
@@ -115,9 +109,7 @@ class ItemServiceTests extends BaseServiceTest {
 		mod.id = "empty-mod";
 		mod.setItems(Collections.emptySet());
 		
-		var us = createStubUserService(tmp.toString());
-		var svc = new ItemService(us);
-		assertDoesNotThrow(() -> svc.writeModItems(mod));
+		assertDoesNotThrow(() -> ItemService.writeModItems(mod, tempDir.resolve("another").toString()));
 	}
 	
 	@Test
@@ -130,9 +122,6 @@ class ItemServiceTests extends BaseServiceTest {
 		var outBase = RESOURCES_OUTPUT;
 		Files.createDirectories(outBase);
 		
-		var us = createStubUserService(outBase.toString());
-		var svc = new ItemService(us);
-		
 		var items = ItemService.loadItems(dataDir);
 		assertFalse(items.isEmpty());
 		
@@ -140,6 +129,6 @@ class ItemServiceTests extends BaseServiceTest {
 		mod.id = "perk-test-mod";
 		mod.setItems(items);
 		
-		assertDoesNotThrow(() -> svc.writeModItems(mod));
+		assertDoesNotThrow(() -> ItemService.writeModItems(mod, outBase.resolve("nother").toString()));
 	}
 }

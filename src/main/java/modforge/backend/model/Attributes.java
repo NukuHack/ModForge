@@ -134,8 +134,7 @@ public final class Attributes {
 			} else if (type == Double.class) {
 				return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
 			} else if (type.isEnum()) {
-				@SuppressWarnings("unchecked")
-				Class<? extends Enum> enumType = (Class<? extends Enum>) type;
+				@SuppressWarnings("unchecked") Class<? extends Enum> enumType = (Class<? extends Enum>) type;
 				return new Attribute.EnumAttribute(name, Enum.valueOf(enumType, value));
 			}
 		} catch (Exception ex) {

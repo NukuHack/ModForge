@@ -262,25 +262,8 @@ public class E {
 	@Getter
 	@RequiredArgsConstructor
 	public enum Language {
-		NOT_VALID("Not valid", "unavailable", "n/a", 0),
-		CHINESE_SIMPLIFIED("Chinese (Simplified)", "简体中文", "zh-CN", 1),
-		CHINESE_TRADITIONAL("Chinese (Traditional)", "繁體中文", "zh-TW", 2),
-		CZECH("Czech", "Čeština", "cs", 3),
-		ENGLISH("English", "English", "en", 4),
-		FRENCH("French", "Français", "fr", 5),
-		GERMAN("German", "Deutsch", "de", 6),
-		ITALIAN("Italian", "Italiano", "it", 7),
-		JAPANESE("Japanese", "日本語", "ja", 8),
-		KOREAN("Korean", "한국어", "ko", 9),
-		POLISH("Polish", "Polski", "pl", 10),
-		PORTUGUESE("Portuguese", "Português", "pt", 11),
-		RUSSIAN("Russian", "Русский", "ru", 12),
-		SPANISH("Spanish", "Español", "es", 13),
-		TURKISH("Turkish", "Türkçe", "tr", 14),
-		UKRAINIAN("Ukrainian", "Українська", "uk", 15),
-		// Custom extras beyond the game (Included in base ModForge for some reason ... so left it here too):
-		HUNGARIAN("Hungarian", "Magyar", "hu", 16),
-		SLOVAK("Slovak", "Slovenčina", "sk", 17);
+		NOT_VALID("Not valid", "unavailable", "n/a", 0), CHINESE_SIMPLIFIED("Chinese (Simplified)", "简体中文", "zh-CN", 1), CHINESE_TRADITIONAL("Chinese (Traditional)", "繁體中文", "zh-TW", 2), CZECH("Czech", "Čeština", "cs", 3), ENGLISH("English", "English", "en", 4), FRENCH("French", "Français", "fr", 5), GERMAN("German", "Deutsch", "de", 6), ITALIAN("Italian", "Italiano", "it", 7), JAPANESE("Japanese", "日本語", "ja", 8), KOREAN("Korean", "한국어", "ko", 9), POLISH("Polish", "Polski", "pl", 10), PORTUGUESE("Portuguese", "Português", "pt", 11), RUSSIAN("Russian", "Русский", "ru", 12), SPANISH("Spanish", "Español", "es", 13), TURKISH("Turkish", "Türkçe", "tr", 14), UKRAINIAN("Ukrainian", "Українська", "uk", 15), // Custom extras beyond the game (Included in base ModForge for some reason ... so left it here too):
+		HUNGARIAN("Hungarian", "Magyar", "hu", 16), SLOVAK("Slovak", "Slovenčina", "sk", 17);
 		
 		/**
 		 * English name (e.g., "German")

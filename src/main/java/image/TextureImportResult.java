@@ -1,7 +1,10 @@
 package image;
 
+import lombok.Getter;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,77 +22,133 @@ import java.util.List;
  * Inspired by the C# KCDTextureExporter's interactive feedback loop, but
  * designed as a pure data object so any frontend (Swing, REST, CLI) can use it.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@Getter
+@ToString
 public class TextureImportResult {
 	
 	// ── Source info ───────────────────────────────────────────────────────────
 	
+	/** Informational messages (shown in a log / status panel). */
+	private final List<String> messages = new ArrayList<>();
+	/** Warnings that the user should be aware of but that didn't block conversion. */
+	private final List<String> warnings = new ArrayList<>();
 	/** File name of the source file as supplied by the caller. */
-	public final String sourceFileName;
-	
+	private String sourceFileName = "";
 	/** Human-readable description of what was detected in the source file. */
-	public final String detectedSourceFormat;
-	
-	/** Image dimensions. */
-	public final int sourceWidth;
-	public final int sourceHeight;
+	private String detectedSourceFormat = "Unknown";
 	
 	// ── Profile info ──────────────────────────────────────────────────────────
-	
-	/** The KCD2 texture role that was resolved (auto-detected or user-chosen). */
-	public final FormatProfile profile;
-	
-	/** Whether the profile was confidently auto-detected ({@code true})
-	 *  or is just a best-guess / default ({@code false}). */
-	public final boolean profileAutoDetected;
+	/** Image dimensions. */
+	private int sourceWidth;
+	private int sourceHeight;
 	
 	// ── Conversion outcome ────────────────────────────────────────────────────
-	
+	/** The KCD2 texture role that was resolved (auto-detected or user-chosen). */
+	private FormatProfile profile = FormatProfile.UNKNOWN;
+	/** Whether the profile was confidently auto-detected ({@code true})
+	 *  or is just a best-guess / default ({@code false}). */
+	private boolean profileAutoDetected;
 	/** True when the converted bytes are ready and no user action is needed. */
-	public final boolean conversionSucceeded;
+	private boolean conversionSucceeded = false;
 	
+	// ── Feedback for the UI ───────────────────────────────────────────────────
 	/**
 	 * Converted DDS bytes in the KCD2-expected format.
 	 * {@code null} when {@link #conversionSucceeded} is {@code false}.
 	 */
-	public final byte[] convertedDdsBytes;
-	
+	private byte[] convertedDdsBytes;
 	/** The DDS format that was actually produced. */
-	public final String outputFormatDescription;
-	
-	// ── Feedback for the UI ───────────────────────────────────────────────────
-	
-	/** Informational messages (shown in a log / status panel). */
-	public final List<String> messages;
-	
-	/** Warnings that the user should be aware of but that didn't block conversion. */
-	public final List<String> warnings;
-	
+	private String outputFormatDescription = "";
 	/** Actionable guidance shown to the user (e.g. "select a profile manually"). */
-	public final String actionRequired;
+	private String actionRequired;
 	
-	// ── Constructor (use Builder) ─────────────────────────────────────────────
+	// ── Builder methods (fluent API) ──────────────────────────────────────────
 	
-	private TextureImportResult(Builder b) {
-		this.sourceFileName = b.sourceFileName;
-		this.detectedSourceFormat = b.detectedSourceFormat;
-		this.sourceWidth = b.sourceWidth;
-		this.sourceHeight = b.sourceHeight;
-		this.profile = b.profile;
-		this.profileAutoDetected = b.profileAutoDetected;
-		this.conversionSucceeded = b.conversionSucceeded;
-		this.convertedDdsBytes = b.convertedDdsBytes;
-		this.outputFormatDescription = b.outputFormatDescription;
-		this.messages = Collections.unmodifiableList(b.messages);
-		this.warnings = Collections.unmodifiableList(b.warnings);
-		this.actionRequired = b.actionRequired;
+	public static TextureImportResult b() {
+		return new TextureImportResult();
 	}
 	
-	// ── Convenience ──────────────────────────────────────────────────────────
-	
-	public static Builder builder(String sourceFileName) {
-		return new Builder(sourceFileName);
+	public TextureImportResult sourceFileName(String sourceFileName) {
+		this.sourceFileName = sourceFileName;
+		return this;
 	}
+	
+	public TextureImportResult detectedSourceFormat(String detectedSourceFormat) {
+		this.detectedSourceFormat = detectedSourceFormat;
+		return this;
+	}
+	
+	public TextureImportResult sourceWidth(int sourceWidth) {
+		this.sourceWidth = sourceWidth;
+		return this;
+	}
+	
+	public TextureImportResult sourceHeight(int sourceHeight) {
+		this.sourceHeight = sourceHeight;
+		return this;
+	}
+	
+	public TextureImportResult profile(FormatProfile profile) {
+		this.profile = profile;
+		return this;
+	}
+	
+	public TextureImportResult profileAutoDetected(boolean profileAutoDetected) {
+		this.profileAutoDetected = profileAutoDetected;
+		return this;
+	}
+	
+	public TextureImportResult conversionSucceeded(boolean conversionSucceeded) {
+		this.conversionSucceeded = conversionSucceeded;
+		return this;
+	}
+	
+	public TextureImportResult convertedDdsBytes(byte[] convertedDdsBytes) {
+		this.convertedDdsBytes = convertedDdsBytes;
+		return this;
+	}
+	
+	public TextureImportResult outputFormatDescription(String outputFormatDescription) {
+		this.outputFormatDescription = outputFormatDescription;
+		return this;
+	}
+	
+	public TextureImportResult actionRequired(String actionRequired) {
+		this.actionRequired = actionRequired;
+		return this;
+	}
+	
+	// ── Convenience methods ───────────────────────────────────────────────────
+	
+	public TextureImportResult file(String sourceFileName) {
+		return sourceFileName(sourceFileName);
+	}
+	
+	public TextureImportResult dimensions(int width, int height) {
+		this.sourceWidth = width;
+		this.sourceHeight = height;
+		return this;
+	}
+	
+	public TextureImportResult succeeded(byte[] dds, String format) {
+		this.conversionSucceeded = true;
+		this.convertedDdsBytes = dds;
+		this.outputFormatDescription = format;
+		return this;
+	}
+	
+	public TextureImportResult message(String message) {
+		this.messages.add(message);
+		return this;
+	}
+	
+	public TextureImportResult warning(String warning) {
+		this.warnings.add(warning);
+		return this;
+	}
+	
+	// ── Utility methods ───────────────────────────────────────────────────────
 	
 	/** Returns a single human-readable summary suitable for a status label. */
 	public String summary() {
@@ -107,77 +166,5 @@ public class TextureImportResult {
 			sb.append("Action needed: ").append(actionRequired).append("\n");
 		}
 		return sb.toString().trim();
-	}
-	
-	// ── Builder ───────────────────────────────────────────────────────────────
-	
-	@Override
-	public String toString() {
-		return summary();
-	}
-	
-	public static class Builder {
-		String sourceFileName;
-		String detectedSourceFormat = "Unknown";
-		int sourceWidth, sourceHeight;
-		FormatProfile profile = FormatProfile.UNKNOWN;
-		boolean profileAutoDetected = false;
-		boolean conversionSucceeded = false;
-		byte[] convertedDdsBytes;
-		String outputFormatDescription = "";
-		List<String> messages = new ArrayList<>();
-		List<String> warnings = new ArrayList<>();
-		String actionRequired;
-		
-		private Builder(String sourceFileName) {
-			this.sourceFileName = sourceFileName;
-		}
-		
-		public Builder detectedSourceFormat(String v) {
-			detectedSourceFormat = v;
-			return this;
-		}
-		
-		public Builder dimensions(int w, int h) {
-			sourceWidth = w;
-			sourceHeight = h;
-			return this;
-		}
-		
-		public Builder profile(FormatProfile v) {
-			profile = v;
-			return this;
-		}
-		
-		public Builder profileAutoDetected(boolean v) {
-			profileAutoDetected = v;
-			return this;
-		}
-		
-		public Builder succeeded(byte[] dds, String fmt) {
-			conversionSucceeded = true;
-			convertedDdsBytes = dds;
-			outputFormatDescription = fmt;
-			return this;
-		}
-		
-		public Builder message(String m) {
-			messages.add(m);
-			return this;
-		}
-		
-		public Builder warning(String w) {
-			warnings.add(w);
-			return this;
-		}
-		
-		public Builder actionRequired(String v) {
-			actionRequired = v;
-			return this;
-		}
-		
-		public TextureImportResult build() {
-			return new TextureImportResult(this);
-		}
 	}
 }

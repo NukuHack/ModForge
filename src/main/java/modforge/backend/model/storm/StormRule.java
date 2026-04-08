@@ -57,8 +57,6 @@ public final class StormRule {
 	
 	@Override
 	public String toString() {
-		return "StormRule{name='" + name + "', mode='" + mode
-					   + "', selectors=" + selectors.size()
-					   + ", operations=" + operations.size() + "}";
+		return "StormRule{name='" + name + "', mode='" + mode + "', selectors=" + selectors.size() + ", operations=" + operations.size() + "}";
 	}
 }

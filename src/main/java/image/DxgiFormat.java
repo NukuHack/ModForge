@@ -1,13 +1,14 @@
 package image;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * DXGI_FORMAT values used by DDS textures.
  * Integer values match the DirectX specification exactly.
  */
 @Getter
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public enum DxgiFormat {
 	UNKNOWN(0), R32G32B32A32_FLOAT(2), R16G16B16A16_FLOAT(10), R16G16B16A16_UNORM(11), R32G32_FLOAT(16), R10G10B10A2_UNORM(24), R8G8B8A8_UNORM(28), R8G8B8A8_UNORM_SRGB(29), R16G16_UNORM(35), R16G16_SNORM(37), R32_FLOAT(41), R8G8_UNORM(49), R8G8_SNORM(50), R16_UNORM(56), R8_UNORM(61), BC1_UNORM(71), BC1_UNORM_SRGB(72), BC2_UNORM(74), BC2_UNORM_SRGB(75), BC3_UNORM(77), BC3_UNORM_SRGB(78), BC4_UNORM(80), BC4_SNORM(81), BC5_UNORM(83), BC5_SNORM(84), BC6H_UF16(95), BC6H_SF16(96), BC7_UNORM(98), BC7_UNORM_SRGB(99);
 	

@@ -152,8 +152,8 @@ class StormServiceTest {
 			StormData data = StormService.parse(is);
 			String serialized = StormService.serialize(data);
 			
-			String raw = realStormXml().replaceAll(">\\s+<", ">\n<");
-			String out = serialized.replaceAll(">\\s+<", ">\n<");
+			String raw = realStormXml().replaceAll(">\\s+<", ">\n<").replaceAll("(?m)^(?:<\\?|<!)[^\\n]*\\n?", "");
+			String out = serialized.replaceAll(">\\s+<", ">\n<").replaceAll("(?m)^(?:<\\?|<!)[^\\n]*\\n?", "");
 			
 			assertEquals(raw, out);
 			

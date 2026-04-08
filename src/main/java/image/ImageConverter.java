@@ -1,6 +1,8 @@
 package image;
 
-import lombok.Value;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -31,7 +33,8 @@ import java.util.concurrent.Future;
  * 16-bit-per-channel or 8-bit-per-channel TIFF depending on the source format,
  * using TwelveMonkeys ImageIO.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ImageConverter {
 	
 	// -------------------------------------------------------------------------
@@ -53,8 +56,8 @@ public class ImageConverter {
 		// ── 1. Load + reassemble the split KCD DDS ───────────────────────────
 		LoadedDds loaded = loadGameDds(filePath, opts);
 		
-		DdsFile dds = loaded.dds;
-		DdsFile alphaDds = loaded.alphaDds;
+		Dds.DdsFile dds = loaded.dds;
+		Dds.DdsFile alphaDds = loaded.alphaDds;
 		
 		DxgiFormat fmt = dds.header.getPixelFormat();
 		boolean isNormal = fmt.isNormalMap();
@@ -215,7 +218,7 @@ public class ImageConverter {
 		}
 		
 		// Read base color DDS
-		DdsFile dds = new DdsFile(base, false);
+		Dds.DdsFile dds = new Dds.DdsFile(base, false);
 		
 		// Prepend mip data then the base DDS pixel data
 		dds.data = concat(mipData, dds.data);
@@ -236,10 +239,10 @@ public class ImageConverter {
 		}
 		
 		// Read alpha sidecar if present
-		DdsFile alphaDds = null;
+		Dds.DdsFile alphaDds = null;
 		Path alphaBase = Path.of(base + ".a");
 		if (Files.exists(alphaBase)) {
-			alphaDds = new DdsFile(alphaBase, true);
+			alphaDds = new Dds.DdsFile(alphaBase, true);
 			alphaDds.data = concat(alphaMipData, alphaDds.data);
 			
 			int aExpected = computePixelDataSize(alphaDds.header.getPixelFormat(), alphaDds.header.width, alphaDds.header.height, alphaDds.header.effectiveMipCount());
@@ -255,7 +258,7 @@ public class ImageConverter {
 	 * Decompress/decode a DDS to a flat float[] in RGBA order,
 	 * values in [0..1].  Only reads mip level 0.
 	 */
-	private static float[] toFloatRgba(DdsFile dds, DxgiFormat fmt) {
+	private static float[] toFloatRgba(Dds.DdsFile dds, DxgiFormat fmt) {
 		int w = dds.header.width, h = dds.header.height;
 		
 		byte[] rgba8 = BcnDecoder.decompress(mip0Data(dds), w, h, fmt);
@@ -275,7 +278,7 @@ public class ImageConverter {
 	/**
 	 * Decompress single-channel (R8) alpha DDS to float[].
 	 */
-	private static float[] toFloatSingleChannel(DdsFile dds, DxgiFormat fmt) {
+	private static float[] toFloatSingleChannel(Dds.DdsFile dds, DxgiFormat fmt) {
 		int w = dds.header.width, h = dds.header.height;
 		byte[] rgba8 = BcnDecoder.decompress(mip0Data(dds), w, h, fmt);
 		float[] out = new float[w * h];
@@ -286,7 +289,7 @@ public class ImageConverter {
 	}
 	
 	/** Returns only the mip-0 pixel bytes (= last mip in the concatenated buffer). */
-	private static byte[] mip0Data(DdsFile dds) {
+	private static byte[] mip0Data(Dds.DdsFile dds) {
 		// The last block in data is mip 0 (highest resolution).
 		// Size of mip 0 alone:
 		int mip0Size = mipSize(dds.header.getPixelFormat(), dds.header.width, dds.header.height);
@@ -503,8 +506,6 @@ public class ImageConverter {
 		}
 	}
 	
-	@Value
-	private static class LoadedDds {
-		DdsFile dds; DdsFile alphaDds; List<Path> mipFiles; List<Path> alphaMipFiles;
+	private record LoadedDds(Dds.DdsFile dds, Dds.DdsFile alphaDds, List<Path> mipFiles, List<Path> alphaMipFiles) {
 	}
 }

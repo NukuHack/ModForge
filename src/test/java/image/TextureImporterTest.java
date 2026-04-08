@@ -112,14 +112,14 @@ class TextureImporterTest {
 		byte[] png = makeSolidPng(64, 64, 200, 150, 100, 255);
 		TextureImportResult r = TextureImporter.importTexture(png, "texture_dif.png");
 		
-		assertTrue(r.conversionSucceeded, "Expected success: " + r.warnings);
-		assertNotNull(r.convertedDdsBytes);
-		assertEquals(FormatProfile.DIFFUSE, r.profile);
-		assertTrue(r.profileAutoDetected);
+		assertTrue(r.isConversionSucceeded(), "Expected success: " + r.getWarnings());
+		assertNotNull(r.getConvertedDdsBytes());
+		assertEquals(FormatProfile.DIFFUSE, r.getProfile());
+		assertTrue(r.isProfileAutoDetected());
 		// Opaque diffuse → should pick BC1 (smaller)
-		assertTrue(r.outputFormatDescription.contains("BC1") || r.outputFormatDescription.contains("BC3"), "Unexpected format: " + r.outputFormatDescription);
+		assertTrue(r.getOutputFormatDescription().contains("BC1") || r.getOutputFormatDescription().contains("BC3"), "Unexpected format: " + r.getOutputFormatDescription());
 		// Valid DDS magic
-		assertDdsMagic(r.convertedDdsBytes);
+		assertDdsMagic(r.getConvertedDdsBytes());
 	}
 	
 	// ── Existing DDS formats pass through ────────────────────────────────────
@@ -130,8 +130,8 @@ class TextureImporterTest {
 		byte[] png = makeSolidPng(32, 32, 100, 100, 100, 128);
 		TextureImportResult r = TextureImporter.importTexture(png, "icon_dif.png");
 		
-		assertTrue(r.conversionSucceeded);
-		assertTrue(r.outputFormatDescription.contains("BC3") || r.outputFormatDescription.contains("DXT5"), "Transparent diffuse should use BC3, got: " + r.outputFormatDescription);
+		assertTrue(r.isConversionSucceeded());
+		assertTrue(r.getOutputFormatDescription().contains("BC3") || r.getOutputFormatDescription().contains("DXT5"), "Transparent diffuse should use BC3, got: " + r.getOutputFormatDescription());
 	}
 	
 	@Test
@@ -140,9 +140,9 @@ class TextureImporterTest {
 		byte[] png = makeNormalMapPng(64, 64);
 		TextureImportResult r = TextureImporter.importTexture(png, "skin_nrm.png");
 		
-		assertTrue(r.conversionSucceeded, r.summary());
-		assertEquals(FormatProfile.NORMAL, r.profile);
-		assertTrue(r.outputFormatDescription.contains("BC5"), "Normal map should produce BC5, got: " + r.outputFormatDescription);
+		assertTrue(r.isConversionSucceeded(), r.summary());
+		assertEquals(FormatProfile.NORMAL, r.getProfile());
+		assertTrue(r.getOutputFormatDescription().contains("BC5"), "Normal map should produce BC5, got: " + r.getOutputFormatDescription());
 	}
 	
 	// ── Invalid input ─────────────────────────────────────────────────────────
@@ -152,9 +152,9 @@ class TextureImporterTest {
 		byte[] png = makeSolidPng(32, 32, 255, 0, 0, 255);
 		TextureImportResult r = TextureImporter.importTexture(png, "body_id.png");
 		
-		assertTrue(r.conversionSucceeded);
-		assertEquals(FormatProfile.ID_MAP, r.profile);
-		assertTrue(r.outputFormatDescription.toLowerCase().contains("uncompressed"), "ID map should be uncompressed, got: " + r.outputFormatDescription);
+		assertTrue(r.isConversionSucceeded());
+		assertEquals(FormatProfile.ID_MAP, r.getProfile());
+		assertTrue(r.getOutputFormatDescription().toLowerCase().contains("uncompressed"), "ID map should be uncompressed, got: " + r.getOutputFormatDescription());
 	}
 	
 	// ── TextureImportResult.summary() ────────────────────────────────────────
@@ -164,31 +164,31 @@ class TextureImporterTest {
 		byte[] png = makeSolidPng(16, 16, 80, 80, 80, 255);
 		TextureImportResult r = TextureImporter.importTexture(png, "generic.png", FormatProfile.UNKNOWN);
 		
-		assertTrue(r.conversionSucceeded, r.summary());
-		assertFalse(r.profileAutoDetected);
-		assertTrue(r.outputFormatDescription.contains("BC7"), "UNKNOWN profile should use BC7, got: " + r.outputFormatDescription);
+		assertTrue(r.isConversionSucceeded(), r.summary());
+		assertFalse(r.isProfileAutoDetected());
+		assertTrue(r.getOutputFormatDescription().contains("BC7"), "UNKNOWN profile should use BC7, got: " + r.getOutputFormatDescription());
 	}
 	
 	// ── Helpers ───────────────────────────────────────────────────────────────
 	
 	@Test
 	void importDxt1_diffuse_recompresses() throws IOException {
-		byte[] dxt1 = DDSUtil.compressToDXT1(makeSolidRgba(32, 32, 200, 100, 50, 255), 32, 32);
+		byte[] dxt1 = DDSUtil.encodeDXT1(makeSolidRgba(32, 32, 200, 100, 50, 255), 32, 32);
 		TextureImportResult r = TextureImporter.importTexture(dxt1, "rock_dif.dds");
 		
-		assertTrue(r.conversionSucceeded, r.summary());
-		assertDdsMagic(r.convertedDdsBytes);
-		assertEquals(FormatProfile.DIFFUSE, r.profile);
+		assertTrue(r.isConversionSucceeded(), r.summary());
+		assertDdsMagic(r.getConvertedDdsBytes());
+		assertEquals(FormatProfile.DIFFUSE, r.getProfile());
 	}
 	
 	@Test
 	void importDxt5_mask_recompresses() throws IOException {
-		byte[] dxt5 = DDSUtil.compressToDXT5(makeSolidRgba(32, 32, 255, 255, 255, 200), 32, 32);
+		byte[] dxt5 = DDSUtil.encodeDXT5(makeSolidRgba(32, 32, 255, 255, 255, 200), 32, 32);
 		TextureImportResult r = TextureImporter.importTexture(dxt5, "armor_mask.dds");
 		
-		assertTrue(r.conversionSucceeded, r.summary());
-		assertEquals(FormatProfile.MASK, r.profile);
-		assertDdsMagic(r.convertedDdsBytes);
+		assertTrue(r.isConversionSucceeded(), r.summary());
+		assertEquals(FormatProfile.MASK, r.getProfile());
+		assertDdsMagic(r.getConvertedDdsBytes());
 	}
 	
 	@Test
@@ -196,9 +196,9 @@ class TextureImporterTest {
 		byte[] garbage = new byte[] { 1, 2, 3, 4, 5 };
 		TextureImportResult r = TextureImporter.importTexture(garbage, "bad.dds");
 		
-		assertFalse(r.conversionSucceeded);
-		assertFalse(r.warnings.isEmpty());
-		assertNotNull(r.actionRequired);
+		assertFalse(r.isConversionSucceeded());
+		assertFalse(r.getWarnings().isEmpty());
+		assertNotNull(r.getActionRequired());
 	}
 	
 	@Test

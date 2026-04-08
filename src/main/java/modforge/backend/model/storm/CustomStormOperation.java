@@ -48,8 +48,7 @@ public final class CustomStormOperation {
 	
 	@Override
 	public String toString() {
-		return "CustomStormOperation{name='" + name + "', mode='" + mode
-					   + "', modAttrs=" + modAttributes.size() + "}";
+		return "CustomStormOperation{name='" + name + "', mode='" + mode + "', modAttrs=" + modAttributes.size() + "}";
 	}
 	
 	// -------------------------------------------------------------------------

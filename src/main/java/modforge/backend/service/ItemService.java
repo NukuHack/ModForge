@@ -6,7 +6,9 @@ import modforge.backend.ItemEntry;
 import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.ModItem;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -123,36 +125,68 @@ public final class ItemService {
 		}
 	}
 	
+	/**
+	 * ---- Build target paths inside the staging area ----
+	 * Structure:  <gameDir>/Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/<type>__<mod.id>.xml
+	 * <gameDir> = input
+	 * <pakStem> = the pak it will be saved in without the extension (.pak)
+	 * <dirSuffix> = the save path relative to pak, ie: "inner/dir/entry.xml" -> "inner/dir"
+	 * <type> = got from item with {@link ItemEntry}
+	 * <mod.id> = the id of the mod input
+	 * @param gameDir Game Directory
+	 * @param item Item you wanna save
+	 * @param mod The mod the item is from
+	 * @return the file, according to the Structure
+	 */
 	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod) {
 		final String rawPath = item.getPath() == null ? "" : item.getPath();
-		
+		final var targetDir = getOutputFile(gameDir, rawPath, mod).getParent();
+		final var typeName = ItemEntry.forClass(item.getClass()).fileName;
+		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
+		return outFile.toFile();
+	}
+	
+	/**
+	 * ---- Build target paths inside the staging area ----
+	 * Structure:  <gameDir>/Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/<item_file>
+	 * <gameDir> = input
+	 * <pakStem> = the pak it will be saved in without the extension (.pak)
+	 * <dirSuffix> = the save path relative to pak, ie: "inner/dir/entry.xml" -> "inner/dir"
+	 * <item_file> = got from item with just cutting of the file name
+	 * <mod.id> = the id of the mod input
+	 * @param gameDir Game Directory
+	 * @param itemPath Item's path you wanna save
+	 * @param mod The mod the item is from
+	 * @return the file, according to the Structure
+	 */
+	public static Path getOutputFile(final String gameDir, final String itemPath, final ModData mod) {
 		// ---- Resolve PAK stem & inner directory suffix ----
 		final String pakStem;   // e.g. "Weapons"  or  modId
 		final String dirSuffix; // e.g. "Libs/Tables" or ""
+		String fileName; // e.g. "apple.txt"
 		
-		int colonIdx = rawPath.indexOf(':');
+		int colonIdx = itemPath.indexOf(':');
 		if (colonIdx > 0) {
 			// Format (a): "SomePak.pak:inner/dir/entry.xml"
-			final String pakFileName = rawPath.substring(0, colonIdx);       // "SomePak.pak"
-			final String innerEntry = rawPath.substring(colonIdx + 1);      // "inner/dir/entry.xml"
+			final String pakFileName = itemPath.substring(0, colonIdx);       // "SomePak.pak"
+			final String innerEntry = itemPath.substring(colonIdx + 1); // "inner/dir/entry.xml"
 			final int dot = pakFileName.lastIndexOf('.');
 			pakStem = dot > 0 ? pakFileName.substring(0, dot) : pakFileName;     // "SomePak"
-			int lastSlash = innerEntry.lastIndexOf('/');
+			int lastSlash = innerEntry.lastIndexOf('/');      // "inner/dir"
 			dirSuffix = lastSlash >= 0 ? innerEntry.substring(0, lastSlash) : "";
+			fileName = innerEntry.substring(++ lastSlash);
 		} else {
 			// Format (b/c): plain path or blank
 			pakStem = mod.id;
-			int lastSlash = rawPath.lastIndexOf('/');
-			dirSuffix = lastSlash >= 0 ? rawPath.substring(0, lastSlash) : "";
+			int lastSlash = itemPath.lastIndexOf('/');
+			dirSuffix = lastSlash >= 0 ? itemPath.substring(0, lastSlash) : "";
+			fileName = itemPath.substring(++ lastSlash);
 		}
+		if (fileName.isBlank())
+			fileName = "apple.txt";
 		
-		// ---- Build target paths inside the staging area ----
-		// Structure:  <gameDir>/Mods/<modId>/Data/_stage/<pakStem>/<dirSuffix>/<type>__<mod.id>.xml
-		final var typeName = ItemEntry.forClass(item.getClass()).fileName;
 		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
-		final var targetDir = dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, dirSuffix);
-		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
-		return outFile.toFile();
+		return dirSuffix.isEmpty() ? stageRoot : Util.joinP(stageRoot, dirSuffix, fileName);
 	}
 	
 	private static Document makeDocument(final File outFile, final ModItem item, final String groupName) throws Exception {
@@ -228,7 +262,7 @@ public final class ItemService {
 			final Element group = doc.createElement("storm");
 			group.appendChild(ModItemBuilder.build(doc, item));
 			doc.appendChild(group);
-			doctype = Util.STORM_HEADER+"\n";
+			doctype = Util.STORM_HEADER + "\n";
 		} else {
 			doc = makeDocument(outFile, item, groupName);
 			doctype = null;
@@ -246,7 +280,6 @@ public final class ItemService {
 		final var writer = new StringWriter();
 		tf.transform(new DOMSource(doc), new StreamResult(writer));
 		final String xml = doctype == null ? writer.toString() : doctype + writer;
-		log.debug("entire xml so far: \n{}", xml);
 		
 		Util.writeXml(xml, outFile.toPath());
 	}
@@ -380,11 +413,10 @@ public final class ItemService {
 	 * Returns the set of PAK names that were written (without extension),
 	 * so the caller knows which staging dirs to pack.
 	 */
-	public void writeModItems(ModData modData) {
+	public static void writeModItems(ModData modData, String gameDir) {
 		final var items = modData.getItems();
 		if (items.isEmpty())
 			return;
-		final String gameDir = userConfig.getGameDirectory();
 		for (final ModItem item : items) {
 			try {
 				writeModItem(gameDir, modData, item);

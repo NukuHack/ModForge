@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConfigServiceTests extends BaseServiceTest {
 	
 	@BeforeAll
-	static void setUp() throws IOException {
+	static void setUp() {
 		// Need an instance to call loadCommonResources, but @BeforeAll is static
 		// Workaround: create temporary instance or make loadCommonResources static
 		// For simplicity, we'll call the static version after fixing BaseServiceTest

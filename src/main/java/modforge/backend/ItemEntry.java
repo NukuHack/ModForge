@@ -143,6 +143,7 @@ public enum ItemEntry {
 		this.showInDisplay = showInDisplay;
 		this.objName = objName;
 	}
+	
 	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, boolean showInDisplay) {
 		this(clazz, idKey, fileName, clazz.getSimpleName().toLowerCase(), showInDisplay);
 	}

@@ -1,7 +1,6 @@
 package modforge.backend.service;
 
 import lombok.NonNull;
-import lombok.Value;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
@@ -151,7 +150,7 @@ public final class LocalService {
 	 */
 	public static Map<Language, Map<String, String>> loadLocalization(String root) {
 		// Collect all valid (language, pakPath) pairs upfront
-		final var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.getPakPath()))).toList();
+		final var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.pakPath()))).toList();
 		if (langPaks.isEmpty()) {
 			log.info("No Localization folder found for folder {}", root);
 			return new EnumMap<>(Language.class);
@@ -161,20 +160,20 @@ public final class LocalService {
 		final Map<Language, Map<String, String>> result = new ConcurrentHashMap<>();
 		
 		langPaks.parallelStream().forEach(lp -> {
-			try (final var zf = new ZipFile(lp.getPakPath())) {
+			try (final var zf = new ZipFile(lp.pakPath())) {
 				// here using parallel is useless
 				//  for now I removed filters, so all text data will be red, but if it's too slow for you just add a filter to the base text data for items
 				zf.stream().forEach(entry -> {
 					try (var is = zf.getInputStream(entry)) {
 						final var parsed = parseLocalizationXml(is);
-						result.computeIfAbsent(lp.getLanguage(), k -> new ConcurrentHashMap<>()).putAll(parsed);
+						result.computeIfAbsent(lp.language(), k -> new ConcurrentHashMap<>()).putAll(parsed);
 					} catch (final Exception ex) {
 						log.warn("Localisation parse error ({}): {}", entry.getName(), ex.getMessage());
 					}
 				});
 				
 			} catch (final Exception ex) {
-				log.warn("Localisation read error ({}): {}", lp.getPakPath(), ex.getMessage());
+				log.warn("Localisation read error ({}): {}", lp.pakPath(), ex.getMessage());
 			}
 		});
 		
@@ -240,8 +239,7 @@ public final class LocalService {
 	 * Write per-language localization files into the mod's Localization folder.
 	 * Each language gets: Localization/<Lang>_xml/text__<modId>.xml
 	 */
-	public void writeModLocalization(ModData mod) {
-		final var gameDir = userConfig.getGameDirectory();
+	public static void writeModLocalization(ModData mod, String gameDir) {
 		boolean ok = writeModLocalizationFiles(gameDir, mod.id, mod.getLocal());
 		if (ok) {
 			log.info("Localization written for mod: {}", mod.id);
@@ -253,7 +251,7 @@ public final class LocalService {
 	/**
 	 * Write mod-specific localization files into the mod's Localization directory.
 	 */
-	private boolean writeModLocalizationFiles(String gameDirectory, String modId, Map<Language, Map<String, String>> localizations) {
+	private static boolean writeModLocalizationFiles(String gameDirectory, String modId, Map<Language, Map<String, String>> localizations) {
 		if (localizations.isEmpty())
 			return true;
 		
@@ -277,7 +275,7 @@ public final class LocalService {
 		return allOk;
 	}
 	
-	public String makeLocalizationXml(Map<String, String> entries) {
+	public static String makeLocalizationXml(Map<String, String> entries) {
 		var sb = new StringBuilder("<Table>\n");
 		for (var entry : entries.entrySet()) {
 			final var key = entry.getKey();
@@ -332,14 +330,11 @@ public final class LocalService {
 		return null;
 	}
 	
-	@Value
-	static class LangPak {
-		@NonNull Language language;
-		@NonNull String pakPath;
-		static LangPak c(String l) {
-			final var base = new File(l).getName();
-			final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
-			return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
+	record LangPak(@NonNull Language language, @NonNull String pakPath) {
+			static LangPak c(String l) {
+				final var base = new File(l).getName();
+				final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
+				return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
+			}
 		}
-	}
 }
