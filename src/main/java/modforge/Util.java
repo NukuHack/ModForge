@@ -341,26 +341,6 @@ public final class Util {
 	// ================================================================================
 	
 	/**
-	 * Normalizes XML by removing whitespace between tags and trimming lines.
-	 * Useful for comparing XML files regardless of formatting.
-	 *
-	 * @param xml Raw XML string
-	 * @return Normalized XML string with consistent line breaks and no empty lines
-	 */
-	public static String normalizeXml(String xml) {
-		// Remove whitespace between tags and normalize line endings
-		final var nicer = xml.replaceAll(">\\s+<", ">\n<");
-		final var sb = new StringBuilder();
-		for (String line : nicer.split("\n")) {
-			line = line.trim(); // this also removes any bad line breaks like \r ...
-			if (line.isEmpty())
-				continue;
-			sb.append(line).append("\n");
-		}
-		return sb.toString();
-	}
-	
-	/**
 	 * Writes normalized and indented XML to a file.
 	 * Creates parent directories if they don't exist.
 	 *
@@ -369,13 +349,22 @@ public final class Util {
 	 * @throws IOException If file writing fails
 	 */
 	public static void writeXml(String inp, Path outFile) throws IOException {
-		final var result = Util.normalizeXml(inp);
 		Files.createDirectories(outFile.getParent());
+		inp = removeEmpty(inp);
+		log.debug("entire xml after cleanup\n{}", inp);
 		
 		// Write the cleaned output
 		try (var fileWriter = new FileWriter(outFile.toFile(), StandardCharsets.UTF_8)) {
-			fileWriter.write(result);
+			fileWriter.write(inp);
 		}
+	}
+	private static String removeEmpty(String inp) {
+		var nL = "\n";
+		var sb = new StringBuilder();
+		for (var line : inp.split(nL))
+			if (! line.isBlank())
+				sb.append(line).append(nL);
+		return sb.toString();
 	}
 	
 	// ================================================================================

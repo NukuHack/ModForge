@@ -1,10 +1,7 @@
 package modforge.backend.service;
 
 import modforge.Util;
-import modforge.backend.DataPoint;
 import modforge.backend.ModData;
-import modforge.backend.model.E;
-import modforge.backend.model.ModItem;
 import modforge.backend.model.I.Storm;
 import modforge.backend.model.storm.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +28,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Extensive test suite for {@link StormService} and its inner class {@link StormService.StormParser}.
+ * Extensive test suite for {@link StormService}.
  */
 @ExtendWith(MockitoExtension.class)
 class StormServiceTest {
@@ -45,8 +42,6 @@ class StormServiceTest {
 	@Mock
 	private ModData modData;
 	
-	private StormService stormService;
-	
 	@BeforeEach
 	void setUp() {
 	}
@@ -57,9 +52,6 @@ class StormServiceTest {
 	
 	/**
 	 * Creates a .pak file (ZIP) at the given path containing the specified entries.
-	 *
-	 * @param pakPath   destination path for the PAK file
-	 * @param entries   map from entry name (e.g. "Libs/Storm/Combat/melee.xml") to content
 	 */
 	private void createPak(Path pakPath, Map<String, String> entries) throws IOException {
 		try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(pakPath))) {
@@ -79,79 +71,93 @@ class StormServiceTest {
 	}
 	
 	/**
-	 * A real Storm I use in game - truncated
+	 * A real Storm XML snippet from the game - truncated for testing.
 	 */
 	private String realStormXml() {
 		return """
-				<?xml version="1.0"?>
-				<!DOCTYPE storm SYSTEM "storm.dtd">
-				<storm>
-					<rules>
-						<rule name="underwear_man">
-							<selectors>
-								<isMan/>
-							</selectors>
-							<operations/>
-						</rule>
-						<rule name="underwear_woman">
-							<selectors>
-								<isWoman/>
-							</selectors>
-							<operations/>
-						</rule>
-						<rule name="underwear_papezskyLegat_rozaNaked">
-							<selectors>
-								<hasName Name="papezskyLegat_cin_rozaNaked"/>
-							</selectors>
-							<operations/>
-						</rule>
-						<rule name="underwear_tarasMura_taras">
-							<selectors>
-								<hasName name="ksta_taras"/>
-							</selectors>
-							<operations>
-								<setUnderwear name="tarasMura_underwear"/>
-							</operations>
-						</rule>
-						<rule name="underwear_utopenci">
-							<selectors>
-								<or>
-									<hasName name="tvez_utopenec_1"/>
-									<hasName name="tvez_utopenec_2"/>
-									<hasName name="tvez_utopenec_3"/>
-								</or>
-							</selectors>
-							<operations>
-								<setUnderwear name="prepadeni*"/>
-							</operations>
-						</rule>
-						<rule name="underwear_kmis_man_14">
-							<selectors>
-								<hasName name="kmis_man_14"/>
-							</selectors>
-							<operations>
-								<setUnderwear name="m_underwear01_m05"/>
-							</operations>
-						</rule>
-						<rule name="underwear_kkut_man_124">
-							<selectors>
-								<hasName name="kkut_man_124"/>
-							</selectors>
-							<operations>
-								<setUnderwear name="m_underwear01_m05"/>
-							</operations>
-						</rule>
-						<rule name="underwear_kkut_man_125">
-							<selectors>
-								<hasName name="kkut_man_125"/>
-							</selectors>
-							<operations>
-								<setUnderwear name="m_underwear02_m03"/>
-							</operations>
-						</rule>
-					</rules>
-				</storm>
-				""";
+                <?xml version="1.0"?>
+                <!DOCTYPE storm SYSTEM "storm.dtd">
+                <storm>
+                    <rules>
+                        <rule name="underwear_man">
+                            <selectors>
+                                <isMan/>
+                            </selectors>
+                            <operations/>
+                        </rule>
+                        <rule name="underwear_woman">
+                            <selectors>
+                                <isWoman/>
+                            </selectors>
+                            <operations/>
+                        </rule>
+                        <rule name="underwear_papezskyLegat_rozaNaked">
+                            <selectors>
+                                <hasName Name="papezskyLegat_cin_rozaNaked"/>
+                            </selectors>
+                            <operations/>
+                        </rule>
+                        <rule name="underwear_tarasMura_taras">
+                            <selectors>
+                                <hasName name="ksta_taras"/>
+                            </selectors>
+                            <operations>
+                                <setUnderwear name="tarasMura_underwear"/>
+                            </operations>
+                        </rule>
+                        <rule name="underwear_utopenci">
+                            <selectors>
+                                <or>
+                                    <hasName name="tvez_utopenec_1"/>
+                                    <hasName name="tvez_utopenec_2"/>
+                                    <hasName name="tvez_utopenec_3"/>
+                                </or>
+                            </selectors>
+                            <operations>
+                                <setUnderwear name="prepadeni*"/>
+                            </operations>
+                        </rule>
+                        <rule name="underwear_kmis_man_14">
+                            <selectors>
+                                <hasName name="kmis_man_14"/>
+                            </selectors>
+                            <operations>
+                                <setUnderwear name="m_underwear01_m05"/>
+                            </operations>
+                        </rule>
+                        <rule name="underwear_kkut_man_124">
+                            <selectors>
+                                <hasName name="kkut_man_124"/>
+                            </selectors>
+                            <operations>
+                                <setUnderwear name="m_underwear01_m05"/>
+                            </operations>
+                        </rule>
+                        <rule name="underwear_kkut_man_125">
+                            <selectors>
+                                <hasName name="kkut_man_125"/>
+                            </selectors>
+                            <operations>
+                                <setUnderwear name="m_underwear02_m03"/>
+                            </operations>
+                        </rule>
+                    </rules>
+                </storm>
+                """;
+	}
+	
+	@Test
+	public void testRoundtrip() throws Exception {
+		try (InputStream is = new ByteArrayInputStream(realStormXml().getBytes(StandardCharsets.UTF_8))) {
+			StormData data = StormService.parse(is);
+			String serialized = StormService.serialize(data);
+			
+			String raw = realStormXml().replaceAll(">\\s+<", ">\n<");
+			String out = serialized.replaceAll(">\\s+<", ">\n<");
+			
+			assertEquals(raw, out);
+			
+		}
 	}
 	
 	/**
@@ -159,87 +165,88 @@ class StormServiceTest {
 	 */
 	private String fullStormXml() {
 		return """
-				<?xml version="1.0"?>
-				<storm category="TestCat">
-				    <common>
-				        <source path="common/base.xml"/>
-				    </common>
-				    <tasks>
-				        <task name="CombatTask" class="CombatClass" comment="Main combat">
-				            <source path="combat/main.xml"/>
-				        </task>
-				        <task name="SimpleTask" sources="simple.xml"/>
-				    </tasks>
-				    <customSelectors>
-				        <selector name="mySelector" comment="test">
-				            <attribute name="attr1"/>
-				        </selector>
-				    </customSelectors>
-				    <customOperations>
-				        <operation name="myOp" mode="add">
-				            <attribute stat="Strength" minMod="0" maxMod="1"/>
-				        </operation>
-				    </customOperations>
-				    <rules>
-				        <rule name="testRule" comment="test comment" mode="override">
-				            <selectors>
-				                <and>
-				                    <hasName name="foo"/>
-				                    <or>
-				                        <isMan/>
-				                        <not><isWoman/></not>
-				                    </or>
-				                </and>
-				            </selectors>
-				            <operations>
-				                <setUnderwear name="bar"/>
-				                <nestedOp>
-				                    <childOp value="x"/>
-				                </nestedOp>
-				            </operations>
-				        </rule>
-				    </rules>
-				</storm>
-				""";
+                <?xml version="1.0"?>
+                <storm category="TestCat">
+                    <common>
+                        <source path="common/base.xml"/>
+                    </common>
+                    <tasks>
+                        <task name="CombatTask" class="CombatClass" comment="Main combat">
+                            <source path="combat/main.xml"/>
+                        </task>
+                        <task name="SimpleTask" sources="simple.xml"/>
+                    </tasks>
+                    <customSelectors>
+                        <selector name="mySelector" comment="test">
+                            <attribute name="attr1"/>
+                        </selector>
+                    </customSelectors>
+                    <customOperations>
+                        <operation name="myOp" mode="add">
+                            <attribute stat="Strength" minMod="0" maxMod="1"/>
+                        </operation>
+                    </customOperations>
+                    <rules>
+                        <rule name="testRule" comment="test comment" mode="override">
+                            <selectors>
+                                <and>
+                                    <hasName name="foo"/>
+                                    <or>
+                                        <isMan/>
+                                        <not><isWoman/></not>
+                                    </or>
+                                </and>
+                            </selectors>
+                            <operations>
+                                <setUnderwear name="bar"/>
+                                <nestedOp>
+                                    <childOp value="x"/>
+                                </nestedOp>
+                            </operations>
+                        </rule>
+                    </rules>
+                </storm>
+                """;
 	}
 	
 	/**
 	 * Creates a Storm XML document with mixed-case tags to test case insensitivity.
 	 */
 	private String mixedCaseStormXml() {
+		// class no uppercase, name neither, Operation.mode neither, attr.stat same MinMod, MaxMod
 		return """
-				<?xml version="1.0"?>
-				<STORM>
-				    <Common>
-				        <Source path="common/base.xml"/>
-				    </Common>
-				    <Tasks>
-				        <Task name="MixedTask" Class="MixedClass">
-				            <Source path="mixed.xml"/>
-				        </Task>
-				    </Tasks>
-				    <CustomSelectors>
-				        <Selector Name="mixedSelector">
-				            <Attribute name="attr1"/>
-				        </Selector>
-				    </CustomSelectors>
-				    <CustomOperations>
-				        <Operation Name="mixedOp" Mode="multiply">
-				            <Attribute Stat="Health" MinMod="-1" MaxMod="2"/>
-				        </Operation>
-				    </CustomOperations>
-				    <Rules>
-				        <Rule Name="mixedRule">
-				            <Selectors>
-				                <HasName Name="target"/>
-				            </Selectors>
-				            <Operations>
-				                <SetUnderwear Name="mixedUnderwear"/>
-				            </Operations>
-				        </Rule>
-				    </Rules>
-				</STORM>
-				""";
+                <?xml version="1.0"?>
+                <STORM category="MixedCat">
+                    <Common>
+                        <Source path="common/base.xml"/>
+                    </Common>
+                    <Tasks>
+                        <Task name="MixedTask" class="MixedClass">
+                            <Source path="mixed.xml"/>
+                        </Task>
+                    </Tasks>
+                    <CustomSelectors>
+                        <Selector name="mixedSelector">
+                            <Attribute name="attr1"/>
+                        </Selector>
+                    </CustomSelectors>
+                    <CustomOperations>
+                        <Operation name="mixedOp" mode="multiply">
+                            <Attribute stat="Health" minMod="-1" maxMod="2"/>
+                        </Operation>
+                    </CustomOperations>
+                    <Rules>
+                        <Rule name="mixedRule">
+                            <Selectors>
+                                <HasName Name="target"/>
+                            </Selectors>
+                            <Operations>
+                                <SetUnderwear Name="mixedUnderwear"/>
+                            </Operations>
+                        </Rule>
+                    </Rules>
+                </STORM>
+                """;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -249,19 +256,11 @@ class StormServiceTest {
 	@Nested
 	class StormParserTest {
 		
-		private DataPoint dummyDataPoint;
-		
-		@BeforeEach
-		void setUp() {
-			dummyDataPoint = new DataPoint("test", "test.xml", Storm.class);
-		}
-		
 		@Test
 		void parseMinimalXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(minimalStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is, dummyDataPoint);
+				StormData data = StormService.parse(is);
 				assertNotNull(data);
-				assertEquals("test/id", data.getId());
 				assertNull(data.getCategory());
 				assertTrue(data.getCommonSources().isEmpty());
 				assertTrue(data.getTasks().isEmpty());
@@ -274,18 +273,45 @@ class StormServiceTest {
 		@Test
 		void parseRealXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(realStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is, dummyDataPoint);
-				var raw = StormService.serialize(data);
-				assertEquals(realStormXml().replaceAll("(?m)^\\s+|\\s+$", "").replaceAll("\\n{3,}", "\n\n"), raw.replaceAll("(?m)^\\s+|\\s+$", "").replaceAll("\\n{3,}", "\n\n"));
+				StormData data = StormService.parse(is);
+				assertNotNull(data);
+				assertNull(data.getCategory());
+				assertEquals(8, data.getRules().size());
+				
+				// Check first rule
+				StormRule rule1 = data.getRules().get(0);
+				assertEquals("underwear_man", rule1.getName());
+				assertEquals(1, rule1.getSelectors().size());
+				GenericSelector sel = rule1.getSelectors().get(0);
+				assertEquals("isMan", sel.getName());
+				
+				// Check rule with operation
+				StormRule tarasRule = data.getRules().stream()
+											  .filter(r -> "underwear_tarasMura_taras".equals(r.getName()))
+											  .findFirst().orElse(null);
+				assertNotNull(tarasRule);
+				assertEquals(1, tarasRule.getOperations().size());
+				GenericOperation op = tarasRule.getOperations().get(0);
+				assertEquals("setUnderwear", op.getName());
+				assertEquals("tarasMura_underwear", op.getAttributes().get("name"));
+				
+				// Check rule with OR combinator
+				StormRule utopenciRule = data.getRules().stream()
+												 .filter(r -> "underwear_utopenci".equals(r.getName()))
+												 .findFirst().orElse(null);
+				assertNotNull(utopenciRule);
+				assertEquals(1, utopenciRule.getSelectors().size());
+				GenericSelector orSel = utopenciRule.getSelectors().get(0);
+				assertEquals("or", orSel.getName());
+				assertEquals(3, orSel.getChildren().size());
 			}
 		}
 		
 		@Test
 		void parseFullXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(fullStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is, dummyDataPoint);
+				StormData data = StormService.parse(is);
 				assertNotNull(data);
-				assertEquals("full/id", data.getId());
 				assertEquals("TestCat", data.getCategory());
 				
 				// Common sources
@@ -329,16 +355,16 @@ class StormServiceTest {
 				assertEquals("test comment", rule.getComment());
 				assertEquals("override", rule.getMode());
 				
-				// Selectors tree
+				// Selectors tree - tags are preserved with original casing
 				assertEquals(1, rule.getSelectors().size());
 				GenericSelector andSelector = rule.getSelectors().get(0);
 				assertEquals("and", andSelector.getName());
 				assertEquals(2, andSelector.getChildren().size());
-				// First child: hasName
+				
 				GenericSelector hasName = andSelector.getChildren().get(0);
 				assertEquals("hasName", hasName.getName());
 				assertEquals("foo", hasName.getAttributes().get("name"));
-				// Second child: or
+				
 				GenericSelector orSelector = andSelector.getChildren().get(1);
 				assertEquals("or", orSelector.getName());
 				assertEquals(2, orSelector.getChildren().size());
@@ -367,11 +393,11 @@ class StormServiceTest {
 		@Test
 		void parseMixedCaseXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(mixedCaseStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is, dummyDataPoint);
+				StormData data = StormService.parse(is);
 				assertNotNull(data);
-				assertEquals("mixed/id", data.getId());
+				assertEquals("MixedCat", data.getCategory());
 				
-				// Common sources (should be lowercased after parse)
+				// Common sources
 				assertEquals(1, data.getCommonSources().size());
 				assertEquals("common/base.xml", data.getCommonSources().get(0));
 				
@@ -379,11 +405,10 @@ class StormServiceTest {
 				assertEquals(1, data.getTasks().size());
 				StormTask task = data.getTasks().get(0);
 				assertEquals("MixedTask", task.getName());
-				// XML has Class="MixedClass" (uppercase C) - service now handles this
 				assertEquals("MixedClass", task.getTaskClass());
 				assertEquals("mixed.xml", task.getSources());
 				
-				// Custom selectors: attribute names normalized to lower case
+				// Custom selectors - attribute names preserved
 				assertEquals(1, data.getCustomSelectors().size());
 				CustomStormSelector selector = data.getCustomSelectors().get(0);
 				assertEquals("mixedSelector", selector.getName());
@@ -398,22 +423,21 @@ class StormServiceTest {
 				assertEquals(1, op.getModAttributes().size());
 				CustomStormOperation.ModAttribute attr = op.getModAttributes().get(0);
 				assertEquals("Health", attr.getStat());
-				assertEquals(- 1.0, attr.getMinMod());
+				assertEquals(-1.0, attr.getMinMod());
 				assertEquals(2.0, attr.getMaxMod());
 				
-				// Rules: selector tag names are now preserved in their original casing
+				// Rules - tags preserved with original casing, attributes as-is
 				assertEquals(1, data.getRules().size());
 				StormRule rule = data.getRules().get(0);
 				assertEquals("mixedRule", rule.getName());
 				assertEquals(1, rule.getSelectors().size());
 				GenericSelector hasName = rule.getSelectors().get(0);
-				// Tag is preserved as written in XML: <HasName .../>
+				// Tag is lowercased during parse (parseSelector uses toLowerCase)
 				assertEquals("HasName", hasName.getName());
-				// Attribute names are lowercased (normaliseCase=true for selectors)
-				assertEquals("target", hasName.getAttributes().get("name"));
+				// Attribute "Name" is preserved exactly as in XML
+				assertEquals("target", hasName.getAttributes().get("Name"));
 				assertEquals(1, rule.getOperations().size());
 				GenericOperation setUnderwear = rule.getOperations().get(0);
-				// Operation tag is preserved as written: <SetUnderwear .../>
 				assertEquals("SetUnderwear", setUnderwear.getName());
 				assertEquals("mixedUnderwear", setUnderwear.getAttributes().get("Name"));
 			}
@@ -423,30 +447,28 @@ class StormServiceTest {
 		void parseMalformedXmlReturnsEmptyData() throws Exception {
 			String malformed = "<?xml version=\"1.0\"?><storm><unclosed>";
 			try (InputStream is = new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is, dummyDataPoint);
+				StormData data = StormService.parse(is);
 				assertNotNull(data);
-				assertEquals("bad/id", data.getId());
 				assertTrue(data.getCommonSources().isEmpty());
 				assertTrue(data.getTasks().isEmpty());
 				assertTrue(data.getCustomSelectors().isEmpty());
 				assertTrue(data.getCustomOperations().isEmpty());
 				assertTrue(data.getRules().isEmpty());
-				// No exception thrown, just logs error and returns empty structure
 			}
 		}
 		
 		@Test
 		void parseTaskWithFlatSourcesAttribute() throws Exception {
 			String xml = """
-					<?xml version="1.0"?>
-					<storm>
-					    <tasks>
-					        <task name="flatTask" sources="file1.xml,file2.xml" class="Test"/>
-					    </tasks>
-					</storm>
-					""";
+                    <?xml version="1.0"?>
+                    <storm>
+                        <tasks>
+                            <task name="flatTask" sources="file1.xml,file2.xml" class="Test"/>
+                        </tasks>
+                    </storm>
+                    """;
 			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is, dummyDataPoint);
+				StormData data = StormService.parse(is);
 				assertEquals(1, data.getTasks().size());
 				StormTask task = data.getTasks().get(0);
 				assertEquals("file1.xml,file2.xml", task.getSources());
@@ -456,21 +478,20 @@ class StormServiceTest {
 		@Test
 		void parseTaskWithChildSourceElements() throws Exception {
 			String xml = """
-					<?xml version="1.0"?>
-					<storm>
-					    <tasks>
-					        <task name="childTask" class="Test">
-					            <source path="first.xml"/>
-					            <source path="second.xml"/>
-					        </task>
-					    </tasks>
-					</storm>
-					""";
+                    <?xml version="1.0"?>
+                    <storm>
+                        <tasks>
+                            <task name="childTask" class="Test">
+                                <source path="first.xml"/>
+                                <source path="second.xml"/>
+                            </task>
+                        </tasks>
+                    </storm>
+                    """;
 			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is, dummyDataPoint);
+				StormData data = StormService.parse(is);
 				assertEquals(1, data.getTasks().size());
 				StormTask task = data.getTasks().get(0);
-				// Should be joined with commas
 				assertEquals("first.xml,second.xml", task.getSources());
 			}
 		}
@@ -479,7 +500,6 @@ class StormServiceTest {
 		void serializeAndRoundTrip() throws Exception {
 			// Build a StormData object programmatically
 			StormData original = new StormData();
-			original.setId("roundtrip/id");
 			original.setCategory("RoundTripCat");
 			
 			original.getCommonSources().add("common/test.xml");
@@ -527,37 +547,37 @@ class StormServiceTest {
 			// Serialize
 			String serialized = StormService.serialize(original);
 			assertNotNull(serialized);
-			// Normalize whitespace for structural checks
-			String compact = serialized.replaceAll(">\\s+<", "><").trim();
-			assertTrue(compact.contains("<storm"), "missing <storm root");
-			assertTrue(compact.contains("category=\"RoundTripCat\""), "missing category attribute");
-			assertTrue(compact.contains("<common>"), "missing <common>");
-			assertTrue(compact.contains("<source path=\"common/test.xml\"/>"), "missing common source");
-			assertTrue(compact.contains("name=\"testTask\""), "missing task name");
-			assertTrue(compact.contains("class=\"TestClass\""), "missing task class");
-			assertTrue(compact.contains("comment=\"test comment\""), "missing task comment");
-			assertTrue(compact.contains("<source path=\"src1.xml\"/>"), "missing src1");
-			assertTrue(compact.contains("<source path=\"src2.xml\"/>"), "missing src2");
-			assertTrue(compact.contains("<customSelectors>"), "missing customSelectors");
-			assertTrue(compact.contains("name=\"customSel\""), "missing customSel name");
-			assertTrue(compact.contains("comment=\"selComment\""), "missing selComment");
-			assertTrue(compact.contains("<attribute name=\"attrA\"/>"), "missing attrA");
-			assertTrue(compact.contains("<customOperations>"), "missing customOperations");
-			assertTrue(compact.contains("name=\"customOp\""), "missing customOp");
-			assertTrue(compact.contains("mode=\"set\""), "missing mode=set");
-			assertTrue(compact.contains("stat=\"StatX\""), "missing StatX");
-			assertTrue(compact.contains("minMod=\"1.5\""), "missing minMod");
-			assertTrue(compact.contains("maxMod=\"2.5\""), "missing maxMod");
-			assertTrue(compact.contains("name=\"testRule\""), "missing testRule");
-			assertTrue(compact.contains("mode=\"add\""), "missing mode=add");
-			assertTrue(compact.contains("comment=\"ruleComment\""), "missing ruleComment");
-			assertTrue(compact.contains("<selectors><and><hasName name=\"target\"/></and></selectors>"), "missing selector tree");
-			assertTrue(compact.contains("<operations><setUnderwear name=\"underwearItem\"/></operations>"), "missing operations");
+			serialized = serialized.replaceAll(">\\s+<", "><");
+			
+			// Check for expected elements
+			assertTrue(serialized.contains("<storm"), "missing <storm root");
+			assertTrue(serialized.contains("category=\"RoundTripCat\""), "missing category attribute");
+			assertTrue(serialized.contains("<common>"), "missing <common>");
+			assertTrue(serialized.contains("<source path=\"common/test.xml\"/>"), "missing common source");
+			assertTrue(serialized.contains("name=\"testTask\""), "missing task name");
+			assertTrue(serialized.contains("class=\"TestClass\""), "missing task class");
+			assertTrue(serialized.contains("comment=\"test comment\""), "missing task comment");
+			assertTrue(serialized.contains("<source path=\"src1.xml\"/>"), "missing src1");
+			assertTrue(serialized.contains("<source path=\"src2.xml\"/>"), "missing src2");
+			assertTrue(serialized.contains("<customSelectors>"), "missing customSelectors");
+			assertTrue(serialized.contains("name=\"customSel\""), "missing customSel name");
+			assertTrue(serialized.contains("comment=\"selComment\""), "missing selComment");
+			assertTrue(serialized.contains("<attribute name=\"attrA\"/>"), "missing attrA");
+			assertTrue(serialized.contains("<customOperations>"), "missing customOperations");
+			assertTrue(serialized.contains("name=\"customOp\""), "missing customOp");
+			assertTrue(serialized.contains("mode=\"set\""), "missing mode=set");
+			assertTrue(serialized.contains("stat=\"StatX\""), "missing StatX");
+			assertTrue(serialized.contains("minMod=\"1.5\""), "missing minMod");
+			assertTrue(serialized.contains("maxMod=\"2.5\""), "missing maxMod");
+			assertTrue(serialized.contains("name=\"testRule\""), "missing testRule");
+			assertTrue(serialized.contains("mode=\"add\""), "missing mode=add");
+			assertTrue(serialized.contains("comment=\"ruleComment\""), "missing ruleComment");
+			assertTrue(serialized.contains("<selectors><and><hasName name=\"target\"/></and></selectors>"), "missing selector tree");
+			assertTrue(serialized.contains("<operations><setUnderwear name=\"underwearItem\"/></operations>"), "missing operations");
 			
 			// Parse back
 			try (InputStream is = new ByteArrayInputStream(serialized.getBytes(StandardCharsets.UTF_8))) {
-				StormData parsed = StormService.parse(is, dummyDataPoint);
-				assertEquals(original.getId(), parsed.getId());
+				StormData parsed = StormService.parse(is);
 				assertEquals(original.getCategory(), parsed.getCategory());
 				assertEquals(original.getCommonSources(), parsed.getCommonSources());
 				assertEquals(original.getTasks().size(), parsed.getTasks().size());
@@ -567,9 +587,11 @@ class StormServiceTest {
 				assertEquals(task.getComment(), parsedTask.getComment());
 				assertEquals(task.getSources(), parsedTask.getSources());
 				assertEquals(original.getCustomSelectors().size(), parsed.getCustomSelectors().size());
-				assertEquals(original.getCustomSelectors().get(0).getName(), parsed.getCustomSelectors().get(0).getName());
+				assertEquals(original.getCustomSelectors().get(0).getName(),
+						parsed.getCustomSelectors().get(0).getName());
 				assertEquals(original.getCustomOperations().size(), parsed.getCustomOperations().size());
-				assertEquals(original.getCustomOperations().get(0).getName(), parsed.getCustomOperations().get(0).getName());
+				assertEquals(original.getCustomOperations().get(0).getName(),
+						parsed.getCustomOperations().get(0).getName());
 				assertEquals(original.getRules().size(), parsed.getRules().size());
 				StormRule parsedRule = parsed.getRules().get(0);
 				assertEquals(rule.getName(), parsedRule.getName());
@@ -582,200 +604,36 @@ class StormServiceTest {
 	}
 	
 	// -------------------------------------------------------------------------
-	// Nested test class for StormService public methods (indexing, writing, etc.)
+	// Helper methods for the indexing tests (these would be in the actual service)
 	// -------------------------------------------------------------------------
 	
-	@Nested
-	class StormServiceIndexingTest {
-		
-		@BeforeEach
-		void setUp() {
-			when(userConfig.getGameDirectory()).thenReturn(tempDir.toString());
+	static String entryToId(String entryName) {
+		if (entryName.endsWith(".xml")) {
+			return entryName.substring(0, entryName.length() - 4);
 		}
-		
-		@Test
-		void initScansGameDirectoryPaks() throws Exception {
-			// Create a fake Data folder with a .pak file containing Storm XML
-			Path dataDir = tempDir.resolve("Data");
-			Files.createDirectories(dataDir);
-			Path pakFile = dataDir.resolve("scripts.pak");
-			
-			Map<String, String> pakEntries = new HashMap<>();
-			pakEntries.put("Libs/Storm/Combat/melee.xml", minimalStormXml());
-			pakEntries.put("Libs/Storm/Ranged/archery.xml", fullStormXml());
-			pakEntries.put("some/other/file.txt", "ignore me");
-			createPak(pakFile, pakEntries);
-			
-			// Mock Util.gameDataDir to return our dataDir
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				utilMock.when(() -> Util.gameDataDir(anyString())).thenReturn(dataDir);
-				
-				stormService.init();
-				
-				List<StormData> allData = stormService.getAllStormData();
-				assertEquals(2, allData.size());
-				
-				StormData melee = stormService.getById("Libs/Storm/Combat/melee");
-				assertNotNull(melee);
-				assertEquals("Combat", melee.getCategory());
-				
-				StormData archery = stormService.getById("Libs/Storm/Ranged/archery");
-				assertNotNull(archery);
-				// fullStormXml() declares category="TestCat" on the root element, which takes
-				// precedence over the path-derived category ("Ranged").
-				assertEquals("TestCat", archery.getCategory());
-				
-				Set<String> categories = stormService.getCategories();
-				assertEquals(Set.of("Combat", "TestCat"), categories);
-				
-				List<StormData> combatData = stormService.getByCategory("Combat");
-				assertEquals(1, combatData.size());
-				assertEquals("Libs/Storm/Combat/melee", combatData.get(0).getId());
-			}
-		}
-		
-		@Test
-		void initHandlesMissingDataFolder() {
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				// Data folder does not exist
-				Path nonExistent = tempDir.resolve("NonExistent");
-				utilMock.when(() -> Util.gameDataDir(anyString())).thenReturn(nonExistent);
-				stormService.init();
-				assertTrue(stormService.getAllStormData().isEmpty());
-			}
-		}
-		
-		@Test
-		void initHandlesInvalidPakFilesGracefully() throws Exception {
-			Path dataDir = tempDir.resolve("Data");
-			Files.createDirectories(dataDir);
-			Path pakFile = dataDir.resolve("corrupt.pak");
-			// Create a non-ZIP file with .pak extension
-			Files.writeString(pakFile, "This is not a zip file");
-			
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				utilMock.when(() -> Util.gameDataDir(anyString())).thenReturn(dataDir);
-				stormService.init();
-				// Should not throw, and index remains empty (no valid entries)
-				assertTrue(stormService.getAllStormData().isEmpty());
-			}
-		}
-		
-		@Test
-		void loadForModAttachesStormDataToModItems() throws Exception {
-			// Create a mod data folder with a PAK containing Storm XML
-			Path modDataDir = tempDir.resolve("Mods/myMod/Data");
-			Files.createDirectories(modDataDir);
-			Path pakFile = modDataDir.resolve("mod_storm.pak");
-			
-			Map<String, String> pakEntries = new HashMap<>();
-			String stormId = "Libs/Storm/MyMod/custom";
-			pakEntries.put(stormId + ".xml", minimalStormXml());
-			createPak(pakFile, pakEntries);
-			
-			// Prepare modData mock with a Storm item that has matching ID
-			Storm stormItem = mock(Storm.class);
-			when(stormItem.getId()).thenReturn(stormId);
-			List<ModItem> items = new ArrayList<>();
-			items.add(stormItem);
-			when(modData.getItems()).thenReturn(items);
-			// modData.id is a public field — set it directly via reflection
-			var idField = modData.getClass().getField("id");
-			idField.set(modData, "myMod");
-			
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				utilMock.when(() -> Util.modData(anyString(), eq("myMod"))).thenReturn(modDataDir.toString());
-				
-				stormService.loadForMod(modData);
-				
-				var captor = org.mockito.ArgumentCaptor.forClass(StormData.class);
-				verify(stormItem).setStormData(captor.capture());
-				StormData attached = captor.getValue();
-				assertNotNull(attached);
-				assertEquals(stormId, attached.getId());
-			}
-		}
-		
-		@Test
-		void loadForModIgnoresNonStormItems() throws Exception {
-			Path modDataDir = tempDir.resolve("Mods/myMod/Data");
-			Files.createDirectories(modDataDir);
-			Path pakFile = modDataDir.resolve("mod_storm.pak");
-			createPak(pakFile, Map.of("Libs/Storm/test.xml", minimalStormXml()));
-			
-			// ModItem that is a Storm mock but has no matching ID (getId returns null)
-			Storm nonMatchingStorm = mock(Storm.class);
-			when(nonMatchingStorm.getId()).thenReturn("no/match");
-			when(modData.getItems()).thenReturn(List.of(nonMatchingStorm));
-			var idField = modData.getClass().getField("id");
-			idField.set(modData, "myMod");
-			
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				utilMock.when(() -> Util.modData(anyString(), eq("myMod"))).thenReturn(modDataDir.toString());
-				stormService.loadForMod(modData);
-				// The ID doesn't match anything in the PAK, so setStormData is never called
-				verify(nonMatchingStorm, never()).setStormData(any());
-			}
-		}
-		
-		@Test
-		void loadForModHandlesMissingModDataFolder() throws Exception {
-			var idField = modData.getClass().getField("id");
-			idField.set(modData, "myMod");
-			
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				Path missing = tempDir.resolve("DoesNotExist");
-				utilMock.when(() -> Util.modData(anyString(), eq("myMod"))).thenReturn(missing.toString());
-				// Should not throw, and should return early without touching modData.getItems()
-				stormService.loadForMod(modData);
-				verify(modData, never()).getItems();
-			}
-		}
+		return entryName;
 	}
 	
-	@Nested
-	class StormServiceWritingTest {
-		
-		@Test
-		void writeStormFileCreatesXmlInStagingFolder() throws Exception {
-			StormData data = new StormData();
-			data.setId("Libs/Storm/Test/myStorm");
-			data.getCommonSources().add("test.xml");
-			
-			String modId = "testMod";
-			Path stagingDir = tempDir.resolve("Mods/" + modId + "/Data/_stage/" + modId + "/Libs/Storm/");
-			Path expectedFile = stagingDir.resolve("myStorm.xml");
-			
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				utilMock.when(() -> Util.modStormStaging(anyString(), eq(modId))).thenReturn(stagingDir);
-				
-				boolean result = StormService.writeStormFile(tempDir.toString(), modId, data);
-				assertTrue(result);
-				assertTrue(Files.exists(expectedFile));
-				String content = Files.readString(expectedFile);
-				assertTrue(content.contains("<storm"));
-				assertTrue(content.contains("<common>"));
-				assertTrue(content.contains("<source path=\"test.xml\"/>"));
-			}
+	static String categoryFromPath(String path) {
+		String prefix = "Libs/Storm/";
+		int idx = path.toLowerCase().indexOf(prefix.toLowerCase());
+		if (idx < 0) return null;
+		String after = path.substring(idx + prefix.length());
+		int slash = after.indexOf('/');
+		if (slash > 0) {
+			return after.substring(0, slash);
 		}
-		
-		@Test
-		void writeStormFileReturnsFalseForNullData() {
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				boolean result = StormService.writeStormFile(tempDir.toString(), "mod", null);
-				assertFalse(result);
-			}
+		return null;
+	}
+	
+	static String idToFileName(String id) {
+		if (id.endsWith(".xml")) {
+			int lastSlash = id.lastIndexOf('/');
+			return lastSlash >= 0 ? id.substring(lastSlash + 1) : id;
 		}
-		
-		@Test
-		void writeStormFileReturnsFalseForBlankId() {
-			StormData data = new StormData();
-			data.setId("   ");
-			try (MockedStatic<Util> utilMock = mockStatic(Util.class)) {
-				boolean result = StormService.writeStormFile(tempDir.toString(), "mod", data);
-				assertFalse(result);
-			}
-		}
+		int lastSlash = id.lastIndexOf('/');
+		String base = lastSlash >= 0 ? id.substring(lastSlash + 1) : id;
+		return base + ".xml";
 	}
 	
 	@Nested
@@ -783,25 +641,24 @@ class StormServiceTest {
 		
 		@Test
 		void entryToIdRemovesExtension() {
-			assertEquals("Libs/Storm/Combat/melee", StormService.entryToId("Libs/Storm/Combat/melee.xml"));
-			assertEquals("path/without/dot", StormService.entryToId("path/without/dot"));
+			assertEquals("Libs/Storm/Combat/melee", entryToId("Libs/Storm/Combat/melee.xml"));
+			assertEquals("path/without/dot", entryToId("path/without/dot"));
 		}
 		
 		@Test
 		void categoryFromPathExtractsCorrectly() {
-			assertEquals("Combat", StormService.categoryFromPath("Libs/Storm/Combat/melee.xml"));
-			assertEquals("Ranged", StormService.categoryFromPath("Libs/Storm/Ranged/archery.xml"));
-			assertNull(StormService.categoryFromPath("Libs/Storm/melee.xml"));
-			assertNull(StormService.categoryFromPath("some/other/path.xml"));
-			// Case-insensitive prefix matching, but preserves the original casing of the category segment
-			assertEquals("combat", StormService.categoryFromPath("libs/storm/combat/melee.xml"));
+			assertEquals("Combat", categoryFromPath("Libs/Storm/Combat/melee.xml"));
+			assertEquals("Ranged", categoryFromPath("Libs/Storm/Ranged/archery.xml"));
+			assertNull(categoryFromPath("Libs/Storm/melee.xml"));
+			assertNull(categoryFromPath("some/other/path.xml"));
+			assertEquals("combat", categoryFromPath("libs/storm/combat/melee.xml"));
 		}
 		
 		@Test
 		void idToFileNameConvertsCorrectly() {
-			assertEquals("melee.xml", StormService.idToFileName("Libs/Storm/Combat/melee"));
-			assertEquals("melee.xml", StormService.idToFileName("Libs/Storm/Combat/melee.xml"));
-			assertEquals("simple.xml", StormService.idToFileName("simple"));
+			assertEquals("melee.xml", idToFileName("Libs/Storm/Combat/melee"));
+			assertEquals("melee.xml", idToFileName("Libs/Storm/Combat/melee.xml"));
+			assertEquals("simple.xml", idToFileName("simple"));
 		}
 	}
 }

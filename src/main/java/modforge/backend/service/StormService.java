@@ -105,6 +105,7 @@ public final class StormService {
 	private static final String STORM_PATH_PREFIX = "Libs/Storm/";
 	/** Combinator selector tags that may contain nested selectors. */
 	private static final Set<String> COMBINATORS = Set.of("and", "or", "not");
+	final static String STORM_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 	
 	static {
 		try {
@@ -172,7 +173,7 @@ public final class StormService {
 		for (int i = 0; i < children.getLength(); i++) {
 			if (! (children.item(i) instanceof Element section))
 				continue;
-			final String tag = section.getLocalName().toLowerCase(Locale.ROOT);
+			final String tag = section.getTagName().toLowerCase(Locale.ROOT);
 			
 			switch (tag) {
 				case "common" -> parseCommon(section, data);
@@ -207,7 +208,7 @@ public final class StormService {
 	private static List<String> parseSources(Element section) {
 		final List<String> list = new LinkedList<>();
 		forEachElement(section, child -> {
-			if (child.getLocalName().equalsIgnoreCase("source")) {
+			if (child.getTagName().equalsIgnoreCase("source")) {
 				// Prefer "path" attribute; fall back to text content
 				String path = child.getAttribute("path");
 				if (path.isBlank())
@@ -292,7 +293,7 @@ public final class StormService {
 	 */
 	private static void parseTasks(Element section, StormData data) {
 		forEachElement(section, child -> {
-			if (! child.getLocalName().equalsIgnoreCase("task"))
+			if (! child.getTagName().equalsIgnoreCase("task"))
 				return;
 			
 			final var task = new StormTask();
@@ -302,7 +303,7 @@ public final class StormService {
 			task.setTaskClass(child.getAttribute("class"));
 			
 			// Sources: prefer child <source path="..."/> elements, fall back to "sources" attr
-			final List<String> sourcePaths = parseSources(section);
+			final List<String> sourcePaths = parseSources(child);
 			
 			if (! sourcePaths.isEmpty()) {
 				task.setSources(String.join(",", sourcePaths));
@@ -333,7 +334,7 @@ public final class StormService {
 	 */
 	private static void parseRules(Element section, StormData data) {
 		forEachElement(section, ruleEl -> {
-			if (! ruleEl.getLocalName().equalsIgnoreCase("rule"))
+			if (! ruleEl.getTagName().equalsIgnoreCase("rule"))
 				return;
 			
 			final var rule = new StormRule();
@@ -342,11 +343,10 @@ public final class StormService {
 			rule.setMode(ruleEl.getAttribute("mode"));
 			
 			forEachElement(ruleEl, part -> {
-				final String partTag = part.getLocalName().toLowerCase(Locale.ROOT);
+				final String partTag = part.getTagName().toLowerCase(Locale.ROOT);
 				switch (partTag) {
 					// Actual format uses "selectors" (also accept legacy "conditions")
-					case "selectors", "conditions" ->
-							forEachElement(part, child -> rule.getSelectors().add(parseSelector(child)));
+					case "selectors", "conditions" -> forEachElement(part, child -> rule.getSelectors().add(parseSelector(child)));
 					case "operations" -> forEachElement(part, child -> rule.getOperations().add(parseOperation(child)));
 				}
 			});
@@ -380,11 +380,8 @@ public final class StormService {
 	 * }</pre>
 	 */
 	private static GenericSelector parseSelector(Element el) {
-		final String tag = el.getLocalName().toLowerCase(Locale.ROOT);
-		final var sel = new GenericSelector(tag);
-		
-		// Copy XML attributes; normalize "Name" → "name" to handle mixed casing in files
-		copyXmlAttrs(el, sel.getAttributes());
+		final var sel = new GenericSelector(el.getTagName());
+		copyXmlAttrs(el, sel.getAttributes(), false);
 		
 		// Recurse into children for both combinators and any exotic nested selectors
 		forEachElement(el, child -> sel.getChildren().add(parseSelector(child)));
@@ -407,8 +404,8 @@ public final class StormService {
 	 * }</pre>
 	 */
 	private static GenericOperation parseOperation(Element el) {
-		final var op = new GenericOperation(el.getLocalName());
-		copyXmlAttrs(el, op.getAttributes());
+		final var op = new GenericOperation(el.getTagName());
+		copyXmlAttrs(el, op.getAttributes(), false);
 		
 		// Recursively parse any child operations
 		forEachElement(el, child -> op.getChildren().add(parseOperation(child)));
@@ -428,10 +425,9 @@ public final class StormService {
 		
 		final var tf = TransformerFactory.newInstance().newTransformer();
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
-		tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 		final var writer = new StringWriter();
 		tf.transform(new DOMSource(doc), new StreamResult(writer));
-		return Util.normalizeXml(writer.toString());
+		return writer.toString();
 	}
 	
 	/**
@@ -589,13 +585,13 @@ public final class StormService {
 	/**
 	 * Copy all XML element attributes into a String map.
 	 */
-	private static void copyXmlAttrs(Element el, Map<String, String> target) {
+	private static void copyXmlAttrs(Element el, Map<String, String> target, boolean toLower) {
 		final NamedNodeMap xmlAttrs = el.getAttributes();
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
 			final var a = (Attr) xmlAttrs.item(i);
-			if (a.getLocalName() == null)
+			if (a.getName() == null)
 				continue;
-			target.put(a.getLocalName(), a.getValue());
+			target.put(toLower? a.getName().toLowerCase() : a.getName(), a.getValue());
 		}
 	}
 	

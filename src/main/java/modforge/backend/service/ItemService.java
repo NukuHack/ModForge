@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
+import static modforge.backend.service.StormService.STORM_HEADER;
+
 @lombok.extern.slf4j.Slf4j
 public final class ItemService {
 	
@@ -55,14 +57,10 @@ public final class ItemService {
 		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
 		// these for speed
 		f.setProperty(XMLInputFactory.IS_COALESCING, true);
-		if (false /*get class for "jackson-dataformat-xml"*/)
-			f.setProperty("com.ctc.wstx.maxElementDepth", 5); // should be fine on 3 but left it
-		else {
-			// JAXP00010003 — individual entity size
-			f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
-			// JAXP00010004 — accumulated entity size across the whole document
-			f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
-		}
+		// JAXP00010003 — individual entity size
+		f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
+		// JAXP00010004 — accumulated entity size across the whole document
+		f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
 		return f;
 	});
 	// TODO : make this kind of data load or ... idk
@@ -225,34 +223,37 @@ public final class ItemService {
 		
 		final var groupName = ModItemBuilder.groupName(item);
 		final Document doc;
-		if (groupName.startsWith("storm")) {
-			// Create DOCTYPE properly
-			var domImpl = docBuilder.getDOMImplementation();
-			var doctype = domImpl.createDocumentType("storm", null, "storm.dtd");
-			// Create a new document with the DOCTYPE
-			doc = domImpl.createDocument(null, "storm", doctype);
-			final Element group = doc.getDocumentElement();
-			
-			group.appendChild(ModItemBuilder.build(doc, item));
-		}
-		else
-			doc = makeDocument(outFile, item, groupName);
+		final String doctype;
 		
-		writeXml(doc, outFile);
+		if (groupName.startsWith("storm")) {
+			doc = docBuilder.newDocument();
+			final Element group = doc.createElement("storm");
+			group.appendChild(ModItemBuilder.build(doc, item));
+			doc.appendChild(group);
+			doctype = STORM_HEADER+"\n";
+		} else {
+			doc = makeDocument(outFile, item, groupName);
+			doctype = null;
+		}
+		
+		writeXml(doc, outFile, doctype);
 	}
 	
-	private static void writeXml(Document doc, File outFile) throws Exception {
+	private static void writeXml(Document doc, File outFile, String doctype) throws Exception {
 		final var tf = TransformerFactory.newInstance().newTransformer();
-		// <?xml version="1.0" encoding="UTF-8"?>
-		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
 		tf.setOutputProperty(OutputKeys.STANDALONE, "yes");
-		tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 		tf.setOutputProperty(OutputKeys.METHOD, "xml");
 		tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		// We'll write the declaration + DOCTYPE ourselves
+		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, doctype == null ? "no" : "yes");
+		
 		final var writer = new StringWriter();
 		tf.transform(new DOMSource(doc), new StreamResult(writer));
-		Util.writeXml(writer.toString(), outFile.toPath());
+		final String xml = doctype == null ? writer.toString() : doctype + writer;
+		log.debug("entire xml so far: \n{}", xml);
+		
+		Util.writeXml(xml, outFile.toPath());
 	}
 	
 	private static Stream<ModItem> extractItemsFromPak(final Path pakFile) {

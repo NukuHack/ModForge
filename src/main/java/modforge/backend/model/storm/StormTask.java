@@ -1,12 +1,17 @@
 package modforge.backend.model.storm;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A task declaration inside a STORM file.
  */
+@ToString
 @Getter
-@lombok.extern.slf4j.Slf4j
+@Slf4j
+@NoArgsConstructor
 public final class StormTask {
 	
 	private String name = "";
@@ -33,10 +38,5 @@ public final class StormTask {
 	
 	public void setTaskClass(String taskClass) {
 		this.taskClass = taskClass == null ? "" : taskClass;
-	}
-	
-	@Override
-	public String toString() {
-		return "StormTask{name='" + name + "', class='" + taskClass + "'}";
 	}
 }

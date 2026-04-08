@@ -131,8 +131,8 @@ public final class ModService {
 				final String existingContent = Files.readString(manifest, StandardCharsets.UTF_8);
 				
 				// Normalize both strings for comparison (remove whitespace differences)
-				final var normalizedNew = Util.normalizeXml(newContent);
-				final var normalizedExisting = Util.normalizeXml(existingContent);
+				final var normalizedNew = newContent.replaceAll(">\\s+<", ">\n<");
+				final var normalizedExisting = existingContent.replaceAll(">\\s+<", ">\n<");
 				
 				if (normalizedNew.equals(normalizedExisting)) {
 					log.info("Manifest already exists with identical content: {}", manifest);

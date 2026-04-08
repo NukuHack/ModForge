@@ -3,6 +3,7 @@ package modforge.backend.model;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.E.MathOperation;
 
@@ -70,13 +71,17 @@ public interface Attribute<T> {
 	/**
 	 * Simple value object for buff parameters (stat_key op value)
 	 */
-	record BuffParam(String name, MathOperation operation, double value) {
-		private static final Pattern BUFF_PARAM_RE = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");
+	@Value
+	class BuffParam {
+		@NonNull String name;
+		@NonNull MathOperation operation;
+		@NonNull double value;
+		private static final Pattern BUFF_PARAM_REGEX = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");
 		
 		public static BuffParam fromString(String part) {
 			if (part == null || (part = part.trim()).isEmpty())
 				return null;
-			final var m = BUFF_PARAM_RE.matcher(part);
+			final var m = BUFF_PARAM_REGEX.matcher(part);
 			if (m.find()) {
 				return new BuffParam(m.group(1), MathOperation.fromSymbol(m.group(2)), Double.parseDouble(m.group(3)));
 			} else {
@@ -89,18 +94,6 @@ public interface Attribute<T> {
 		 */
 		public static List<BuffParam> parse(final String data) {
 			return Arrays.stream(data.split(",")).map(BuffParam::fromString).filter(Objects::nonNull).toList();
-		}
-		
-		public static String toAttrString(List<BuffParam> params) {
-			if (params == null || params.isEmpty())
-				return "";
-			return params.stream().map(b -> b.toAttrString()).collect(Collectors.joining(","));
-		}
-		
-		public static String toAttrString(BuffParam params) {
-			if (params == null)
-				return "";
-			return params.toAttrString();
 		}
 		
 		/**

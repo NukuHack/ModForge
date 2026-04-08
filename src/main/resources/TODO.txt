@@ -2,7 +2,7 @@
 icon view - load some icons into the loader and view them (atleast the mod's if the main data takes up too much space)
 lang correct - for now we use item fiels for filtering which is not correct
 
-// TODO : check if self-closing tag of "operations" could actually work or not
+// TODO : check if self-closing tag of "operations" could actually work or not - or just any self-closing tag in storm
 Make storm work - from main ModForge
 
 parse other files (adb - animation database)
