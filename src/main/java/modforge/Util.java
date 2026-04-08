@@ -2,6 +2,7 @@ package modforge;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.E.Language;
 
 import javax.swing.*;
@@ -34,7 +35,7 @@ import java.util.zip.ZipOutputStream;
  * PAK file packing, and cross-platform directory utilities for the ModForge application.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class Util {
 	// ================================================================================
 	// APPLICATION CONSTANTS - Modify these to change application behavior
@@ -45,6 +46,9 @@ public final class Util {
 	
 	/** Operating system name (lowercase) for cross-platform detection */
 	public static final String os = System.getProperty("os.name").toLowerCase();
+	
+	public final static String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+	public final static String STORM_HEADER = "<!DOCTYPE storm SYSTEM \"storm.dtd\">";
 	
 	/** Username cross-platform */
 	public static final String username;
@@ -138,7 +142,10 @@ public final class Util {
 	 * @param root Base game installation directory
 	 * @return Path to the Data directory
 	 */
-	public static Path gameDataDir(String root) {
+	public static Path dataDir(String root) {
+		return joinP(root, DATA_DIR);
+	}
+	public static Path dataDir(Path root) {
 		return joinP(root, DATA_DIR);
 	}
 	
@@ -289,7 +296,7 @@ public final class Util {
 	 * @return Path to the icons PAK file
 	 */
 	public static Path icons(String gameDir) {
-		return Util.joinP(gameDataDir(gameDir), ICONS);
+		return Util.joinP(dataDir(gameDir), ICONS);
 	}
 	
 	// ================================================================================
@@ -352,6 +359,8 @@ public final class Util {
 		Files.createDirectories(outFile.getParent());
 		inp = removeEmpty(inp);
 		log.debug("entire xml after cleanup\n{}", inp);
+		if (! inp.startsWith(XML_HEADER))
+			inp = XML_HEADER+"\n"+inp;
 		
 		// Write the cleaned output
 		try (var fileWriter = new FileWriter(outFile.toFile(), StandardCharsets.UTF_8)) {

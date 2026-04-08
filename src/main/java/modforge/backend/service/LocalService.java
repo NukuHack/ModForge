@@ -63,7 +63,7 @@ public final class LocalService {
 			return;
 		final var game = Singleton.INSTANCE.getGame();
 		try {
-			game.setLocal(this.loadLocalization(gameDir));
+			game.setLocal(loadLocalization(gameDir));
 		} catch (Exception ex) {
 			log.error("Localisation read failed: {}", ex.getMessage());
 		}
@@ -149,7 +149,7 @@ public final class LocalService {
 	 * Read all localisation paks from the game directory.
 	 * Returns: Language enum -> (string-key -> localized-value)
 	 */
-	public Map<Language, Map<String, String>> loadLocalization(String root) {
+	public static Map<Language, Map<String, String>> loadLocalization(String root) {
 		// Collect all valid (language, pakPath) pairs upfront
 		final var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.getPakPath()))).toList();
 		if (langPaks.isEmpty()) {
@@ -188,7 +188,7 @@ public final class LocalService {
 	/**
 	 * Parse a single localisation XML stream.
 	 */
-	public Map<String, String> parseLocalizationXml(InputStream is) throws XMLStreamException {
+	public static Map<String, String> parseLocalizationXml(InputStream is) throws XMLStreamException {
 		// Pre-sized to avoid rehashing for typical file sizes
 		var result = new LinkedHashMap<String, String>(1024);
 		
@@ -278,23 +278,20 @@ public final class LocalService {
 	}
 	
 	public String makeLocalizationXml(Map<String, String> entries) {
-		var sb = new StringBuilder();
-		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-		sb.append("<Table>\n");
-		
+		var sb = new StringBuilder("<Table>\n");
 		for (var entry : entries.entrySet()) {
 			final var key = entry.getKey();
-			if (! key.isBlank()) {
-				sb.append("\t<Row>\n");
-				sb.append("\t\t<Cell>").append(Util.escapeXml(key)).append("</Cell>\n");
-				sb.append("\t\t<Cell/>\n");
-				sb.append("\t\t<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n");
-				sb.append("\t</Row>\n");
-			}
+			if (key.isBlank())
+				continue;
+			
+			sb.append("\t<Row>\n");
+			sb.append("\t\t<Cell>").append(Util.escapeXml(key)).append("</Cell>\n");
+			sb.append("\t\t<Cell/>\n");
+			sb.append("\t\t<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n");
+			sb.append("\t</Row>\n");
 		}
 		
-		sb.append("</Table>\n");
-		return sb.toString();
+		return sb.append("</Table>\n").toString();
 	}
 	
 	/**

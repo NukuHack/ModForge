@@ -2,6 +2,7 @@ package modforge.backend.service;
 
 import modforge.Util;
 import modforge.backend.ModData;
+import modforge.frontend.BarManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -90,8 +91,7 @@ public final class ModService {
 		final String rootPath = Util.modFolder(gameDirectory, mod.id);
 		final Path manifest = Path.of(rootPath, "mod.manifest");
 		try {
-			Files.createDirectories(Util.gameDataDir(rootPath));
-			Files.createDirectories(Util.gameDataDir(rootPath));
+			Files.createDirectories(Util.dataDir(rootPath));
 			
 			// Create the new manifest content first
 			var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -174,31 +174,31 @@ public final class ModService {
 		
 		try (var stream = Files.list(modsFolder)) {
 			stream.filter(Files::isDirectory).forEach(modPath -> {
-				try {
-					fillCollection(modPath);
-				} catch (IOException ex) {
-					log.warn("Cannot read mod at {}: {}", modPath, ex.getMessage());
-				}
+				var mod = loadMod(modPath);
+				if (mod == null)
+					log.warn("Cannot read mod at {}", modPath);
+				
+				if (! modCollection.contains(mod))
+					modCollection.add(mod);
 			});
 		} catch (IOException e) {
 			log.warn("Cannot list Mods folder: {}", e.getMessage());
 		}
 	}
 	
-	private void fillCollection(Path modPath) throws IOException {
+	public static ModData loadMod(Path modPath) {
 		final var mod = loadModManifest(modPath);
 		
-		configService.loadModConfig(mod);
-		final String gameDir = userConfig.getGameDirectory();
-		final var langFolder = Util.modFolder(gameDir, mod.id);
-		final Path dataPath = Path.of(Util.modData(gameDir, mod.id));
+		if (mod == null || mod.id == null || mod.id.isBlank())
+			return null;
+		mod.setConfig(ConfigService.loadModConfig(mod.id, modPath));
 		
-		mod.setLocal(localService.loadLocalization(langFolder));
+		final Path dataPath = Util.dataDir(modPath);
+		mod.setLocal(LocalService.loadLocalization(String.valueOf(modPath)));
 		mod.setItems(ItemService.loadItems(dataPath));
 		mod.setIcon(IconService.loadModIcons(dataPath));
 		
-		if (! modCollection.contains(mod))
-			modCollection.add(mod);
+		return mod;
 	}
 	
 	// ------------------------------------------------------------------
@@ -340,13 +340,13 @@ public final class ModService {
 		return success.get();
 	}
 	
-	public ModData loadModManifest(Path modPath) throws IOException {
-		final Path manifest;
-		try (var fs = Files.list(modPath)) {
-			manifest = fs.filter(p -> p.getFileName().toString().contains("manifest")).findFirst().orElse(null);
+	public static ModData loadModManifest(Path modPath) {
+		final Path manifest = modPath.resolve("mod.manifest");
+		
+		if (! Files.exists(manifest)) {
+			log.warn("manifest not found");
+			return null;
 		}
-		if (manifest == null)
-			throw new FileNotFoundException("manifest not found");
 		
 		try {
 			final var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -354,7 +354,8 @@ public final class ModService {
 			
 			return parseModDescription(xmlDoc);
 		} catch (IOException | SAXException | ParserConfigurationException e) {
-			throw new IOException(e);
+			log.warn("could not parse manifest");
+			return null;
 		}
 	}
 }

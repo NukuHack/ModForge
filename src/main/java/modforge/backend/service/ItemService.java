@@ -30,8 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
-import static modforge.backend.service.StormService.STORM_HEADER;
-
 @lombok.extern.slf4j.Slf4j
 public final class ItemService {
 	
@@ -230,7 +228,7 @@ public final class ItemService {
 			final Element group = doc.createElement("storm");
 			group.appendChild(ModItemBuilder.build(doc, item));
 			doc.appendChild(group);
-			doctype = STORM_HEADER+"\n";
+			doctype = Util.STORM_HEADER+"\n";
 		} else {
 			doc = makeDocument(outFile, item, groupName);
 			doctype = null;
@@ -242,11 +240,8 @@ public final class ItemService {
 	private static void writeXml(Document doc, File outFile, String doctype) throws Exception {
 		final var tf = TransformerFactory.newInstance().newTransformer();
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
-		tf.setOutputProperty(OutputKeys.STANDALONE, "yes");
-		tf.setOutputProperty(OutputKeys.METHOD, "xml");
-		tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 		// We'll write the declaration + DOCTYPE ourselves
-		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, doctype == null ? "no" : "yes");
+		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 		
 		final var writer = new StringWriter();
 		tf.transform(new DOMSource(doc), new StreamResult(writer));

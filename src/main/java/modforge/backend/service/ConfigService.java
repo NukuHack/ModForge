@@ -193,13 +193,8 @@ public final class ConfigService {
 	 * @param modId The mod ID (used to locate Mods/<modId>/mod.cfg)
 	 * @return Map of config keys to their values
 	 */
-	private Map<String, String> loadModConfig(String modId) {
-		String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank() || modId == null || modId.isBlank()) {
-			return new HashMap<>();
-		}
-		
-		Path modCfg = Path.of(Util.modFolder(gameDir, modId), "mod.cfg");
+	public static Map<String, String> loadModConfig(String modId, Path modPath) {
+		Path modCfg = modPath.resolve("mod.cfg");
 		
 		if (! Files.exists(modCfg)) {
 			log.info("No mod.cfg found for mod: {}", modId);
@@ -216,17 +211,6 @@ public final class ConfigService {
 	// ==================================================================
 	// Utility Methods
 	// ==================================================================
-	
-	/**
-	 * Load mod config and merge into ModData.
-	 *
-	 * @param mod The mod data to update
-	 */
-	public void loadModConfig(ModData mod) {
-		if (mod == null || mod.id == null || mod.id.isBlank())
-			return;
-		mod.setConfig(loadModConfig(mod.id));
-	}
 	
 	/**
 	 * Load a config file in key=value format (with ; or # comments).

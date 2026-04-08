@@ -10,6 +10,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
 
 // =============================================================================
 //  MODS PAGE
@@ -96,37 +99,28 @@ public class ModsPage extends BasePage {
 	}
 	
 	private void importMod() {
-		JFileChooser chooser = new JFileChooser();
+		var chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		chooser.setDialogTitle("Select mod folder to import");
 		
-		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			java.nio.file.Path modPath = chooser.getSelectedFile().toPath();
-			try {
-				// Try to read manifest and import
-				var docBuilder = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder();
-				java.nio.file.Path manifestPath = modPath.resolve("mod.manifest");
-				
-				if (java.nio.file.Files.exists(manifestPath)) {
-					var doc = docBuilder.parse(manifestPath.toFile());
-					var mod = ModService.parseModDescription(doc);
-					
-					// Check if already exists
-					if (! ModService.modCollection.contains(mod)) {
-						ModService.modCollection.add(mod);
-						refreshMods();
-						window.snackbar.show("Imported mod: " + mod.name, BarManager.Type.SUCCESS);
-					} else {
-						window.snackbar.show("Mod already exists: " + mod.id, BarManager.Type.WARNING);
-					}
-				} else {
-					window.snackbar.show("No mod.manifest found in selected folder", BarManager.Type.ERROR);
-				}
-			} catch (Exception e) {
-				window.snackbar.show("Import failed: " + e.getMessage(), BarManager.Type.ERROR);
-				log.error("Import error", e);
-			}
+		if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
+			return;
+		final var modPath = chooser.getSelectedFile().toPath();
+		
+		var mod = ModService.loadMod(modPath);
+		if (mod == null) {
+			window.snackbar.show("Import failed, Mod can not be null", BarManager.Type.ERROR);
+			return;
 		}
+		if (ModService.modCollection.contains(mod)) {
+			window.snackbar.show("Mod already exists: " + mod.id, BarManager.Type.WARNING);
+			return;
+		}
+		
+		ModService.modCollection.add(mod);
+		
+		refreshMods();
+		window.snackbar.show("Imported mod: " + mod.name, BarManager.Type.SUCCESS);
 	}
 	
 	// Custom cell renderer for mod list items

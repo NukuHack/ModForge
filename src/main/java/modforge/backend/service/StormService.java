@@ -105,7 +105,6 @@ public final class StormService {
 	private static final String STORM_PATH_PREFIX = "Libs/Storm/";
 	/** Combinator selector tags that may contain nested selectors. */
 	private static final Set<String> COMBINATORS = Set.of("and", "or", "not");
-	final static String STORM_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 	
 	static {
 		try {
