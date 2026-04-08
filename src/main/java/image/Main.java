@@ -2,6 +2,8 @@ package image;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.swing.*;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -17,7 +19,24 @@ import java.util.List;
 @Slf4j
 public class Main {
 	
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
+		
+		if (true) {
+			modforge.Main.applyTheme();
+			SwingUtilities.invokeLater(() -> {
+				new KCDConverterGUI().setVisible(true);
+			});
+		} else {
+			try {
+				console(args);
+			} catch (Exception e) {
+				log.warn("Failed to do some stuff ...", e);
+			}
+		}
+	}
+	
+	public static void console(String[] args) throws Exception {
+		
 		List<String> argList = Arrays.asList(args);
 		
 		if (! argList.contains("--input") || ! argList.contains("--output")) {

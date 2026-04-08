@@ -261,7 +261,7 @@ public class ImageConverter {
 	private static float[] toFloatRgba(Dds.DdsFile dds, DxgiFormat fmt) {
 		int w = dds.header.width, h = dds.header.height;
 		
-		byte[] rgba8 = BcnDecoder.decompress(mip0Data(dds), w, h, fmt);
+		byte[] rgba8 = BCUtil.decompress(mip0Data(dds), w, h, fmt);
 		
 		// Convert RGBA8 → float RGBA [0..1]
 		float[] out = new float[w * h * 4];
@@ -280,7 +280,7 @@ public class ImageConverter {
 	 */
 	private static float[] toFloatSingleChannel(Dds.DdsFile dds, DxgiFormat fmt) {
 		int w = dds.header.width, h = dds.header.height;
-		byte[] rgba8 = BcnDecoder.decompress(mip0Data(dds), w, h, fmt);
+		byte[] rgba8 = BCUtil.decompress(mip0Data(dds), w, h, fmt);
 		float[] out = new float[w * h];
 		for (int i = 0; i < out.length; i++) {
 			out[i] = (rgba8[i * 4] & 0xFF) / 255.0f; // R channel

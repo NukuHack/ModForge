@@ -16,7 +16,7 @@ import java.nio.ByteOrder;
  * <p><b>Supported encode:</b> DXT1 / DXT3 / DXT5 / BC5 / BC7 / uncompressed RGBA·BGRA.
  *
  * <p>All format-specific codec work is delegated to package-private helpers
- * ({@link BC7Util}, {@link Bc5Util}, {@link BcnDecoder}) — callers never need
+ * ({@link BCUtil}) — callers never need
  * to know which codec is active.
  *
  * <p>All methods are static; this class cannot be instantiated.
@@ -27,16 +27,16 @@ public class DDSUtil {
 	
 	// ── DXGI format constants ────────────────────────────────────────────────
 	
-	static final int DXGI_BC1 = 71;
-	static final int DXGI_BC2 = 74;
-	static final int DXGI_BC3 = 77;
-	static final int DXGI_BC4U = 80;
-	static final int DXGI_BC4S = 81;
-	static final int DXGI_BC5U = 83;
-	static final int DXGI_BC5S = 84;
-	static final int DXGI_BC7 = 98;
-	static final int DXGI_RGBA = 28;   // R8G8B8A8_UNORM
-	static final int DXGI_BGRA = 87;   // B8G8R8A8_UNORM
+	static final int DXGI_BC1 = DxgiFormat.BC1_UNORM.getValue();
+	static final int DXGI_BC2 = DxgiFormat.BC2_UNORM.getValue();
+	static final int DXGI_BC3 = DxgiFormat.BC3_UNORM.getValue();
+	static final int DXGI_BC4U = DxgiFormat.BC4_UNORM.getValue();
+	static final int DXGI_BC4S = DxgiFormat.BC4_SNORM.getValue();
+	static final int DXGI_BC5U = DxgiFormat.BC5_UNORM.getValue();
+	static final int DXGI_BC5S = DxgiFormat.BC5_SNORM.getValue();
+	static final int DXGI_BC7 = DxgiFormat.BC7_UNORM.getValue();
+	static final int DXGI_RGBA = DxgiFormat.R8G8B8A8_UNORM.getValue();
+	static final int DXGI_BGRA =  DxgiFormat.B8G8R8A8_UNORM.getValue();
 	
 	// ── DDS / FourCC constants ───────────────────────────────────────────────
 	static final int FOURCC_DXT1 = 0x31545844;
@@ -177,7 +177,7 @@ public class DDSUtil {
 	/** Compress RGBA8 pixels and write a BC5_UNORM DDS directly to an {@link OutputStream}. */
 	public static void encodeBC5(byte[] rgba, int w, int h, OutputStream out) throws IOException {
 		writeDx10Header(out, w, h, DXGI_BC5U, blocksSize(w, h, 16));
-		out.write(Bc5Util.compress(rgba, w, h));
+		out.write(BCUtil.compressBC5(rgba, w, h));
 	}
 	
 	// ── BC7 ─────────────────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ public class DDSUtil {
 	/** Compress RGBA8 pixels and write a BC7 DDS directly to an {@link OutputStream}. */
 	public static void encodeBC7(byte[] rgba, int w, int h, OutputStream out) throws IOException {
 		writeDx10Header(out, w, h, DXGI_BC7, blocksSize(w, h, 16));
-		out.write(BC7Util.compress(rgba, w, h));
+		out.write(BCUtil.compressBC7(rgba, w, h));
 	}
 	
 	// ── Uncompressed RGBA ────────────────────────────────────────────────────
@@ -264,15 +264,11 @@ public class DDSUtil {
 			case FOURCC_DXT1 -> decompressDXT1(data, rgba);
 			case FOURCC_DXT3 -> decompressDXT3(data, rgba);
 			case FOURCC_DXT5 -> decompressDXT5(data, rgba);
-			case FOURCC_BC7 -> BC7Util.decompress(data, rgba);
+			case FOURCC_BC7 -> BCUtil.decompressBC7(data, rgba);
 			case CODE_RAW_RGBA -> System.arraycopy(data.data, 0, rgba, 0, Math.min(data.data.length, rgba.length));
-			default -> {
-				// Route all remaining BCn formats through BcnDecoder
-				DxgiFormat fmt = dxgiCodeToFormat(data.code);
-				if (fmt == null)
-					throw new UnsupportedOperationException("Unknown DDS format code: 0x" + Integer.toHexString(data.code));
-				rgba = BcnDecoder.decompress(data.data, data.w, data.h, fmt);
-			}
+			// Route all remaining BCn formats through BCUtil
+			default -> rgba = BCUtil.decompress(data.data, data.w, data.h, data.code);
+			
 		}
 		return new DDSImage(data.w, data.h, rgba);
 	}
@@ -315,7 +311,7 @@ public class DDSUtil {
 			buf.getInt();                   // arraySize
 			buf.getInt();                   // miscFlags2
 			pixelDataOffset = 148;          // 128 + 20
-			code = dxgiToCode(dxgi);
+			code = DxgiFormat.toValue(dxgi);
 		} else {
 			pixelDataOffset = 128;
 			code = legacyFourccToCode(fourCC);
@@ -332,21 +328,6 @@ public class DDSUtil {
 		return new Dds.ImgData(height, width, code, expectedSize, pixelData);
 	}
 	
-	/** Map a DXGI integer to our internal code (either a FourCC or a special constant). */
-	private static int dxgiToCode(int dxgi) throws IOException {
-		return switch (dxgi) {
-			case DXGI_BC1 -> FOURCC_DXT1;
-			case DXGI_BC2 -> FOURCC_DXT3;
-			case DXGI_BC3 -> FOURCC_DXT5;
-			case DXGI_BC7 -> FOURCC_BC7;
-			case DXGI_RGBA -> CODE_RAW_RGBA;
-			// All other DXGI formats are passed through numerically so
-			// decodeInternal can route them to BcnDecoder.
-			case DXGI_BC4U, DXGI_BC4S, DXGI_BC5U, DXGI_BC5S -> dxgi;
-			default -> throw new IOException("Unsupported DXGI format: " + dxgi);
-		};
-	}
-	
 	/** Map a legacy DDS FourCC to our internal code. */
 	private static int legacyFourccToCode(int fourCC) throws IOException {
 		return switch (fourCC) {
@@ -359,17 +340,6 @@ public class DDSUtil {
 			case FOURCC_ATI2, FOURCC_BC5U -> DXGI_BC5U;
 			case FOURCC_BC5S -> DXGI_BC5S;
 			default -> throw new IOException("Unsupported DDS FourCC: 0x" + Integer.toHexString(fourCC));
-		};
-	}
-	
-	/** Map a numeric DXGI code back to a {@link DxgiFormat} enum for BcnDecoder. */
-	private static DxgiFormat dxgiCodeToFormat(int code) {
-		return switch (code) {
-			case DXGI_BC4U -> DxgiFormat.BC4_UNORM;
-			case DXGI_BC4S -> DxgiFormat.BC4_SNORM;
-			case DXGI_BC5U -> DxgiFormat.BC5_UNORM;
-			case DXGI_BC5S -> DxgiFormat.BC5_SNORM;
-			default -> null;
 		};
 	}
 	

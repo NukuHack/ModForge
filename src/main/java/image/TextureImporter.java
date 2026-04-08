@@ -296,17 +296,17 @@ public class TextureImporter {
 	// =========================================================================
 	
 	private static String dxgiName(int dxgi) {
-		return switch (dxgi) {
-			case DDSUtil.DXGI_BC1 -> "BC1 / DXT1 (DXGI 71)";
-			case DDSUtil.DXGI_BC2 -> "BC2 / DXT3 (DXGI 74)";
-			case DDSUtil.DXGI_BC3 -> "BC3 / DXT5 (DXGI 77)";
-			case DDSUtil.DXGI_BC4U -> "BC4_UNORM (DXGI 80)";
-			case DDSUtil.DXGI_BC4S -> "BC4_SNORM (DXGI 81)";
-			case DDSUtil.DXGI_BC5U -> "BC5_UNORM — RG normal map (DXGI 83)";
-			case DDSUtil.DXGI_BC5S -> "BC5_SNORM — RG normal map signed (DXGI 84)";
-			case DDSUtil.DXGI_BC7 -> "BC7 (DXGI 98)";
-			case DDSUtil.DXGI_RGBA -> "Uncompressed RGBA8 (DXGI 28)";
-			case DDSUtil.DXGI_BGRA -> "Uncompressed BGRA8 (DXGI 87)";
+		return switch (DxgiFormat.fromValue(dxgi)) {
+			case BC1_UNORM -> "BC1 / DXT1 (DXGI 71)";
+			case BC2_UNORM -> "BC2 / DXT3 (DXGI 74)";
+			case BC3_UNORM -> "BC3 / DXT5 (DXGI 77)";
+			case BC4_UNORM -> "BC4_UNORM (DXGI 80)";
+			case BC4_SNORM -> "BC4_SNORM (DXGI 81)";
+			case BC5_UNORM -> "BC5_UNORM — RG normal map (DXGI 83)";
+			case BC5_SNORM -> "BC5_SNORM — RG normal map signed (DXGI 84)";
+			case BC7_UNORM -> "BC7 (DXGI 98)";
+			case R8G8B8A8_UNORM -> "Uncompressed RGBA8 (DXGI 28)";
+			case B8G8R8A8_UNORM -> "Uncompressed BGRA8 (DXGI 87)";
 			default -> "DXGI format " + dxgi;
 		};
 	}

@@ -63,13 +63,18 @@ public class Main {
 		});
 	}
 	
-	static void applyTheme() {
+	public static void applyTheme() {
 		setNicerFont();
 		try {
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (final Exception e) {
+				log.warn("Failed to set system look and feel", e);
+			}
 			// Requires FlatLaf on classpath
 			var flat = Class.forName("com.formdev.flatlaf.FlatDarkLaf");
 			flat.getMethod("setup").invoke(null);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			// Fallback: force metal dark-ish defaults
 			UIManager.put("Panel.background", new Color(0x1e1e2e));
 			UIManager.put("control", new Color(0x1e1e2e));
