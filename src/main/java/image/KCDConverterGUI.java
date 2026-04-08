@@ -1,11 +1,14 @@
 package image;
 
 import lombok.extern.slf4j.Slf4j;
+import modforge.Util;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +72,17 @@ public class KCDConverterGUI extends JFrame {
         JButton outputFolderBtn = new JButton("Folder...");
         outputFolderBtn.addActionListener(this::pickOutputFolder);
         mainPanel.add(outputFolderBtn, gbc);
+		
+		
+		// Add the mouse listener
+		mainPanel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				// The key line: getButton() will return 4, 5, 6, etc.
+				int button = e.getButton();
+				log.debug("Button {} pressed.", button);
+			}
+		});
         
         // Options panel
         JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 5));
@@ -110,65 +124,29 @@ public class KCDConverterGUI extends JFrame {
     }
     
     private void pickInputFile(ActionEvent e) {
-        pickFileAsync("Select DDS file", JFileChooser.FILES_ONLY, ".dds", "DDS files")
+		Util.pickFileAsync("Select DDS file", ".dds", "DDS files")
             .thenAccept(path -> {
                 if (path != null) inputField.setText(path);
             });
     }
     
     private void pickInputFolder(ActionEvent e) {
-        pickFolderAsync().thenAccept(path -> {
+        Util.pickFolderAsync().thenAccept(path -> {
             if (path != null) inputField.setText(path);
         });
     }
     
     private void pickOutputFile(ActionEvent e) {
-        pickFileAsync("Save TIFF file as", JFileChooser.FILES_ONLY, ".tif", "TIFF files")
+		Util.pickFileAsync("Save TIFF file as", ".tif", "TIFF files")
             .thenAccept(path -> {
                 if (path != null) outputField.setText(path);
             });
     }
     
     private void pickOutputFolder(ActionEvent e) {
-        pickFolderAsync().thenAccept(path -> {
+		Util.pickFolderAsync().thenAccept(path -> {
             if (path != null) outputField.setText(path);
         });
-    }
-    
-    private CompletableFuture<String> pickFolderAsync() {
-        CompletableFuture<String> future = new CompletableFuture<>();
-        SwingUtilities.invokeLater(() -> {
-            JFileChooser chooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            chooser.setDialogTitle("Select folder");
-            chooser.setAcceptAllFileFilterUsed(false);
-            int result = chooser.showOpenDialog(this);
-            String selectedPath = result == JFileChooser.APPROVE_OPTION ? chooser.getSelectedFile().getAbsolutePath() : null;
-            future.complete(selectedPath);
-        });
-        return future;
-    }
-    
-    private CompletableFuture<String> pickFileAsync(String title, int mode, String extension, String description) {
-        CompletableFuture<String> future = new CompletableFuture<>();
-        SwingUtilities.invokeLater(() -> {
-            JFileChooser chooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
-            chooser.setFileSelectionMode(mode);
-            chooser.setDialogTitle(title);
-            if (extension != null) {
-                chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(description, extension.substring(1)));
-            }
-            int result = chooser.showSaveDialog(this);
-            String selectedPath = result == JFileChooser.APPROVE_OPTION ? chooser.getSelectedFile().getAbsolutePath() : null;
-            
-            // Auto-append extension if missing
-            if (selectedPath != null && !selectedPath.toLowerCase().endsWith(extension)) {
-                selectedPath += extension;
-            }
-            
-            future.complete(selectedPath);
-        });
-        return future;
     }
     
     private void startConversion(ActionEvent e) {

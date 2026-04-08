@@ -469,19 +469,35 @@ public final class Util {
 		return (dot > 0 ? filename.substring(0, dot) : filename).toLowerCase(Locale.ROOT);
 	}
 	
+	public static CompletableFuture<String> pickFileAsync() {
+		return pickAsync("Pick a file", JFileChooser.FILES_ONLY, null, "yes");
+	}
+	public static CompletableFuture<String> pickFileAsync(String title, String extension, String description) {
+		return pickAsync(title, JFileChooser.FILES_ONLY, extension, description);
+	}
+	
+	public static CompletableFuture<String> pickFolderAsync() {
+		return pickAsync("Select target folder", JFileChooser.DIRECTORIES_ONLY, null, "yes");
+	}
+	public static CompletableFuture<String> pickFolderAsync(String title, String extension, String description) {
+		return pickAsync(title, JFileChooser.DIRECTORIES_ONLY, extension, description);
+	}
+	
 	/**
 	 * Opens a folder selection dialog asynchronously.
 	 *
 	 * @return CompletableFuture that completes with selected folder path, or null if canceled
 	 */
-	public static CompletableFuture<String> pickFolderAsync() {
+	public static CompletableFuture<String> pickAsync(String title, int mode, String extension, String description) {
 		CompletableFuture<String> future = new CompletableFuture<>();
 		SwingUtilities.invokeLater(() -> {
 			JFileChooser chooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
-			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			chooser.setDialogTitle("Select target folder");
-			chooser.setAcceptAllFileFilterUsed(false);
-			int result = chooser.showOpenDialog(null);
+			chooser.setFileSelectionMode(mode);
+			chooser.setDialogTitle(title);
+			if (extension != null) {
+				chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(description, extension.substring(1)));
+			}
+			int result = chooser.showSaveDialog(null);
 			String selectedPath = result == JFileChooser.APPROVE_OPTION ? chooser.getSelectedFile().getAbsolutePath() : null;
 			
 			future.complete(selectedPath);
