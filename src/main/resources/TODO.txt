@@ -4,8 +4,6 @@ making icon view + *edit*
 
 parse other files (adb - animation database)
 
-rename project to - com.nukuhack.modforge - might be too lazy to do such thing ...
-
 TODO : Make the other models - items
 
 make the ID system work - recipes, perk_buff, perk_script
