@@ -266,8 +266,8 @@ class AttributeTests {
         void parseMultiply() {
             var bp = Attribute.BuffParam.fromString("asp*1.15");
             assertNotNull(bp);
-            assertEquals("asp", bp.getName());
-            assertEquals(1.15, bp.getValue(), 1e-9);
+            assertEquals("asp", bp.name());
+            assertEquals(1.15, bp.value(), 1e-9);
         }
 
         @Test
@@ -275,8 +275,8 @@ class AttributeTests {
         void parseAdd() {
             var bp = Attribute.BuffParam.fromString("bba+25.0");
             assertNotNull(bp);
-            assertEquals("bba", bp.getName());
-            assertEquals(25.0, bp.getValue(), 1e-9);
+            assertEquals("bba", bp.name());
+            assertEquals(25.0, bp.value(), 1e-9);
         }
 
         @Test
@@ -284,8 +284,8 @@ class AttributeTests {
         void parseSubtract() {
             var bp = Attribute.BuffParam.fromString("eqw-500.0");
             assertNotNull(bp);
-            assertEquals("eqw", bp.getName());
-            assertEquals(500.0, bp.getValue());
+            assertEquals("eqw", bp.name());
+            assertEquals(500.0, bp.value());
         }
 
         @Test
@@ -293,8 +293,8 @@ class AttributeTests {
         void parseSet() {
             var bp = Attribute.BuffParam.fromString("hp=100");
             assertNotNull(bp);
-            assertEquals("hp", bp.getName());
-            assertEquals(100.0, bp.getValue(), 1e-9);
+            assertEquals("hp", bp.name());
+            assertEquals(100.0, bp.value(), 1e-9);
         }
 
         @Test
@@ -302,8 +302,8 @@ class AttributeTests {
         void parseBareNameFallback() {
             var bp = Attribute.BuffParam.fromString("someflag");
             assertNotNull(bp);
-            assertEquals("someflag", bp.getName());
-            assertEquals(1.0, bp.getValue(), 1e-9);
+            assertEquals("someflag", bp.name());
+            assertEquals(1.0, bp.value(), 1e-9);
         }
 
         @Test
@@ -321,11 +321,11 @@ class AttributeTests {
         @Test
         @DisplayName("parse: comma-separated list returns all entries")
         void parseMultipleParams() {
-            var list = Attribute.BuffParam.parse("rms*1.25,bba+25.0,hp-10");
+            var list = Attribute.BuffParamListAttribute.parse("rms*1.25,bba+25.0,hp-10");
             assertEquals(3, list.size());
-            assertEquals("rms", list.get(0).getName());
-            assertEquals("bba", list.get(1).getName());
-            assertEquals("hp",  list.get(2).getName());
+            assertEquals("rms", list.get(0).name());
+            assertEquals("bba", list.get(1).name());
+            assertEquals("hp",  list.get(2).name());
         }
 
         @Test
@@ -344,7 +344,7 @@ class AttributeTests {
         void listAttributeRoundTrip() {
             // Simulates what Attributes.create does for buff_params
             String raw = "asp*1.15,rms*1.25,bba+25.0";
-            var parsed = Attribute.BuffParam.parse(raw);
+            var parsed = Attribute.BuffParamListAttribute.parse(raw);
             assertEquals(3, parsed.size());
 
             // Simulate serialization through the ListAttribute path
@@ -352,13 +352,13 @@ class AttributeTests {
             String serialized = Attributes.serializeValue(listAttr);
 
             // Re-parse and check values are preserved
-            var reparsed = Attribute.BuffParam.parse(serialized);
+            var reparsed = Attribute.BuffParamListAttribute.parse(serialized);
             assertEquals(3, reparsed.size());
-            assertEquals("asp", reparsed.get(0).getName());
-            assertEquals(1.15, reparsed.get(0).getValue(), 1e-9);
-            assertEquals("rms", reparsed.get(1).getName());
-            assertEquals("bba", reparsed.get(2).getName());
-            assertEquals(25.0, reparsed.get(2).getValue(), 1e-9);
+            assertEquals("asp", reparsed.get(0).name());
+            assertEquals(1.15, reparsed.get(0).value(), 1e-9);
+            assertEquals("rms", reparsed.get(1).name());
+            assertEquals("bba", reparsed.get(2).name());
+            assertEquals(25.0, reparsed.get(2).value(), 1e-9);
         }
     }
 
@@ -373,7 +373,7 @@ class AttributeTests {
         @Test
         @DisplayName("deepClone(): produces a distinct list with equal elements")
         void deepClone() {
-            List<Attribute.BuffParam> params = Attribute.BuffParam.parse("hp+10,mp-5");
+            List<Attribute.BuffParam> params = Attribute.BuffParamListAttribute.parse("hp+10,mp-5");
             var orig = new Attribute.ListAttribute<>("buff_params", params);
             var clone = orig.deepClone();
 
@@ -384,8 +384,8 @@ class AttributeTests {
         @Test
         @DisplayName("deepClone(newValue): wraps the new list correctly")
         void deepCloneWithNewValue() {
-            List<Attribute.BuffParam> original = Attribute.BuffParam.parse("hp+10");
-            List<Attribute.BuffParam> replacement = Attribute.BuffParam.parse("mp-5,sp*2");
+            List<Attribute.BuffParam> original = Attribute.BuffParamListAttribute.parse("hp+10");
+            List<Attribute.BuffParam> replacement = Attribute.BuffParamListAttribute.parse("mp-5,sp*2");
             var orig = new Attribute.ListAttribute<>("buff_params", original);
             var clone = orig.deepClone(replacement);
 

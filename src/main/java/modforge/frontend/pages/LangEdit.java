@@ -97,7 +97,7 @@ public class LangEdit extends BaseEditPage {
 		
 		// Language selector
 		langSelector = new JComboBox<>();
-		for (String name : Language.getAllDisplayNames())
+		for (String name : Language.getAllLang())
 			langSelector.addItem(name);
 		final var defLang = window.getRegistry().userConfig.getLanguage();
 		if (defLang != null)

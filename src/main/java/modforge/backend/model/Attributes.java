@@ -3,8 +3,6 @@ package modforge.backend.model;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
 
 import java.util.List;
 import java.util.Locale;
@@ -63,34 +61,7 @@ public final class Attributes {
 		final T v = attr.getValue();
 		if (v == null)
 			return "";
-		if (v instanceof List<?> list) {
-			if (list.isEmpty())
-				return "";
-			else if (list.get(0) instanceof String)
-				return String.join(",", list.stream().map(Object::toString).toList());
-			var sb = new StringBuilder();
-			for (var f : list)
-				if (f instanceof Attribute<?> a)
-					sb.append(serializeValue(a)).append(',');
-				else if (f instanceof Attribute.BuffParam b)
-					sb.append(b).append(',');
-				else
-					log.warn("found list with unsupported type: {} type: {}", list.stream().limit(20).toList(), f.getClass());
-			return sb.toString();
-		} else if (v instanceof Enum<?> e) {
-			return String.valueOf(e.ordinal());
-		} else if (v instanceof Boolean b) {
-			return b.toString().toLowerCase(Locale.ROOT);
-		} else if (v instanceof Double d) {
-			if (Double.isInfinite(d) || Double.isNaN(d))
-				return "1";
-			long rounded = Math.round(d);
-			if (Math.abs(d - rounded) < 1e-8)
-				return String.valueOf(rounded);
-			return d.toString();
-		} else {
-			return v.toString();
-		}
+		return attr.serialize();
 	}
 	
 	/**
@@ -105,7 +76,7 @@ public final class Attributes {
 		
 		try {
 			if (type == Attribute.BuffParam.class) {
-				return new Attribute.ListAttribute<>(name, Attribute.BuffParam.parse(value));
+				return new Attribute.BuffParamListAttribute(name, value);
 			} else if (type == List.class) {
 				return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
 			} else if (type == Boolean.class) {

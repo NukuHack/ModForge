@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -307,10 +308,10 @@ public class E {
 		}
 		
 		/**
-		 * Get all display names (native names)
+		 * For frontend
 		 */
-		public static Set<String> getAllDisplayNames() {
-			return Arrays.stream(values()).map(Language::getDisplayName).collect(Collectors.toSet());
+		public static String[] getAllLang() {
+			return Arrays.stream(values()).filter(l -> !l.equals(Language.NOT_VALID)).map(Language::getDisplayName).collect(Collectors.toSet()).toArray(new String[]{});
 		}
 	}
 	

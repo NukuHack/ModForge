@@ -9,6 +9,7 @@ import modforge.frontend.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Vector;
 
 // =============================================================================
 //  SETTINGS PAGE
@@ -19,7 +20,7 @@ public class SettingsPage extends BasePage {
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");
 	private final JPanel card = card(null);
 	private final JTextField userName = styledField("Your name (used as mod author)");
-	private final JComboBox<Language> langBox = new JComboBox<>(Language.values());
+	private final JComboBox<String> langBox = new JComboBox<>(Language.getAllLang());
 	private final JCheckBox loadGameData = new JCheckBox();
 	private final UserConfig configService;
 	
@@ -103,11 +104,10 @@ public class SettingsPage extends BasePage {
 		// Username row (gridy = 4)
 		gc.gridx = 0;
 		gc.gridy = 4;
-		gc.gridwidth = 2;
+		gc.gridwidth = 1;
 		gc.weightx = 0.15;
 		card.add(label("Load game data at Startup"), gc);
-		gc.gridx = 2;
-		gc.weightx = 0.85;
+		gc.gridx = 1;
 		gc.gridwidth = 1;
 		card.add(loadGameData, gc);
 		
@@ -124,8 +124,15 @@ public class SettingsPage extends BasePage {
 				configService.setLanguage(sel);
 			configService.setAutoLoadGameData(loadGameData.isSelected());
 			
-			Singleton.INSTANCE.getRegistry().init();
 			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
+		}), gc);
+		gc.gridx = 2;
+		gc.gridy = 5;
+		gc.weightx = 0;
+		gc.gridwidth = 1;
+		card.add(primaryBtn("Refresh game&mod data", e -> {
+			Singleton.INSTANCE.getRegistry().init();
+			w.snackbar.show("Data refreshed", BarManager.Type.SUCCESS);
 		}), gc);
 		
 		return card;
@@ -145,10 +152,10 @@ public class SettingsPage extends BasePage {
 			userName.setText(userNam);
 		
 		// Load language if exists
-		var lang = configService.getLanguage();
+		var lang = configService.getLanguage().getDisplayName();
 		for (int i = 0; i < langBox.getItemCount(); i++) {
 			final var item = langBox.getItemAt(i);
-			if (item != null && item.equals(lang)) {
+			if (lang.equals(item)) {
 				langBox.setSelectedIndex(i);
 				break;
 			}
