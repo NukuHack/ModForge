@@ -177,7 +177,7 @@ public class ItemsPage extends BasePage {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2 && selectedItem != null) {
 					Util.copyText(selectedItem.getId());
-					window.snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
+					window.snackbar.show("ID copied: ", BarManager.Type.INFO, selectedItem.getId());
 				}
 			}
 		});
@@ -221,7 +221,7 @@ public class ItemsPage extends BasePage {
 		copyIdMenuItem.addActionListener(e -> {
 			if (selectedItem != null) {
 				Util.copyText(selectedItem.getId());
-				window.snackbar.show("ID copied to clipboard: " + selectedItem.getId(), BarManager.Type.INFO);
+				window.snackbar.show("ID copied: ", BarManager.Type.INFO, selectedItem.getId());
 			}
 		});
 		popupMenu.add(copyIdMenuItem);
@@ -309,19 +309,19 @@ public class ItemsPage extends BasePage {
 				return;
 			}
 			if (item == null) {
-				window.snackbar.show("No item loaded", BarManager.Type.WARNING);
+				window.snackbar.show("No items to display", BarManager.Type.WARNING);
 				return;
 			}
 			String modId = sel.split(" \\| ")[0];
 			var found = ModService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst();
 			if (found.isEmpty()) {
-				window.snackbar.show("Please select a correct mod first", BarManager.Type.WARNING);
+				window.snackbar.show("Please select a mod first", BarManager.Type.WARNING);
 				return;
 			}
 			final ModData mod = found.get();
 			final var copy = ModItemBuilder.deepCopy(item, mod);
 			mod.addItem(copy);
-			window.snackbar.show("Copied Data !", BarManager.Type.SUCCESS);
+			window.snackbar.show("All details copied to clipboard", BarManager.Type.SUCCESS);
 			dialog.dispose();
 		});
 		
@@ -439,7 +439,10 @@ public class ItemsPage extends BasePage {
 		}
 		
 		if (tellUser)
-			window.snackbar.show("Showing " + displayModel.size() + " items", BarManager.Type.SUCCESS);
+			if (! displayModel.isEmpty())
+				window.snackbar.show("No items to display", BarManager.Type.WARNING);
+			else
+				window.snackbar.show("Showing items: ", BarManager.Type.SUCCESS, displayModel.size());
 	}
 	
 	

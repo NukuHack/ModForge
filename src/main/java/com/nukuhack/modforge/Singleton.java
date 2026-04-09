@@ -11,6 +11,7 @@ import lombok.Setter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @lombok.extern.slf4j.Slf4j
@@ -41,7 +42,7 @@ public enum Singleton {
 		game.createdOn = "2025";
 		game.id = "kdc2";
 		game.modifiesLevel = true;
-		game.supportsGameVersions.add("*");
+		game.setSupportsGameVersions(List.of("*"));
 	}
 	
 	private static void ensureConfigDirExists() {

@@ -148,7 +148,7 @@ public final class LocalService {
 	 * Each language gets: Localization/<Lang>_xml/text__<modId>.xml
 	 */
 	public static void writeModLocalization(ModData mod, String gameDir) {
-		boolean ok = writeModLocalizationFiles(gameDir, mod.id, mod.getLocal());
+		boolean ok = writeModLocalizationFiles(gameDir, mod.id, mod.getLocalizations());
 		if (! ok) {
 			log.warn("Localization write had errors for mod: {}", mod.id);
 		}
@@ -266,13 +266,13 @@ public final class LocalService {
 		final var game = Singleton.INSTANCE.getGame();
 		// 1. Mod's own strings
 		if (mod != game) {
-			final var modMap = mod.getLocal().get(lang);
+			final var modMap = mod.getLang(lang);
 			if (modMap != null && modMap.containsKey(key))
 				return modMap.get(key);
 		}
 		
 		// 2. Base-game strings
-		final var baseMap = game.getLocal().get(lang);
+		final var baseMap = game.getLang(lang);
 		if (baseMap != null && baseMap.containsKey(key))
 			return baseMap.get(key);
 		
@@ -302,8 +302,8 @@ public final class LocalService {
 	private String resolve(ModItem item, ModData mod, String... candidates) {
 		// Pull the two lang maps once – either may be null if never populated.
 		final var game = Singleton.INSTANCE.getGame();
-		final Map<String, String> modMap = (mod != game) ? mod.getLocal().get(userConfig.getLanguage()) : new HashMap<>();
-		final Map<String, String> baseMap = game.getLocal().get(userConfig.getLanguage());
+		final var modMap = (mod != game) ? mod.getLang(userConfig.getLanguage()) : new HashMap<String, String>();
+		final var baseMap = game.getLang(userConfig.getLanguage());
 		
 		for (String candidate : candidates) {
 			final String clo = candidate.toLowerCase(Locale.ROOT);

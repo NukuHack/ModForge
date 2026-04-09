@@ -129,7 +129,6 @@ public class LangEdit extends BaseEditPage {
 	protected JPanel buildActionButtons() {
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		buttons.setOpaque(false);
-		buttons.add(primaryBtn("Save Changes", e -> saveChanges()));
 		buttons.add(getDangerButton("← Back to Items", e -> navigateBack()));
 		return buttons;
 	}
@@ -264,7 +263,7 @@ public class LangEdit extends BaseEditPage {
 				@Override
 				public void mouseClicked(MouseEvent e) {
 					Util.copyText(langKey);
-					window.snackbar.show("Key copied: " + langKey, BarManager.Type.INFO);
+					window.snackbar.show("Key copied: ", BarManager.Type.INFO, langKey);
 				}
 			});
 			GridBagConstraints keyGc = new GridBagConstraints();
@@ -343,23 +342,13 @@ public class LangEdit extends BaseEditPage {
 		updatePreview();
 	}
 	
-	private void saveChanges() {
-		if (currentItem == null || keyToEditor.isEmpty())
-			return;
-		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
-		hasChanges = false;
-		updateStatus();
-		updatePreview();
-		window.snackbar.show("Lang changes staged (use 'Add to Mod' to persist)", BarManager.Type.SUCCESS);
-	}
-	
 	/**
 	 * Copy the working entries into the selected mod's localization map
 	 * for the selected language, then write the mod to disk.
 	 */
 	private void addEntriesToSelectedMod() {
 		if (currentItem == null) {
-			window.snackbar.show("No item loaded", BarManager.Type.WARNING);
+			window.snackbar.show("No items to display", BarManager.Type.WARNING);
 			return;
 		}
 		final var targetMod = getSelectedMod();
@@ -384,7 +373,7 @@ public class LangEdit extends BaseEditPage {
 		mod.addLocal(lang, new HashMap<>(workingEntries));
 		hasChanges = false;
 		updateStatus();
-		window.snackbar.show("Added " + workingEntries.size() + " entries → " + mod.name + " [" + lang.getDisplayName() + "]", BarManager.Type.SUCCESS);
+		window.snackbar.show("Added entries : ", BarManager.Type.SUCCESS, workingEntries.size());
 	}
 	
 	private void refreshLangSelector() {

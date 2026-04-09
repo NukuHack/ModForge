@@ -11,6 +11,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.util.Set;
 
 // =============================================================================
 //  MODS PAGE
@@ -83,15 +85,15 @@ public class ModsPage extends BasePage {
 			listModel.addElement(mod);
 		}
 		
-		window.snackbar.show("Loaded " + listModel.size() + " mods", BarManager.Type.SUCCESS);
+		window.snackbar.show("Loaded mods: ", BarManager.Type.SUCCESS, listModel.size());
 	}
 	
 	private void createNewMod() {
 		// Create a new mod with default values
 		String defaultId = "new_mod_" + Util.getRandomString(32);
 		
-		final ModData newMod = window.getRegistry().modService.createNewMod("New Mod", "Your mod description", window.getRegistry().userConfig.getUserName(), "1.0", java.time.LocalDate.now().toString(), defaultId, false, java.util.List.of("1.0", "1.1", "1.2"));
-		
+		final var newMod = window.getRegistry().modService.createNewMod("New Mod", "Your mod description", window.getRegistry().userConfig.getUserName(), "1.0", LocalDate.now().toString(), defaultId, false);
+		newMod.setSupportsGameVersions(Set.of("1.0", "1.1", "1.2"));
 		window.navigate(MainWindow.Page.MOD_EDIT, newMod);
 	}
 	
@@ -110,14 +112,14 @@ public class ModsPage extends BasePage {
 			return;
 		}
 		if (ModService.modCollection.contains(mod)) {
-			window.snackbar.show("Mod already exists: " + mod.id, BarManager.Type.WARNING);
+			window.snackbar.show("Mod already exists: ", BarManager.Type.WARNING, mod.id);
 			return;
 		}
 		
 		ModService.modCollection.add(mod);
 		
 		refreshMods();
-		window.snackbar.show("Imported mod: " + mod.name, BarManager.Type.SUCCESS);
+		window.snackbar.show("Imported mod: ", BarManager.Type.SUCCESS, mod.name);
 	}
 	
 	// Custom cell renderer for mod list items

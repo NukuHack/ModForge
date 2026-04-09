@@ -151,7 +151,7 @@ public abstract class BasePage extends JPanel {
 			for (var attr : item.getAttributes()) {
 				html.append("<div style='margin-bottom:8px;'>");
 				html.append("<span style='color:#6c6f85;font-size:10px;'>").append(escHtml(attr.getName())).append("</span><br/>");
-				html.append("<span style='color:#cdd6f4;'>").append(escHtml(String.valueOf(attr.getValue()))).append("</span>");
+				html.append("<span style='color:#cdd6f4;'>").append(escHtml(attr.serialize())).append("</span>");
 				html.append("</div>");
 			}
 		}

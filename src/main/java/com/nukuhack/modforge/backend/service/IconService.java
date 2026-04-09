@@ -337,7 +337,7 @@ public final class IconService {
 		final String key = iconId.toLowerCase(Locale.ROOT);
 		
 		// 1. Mod's raw DDS index
-		final var modDds = mod.getIcon().get(key);
+		final var modDds = mod.getIcon(key);
 		if (modDds != null) {
 			return convert(key, modDds.data);
 		}
@@ -345,7 +345,7 @@ public final class IconService {
 		// 2. Base-game raw DDS index
 		final var game = Singleton.INSTANCE.getGame();
 		if (mod != game) {
-			final var baseDds = game.getIcon().get(key);
+			final var baseDds = game.getIcon(key);
 			if (baseDds != null) {
 				return convert(key, baseDds.data);
 			}
@@ -362,7 +362,7 @@ public final class IconService {
 		if (iconId == null || iconId.isBlank())
 			return false;
 		final String key = iconId.toLowerCase(Locale.ROOT);
-		return (mod != Singleton.INSTANCE.getGame() && mod.getIcon().containsKey(key));
+		return (mod != Singleton.INSTANCE.getGame() && mod.getIconIndex().containsKey(key));
 	}
 	
 	/**
@@ -379,7 +379,7 @@ public final class IconService {
 	}
 	
 	public static void writeModIcons(ModData mod, String gameDir) {
-		final var icons = mod.getIcon();
+		final var icons = mod.getIconIndex();
 		if (icons.isEmpty())
 			return;
 		try {

@@ -218,7 +218,7 @@ public class MainWindow extends JFrame {
 		// Update active nav button styling
 		// (You might want to implement this to highlight the current page in sidebar)
 		
-		snackbar.show("Navigated to " + page.getDisplayName(), BarManager.Type.INFO);
+		snackbar.show("Navigated to ", BarManager.Type.INFO, page.getDisplayName());
 	}
 	
 	// ── zoom-block (mirrors js/functions.js) ──────────────────────────────────

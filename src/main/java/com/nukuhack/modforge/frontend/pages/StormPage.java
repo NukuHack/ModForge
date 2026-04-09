@@ -507,7 +507,7 @@ public class StormPage extends BasePage {
 		// Pick a mod
 		var mods = ModService.modCollection;
 		if (mods.isEmpty()) {
-			window.snackbar.show("No mods available — create a mod first", BarManager.Type.WARNING);
+			window.snackbar.show("No mods available — create one", BarManager.Type.WARNING);
 			return;
 		}
 		

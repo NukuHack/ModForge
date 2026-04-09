@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,9 +55,11 @@ public final class ModService {
 		m.id = textOf(doc, "modid");
 		m.modifiesLevel = "true".equalsIgnoreCase(textOf(doc, "modifies_level"));
 		
+		List<String> list = new LinkedList<>();
 		var versions = doc.getElementsByTagName("kcd_version");
 		for (int i = 0; i < versions.getLength(); i++)
-			m.supportsGameVersions.add(versions.item(i).getTextContent().trim());
+			list.add(versions.item(i).getTextContent().trim());
+		m.setSupportsGameVersions(list);
 		
 		return m;
 	}
@@ -111,7 +114,7 @@ public final class ModService {
 			root.appendChild(info);
 			
 			final Element supports = doc.createElement("supports");
-			for (final var v : mod.supportsGameVersions)
+			for (final var v : mod.getSupportsGameVersions())
 				appendText(doc, supports, "kcd_version", v);
 			root.appendChild(supports);
 			
@@ -264,7 +267,7 @@ public final class ModService {
 	 * @param mod     The mod data containing localizations
 	 */
 	private static void packLocalization(String gameDir, ModData mod) {
-		if (mod.getLocal().isEmpty()) {
+		if (mod.getLocalizations().isEmpty()) {
 			log.info("No localizations to pack for mod {}", mod.id);
 			return;
 		}
@@ -348,7 +351,7 @@ public final class ModService {
 		log.info("Mod loading took: {}ms", System.currentTimeMillis() - start);
 	}
 	
-	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel, List<String> supportedVersions) {
+	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel) {
 		if (name.isBlank() || modId.isBlank()) {
 			log.warn("createNewMod: required fields missing.");
 			return new ModData();
@@ -357,7 +360,7 @@ public final class ModService {
 			log.warn("createNewMod: mod ID '{}' already exists.", modId);
 			return new ModData();
 		}
-		final var m = new ModData(modId, name, description, author, version, createdOn, modifiesLevel, supportedVersions);
+		final var m = new ModData(modId, name, description, author, version, createdOn, modifiesLevel);
 		modCollection.add(m);
 		log.info("Mod '{}' [{}] created.", name, modId);
 		return m;

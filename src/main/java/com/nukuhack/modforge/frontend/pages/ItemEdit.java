@@ -110,7 +110,7 @@ public class ItemEdit extends BaseEditPage {
 					public void mouseClicked(MouseEvent e) {
 						if (e.getClickCount() == 2 && currentItem != null) {
 							Util.copyText(currentItem.getId());
-							window.snackbar.show("ID copied: " + currentItem.getId(), BarManager.Type.INFO);
+							window.snackbar.show("ID copied: ", BarManager.Type.INFO, currentItem.getId());
 						}
 					}
 				});
@@ -126,14 +126,14 @@ public class ItemEdit extends BaseEditPage {
 		copyId.addActionListener(e -> {
 			if (currentItem != null) {
 				Util.copyText(currentItem.getId());
-				window.snackbar.show("ID copied: " + currentItem.getId(), BarManager.Type.INFO);
+				window.snackbar.show("ID copied: ", BarManager.Type.INFO, currentItem.getId());
 			}
 		});
 		JMenuItem copyAll = new JMenuItem("Copy All Details");
 		copyAll.addActionListener(e -> {
 			if (currentItem != null) {
 				Util.copyText(currentItem.details());
-				window.snackbar.show("All details copied", BarManager.Type.INFO);
+				window.snackbar.show("All details copied to clipboard", BarManager.Type.INFO);
 			}
 		});
 		menu.add(copyId);
@@ -176,7 +176,7 @@ public class ItemEdit extends BaseEditPage {
 	
 	private void addCurrentItemToSelectedMod() {
 		if (currentItem == null) {
-			window.snackbar.show("No item loaded", BarManager.Type.WARNING);
+			window.snackbar.show("No items to display", BarManager.Type.WARNING);
 			return;
 		}
 		final var targetMod = getSelectedMod();
@@ -187,7 +187,7 @@ public class ItemEdit extends BaseEditPage {
 		var mod = targetMod.get();
 		ModItem copy = ModItemBuilder.deepCopy(currentItem, mod);
 		mod.addItem(copy);
-		window.snackbar.show("Added item to mod: " + mod.name, BarManager.Type.SUCCESS);
+		window.snackbar.show("Added item to mod: ", BarManager.Type.SUCCESS, mod.name);
 	}
 	
 	// ── Attribute editor ──────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ public class ItemEdit extends BaseEditPage {
 		
 		JButton copyBtn = smallBtn("⎘", e -> {
 			Util.copyText(field.getText());
-			window.snackbar.show("ID copied", BarManager.Type.INFO);
+			window.snackbar.show("ID copied: ", BarManager.Type.INFO, field.getText());
 		});
 		
 		JPanel fieldRow = new JPanel(new BorderLayout(4, 0));
@@ -330,21 +330,21 @@ public class ItemEdit extends BaseEditPage {
 			return cb;
 		}
 		if (attr instanceof Attribute.DoubleAttribute doubleAttr) {
-			JSpinner sp = new JSpinner(new SpinnerNumberModel((Number) doubleAttr.getValue(), - Double.MAX_VALUE, Double.MAX_VALUE, 1.0));
+			double billion = 1_000_000_000; // this is waaay too much overkill, but left it here as a limit
+			JSpinner sp = new JSpinner(new SpinnerNumberModel((Number) doubleAttr.getValue(), - billion, billion, 0.001));
 			sp.setEditor(new JSpinner.NumberEditor(sp, "#.####"));
 			styleSpinner(sp);
 			sp.addChangeListener(e -> markChanged());
 			return sp;
 		}
 		if (attr instanceof Attribute.StringAttribute) {
-			JTextField tf = new JTextField(String.valueOf(attr.getValue()));
+			JTextField tf = new JTextField(attr.serialize());
 			styleTextField(tf);
 			addChangeListeners(tf.getDocument());
 			return tf;
 		}
-		if (attr instanceof Attribute.ListAttribute<?> listAttr) {
-			@SuppressWarnings("unchecked") Attribute.ListAttribute<Object> la = (Attribute.ListAttribute<Object>) listAttr;
-			JTextArea ta = new JTextArea(la.getValue().toString());
+		if (attr instanceof Attribute.ListAttribute<?>) {
+			JTextArea ta = new JTextArea(attr.serialize());
 			ta.setRows(3);
 			ta.setBackground(new Color(0x313244));
 			ta.setForeground(MainWindow.TEXT);

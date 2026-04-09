@@ -219,7 +219,7 @@ public class ConvertPage extends BasePage {
 		String direction = wasToPng ? "DDS → PNG" : "PNG → DDS";
 		
 		if (success) {
-			window.snackbar.show("Conversion complete (" + direction + ")", BarManager.Type.SUCCESS);
+			window.snackbar.show("Conversion complete: ", BarManager.Type.SUCCESS, direction);
 			
 			JOptionPane.showMessageDialog(this, "<html><b>Conversion complete!</b><br/><br/>" + "Direction: <tt>" + direction + "</tt><br/>" + "Source: <tt>" + selectedPath + "</tt><br/><br/>" + "Output was written next to the source (archives get a <tt>_converted/</tt> folder).</html>", "Done", JOptionPane.INFORMATION_MESSAGE);
 		} else {

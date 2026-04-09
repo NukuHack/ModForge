@@ -289,7 +289,7 @@ public class LocalizationPage extends BasePage {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2 && selectedEntry != null) {
 					Util.copyText(selectedEntry.langKey);
-					window.snackbar.show("Key copied: " + selectedEntry.langKey, BarManager.Type.INFO);
+					window.snackbar.show("Key copied: ", BarManager.Type.INFO, selectedEntry.langKey);
 				}
 			}
 		});
@@ -325,7 +325,7 @@ public class LocalizationPage extends BasePage {
 		copyKey.addActionListener(e -> {
 			if (selectedEntry != null) {
 				Util.copyText(selectedEntry.langKey);
-				window.snackbar.show("Key copied: " + selectedEntry.langKey, BarManager.Type.INFO);
+				window.snackbar.show("Key copied: ", BarManager.Type.INFO, selectedEntry.langKey);
 			}
 		});
 		JMenuItem copyVal = new JMenuItem("Copy Value");
@@ -412,16 +412,16 @@ public class LocalizationPage extends BasePage {
 			return;
 		}
 		
-		final Map<String, String> langMap = source.getLocal().get(lang);
-		if (langMap == null || langMap.isEmpty()) {
+		final var langMap = source.getLang(lang);
+		if (langMap.isEmpty()) {
 			applyFilters();
-			window.snackbar.show("No localization data for " + lang.getDisplayName() + " in selected source", BarManager.Type.WARNING);
+			window.snackbar.show("No localization data for ", BarManager.Type.WARNING, lang.getDisplayName());
 			return;
 		}
 		
 		// Build a reverse index: langKey → (item, attrName) from items in this source.
 		// Done once here so we avoid a separate map allocation and second pass.
-		final Map<String, LangEntry> entryByKey = getLangEntryMap(langMap, source);
+		final var entryByKey = getLangEntryMap(langMap, source);
 		
 		allEntries.addAll(entryByKey.values());
 		
@@ -429,7 +429,7 @@ public class LocalizationPage extends BasePage {
 		allEntries.sort(Comparator.comparing((LangEntry le) -> le.attrName, Comparator.nullsLast(String::compareToIgnoreCase)).thenComparing(le -> le.langKey, String.CASE_INSENSITIVE_ORDER));
 		
 		applyFilters();
-		window.snackbar.show("Loaded " + allEntries.size() + " entries · " + lang.getDisplayName(), BarManager.Type.SUCCESS);
+		window.snackbar.show("Loaded localization entries : ", BarManager.Type.SUCCESS, allEntries.size());
 	}
 	
 	// =========================================================================

@@ -18,14 +18,18 @@ public class BarManager {
 	private final JFrame owner;
 	private final List<JWindow> active = new ArrayList<>();
 	
-	public void show(String message, Type type) {
+	public void show(String message, Type type, Object... variables) {
 		Color bg = type.c;
 		Color fg = new Color(0x1e1e2e);
 		
 		JWindow toast = new JWindow(owner);
 		toast.setSize(BAR_WIDTH, BAR_HEIGHT);
 		
-		JLabel lbl = new JLabel(" " + message);
+		var sb = new StringBuilder(message);
+		for (var o : variables)
+			sb.append(o).append(" ");
+		
+		JLabel lbl = new JLabel(sb.toString());
 		lbl.setForeground(fg);
 		lbl.setBackground(bg);
 		lbl.setOpaque(true);

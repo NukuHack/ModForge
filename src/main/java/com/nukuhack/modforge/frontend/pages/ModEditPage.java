@@ -12,6 +12,7 @@ import java.awt.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -187,7 +188,7 @@ public class ModEditPage extends BasePage {
 		versionFields.clear();
 		
 		// Add version fields for each supported version
-		for (String version : currentMod.supportsGameVersions) {
+		for (String version : currentMod.getSupportsGameVersions()) {
 			addVersionField(version);
 		}
 		
@@ -208,11 +209,11 @@ public class ModEditPage extends BasePage {
 		this.currentMod = currentMod;
 		// Update text fields
 		idField.setText(currentMod.id);
-		nameField.setText(currentMod.name != null ? currentMod.name : "");
-		descriptionArea.setText(currentMod.description != null ? currentMod.description : "");
-		authorField.setText(currentMod.author != null ? currentMod.author : "");
-		versionField.setText(currentMod.modVersion != null ? currentMod.modVersion : "");
-		createdOnField.setText(currentMod.createdOn != null ? currentMod.createdOn : "");
+		nameField.setText(currentMod.name);
+		descriptionArea.setText(currentMod.description);
+		authorField.setText(currentMod.author);
+		versionField.setText(currentMod.modVersion);
+		createdOnField.setText(currentMod.createdOn);
 		modifiesLevelCheck.setSelected(currentMod.modifiesLevel);
 		
 		// Refresh the versions panel with current supported versions
@@ -270,7 +271,21 @@ public class ModEditPage extends BasePage {
 			return;
 		}
 		
-		// Update mod object
+		List<String> list = new LinkedList<>();
+		for (JTextField field : versionFields) {
+			String version = field.getText().trim();
+			if (! version.isBlank())
+				list.add(version);
+		}
+		var m = new ModData(
+				idField.getText(),
+				nameField.getText(),
+				descriptionArea.getText(),
+				authorField.getText(),
+				versionField.getText(),
+				createdOnField.getText(),
+				modifiesLevelCheck.isSelected()
+		);
 		currentMod.id = idField.getText();
 		currentMod.name = nameField.getText();
 		currentMod.description = descriptionArea.getText();
@@ -278,22 +293,14 @@ public class ModEditPage extends BasePage {
 		currentMod.modVersion = versionField.getText();
 		currentMod.createdOn = createdOnField.getText();
 		currentMod.modifiesLevel = modifiesLevelCheck.isSelected();
-		
-		// Update supported versions
-		currentMod.supportsGameVersions.clear();
-		for (JTextField field : versionFields) {
-			String version = field.getText().trim();
-			if (! version.isBlank()) {
-				currentMod.supportsGameVersions.add(version);
-			}
-		}
+		currentMod.setSupportsGameVersions(list);
 		
 		// Write manifest
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
 		ConfigService.saveModConfig(Util.modFolder(gameDir, currentMod.id), currentMod);
 		
 		if (success) {
-			window.snackbar.show("Manifest saved for " + currentMod.name, BarManager.Type.SUCCESS);
+			window.snackbar.show("Manifest saved for ", BarManager.Type.SUCCESS, currentMod.name);
 		} else {
 			window.snackbar.show("Failed to save manifest", BarManager.Type.ERROR);
 		}
@@ -304,7 +311,7 @@ public class ModEditPage extends BasePage {
 			final String gameDir = window.getRegistry().userConfig.getGameDirectory();
 			saveManifest(gameDir);
 			ModService.exportMod(currentMod, gameDir);
-			window.snackbar.show("Mod exported to PAK: " + currentMod.id + ".pak", BarManager.Type.SUCCESS);
+			window.snackbar.show("Mod exported to PAK: ", BarManager.Type.SUCCESS, currentMod.id + ".pak");
 		} catch (final Exception ex) {
 			window.snackbar.show("Failed to export mod", BarManager.Type.ERROR);
 			Logger log = Logger.getLogger(ModEditPage.class.getName());
@@ -322,13 +329,13 @@ public class ModEditPage extends BasePage {
 			try {
 				if (Files.exists(modPath)) {
 					Util.deleteRecursively(modPath);
-					window.snackbar.show("Mod deleted: " + currentMod.name, BarManager.Type.SUCCESS);
+					window.snackbar.show("Mod deleted: ", BarManager.Type.SUCCESS, currentMod.name);
 				}
 				
 				ModService.modCollection.remove(currentMod);
 				window.navigate(MainWindow.Page.MODS);
 			} catch (Exception e) {
-				window.snackbar.show("Failed to delete mod: " + e.getMessage(), BarManager.Type.ERROR);
+				window.snackbar.show("Failed to delete mod: ", BarManager.Type.ERROR, e.getMessage(), e.getClass().getSimpleName());
 			}
 		}
 	}
