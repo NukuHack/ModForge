@@ -4,7 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import modforge.backend.model.I;
 import modforge.backend.model.ModItem;
 
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -100,31 +101,35 @@ public enum ItemEntry {
 	STORM(I.Storm.class, "id", "storm", true);
 	
 	// ────────────────────────────────────────────────────────────────────────
-	// Fields
+	// Inner data
 	// ────────────────────────────────────────────────────────────────────────
+	
+	private static final Map<Class<? extends ModItem>, ItemEntry> BY_CLASS = new HashMap<>();
+	
+	static {
+		for (var entry : values()) {
+			BY_CLASS.put(entry.clazz, entry);
+		}
+	}
 	
 	/** The concrete ModItem subclass this constant represents. */
 	public final Class<? extends ModItem> clazz;
-	
 	/**
 	 * The XML attribute name used as the primary ID for this item class
 	 * (e.g. {@code "Id"}, {@code "perk_id"}, {@code "buff_id"}, {@code "id"}).
 	 */
 	public final String idKey;
-	
 	/**
 	 * The short XML key used as the endpoint name in zip entries
 	 * (e.g. {@code "item"}, {@code "perk"}, {@code "storm"}).
 	 */
 	public final String fileName;
-	
 	/**
 	 * The short key used to create Object from XML Elements and vice versa
 	 * (e.g. {@code "MeleeWeapon"} → {@code "meleeweapon"},
 	 *  {@code "NPCTool"} → {@code "npctool"}).
 	 */
 	public final String objName;
-	
 	/**
 	 * Whether this class should appear in the frontend item-type dropdown.
 	 * Weapon-class entries are excluded ({@code false}); everything else is {@code true}.
@@ -148,9 +153,9 @@ public enum ItemEntry {
 		this(clazz, idKey, fileName, clazz.getSimpleName().toLowerCase(), showInDisplay);
 	}
 	
-	// ────────────────────────────────────────────────────────────────────────
-	// Convenience helpers (used by ItemType internally)
-	// ────────────────────────────────────────────────────────────────────────
+	public static ItemEntry forClass(Class<? extends ModItem> clazz) {
+		return BY_CLASS.get(clazz);
+	}
 	
 	/** A predicate that accepts any {@link ModItem} whose runtime class is {@link #clazz}. */
 	public Predicate<ModItem> matcher() {
@@ -166,10 +171,6 @@ public enum ItemEntry {
 		var s = clazz.getSimpleName();
 		s = s.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", " ");
 		return s.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2");
-	}
-	
-	public static ItemEntry forClass(Class<? extends ModItem> clazz) {
-		return Arrays.stream(values()).filter(c -> c.clazz.equals(clazz)).findAny().orElse(null);
 	}
 	
 	public String parentName() {

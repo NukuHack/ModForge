@@ -1,6 +1,7 @@
 package modforge.backend.service;
 
 import lombok.NonNull;
+import modforge.Singleton;
 import modforge.backend.ModData;
 
 import java.io.BufferedReader;
@@ -33,6 +34,10 @@ public final class ConfigService {
 	// ==================================================================
 	// Game Config Loading (user.cfg / autoexec.cfg)
 	// ==================================================================
+	
+	public void init() {
+		Singleton.INSTANCE.getGame().setConfig(loadGameConfig());
+	}
 	
 	/**
 	 * Save a mod's configuration file.
@@ -156,32 +161,29 @@ public final class ConfigService {
 	 * @return Map of config keys to their values
 	 */
 	public @NonNull Map<String, String> loadGameConfig() {
-		String gameDir = userConfig.getGameDirectory();
+		var gameDir = userConfig.getGameDirectory();
 		if (gameDir == null || gameDir.isBlank()) {
 			log.warn("Game directory not configured - cannot load game config.");
 			return new HashMap<>();
 		}
 		
-		Path userCfg = Path.of(gameDir, "user.cfg");
-		Path autoexecCfg = Path.of(gameDir, "autoexec.cfg");
+		var userCfg = Path.of(gameDir, "user.cfg");
+		var autoexecCfg = Path.of(gameDir, "autoexec.cfg");
 		
 		Map<String, String> config = new LinkedHashMap<>();
 		
 		// Load autoexec.cfg first (lower precedence)
-		if (Files.exists(autoexecCfg)) {
+		if (Files.exists(autoexecCfg))
 			loadConfigFile(autoexecCfg, config);
-		}
 		
 		// Load user.cfg second (higher precedence - overwrites autoexec)
-		if (Files.exists(userCfg)) {
+		if (Files.exists(userCfg))
 			loadConfigFile(userCfg, config);
-		}
 		
-		if (config.isEmpty()) {
+		if (config.isEmpty())
 			log.info("No game config found (user.cfg or autoexec.cfg)");
-		} else {
+		else
 			log.info("Loaded {} config entries from game config", config.size());
-		}
 		
 		return config;
 	}
@@ -258,7 +260,7 @@ public final class ConfigService {
 			return;
 		
 		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-			StringBuilder currentComment = new StringBuilder();
+			var currentComment = new StringBuilder();
 			String line;
 			
 			while ((line = reader.readLine()) != null) {

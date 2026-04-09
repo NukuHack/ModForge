@@ -71,7 +71,7 @@ public final class ItemType {
 	public static boolean excludeNonEndpoints(final ZipEntry ze) {
 		if (ze.isDirectory())
 			return false;
-		final var name = ze.getName().toLowerCase(Locale.ROOT);
+		final var name = ze.getName().toLowerCase(Locale.ROOT).replace('\\', '/');
 		final var isData = name.endsWith(".xml") || name.endsWith(".adb");
 		if (! isData)
 			return false;
@@ -113,10 +113,10 @@ public final class ItemType {
 	// ── Nested types (public API – unchanged) ─────────────────────────────────
 	
 	/** Pair of a concrete item class and the XML attribute name that holds its ID. */
-		public record HandlerSpec(@NonNull Class<? extends ModItem> clazz, @NonNull String idKey, @NonNull String name) {
+	public record HandlerSpec(@NonNull Class<? extends ModItem> clazz, @NonNull String idKey, @NonNull String name) {
 	}
 	
 	/** Display entry for the frontend type dropdown. */
-		private record ITDisplay(@NonNull String displayName, @NonNull Predicate<ModItem> matcher) {
+	private record ITDisplay(@NonNull String displayName, @NonNull Predicate<ModItem> matcher) {
 	}
 }

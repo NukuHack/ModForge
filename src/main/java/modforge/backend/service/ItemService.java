@@ -21,7 +21,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -36,20 +35,6 @@ import java.util.zip.ZipFile;
 public final class ItemService {
 	
 	final static DocumentBuilder docBuilder;
-	
-	static {
-		try {
-			var f = DocumentBuilderFactory.newInstance();
-			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			f.setFeature("http://xml.org/sax/features/validation", false);
-			f.setFeature("http://xml.org/sax/features/external-general-entities", false);
-			f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-			docBuilder = f.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
 	private static final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
 		XMLInputFactory f = XMLInputFactory.newInstance();
 		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
@@ -65,6 +50,20 @@ public final class ItemService {
 	});
 	// TODO : make this kind of data load or ... idk
 	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
+
+	static {
+		try {
+			var f = DocumentBuilderFactory.newInstance();
+			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			f.setFeature("http://xml.org/sax/features/validation", false);
+			f.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			docBuilder = f.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private final UserConfig userConfig;
 	
 	public ItemService(UserConfig userConfig) {
@@ -78,7 +77,7 @@ public final class ItemService {
 	static Document parseXml(InputStream is) {
 		try {
 			// Wrap in BufferedInputStream if not already mark-supported
-			if (!is.markSupported())
+			if (! is.markSupported())
 				is = new BufferedInputStream(is);
 			
 			is.mark(3);
@@ -88,21 +87,26 @@ public final class ItemService {
 			// Reset to beginning regardless
 			is.reset();
 			
-			String encoding = "UTF-8";
+			final String encoding;
 			
 			// Check for BOM only if we read enough bytes
-			if (bytesRead >= 3 && bom[0] == (byte)0xEF && bom[1] == (byte)0xBB && bom[2] == (byte)0xBF) {
+			if (bytesRead >= 3 && bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF) {
 				// BOM found, skip it by reading past it
-				is.skip(3);
+				if (is.skip(3) != 3)
+					throw new IOException("Could not read the BOM correctly");
 				encoding = "UTF-8";
-			} else if (bytesRead >= 2 && bom[0] == (byte)0xFE && bom[1] == (byte)0xFF) {
+			} else if (bytesRead >= 2 && bom[0] == (byte) 0xFE && bom[1] == (byte) 0xFF) {
 				// UTF-16BE BOM
-				is.skip(2);
+				if (is.skip(2) != 2)
+					throw new IOException("Could not read the BOM correctly");
 				encoding = "UTF-16BE";
-			} else if (bytesRead >= 2 && bom[0] == (byte)0xFF && bom[1] == (byte)0xFE) {
+			} else if (bytesRead >= 2 && bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE) {
 				// UTF-16LE BOM
-				is.skip(2);
+				if (is.skip(2) != 2)
+					throw new IOException("Could not read the BOM correctly");
 				encoding = "UTF-16LE";
+			} else {
+				encoding = "UTF-8";
 			}
 			
 			// Use the detected encoding
@@ -137,7 +141,7 @@ public final class ItemService {
 	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod) {
 		final String rawPath = item.getPath() == null ? "" : item.getPath();
 		final var targetDir = getOutputFile(gameDir, rawPath, mod).getParent();
-		final var typeName = ItemEntry.forClass(item.getClass()).fileName;
+		final var typeName = ModItemBuilder.group(item).fileName;
 		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
 		return outFile.toFile();
 	}
@@ -250,7 +254,7 @@ public final class ItemService {
 		final File outFile = getOutputFile(gameDir, item, mod);
 		Files.createDirectories(outFile.toPath().getParent());
 		
-		final var groupName = ModItemBuilder.groupName(item);
+		final var groupName = ModItemBuilder.group(item).parentName();
 		final Document doc;
 		final String doctype;
 		
@@ -282,11 +286,13 @@ public final class ItemService {
 	}
 	
 	private static Stream<ModItem> extractItemsFromPak(final Path pakFile) {
+		log.trace("got path : {}", pakFile);
 		final Set<ModItem> items = new HashSet<>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
 			for (final var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
 				final var entryName = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
+					log.trace("Entry: '{}', name={}, size={}", entry.getName(), entryName, entry.getSize());
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
 				} catch (final Exception ex) {
 					log.warn("Parse error in {} from {}: {}", entryName, pakFile.getFileName(), ex.getMessage());
@@ -380,25 +386,6 @@ public final class ItemService {
 	}
 	
 	/**
-	 * Try to read all XML pak files.
-	 * Returns false if the game directory is not configured.
-	 */
-	public void init() {
-		final long start = System.currentTimeMillis();
-		final String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank())
-			return;
-		final var game = Singleton.INSTANCE.getGame();
-		try {
-			game.setItems(loadItems(Path.of(gameDir, "Data")));
-			log.info("XML read done items={}", game.getItems().size());
-		} catch (Exception ex) {
-			log.error("Game Data read failed: {}", ex.getMessage());
-		}
-		log.info("Game ItemData Load took: {}", System.currentTimeMillis() - start);
-	}
-	
-	/**
 	 * Write all mod items to XML files, grouped by their origin PAK.
 	 * Items loaded from "Weapons.pak:some/entry.xml" are staged under
 	 * Mods/<modId>/Data/_stage/Weapons/<entry-dir>/
@@ -422,5 +409,24 @@ public final class ItemService {
 			}
 		}
 		log.error("ModItem written to {}", Util.modStaging(gameDir, mod.id));
+	}
+	
+	/**
+	 * Try to read all XML pak files.
+	 * Returns false if the game directory is not configured.
+	 */
+	public void init() {
+		final long start = System.currentTimeMillis();
+		final String gameDir = userConfig.getGameDirectory();
+		if (gameDir == null || gameDir.isBlank())
+			return;
+		final var game = Singleton.INSTANCE.getGame();
+		try {
+			game.setItems(loadItems(Path.of(gameDir, "Data")));
+			log.info("XML read done items={}", game.getItems().size());
+		} catch (Exception ex) {
+			log.error("Game Data read failed: {}", ex.getMessage());
+		}
+		log.info("Game ItemData Load took: {}", System.currentTimeMillis() - start);
 	}
 }

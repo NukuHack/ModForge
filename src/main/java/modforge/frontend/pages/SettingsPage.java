@@ -20,6 +20,7 @@ public class SettingsPage extends BasePage {
 	private final JPanel card = card(null);
 	private final JTextField userName = styledField("Your name (used as mod author)");
 	private final JComboBox<Language> langBox = new JComboBox<>(Language.values());
+	private final JCheckBox loadGameData = new JCheckBox();
 	private final UserConfig configService;
 	
 	public SettingsPage(MainWindow w) {
@@ -67,13 +68,11 @@ public class SettingsPage extends BasePage {
 		gc.gridx = 2;
 		gc.weightx = 0.1;
 		card.add(primaryBtn("Browse…", e -> Util.pickFolderAsync().thenAccept(path -> {
-			if (path != null)
-				SwingUtilities.invokeLater(() -> {
-					gameDir.setText(path);
-					configService.setGameDirectory(path);
-					configService.save();
-					w.snackbar.show("Game directory set", BarManager.Type.SUCCESS);
-				});
+			if (path != null) {
+				gameDir.setText(path);
+				gameDir.setForeground(MainWindow.TEXT);
+				w.snackbar.show("Game directory set", BarManager.Type.SUCCESS);
+			}
 		})), gc);
 		
 		// Username row (gridy = 2)
@@ -101,14 +100,30 @@ public class SettingsPage extends BasePage {
 		langBox.setFont(new Font("Roboto", Font.PLAIN, 13));
 		card.add(langBox, gc);
 		
-		// Save button (gridy = 4)
-		gc.gridx = 1;
+		// Username row (gridy = 4)
+		gc.gridx = 0;
 		gc.gridy = 4;
+		gc.gridwidth = 2;
+		gc.weightx = 0.15;
+		card.add(label("Load game data at Startup"), gc);
+		gc.gridx = 2;
+		gc.weightx = 0.85;
+		gc.gridwidth = 1;
+		card.add(loadGameData, gc);
+		
+		// Save button (gridy = 5)
+		gc.gridx = 1;
+		gc.gridy = 5;
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("Save Settings", e -> {
+			configService.setGameDirectory(gameDir.getText());
 			configService.setUserName(userName.getText());
-			configService.setLanguage(selectedLang());
+			final var sel = (Language) langBox.getSelectedItem();
+			if (sel != null)
+				configService.setLanguage(sel);
+			configService.setAutoLoadGameData(loadGameData.isSelected());
+			
 			Singleton.INSTANCE.getRegistry().init();
 			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
 		}), gc);
@@ -119,32 +134,27 @@ public class SettingsPage extends BasePage {
 	private void loadSettings() {
 		// Load game directory if exists
 		var gameDire = configService.getGameDirectory();
-		if (gameDire != null && ! gameDire.isEmpty()) {
+		if (! gameDire.isEmpty()) {
 			gameDir.setText(gameDire);
 			gameDir.setForeground(MainWindow.TEXT);
 		}
 		
 		// Load username if exists
 		var userNam = configService.getUserName();
-		if (userNam != null && ! userNam.isEmpty()) {
+		if (! userNam.isEmpty())
 			userName.setText(userNam);
-		}
 		
 		// Load language if exists
 		var lang = configService.getLanguage();
-		if (lang != null) {
-			for (int i = 0; i < langBox.getItemCount(); i++) {
-				final var item = langBox.getItemAt(i);
-				if (item != null && item.equals(lang)) {
-					langBox.setSelectedIndex(i);
-					break;
-				}
+		for (int i = 0; i < langBox.getItemCount(); i++) {
+			final var item = langBox.getItemAt(i);
+			if (item != null && item.equals(lang)) {
+				langBox.setSelectedIndex(i);
+				break;
 			}
 		}
-	}
-	
-	private Language selectedLang() {
-		final var sel = langBox.getSelectedItem();
-		return sel != null ? (Language) sel : Language.ENGLISH;
+		
+		boolean loadData = configService.isAutoLoadGameData();
+		loadGameData.setSelected(loadData);
 	}
 }

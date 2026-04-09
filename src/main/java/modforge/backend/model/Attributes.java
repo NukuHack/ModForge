@@ -96,9 +96,6 @@ public final class Attributes {
 				else
 					log.warn("found list with unsupported type: {} type: {}", list.stream().limit(20).toList(), f.getClass());
 			return sb.toString();
-		}
-		if (v instanceof Attribute.BuffParam b) {
-			return b.toAttrString();
 		} else if (v instanceof Enum<?> e) {
 			return String.valueOf(e.ordinal());
 		} else if (v instanceof Boolean b) {
@@ -126,7 +123,7 @@ public final class Attributes {
 		
 		try {
 			if (type == Attribute.BuffParam.class) {
-				return Attribute.BuffParam.BuffParams.parse(name, value);
+				return new Attribute.ListAttribute<>(name, Attribute.BuffParam.parse(value));
 			} else if (type == List.class) {
 				return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
 			} else if (type == Boolean.class) {

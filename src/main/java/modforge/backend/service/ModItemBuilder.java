@@ -1,5 +1,7 @@
 package modforge.backend.service;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import modforge.Util;
@@ -18,6 +20,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ModItemBuilder {
 	
 	// O(1) lookup map - element name to handler
@@ -32,18 +35,16 @@ public final class ModItemBuilder {
 			if (! FILE_PARSERS.contains(spec.name())) {
 				HANDLER_MAP.put(spec.name(), new GeneralBuilder<>(spec.clazz(), spec.idKey()));
 				MAKER_MAP.put(spec.clazz(), new GeneralCreater<>(spec.clazz(), spec.idKey()));
-			} else {
-				if (spec.name().equals("storm")) {
-					HANDLER_MAP.put(spec.name(), new StormBuilder((Class<Storm>) spec.clazz(), spec.idKey()));
-					MAKER_MAP.put(spec.clazz(), new StormCreater((Class<Storm>) spec.clazz(), spec.idKey()));
-				} else if (true) {
-					// do future stuff here
-				}
+				continue;
+			}
+			
+			if (spec.name().equals("storm")) {
+				HANDLER_MAP.put(spec.name(), new StormBuilder(spec.clazz(), spec.idKey()));
+				MAKER_MAP.put(spec.clazz(), new StormCreater(spec.clazz(), spec.idKey()));
+			} else if (true) {
+				// do future stuff here
 			}
 		}
-	}
-	
-	private ModItemBuilder() {
 	}
 	
 	public static ModItem create(final Element el, final ModItem item) {
@@ -138,8 +139,8 @@ public final class ModItemBuilder {
 		return deepCopy(src, fullFinal);
 	}
 	
-	public static String groupName(ModItem item) {
-		return ItemEntry.forClass(item.getClass()).parentName();
+	public static ItemEntry group(ModItem item) {
+		return ItemEntry.forClass(item.getClass());
 	}
 	
 	protected interface BuildHandler {
@@ -184,9 +185,9 @@ public final class ModItemBuilder {
 		
 		@Override
 		public Element build(final Document document, final ModItem item) {
-			final var typeName = ItemEntry.forClass(item.getClass()).fileName;
+			final var typeName = group(item).fileName;
 			final var el = document.createElement(typeName);
-			for (Attribute<?> attr : item.getAttributes()) {
+			for (var attr : item.getAttributes()) {
 				el.setAttribute(attr.getName(), Attributes.serializeValue(attr));
 			}
 			return el;
@@ -196,13 +197,13 @@ public final class ModItemBuilder {
 	@Slf4j
 	@RequiredArgsConstructor
 	protected static final class StormBuilder implements BuildHandler {
-		private final Class<Storm> type;
+		private final Class<? extends ModItem> type;
 		private final String IdKey;
 		
 		@Override
 		public ModItem create(final Element element) {
 			try {
-				final Storm item = type.getDeclaredConstructor().newInstance();
+				final Storm item = Storm.class.getDeclaredConstructor().newInstance();
 				
 				item.setId("storm_" + Util.getRandomString(32));
 				
@@ -220,7 +221,7 @@ public final class ModItemBuilder {
 	@Slf4j
 	@RequiredArgsConstructor
 	protected static final class StormCreater implements CreateHandler {
-		private final Class<Storm> type;
+		private final Class<? extends ModItem> type;
 		private final String IdKey;
 		
 		@Override

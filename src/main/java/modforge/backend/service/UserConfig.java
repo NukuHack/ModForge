@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
@@ -20,15 +21,19 @@ public interface UserConfig {
 	
 	String getGameDirectory();
 	
-	Language getLanguage();
-	
-	String getUserName();
-	
 	void setGameDirectory(String gameDirectory);
+	
+	Language getLanguage();
 	
 	void setLanguage(Language language);
 	
+	String getUserName();
+	
 	void setUserName(String username);
+	
+	boolean isAutoLoadGameData();
+	
+	void setAutoLoadGameData(boolean bool);
 	
 	void load();
 	
@@ -36,20 +41,20 @@ public interface UserConfig {
 	
 	
 	@NoArgsConstructor(access = AccessLevel.PUBLIC)
-	@lombok.extern.slf4j.Slf4j
+	@Slf4j
+	@Getter
+	@Setter
 	final class UserConfigImpl implements UserConfig {
 		
 		private static final Path configFile = Singleton.getUserConfig();
 		
-		@Getter
-		@Setter
 		private String gameDirectory = "";
-		@Getter
-		@Setter
 		private String userName = "";
-		@Getter
-		@Setter
 		private Language language = Language.ENGLISH;
+		/**
+		 * Load all game-data or not at startup, added so debugging is faster
+		 */
+		private boolean autoLoadGameData = true;
 		
 		public void load() {
 			try {
@@ -63,26 +68,26 @@ public interface UserConfig {
 		
 		// Convert to JsonValue
 		private JsonIO.JsonObject toJsonObject() {
-			final JsonIO.JsonObject obj = new JsonIO.JsonObject();
+			final var obj = new JsonIO.JsonObject();
 			obj.put("gameDirectory", new JsonIO.JsonString(gameDirectory));
 			obj.put("userName", new JsonIO.JsonString(userName));
 			obj.put("language", new JsonIO.JsonString(language.getIsoCode()));
+			obj.put("autoLoadGameData", new JsonIO.JsonBoolean(autoLoadGameData));
 			return obj;
 		}
 		
 		// Create from JsonValue
 		private void fromJson(JsonIO.JsonValue value) {
-			if (value instanceof JsonIO.JsonObject obj) {
-				if (obj.get("gameDirectory") instanceof JsonIO.JsonString string) {
-					gameDirectory = string.getValue();
-				}
-				if (obj.get("userName") instanceof JsonIO.JsonString string) {
-					userName = string.getValue();
-				}
-				if (obj.get("language") instanceof JsonIO.JsonString string) {
-					language = Language.fromIsoCode(string.getValue());
-				}
-			}
+			if (! (value instanceof JsonIO.JsonObject obj))
+				return;
+			if (obj.get("gameDirectory") instanceof JsonIO.JsonString string)
+				gameDirectory = string.getValue();
+			if (obj.get("userName") instanceof JsonIO.JsonString string)
+				userName = string.getValue();
+			if (obj.get("language") instanceof JsonIO.JsonString string)
+				language = Language.fromIsoCode(string.getValue());
+			if (obj.get("autoLoadGameData") instanceof JsonIO.JsonBoolean bool)
+				autoLoadGameData = bool.getValue();
 		}
 		
 		public void save() {

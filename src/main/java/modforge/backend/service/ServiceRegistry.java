@@ -24,15 +24,16 @@ public final class ServiceRegistry {
 		iconService = new IconService(userConfig);
 		modService = new ModService(this);
 		
-		// used to load main game data
 		userConfig.load();
-		localService.init();
-		itemService.init();
-		// DISABLING since it uses up over 3gigs of memory, so i will rework it
-		// TODO : rework
-		//iconService.init();
+		if (userConfig.isAutoLoadGameData()) {
+			configService.init();
+			localService.init();
+			itemService.init();
+			// DISABLING since it uses up over 3gigs of memory, so i will rework it
+			// TODO : rework
+			//iconService.init();
+		}
 		
-		// used to load mod data
 		modService.init();
 	}
 	
@@ -42,12 +43,12 @@ public final class ServiceRegistry {
 	public void init() {
 		userConfig.save();
 		
+		configService.init();
 		localService.init();
 		itemService.init();
 		// TODO : rework
 		//iconService.init();
 		
 		modService.init();
-		Singleton.INSTANCE.getGame().setConfig(configService.loadGameConfig());
 	}
 }
