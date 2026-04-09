@@ -59,7 +59,6 @@ public final class ModItemBuilder {
 	}
 	
 	public static ModItem create(final Element element) {
-		Attributes.traverseElement(element);
 		// glue it together yet again, barely works
 		final var elementName = element.getTagName().toLowerCase(Locale.ROOT);
 		final var handler = HANDLER_MAP.get(elementName);

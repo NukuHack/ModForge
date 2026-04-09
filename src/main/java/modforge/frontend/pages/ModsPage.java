@@ -1,6 +1,7 @@
 package modforge.frontend.pages;
 
 import modforge.Singleton;
+import modforge.Util;
 import modforge.backend.ModData;
 import modforge.backend.service.ModService;
 import modforge.frontend.BarManager;
@@ -87,8 +88,7 @@ public class ModsPage extends BasePage {
 	
 	private void createNewMod() {
 		// Create a new mod with default values
-		String timestamp = String.valueOf(System.currentTimeMillis());
-		String defaultId = "new_mod_" + timestamp.substring(timestamp.length() - 6);
+		String defaultId = "new_mod_" + Util.getRandomString(32);
 		
 		final ModData newMod = window.getRegistry().modService.createNewMod("New Mod", "Your mod description", window.getRegistry().userConfig.getUserName(), "1.0", java.time.LocalDate.now().toString(), defaultId, false, java.util.List.of("1.0", "1.1", "1.2"));
 		

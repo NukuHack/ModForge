@@ -1,6 +1,7 @@
 package modforge.backend;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import modforge.backend.service.IconService;
 import java.util.*;
 
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
+@AllArgsConstructor
 @Slf4j
 public final class ModData {
 	private final Map<String, ModItem> items = new HashMap<>();

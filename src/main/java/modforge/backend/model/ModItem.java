@@ -42,7 +42,7 @@ public interface ModItem {
 	
 	void addAttribute(final Collection<Attribute> attributes);
 	
-	List<ModItem> getLinkedItems();
+	Set<ModItem> getLinkedItems();
 	
 	void setLinkedItem(final Collection<ModItem> linkedItems);
 	
@@ -89,7 +89,7 @@ public interface ModItem {
 	@Slf4j
 	abstract class BaseModItem implements ModItem {
 		private final List<Attribute> attributes = new ArrayList<>();
-		private final List<ModItem> linkedItems = new ArrayList<>();
+		private Set<ModItem> linkedItems = null;
 		// TODO change the ID from string to a nicer object
 		// - can not do since we have id of 0 and id of -1 ... LOL
 		@Getter
@@ -126,24 +126,30 @@ public interface ModItem {
 		}
 		
 		@Override
-		public List<ModItem> getLinkedItems() {
-			return Collections.unmodifiableList(this.linkedItems);
+		public Set<ModItem> getLinkedItems() {
+			if (this.linkedItems == null)
+				this.linkedItems = new HashSet<>();
+			return Collections.unmodifiableSet(this.linkedItems);
 		}
 		
 		@Override
 		public void setLinkedItem(final Collection<ModItem> linkedItems) {
-			this.linkedItems.clear();
-			this.linkedItems.addAll(linkedItems);
+			this.linkedItems = new HashSet<>(linkedItems);
 		}
 		
 		@Override
 		public void addLinkedItem(final ModItem linkedItem) {
+			if (this.linkedItems == null)
+				this.linkedItems = new HashSet<>();
 			this.linkedItems.add(linkedItem);
 		}
 		
 		@Override
 		public void addLinkedItem(final Collection<ModItem> linkedItem) {
-			this.linkedItems.addAll(linkedItem);
+			if (this.linkedItems == null)
+				this.linkedItems = new HashSet<>(linkedItem);
+			else
+				this.linkedItems.addAll(linkedItem);
 		}
 		
 		@Override

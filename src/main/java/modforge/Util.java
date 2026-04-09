@@ -690,7 +690,7 @@ public final class Util {
 	}
 	
 	/**
-	 * Low n bits of nanoTime → 8 hex chars, e.g. "a3f9c012"
+	 * Low n bits of nanoTime 32 bit → 8 hex chars, e.g. "a3f9c012"
 	 * @param n number of bits to use (must be multiple of 4, max 32)
 	 */
 	public static String getRandomString(int n) {

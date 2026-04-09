@@ -1,8 +1,10 @@
 package modforge.backend;
 
 import lombok.extern.slf4j.Slf4j;
+import modforge.backend.model.E;
 import modforge.backend.model.I;
 import modforge.backend.model.ModItem;
+import modforge.backend.service.JsonIO;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -176,6 +178,9 @@ public enum ItemEntry {
 	public String parentName() {
 		if (fileName.endsWith("s"))
 			return fileName;
+		if (fileName.equals("item"))
+			// TODO : this cares about the version attribute it has so this has to be reworked quiet a bit
+			return "ItemClasses";
 		return fileName + "s";
 		// TODO : some of the items have special parent stuffs so ... I'll do it later
 	}

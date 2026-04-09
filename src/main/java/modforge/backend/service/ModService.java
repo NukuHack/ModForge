@@ -5,7 +5,6 @@ import modforge.Util;
 import modforge.backend.ModData;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -154,37 +153,6 @@ public final class ModService {
 		}
 	}
 	
-	public void init() {
-		final String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank()) {
-			log.warn("Game directory not configured - skipping mod collection scan.");
-			return;
-		}
-		
-		final Path modsFolder = Util.modFolder(gameDir);
-		try {
-			Files.createDirectories(modsFolder);
-		} catch (IOException e) {
-			log.error("Cannot create Mods folder: {}", e.getMessage());
-			return;
-		}
-		
-		modCollection.clear();
-		
-		try (var stream = Files.list(modsFolder)) {
-			stream.filter(Files::isDirectory).forEach(modPath -> {
-				var mod = loadMod(modPath);
-				if (mod == null)
-					log.warn("Cannot read mod at {}", modPath);
-				
-				if (! modCollection.contains(mod))
-					modCollection.add(mod);
-			});
-		} catch (IOException e) {
-			log.warn("Cannot list Mods folder: {}", e.getMessage());
-		}
-	}
-	
 	public static ModData loadMod(Path modPath) {
 		final var mod = loadModManifest(modPath);
 		
@@ -198,33 +166,6 @@ public final class ModService {
 		mod.setIcon(IconService.loadModIcons(dataPath));
 		
 		return mod;
-	}
-	
-	// ------------------------------------------------------------------
-	// Helpers
-	// ------------------------------------------------------------------
-	
-	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel, List<String> supportedVersions) {
-		if (name.isBlank() || modId.isBlank()) {
-			log.warn("createNewMod: required fields missing.");
-			return new ModData();
-		}
-		if (modCollection.stream().anyMatch(mod -> mod.id.equals(modId))) {
-			log.warn("createNewMod: mod ID '{}' already exists.", modId);
-			return new ModData();
-		}
-		final var m = new ModData();
-		m.id = modId;
-		m.name = name;
-		m.description = description;
-		m.author = author;
-		m.modVersion = version;
-		m.createdOn = createdOn;
-		m.modifiesLevel = modifiesLevel;
-		m.supportsGameVersions = new ArrayList<>(supportedVersions);
-		modCollection.add(m);
-		log.info("Mod '{}' [{}] created.", name, modId);
-		return m;
 	}
 	
 	/**
@@ -257,6 +198,10 @@ public final class ModService {
 		
 		log.info("Mod export completed: {}", mod.id);
 	}
+	
+	// ------------------------------------------------------------------
+	// Helpers
+	// ------------------------------------------------------------------
 	
 	/**
 	 * Pack each staging folder into its own PAK file and then delete the staging dir.
@@ -370,5 +315,51 @@ public final class ModService {
 			log.warn("could not parse manifest");
 			return null;
 		}
+	}
+	
+	public void init() {
+		final String gameDir = userConfig.getGameDirectory();
+		if (gameDir == null || gameDir.isBlank()) {
+			log.warn("Game directory not configured - skipping mod collection scan.");
+			return;
+		}
+		
+		final Path modsFolder = Util.modFolder(gameDir);
+		try {
+			Files.createDirectories(modsFolder);
+		} catch (IOException e) {
+			log.error("Cannot create Mods folder: {}", e.getMessage());
+			return;
+		}
+		final var start = System.currentTimeMillis();
+		modCollection.clear();
+		try (var stream = Files.list(modsFolder)) {
+			stream.filter(Files::isDirectory).forEach(modPath -> {
+				var mod = loadMod(modPath);
+				if (mod == null)
+					log.warn("Cannot read mod at {}", modPath);
+				
+				if (! modCollection.contains(mod))
+					modCollection.add(mod);
+			});
+		} catch (IOException e) {
+			log.warn("Cannot list Mods folder: {}", e.getMessage());
+		}
+		log.info("Mod loading took: {}ms", System.currentTimeMillis() - start);
+	}
+	
+	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel, List<String> supportedVersions) {
+		if (name.isBlank() || modId.isBlank()) {
+			log.warn("createNewMod: required fields missing.");
+			return new ModData();
+		}
+		if (modCollection.stream().anyMatch(mod -> mod.id.equals(modId))) {
+			log.warn("createNewMod: mod ID '{}' already exists.", modId);
+			return new ModData();
+		}
+		final var m = new ModData(modId, name, description, author, version, createdOn, modifiesLevel, supportedVersions);
+		modCollection.add(m);
+		log.info("Mod '{}' [{}] created.", name, modId);
+		return m;
 	}
 }

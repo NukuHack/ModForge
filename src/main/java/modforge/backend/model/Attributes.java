@@ -26,29 +26,8 @@ public final class Attributes {
 	}
 	
 	/**
-	 * Walk the entire document tree and record the best-guess Java type for
-	 * every XML attribute name encountered. Idempotent – safe to call many times.
+	 * Record the best-guess Java type for an XML attribute name
 	 */
-	public static void traverseElement(final Element el) {
-		final var attrs = el.getAttributes();
-		for (int i = 0; i < attrs.getLength(); i++) {
-			final var a = (Attr) attrs.item(i);
-			String name = a.getLocalName();
-			final String value = a.getValue();
-			if (name == null)
-				continue;
-			TYPE_MAP.computeIfAbsent(name, n -> inferType(n, value == null ? "" : value.trim()));
-		}
-		final var children = el.getChildNodes();
-		final int len = children.getLength();
-		if (len == 0)
-			return;
-		for (int i = 0; i < len; i++) {
-			if (children.item(i) instanceof Element child)
-				traverseElement(child);
-		}
-	}
-	
 	private static Class<?> inferType(final String name, final String value) {
 		final String lo = name.toLowerCase();
 		if (lo.endsWith("id") || lo.endsWith("class"))
@@ -84,15 +63,17 @@ public final class Attributes {
 		final T v = attr.getValue();
 		if (v == null)
 			return "";
-		if (attr instanceof List<?> list) {
+		if (v instanceof List<?> list) {
 			if (list.isEmpty())
 				return "";
-			if (list.get(0) instanceof String)
+			else if (list.get(0) instanceof String)
 				return String.join(",", list.stream().map(Object::toString).toList());
 			var sb = new StringBuilder();
 			for (var f : list)
 				if (f instanceof Attribute<?> a)
 					sb.append(serializeValue(a)).append(',');
+				else if (f instanceof Attribute.BuffParam b)
+					sb.append(b).append(',');
 				else
 					log.warn("found list with unsupported type: {} type: {}", list.stream().limit(20).toList(), f.getClass());
 			return sb.toString();
@@ -102,7 +83,7 @@ public final class Attributes {
 			return b.toString().toLowerCase(Locale.ROOT);
 		} else if (v instanceof Double d) {
 			if (Double.isInfinite(d) || Double.isNaN(d))
-				return "-1";
+				return "1";
 			long rounded = Math.round(d);
 			if (Math.abs(d - rounded) < 1e-8)
 				return String.valueOf(rounded);
@@ -119,7 +100,8 @@ public final class Attributes {
 	public static Attribute create(final String name, String value) {
 		if (value == null || (value = value.trim()).isEmpty())
 			return new Attribute.StringAttribute(name, "");
-		final Class<?> type = TYPE_MAP.getOrDefault(name, String.class);
+		final var v = value;
+		final Class<?> type = TYPE_MAP.computeIfAbsent(name, n -> inferType(n, v));
 		
 		try {
 			if (type == Attribute.BuffParam.class) {
