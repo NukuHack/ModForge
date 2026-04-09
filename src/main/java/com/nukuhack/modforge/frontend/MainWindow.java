@@ -1,11 +1,10 @@
 package com.nukuhack.modforge.frontend;
 
+import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.pages.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import com.nukuhack.modforge.backend.service.ServiceRegistry;
-import com.nukuhack.modforge.frontend.pages.*;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;

@@ -1,8 +1,8 @@
 package com.nukuhack.modforge.backend;
 
-import lombok.extern.slf4j.Slf4j;
 import com.nukuhack.modforge.backend.model.I;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -93,7 +93,7 @@ public enum ItemEntry {
 	
 	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", "perk_script", true),
 	
-	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParams", "ScriptParam", true),
+	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParams", "scriptparam", true),
 	
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", true),
 	
@@ -129,7 +129,7 @@ public enum ItemEntry {
 	 * (e.g. {@code "MeleeWeapon"} → {@code "meleeweapon"},
 	 *  {@code "NPCTool"} → {@code "npctool"}).
 	 */
-	public final String objName;
+	public final String xmlObjName;
 	/**
 	 * Whether this class should appear in the frontend item-type dropdown.
 	 * Weapon-class entries are excluded ({@code false}); everything else is {@code true}.
@@ -141,12 +141,12 @@ public enum ItemEntry {
 	// ────────────────────────────────────────────────────────────────────────
 	
 	/** Constructor with an explicit label override. */
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String objName, boolean showInDisplay) {
+	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String xmlObjName, boolean showInDisplay) {
 		this.clazz = clazz;
 		this.idKey = idKey;
 		this.fileName = fileName;
 		this.showInDisplay = showInDisplay;
-		this.objName = objName;
+		this.xmlObjName = xmlObjName;
 	}
 	
 	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, boolean showInDisplay) {

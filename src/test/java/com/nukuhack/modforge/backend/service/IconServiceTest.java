@@ -2,8 +2,8 @@ package com.nukuhack.modforge.backend.service;
 
 import com.nukuhack.image.DDSUtil;
 import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.model.Attribute;
+import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.model.ModItem.BaseModItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

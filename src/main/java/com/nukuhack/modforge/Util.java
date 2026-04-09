@@ -1,9 +1,9 @@
 package com.nukuhack.modforge;
 
+import com.nukuhack.modforge.backend.model.E.Language;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.nukuhack.modforge.backend.model.E.Language;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
@@ -33,7 +33,7 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 public final class Util {
 	// ================================================================================
-	// APPLICATION CONSTANTS - Modify these to change application behavior
+	// CONSTANTS
 	// ================================================================================
 	
 	/** Application name used for config directories and UI display */
@@ -50,9 +50,6 @@ public final class Util {
 	/** Main game tables PAK file containing game data tables */
 	public static final String TABLES = "Tables.pak";
 	
-	// ================================================================================
-	// GAME FILE CONSTANTS - Modify if game file names change
-	// ================================================================================
 	/** Storm engine PAK file containing core engine resources */
 	public static final String STORM = "Storm.pak";
 	/** Standard compression/archive format extension for game files */
@@ -64,9 +61,6 @@ public final class Util {
 	/** Directory name for localization/language files */
 	public static final String LOCALIZATION_DIR = "Localization";
 	
-	// ================================================================================
-	// DIRECTORY STRUCTURE CONSTANTS - Modify to change folder organization
-	// ================================================================================
 	/** Suffix added to language names for localization PAK files (e.g., "en_xml") */
 	public static final String LOCALIZATION_EXTRA = "_xml";
 	/** Main game data directory containing core game assets */
@@ -77,11 +71,7 @@ public final class Util {
 	public static final String TABLES_DIR = "Tables";
 	/** Root directory for all mod installations */
 	public static final String MODS_DIR = "Mods";
-	private static final FileTime EPOCH = FileTime.fromMillis(0);
 	
-	// ================================================================================
-	// STRING UTILITIES
-	// ================================================================================
 	
 	static {
 		String user = System.getenv("USERNAME"); // Windows
@@ -116,10 +106,6 @@ public final class Util {
 			return s;
 		return Character.toUpperCase(s.charAt(0)) + s.substring(1);
 	}
-	
-	// ================================================================================
-	// PATH CONSTRUCTION METHODS - All paths are built using constants above
-	// ================================================================================
 	
 	public static String capitalStartOnly(String s) {
 		if (s == null || s.isEmpty())
@@ -281,10 +267,6 @@ public final class Util {
 		return Arrays.stream(Language.values()).map(l -> locImport(root, l)).collect(Collectors.toSet());
 	}
 	
-	// ================================================================================
-	// PATH JOINING UTILITIES
-	// ================================================================================
-	
 	/**
 	 * Returns the icons PAK file path.
 	 * Structure: {gameDataDir}/{ICONS}
@@ -325,10 +307,6 @@ public final class Util {
 		return Path.of(join(parts));
 	}
 	
-	// ================================================================================
-	// XML PROCESSING UTILITIES
-	// ================================================================================
-	
 	/**
 	 * Join a base Path with additional segments.
 	 *
@@ -359,10 +337,6 @@ public final class Util {
 			fileWriter.write(inp);
 		}
 	}
-	
-	// ================================================================================
-	// STRING ESCAPING UTILITIES
-	// ================================================================================
 	
 	private static String removeEmpty(String inp) {
 		var nL = "\n";
@@ -425,10 +399,6 @@ public final class Util {
 		// theoretically escapeHtml could work, but I made this just in case
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
 	}
-	
-	// ================================================================================
-	// CLIPBOARD AND UI UTILITIES
-	// ================================================================================
 	
 	/**
 	 * Unescapes common XML entities back to their original characters.
@@ -503,10 +473,6 @@ public final class Util {
 		return future;
 	}
 	
-	// ================================================================================
-	// FILE TYPE DETECTION
-	// ================================================================================
-	
 	/**
 	 * Opens a directory in the operating system's file explorer.
 	 * Cross-platform support for Windows, macOS, and Linux.
@@ -550,10 +516,6 @@ public final class Util {
 		}
 	}
 	
-	// ================================================================================
-	// CONFIGURATION DIRECTORY - Platform-specific paths using APP_NAME constant
-	// ================================================================================
-	
 	/**
 	 * Determines if a file is ZIP-like (ZIP or PAK) by checking extension or magic bytes.
 	 *
@@ -572,10 +534,6 @@ public final class Util {
 			return false;
 		}
 	}
-	
-	// ================================================================================
-	// PAK FILE PACKING UTILITIES
-	// ================================================================================
 	
 	/**
 	 * Returns the application configuration directory following platform conventions.
@@ -663,10 +621,6 @@ public final class Util {
 			return false;
 		}
 	}
-	
-	// ================================================================================
-	// FILE SYSTEM OPERATIONS
-	// ================================================================================
 	
 	/**
 	 * Recursively deletes a file or directory and all its contents.

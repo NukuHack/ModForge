@@ -1,8 +1,8 @@
 package com.nukuhack.modforge.backend.service;
 
-import lombok.NonNull;
 import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.backend.ModData;
+import lombok.NonNull;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

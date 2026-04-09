@@ -1,10 +1,10 @@
 package com.nukuhack.modforge.backend.model;
 
+import com.nukuhack.modforge.backend.ItemType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import com.nukuhack.modforge.backend.ItemType;
 
 import java.util.*;
 
@@ -178,6 +178,14 @@ public interface ModItem {
 		public String toString() {
 			return this.getClass().getName() + "{attributes=" + attributes + ", linkedItems=" + linkedItems + ", id='" + id + '\'' + ", path='" + path + '\'' + '}';
 		}
+	}
+	
+	@NoArgsConstructor
+	@Slf4j
+	class EmptyImpl extends BaseModItem{
+		@Getter
+		@Setter
+		private String idKey;
 	}
 	
 }

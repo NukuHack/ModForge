@@ -40,7 +40,7 @@ public final class Attributes {
 		try {
 			UUID.fromString(value);
 			// TODO : actually save them as UUID
-			return String.class;
+			return UUID.class;
 		} catch (Exception ignored) {
 		}
 		
@@ -55,14 +55,6 @@ public final class Attributes {
 		return String.class;
 	}
 	
-	
-	public static <T> String serializeValue(Attribute<T> attr) {
-		final T v = attr.getValue();
-		if (v == null)
-			return "";
-		return attr.serialize();
-	}
-	
 	/**
 	 * Create a typed IAttribute from a raw XML name/value pair.
 	 * Falls back to String if the type is not yet discovered.
@@ -74,7 +66,12 @@ public final class Attributes {
 		final Class<?> type = TYPE_MAP.computeIfAbsent(name, n -> inferType(n, v));
 		
 		try {
-			if (type == Attribute.BuffParam.class) {
+			if (type == UUID.class) {
+				//return new Attribute.UUID(name, UUID.fromString(value));
+				return new Attribute.StringAttribute(name, value);
+			} else if (type == String.class) {
+				return new Attribute.StringAttribute(name, value);
+			} else if (type == Attribute.BuffParam.class) {
 				return new Attribute.BuffParamListAttribute(name, value);
 			} else if (type == List.class) {
 				return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
@@ -83,13 +80,12 @@ public final class Attributes {
 			} else if (type == Double.class) {
 				return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
 			} else if (type.isEnum()) {
-				@SuppressWarnings("unchecked") Class<? extends Enum> enumType = (Class<? extends Enum>) type;
-				return new Attribute.EnumAttribute(name, Enum.valueOf(enumType, value));
+				return new Attribute.EnumAttribute(name, Enum.valueOf((Class<? extends Enum>) type, value));
 			}
+			throw new IllegalArgumentException("Attribute is not a known type");
 		} catch (Exception ex) {
 			log.warn("Cannot parse attribute '{}'='{}': {}", name, value, ex.getMessage());
+			return new Attribute.StringAttribute(name, value);
 		}
-		// fallback -> all of it is string
-		return new Attribute.StringAttribute(name, value);
 	}
 }

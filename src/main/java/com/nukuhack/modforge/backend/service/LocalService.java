@@ -1,11 +1,12 @@
 package com.nukuhack.modforge.backend.service;
 
-import lombok.NonNull;
 import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -18,9 +19,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipFile;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class LocalService {
-	private static final String EXTRA = "_xml.pak";
 	/**
 	 * Thread-local XMLInputFactory — one pre-configured instance per thread,
 	 * avoids repeated factory construction and carries the entity-size fix.

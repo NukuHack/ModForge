@@ -1,20 +1,20 @@
 package com.nukuhack.modforge.backend.service;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ItemEntry;
-import com.nukuhack.modforge.backend.ItemType;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.Attributes;
 import com.nukuhack.modforge.backend.model.I.Storm;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -26,28 +26,30 @@ public final class ModItemBuilder {
 	static final Set<String> FILE_PARSERS = new HashSet<>();
 	static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
 	static final Map<Class<? extends ModItem>, CreateHandler> MAKER_MAP = new HashMap<>();
+	static final FallbackBuilder fallbackBuilder = new FallbackBuilder();
 	
 	static {
 		FILE_PARSERS.add("storm");
 		// Build the handler map once at class initialization
-		for (var spec : ItemType.getHandlerSpecs()) {
-			if (! FILE_PARSERS.contains(spec.name())) {
-				HANDLER_MAP.put(spec.name(), new GeneralBuilder<>(spec.clazz(), spec.idKey()));
-				MAKER_MAP.put(spec.clazz(), new GeneralCreater<>(spec.clazz(), spec.idKey()));
+		for (var spec : ItemEntry.values()) {
+			var name = spec.xmlObjName;
+			if (! FILE_PARSERS.contains(name)) {
+				HANDLER_MAP.put(name, new GeneralBuilder<>(spec.clazz, spec.idKey));
+				MAKER_MAP.put(spec.clazz, new GeneralCreater<>(spec.clazz, spec.idKey));
 				continue;
 			}
 			
-			if (spec.name().equals("storm")) {
-				HANDLER_MAP.put(spec.name(), new StormBuilder(spec.clazz(), spec.idKey()));
-				MAKER_MAP.put(spec.clazz(), new StormCreater(spec.clazz(), spec.idKey()));
+			if ("storm".equals(name)) {
+				HANDLER_MAP.put(name, new StormBuilder(spec.clazz, spec.idKey));
+				MAKER_MAP.put(spec.clazz, new StormCreater(spec.clazz, spec.idKey));
 			} else if (true) {
 				// do future stuff here
 			}
 		}
 	}
 	
-	public static ModItem create(final Element el, final ModItem item) {
-		final var xmlAttrs = el.getAttributes();
+	public static <I extends ModItem> I create(final Element el, final I item) {
+		var xmlAttrs = el.getAttributes();
 		final var list = new ArrayList<Attribute>(xmlAttrs.getLength());
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
 			final var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
@@ -60,36 +62,21 @@ public final class ModItemBuilder {
 	public static ModItem create(final Element element) {
 		// glue it together yet again, barely works
 		final var elementName = element.getTagName().toLowerCase(Locale.ROOT);
-		final var handler = HANDLER_MAP.get(elementName);
+		final var handler = HANDLER_MAP.getOrDefault(elementName, fallbackBuilder);
 		
-		if (handler != null) {
-			return handler.create(element);
-		}
-		
-		log.info("No creater matched element <{}>", elementName);
-		if (log.isDebugEnabled()) {
-			final var attributes = element.getAttributes();
-			final var map = new HashMap<>();
-			
-			for (int i = 0; i < attributes.getLength(); i++) {
-				var attr = attributes.item(i);
-				map.put(attr.getNodeName(), attr.getNodeValue());
-			}
-			log.debug("No creater matched element data {}", map);
-		}
-		return null;
+		return handler.create(element);
 	}
 	
-	public static Element build(final Document document, final ModItem item) {
+	public static Optional<Element> build(final Document document, final ModItem item) {
 		// getting the correct one from HANDLER_MAP
 		final var maker = MAKER_MAP.get(item.getClass());
 		
-		if (maker != null) {
-			return maker.build(document, item);
-		}
+		// Intentional - No serialization if item is not correct, we don't want incorrect data to be serialized
+		if (maker != null)
+			return Optional.of(maker.build(document, item));
 		
 		log.info("No builder matched item <{}>", item);
-		return null;
+		return Optional.empty();
 	}
 	
 	
@@ -154,18 +141,33 @@ public final class ModItemBuilder {
 	 * simple class name (case-insensitive) and populates a configurable ID attribute.
 	 */
 	@Slf4j
-	@RequiredArgsConstructor
-	protected static final class GeneralBuilder<M extends ModItem> implements BuildHandler {
+	protected static class GeneralBuilder<M extends ModItem> implements BuildHandler {
 		private final Class<M> type;
-		private final String IdKey;
+		private final String idKey;
+		private final Constructor<M> cons;
+		
+		protected GeneralBuilder(Class<M> type, String idKey) {
+			this.type = type;
+			this.idKey = idKey;
+			Constructor<M> cons;
+			try {
+				cons = type.getDeclaredConstructor();
+			} catch (NoSuchMethodException e) {
+				cons = null;
+				log.warn("failed to get constructor for type: {} falling back to Fallback", type.getSimpleName());
+			}
+			this.cons = cons;
+		}
 		
 		@Override
 		public ModItem create(final Element element) {
 			try {
-				final M item = type.getDeclaredConstructor().newInstance();
+				if (cons == null)
+					return fallbackBuilder.create(element);
+				final M item = cons.newInstance();
 				
-				final var idValue = element.getAttribute(IdKey);
-				item.setId(idValue.isBlank() ? null : idValue);
+				final var idValue = element.getAttribute(idKey);
+				item.setId(idValue);
 				
 				return ModItemBuilder.create(element, item);
 			} catch (final Exception e) {
@@ -177,7 +179,7 @@ public final class ModItemBuilder {
 	
 	@Slf4j
 	@RequiredArgsConstructor
-	protected static final class GeneralCreater<M extends ModItem> implements CreateHandler {
+	protected static class GeneralCreater<M extends ModItem> implements CreateHandler {
 		private final Class<M> type;
 		private final String IdKey;
 		
@@ -186,15 +188,53 @@ public final class ModItemBuilder {
 			final var typeName = group(item).fileName;
 			final var el = document.createElement(typeName);
 			for (var attr : item.getAttributes()) {
-				el.setAttribute(attr.getName(), Attributes.serializeValue(attr));
+				el.setAttribute(attr.getName(), attr.serialize());
 			}
 			return el;
 		}
 	}
 	
+	private static class FallbackBuilder implements BuildHandler {
+		@Override
+		public ModItem create(Element element) {
+			final var elementName = element.getTagName().toLowerCase(Locale.ROOT);
+			log.info("No creater matched element <{}>", elementName);
+			
+			// using if- so the compiler sees it as good code
+			if (true) return null;
+			
+			final var attributes = element.getAttributes();
+			final Map<String, String> map = new HashMap<>();
+			for (int i = 0; i < attributes.getLength(); i++) {
+				final var a = (org.w3c.dom.Attr) attributes.item(i);
+				map.put(a.getName(), a.getValue());
+			}
+			
+			log.trace("No creater matched element data {}", map);
+			final var item = new ModItem.EmptyImpl();
+			String id = null; String name = null;
+			for (var key : map.keySet()) {
+				if (id == null && key.toLowerCase().endsWith("id"))
+					id = key;
+				if (name == null && key.equalsIgnoreCase("name"))
+					name = key;
+			}
+			final var idKey = id != null ? id : name != null ? name : "";
+			final var idValue = element.getAttribute(idKey);
+			item.setIdKey(idKey);
+			item.setId(idValue);
+			log.debug("set unknown item's id to be key={}, val={}", idKey, idValue);
+			
+			for (var ent : map.entrySet())
+				item.addAttribute(Attributes.create(ent.getKey(), ent.getValue()));
+			
+			return item;
+		}
+	}
+	
 	@Slf4j
 	@RequiredArgsConstructor
-	protected static final class StormBuilder implements BuildHandler {
+	protected static class StormBuilder implements BuildHandler {
 		private final Class<? extends ModItem> type;
 		private final String IdKey;
 		
@@ -218,7 +258,7 @@ public final class ModItemBuilder {
 	
 	@Slf4j
 	@RequiredArgsConstructor
-	protected static final class StormCreater implements CreateHandler {
+	protected static class StormCreater implements CreateHandler {
 		private final Class<? extends ModItem> type;
 		private final String IdKey;
 		

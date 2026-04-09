@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -44,19 +44,6 @@ class StormServiceTest {
 	// -------------------------------------------------------------------------
 	// Helper methods for creating test PAK files and XML content
 	// -------------------------------------------------------------------------
-	
-	/**
-	 * Creates a .pak file (ZIP) at the given path containing the specified entries.
-	 */
-	private void createPak(Path pakPath, Map<String, String> entries) throws IOException {
-		try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(pakPath))) {
-			for (var entry : entries.entrySet()) {
-				zos.putNextEntry(new ZipEntry(entry.getKey()));
-				zos.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
-				zos.closeEntry();
-			}
-		}
-	}
 	
 	/**
 	 * Creates a minimal valid Storm XML document.

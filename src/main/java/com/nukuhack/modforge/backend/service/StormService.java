@@ -1,9 +1,9 @@
 package com.nukuhack.modforge.backend.service;
 
+import com.nukuhack.modforge.backend.model.I.Storm;
 import com.nukuhack.modforge.backend.model.storm.*;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import com.nukuhack.modforge.backend.model.I.Storm;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -100,8 +100,6 @@ import java.util.function.Consumer;
 public final class StormService {
 	
 	final static DocumentBuilder docBuilder;
-	/** Path prefix inside PAKs where Storm XML files reside. */
-	private static final String STORM_PATH_PREFIX = "Libs/Storm/";
 	/** Combinator selector tags that may contain nested selectors. */
 	private static final Set<String> COMBINATORS = Set.of("and", "or", "not");
 	

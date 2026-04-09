@@ -1,13 +1,12 @@
 package com.nukuhack.modforge.backend;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.service.IconService;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
@@ -44,20 +43,21 @@ public final class ModData {
 		items.put(item.getId(), item);
 	}
 	
-	public @NonNull Collection<ModItem> getItems() {
+	public Collection<ModItem> getItems() {
 		return Collections.unmodifiableCollection(items.values());
 	}
 	
-	public void setItems(@NonNull Collection<ModItem> input) {
+	public void setItems(Collection<ModItem> input) {
 		this.items.clear();
 		Map<String, List<ModItem>> duplicates = new HashMap<>();
 		input.forEach(i -> {
-			if (log.isDebugEnabled() && this.items.containsKey(i.getId())) {
-				duplicates.computeIfAbsent(i.getId(), k -> new ArrayList<>()).add(this.items.get(i.getId()));
-				duplicates.get(i.getId()).add(i);
-				log.debug("Duplicated item: {}", i);
+			var itemId = i.getId();
+			if (log.isDebugEnabled() && this.items.containsKey(itemId)) {
+				duplicates.computeIfAbsent(itemId, k -> new ArrayList<>()).add(this.items.get(itemId));
+				duplicates.get(itemId).add(i);
+				log.debug("Duplicated item: {}, original was: {}", i, this.items.get(itemId));
 			}
-			this.items.put(i.getId(), i);
+			this.items.put(itemId, i);
 		});
 		
 		if (! duplicates.isEmpty()) {
@@ -65,7 +65,7 @@ public final class ModData {
 		}
 	}
 	
-	public @NonNull Map<String, ModItem> items() {
+	public Map<String, ModItem> items() {
 		return Collections.unmodifiableMap(items);
 	}
 	

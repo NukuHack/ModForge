@@ -2,8 +2,8 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.image.ConversionOptions;
 import com.nukuhack.image.ImageConverter;
-import lombok.extern.slf4j.Slf4j;
 import com.nukuhack.modforge.Util;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import java.awt.*;
@@ -190,28 +190,22 @@ public class KCDConverterGUI extends JFrame {
                     appendLog("Converting single file: " + inputPath);
                     ImageConverter.convertImage(inputPath, opts);
                 } else {
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(this, 
-                            "Input path is not a .dds file or a directory: " + inputPath, 
-                            "Error", JOptionPane.ERROR_MESSAGE);
-                    });
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+						"Input path is not a .dds file or a directory: " + inputPath,
+						"Error", JOptionPane.ERROR_MESSAGE));
                     return;
                 }
                 
                 appendLog("Conversion completed successfully!");
                 
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, "Conversion completed!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                });
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Conversion completed!", "Success", JOptionPane.INFORMATION_MESSAGE));
                 
             } catch (Exception ex) {
                 log.error("Conversion failed", ex);
                 appendLog("ERROR: " + ex.getMessage());
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, 
-                        "Conversion failed: " + ex.getMessage(), 
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                });
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+					"Conversion failed: " + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE));
             } finally {
                 SwingUtilities.invokeLater(() -> convertButton.setEnabled(true));
             }

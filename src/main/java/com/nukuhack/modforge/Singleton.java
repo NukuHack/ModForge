@@ -1,12 +1,12 @@
 package com.nukuhack.modforge;
 
+import com.nukuhack.modforge.backend.ModData;
+import com.nukuhack.modforge.backend.service.ServiceRegistry;
+import com.nukuhack.modforge.frontend.MainWindow;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.service.ServiceRegistry;
-import com.nukuhack.modforge.frontend.MainWindow;
 
 import java.io.IOException;
 import java.nio.file.Files;

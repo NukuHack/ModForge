@@ -1,9 +1,9 @@
 package com.nukuhack.modforge.backend.model;
 
-import lombok.*;
-import lombok.extern.slf4j.Slf4j;
 import com.nukuhack.modforge.backend.model.ModItem.BaseModItem;
 import com.nukuhack.modforge.backend.model.storm.StormData;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * I -> Item

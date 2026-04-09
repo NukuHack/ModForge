@@ -1,11 +1,11 @@
 package com.nukuhack.modforge.backend.service;
 
 import com.nukuhack.image.DDSUtil;
-import lombok.NonNull;
 import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.NonNull;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

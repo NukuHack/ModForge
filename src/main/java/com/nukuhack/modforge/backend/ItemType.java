@@ -1,9 +1,8 @@
 package com.nukuhack.modforge.backend;
 
+import com.nukuhack.modforge.backend.model.ModItem;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import com.nukuhack.modforge.backend.model.ModItem;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -19,9 +18,6 @@ public final class ItemType {
 	/** class → idKey */
 	private static final Map<Class<? extends ModItem>, String> ID_KEYS;
 	
-	/** Ordered list of (class, idKey) pairs for ModItemBuilder */
-	private static final List<HandlerSpec> HANDLER_SPECS;
-	
 	/** Display entries for the frontend dropdown */
 	private static final List<ITDisplay> DISPLAYS;
 	
@@ -30,7 +26,6 @@ public final class ItemType {
 	
 	static {
 		Map<Class<? extends ModItem>, String> idMap = new LinkedHashMap<>();
-		List<HandlerSpec> specs = new ArrayList<>();
 		List<ITDisplay> displays = new ArrayList<>();
 		Set<String> epKeys = new HashSet<>();
 		
@@ -39,7 +34,6 @@ public final class ItemType {
 		for (final var e : ItemEntry.values()) {
 			// id key (first registration wins – ItemEntry order is the priority)
 			idMap.put(e.clazz, e.idKey);
-			specs.add(new HandlerSpec(e.clazz, e.idKey, e.objName.toLowerCase()));
 			
 			// endpoint key set
 			epKeys.add(e.fileName.toLowerCase());
@@ -60,7 +54,6 @@ public final class ItemType {
 		});
 		
 		ID_KEYS = Collections.unmodifiableMap(idMap);
-		HANDLER_SPECS = Collections.unmodifiableList(specs);
 		DISPLAYS = Collections.unmodifiableList(displays);
 		ENDPOINT_KEYS = Collections.unmodifiableSet(epKeys);
 	}
@@ -102,21 +95,8 @@ public final class ItemType {
 		return ID_KEYS.getOrDefault(clazz, "Id");
 	}
 	
-	/**
-	 * Ordered list of (class, idAttrKey) pairs – the single source of truth
-	 * consumed by {@code ModItemBuilder.createDefault()} to build its handler list.
-	 */
-	public static List<HandlerSpec> getHandlerSpecs() {
-		return HANDLER_SPECS;
-	}
-	
-	// ── Nested types (public API – unchanged) ─────────────────────────────────
-	
-	/** Pair of a concrete item class and the XML attribute name that holds its ID. */
-	public record HandlerSpec(@NonNull Class<? extends ModItem> clazz, @NonNull String idKey, @NonNull String name) {
-	}
 	
 	/** Display entry for the frontend type dropdown. */
-	private record ITDisplay(@NonNull String displayName, @NonNull Predicate<ModItem> matcher) {
+	private record ITDisplay(String displayName, Predicate<ModItem> matcher) {
 	}
 }

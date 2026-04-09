@@ -1,10 +1,10 @@
 package com.nukuhack.modforge.backend.model;
 
+import com.nukuhack.modforge.backend.model.E.MathOperation;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.nukuhack.modforge.backend.model.E.MathOperation;
 
 import java.util.*;
 import java.util.function.Predicate;

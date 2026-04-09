@@ -1,14 +1,14 @@
 package com.nukuhack.modforge.backend.service;
 
+import com.nukuhack.modforge.Singleton;
+import com.nukuhack.modforge.Util;
+import com.nukuhack.modforge.backend.ModData;
+import com.nukuhack.modforge.backend.model.E.Language;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import com.nukuhack.modforge.Singleton;
-import com.nukuhack.modforge.Util;
-import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.model.E.Language;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

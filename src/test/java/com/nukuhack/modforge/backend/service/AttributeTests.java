@@ -1,8 +1,8 @@
 package com.nukuhack.modforge.backend.service;
 
-import lombok.extern.slf4j.Slf4j;
 import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.Attributes;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -62,7 +62,7 @@ class AttributeTests {
         @DisplayName("serialize: returns the string value unchanged")
         void serialize() {
             var attr = new Attribute.StringAttribute("perk_name", "Enthusiast");
-            assertEquals("Enthusiast", Attributes.serializeValue(attr));
+            assertEquals("Enthusiast", attr.serialize());
         }
 
         @Test
@@ -103,7 +103,7 @@ class AttributeTests {
         void roundTrip() {
             String value = "some_perk_name_with_underscores";
             var attr = Attributes.create("perk_name", value);
-            assertEquals(value, Attributes.serializeValue(attr));
+            assertEquals(value, attr.serialize());
         }
     }
 
@@ -137,8 +137,8 @@ class AttributeTests {
         @Test
         @DisplayName("serialize: true → 'true', false → 'false' (lowercase)")
         void serialize() {
-            assertEquals("true",  Attributes.serializeValue(new Attribute.BooleanAttribute("x", true)));
-            assertEquals("false", Attributes.serializeValue(new Attribute.BooleanAttribute("x", false)));
+            assertEquals("true",  new Attribute.BooleanAttribute("x", true).serialize());
+            assertEquals("false", new Attribute.BooleanAttribute("x", false).serialize());
         }
 
         @Test
@@ -146,7 +146,7 @@ class AttributeTests {
         void roundTripTrue() {
             Attributes.TYPE_MAP.put("flag_rt", Boolean.class);
             var attr = Attributes.create("flag_rt", "true");
-            assertEquals("true", Attributes.serializeValue(attr));
+            assertEquals("true", attr.serialize());
         }
 
         @Test
@@ -154,7 +154,7 @@ class AttributeTests {
         void roundTripFalse() {
             Attributes.TYPE_MAP.put("flag_rt2", Boolean.class);
             var attr = Attributes.create("flag_rt2", "false");
-            assertEquals("false", Attributes.serializeValue(attr));
+            assertEquals("false", attr.serialize());
         }
 
         @Test
@@ -162,7 +162,7 @@ class AttributeTests {
         void deepCloneWithNewValue() {
             var orig = new Attribute.BooleanAttribute("active", true);
             var clone = orig.deepClone(false);
-            assertFalse((Boolean) clone.getValue());
+            assertFalse(clone.getValue());
             assertEquals("active", clone.getName());
         }
     }
@@ -196,35 +196,35 @@ class AttributeTests {
         @DisplayName("serialize: integer-valued double → no decimal point")
         void serializeInteger() {
             var attr = new Attribute.DoubleAttribute("level", 30.0);
-            assertEquals("30", Attributes.serializeValue(attr));
+            assertEquals("30", attr.serialize());
         }
 
         @Test
         @DisplayName("serialize: fractional double preserves decimals")
         void serializeDecimal() {
             var attr = new Attribute.DoubleAttribute("chance", 0.25);
-            assertEquals("0.25", Attributes.serializeValue(attr));
+            assertEquals("0.25", attr.serialize());
         }
 
         @Test
         @DisplayName("serialize: NaN → '-1'")
         void serializeNaN() {
             var attr = new Attribute.DoubleAttribute("bad", Double.NaN);
-            assertEquals("1", Attributes.serializeValue(attr));
+            assertEquals("1", attr.serialize());
         }
 
         @Test
         @DisplayName("serialize: Infinity → '-1'")
         void serializeInfinity() {
             var attr = new Attribute.DoubleAttribute("bad", Double.POSITIVE_INFINITY);
-            assertEquals("1", Attributes.serializeValue(attr));
+            assertEquals("1", attr.serialize());
         }
 
         @Test
         @DisplayName("serialize: negative Infinity → '-1'")
         void serializeNegativeInfinity() {
             var attr = new Attribute.DoubleAttribute("bad", Double.NEGATIVE_INFINITY);
-            assertEquals("1", Attributes.serializeValue(attr));
+            assertEquals("1", attr.serialize());
         }
 
         @Test
@@ -232,7 +232,7 @@ class AttributeTests {
         void roundTrip() {
             Attributes.TYPE_MAP.put("rt_double", Double.class);
             var attr = Attributes.create("rt_double", "0.25");
-            assertEquals("0.25", Attributes.serializeValue(attr));
+            assertEquals("0.25", attr.serialize());
         }
 
         @Test
@@ -241,7 +241,7 @@ class AttributeTests {
             Attributes.TYPE_MAP.put("rt_neg", Double.class);
             var attr = Attributes.create("rt_neg", "-500.0");
             // -500.0 is integer-valued, so serialize should drop the fraction
-            assertEquals("-500", Attributes.serializeValue(attr));
+            assertEquals("-500", attr.serialize());
         }
 
         @Test
@@ -249,7 +249,7 @@ class AttributeTests {
         void deepCloneWithNewValue() {
             var orig = new Attribute.DoubleAttribute("level", 10.0);
             var clone = orig.deepClone(99.9);
-            assertEquals(99.9, (Double) clone.getValue(), 1e-9);
+            assertEquals(99.9, clone.getValue(), 1e-9);
         }
     }
 
@@ -349,7 +349,7 @@ class AttributeTests {
 
             // Simulate serialization through the ListAttribute path
             var listAttr = new Attribute.BuffParamListAttribute("buff_params", parsed);
-            String serialized = Attributes.serializeValue(listAttr);
+            String serialized = listAttr.serialize();
 
             // Re-parse and check values are preserved
             var reparsed = Attribute.BuffParamListAttribute.parse(serialized);
@@ -409,7 +409,7 @@ class AttributeTests {
         @DisplayName("serialize: empty list → empty string")
         void serializeEmpty() {
             var attr = new Attribute.ListAttribute<>("buff_params", List.of());
-            assertEquals("", Attributes.serializeValue(attr));
+            assertEquals("", attr.serialize());
         }
 
         @Test

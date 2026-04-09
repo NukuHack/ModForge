@@ -203,9 +203,10 @@ public final class ItemService {
 				document.getDocumentElement().appendChild(group);
 			}
 			
-			final var newEl = ModItemBuilder.build(document, item);
-			if (newEl == null)
+			final var ele = ModItemBuilder.build(document, item);
+			if (ele.isEmpty())
 				return document;
+			final var newEl = ele.get();
 			final String idKey = item.getIdKey();
 			final String idVal = newEl.getAttribute(idKey);
 			
@@ -237,7 +238,7 @@ public final class ItemService {
 			temp.appendChild(group);
 			
 			final var newEl = ModItemBuilder.build(document, item);
-			group.appendChild(newEl);
+			newEl.ifPresent(group::appendChild);
 		}
 		return document;
 	}
@@ -262,7 +263,8 @@ public final class ItemService {
 		if (groupName.startsWith("storm")) {
 			doc = docBuilder.newDocument();
 			final Element group = doc.createElement("storm");
-			group.appendChild(ModItemBuilder.build(doc, item));
+			var el = ModItemBuilder.build(doc, item);
+			el.ifPresent(group::appendChild);
 			doc.appendChild(group);
 			doctype = Util.STORM_HEADER + "\n";
 		} else {
@@ -287,13 +289,11 @@ public final class ItemService {
 	}
 	
 	private static Stream<ModItem> extractItemsFromPak(final Path pakFile) {
-		log.trace("got path : {}", pakFile);
 		final Set<ModItem> items = new HashSet<>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
 			for (final var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
 				final var entryName = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
-					log.trace("Entry: '{}', name={}, size={}", entry.getName(), entryName, entry.getSize());
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
 				} catch (final Exception ex) {
 					log.warn("Parse error in {} from {}: {}", entryName, pakFile.getFileName(), ex.getMessage());
