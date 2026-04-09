@@ -1,6 +1,7 @@
 package modforge.backend.service;
 
 import modforge.backend.ModData;
+import modforge.backend.model.ModItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -73,6 +76,26 @@ class ItemServiceTests extends BaseServiceTest {
 				<root>&xxe;</root>
 				""";
 		assertDoesNotThrow(() -> ItemService.parseXml(new ByteArrayInputStream(xxe.getBytes(StandardCharsets.UTF_8))));
+	}
+	
+	@Test
+	@DisplayName("parseXml: real xml, that sometimes failed")
+	void parseBuggyXml() {
+		String xxe = """
+<?xml version="1.0" encoding="us-ascii"?>
+<database xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="barbora" xsi:noNamespaceSchemaLocation="../database.xsd">
+	<perk_scripts version="1">
+             <perk_script perk_editor_name="BS recipe r_shortswordheavy" perk_id="330b075a-2568-4d2d-bca1-b02cb60df582" />
+<perk_script perk_editor_name="BS recipe r_huntingswordsword" perk_id="489a6940-d6d4-4e4f-9ebf-88ae357f988f" />
+	</perk_scripts>
+</database>
+				""";
+		assertDoesNotThrow(() -> {
+			var is = new ByteArrayInputStream(xxe.getBytes(StandardCharsets.UTF_8));
+			Set<ModItem> set = new HashSet<>();
+			ItemService.readItemsFromXml(is, "app.pak", set);
+			System.out.println(set);
+		});
 	}
 	
 	@Test

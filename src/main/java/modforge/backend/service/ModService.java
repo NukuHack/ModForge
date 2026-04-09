@@ -55,7 +55,7 @@ public final class ModService {
 		m.id = textOf(doc, "modid");
 		m.modifiesLevel = "true".equalsIgnoreCase(textOf(doc, "modifies_level"));
 		
-		NodeList versions = doc.getElementsByTagName("kcd_version");
+		var versions = doc.getElementsByTagName("kcd_version");
 		for (int i = 0; i < versions.getLength(); i++)
 			m.supportsGameVersions.add(versions.item(i).getTextContent().trim());
 		
@@ -188,7 +188,7 @@ public final class ModService {
 	public static ModData loadMod(Path modPath) {
 		final var mod = loadModManifest(modPath);
 		
-		if (mod == null || mod.id == null || mod.id.isBlank())
+		if (mod == null)
 			return null;
 		mod.setConfig(ConfigService.loadModConfig(mod.id, modPath));
 		
@@ -275,7 +275,7 @@ public final class ModService {
 			return;
 		}
 		
-		final Path stageRoot = Util.modStaging(gameDir, mod.id);
+		final var stageRoot = Util.modStaging(gameDir, mod.id);
 		if (! Files.exists(stageRoot)) {
 			log.warn("Staging folder not found for mod {} – skipping PAK creation.", mod.id);
 			return;
@@ -287,7 +287,7 @@ public final class ModService {
 		}
 		
 		boolean allOk = true;
-		for (File stageDir : pakList) {
+		for (var stageDir : pakList) {
 			if (! Files.exists(stageDir.toPath())) {
 				log.info("Staging dir missing for PAK '{}' – skipping.", stageDir);
 				continue;
@@ -335,7 +335,7 @@ public final class ModService {
 		langPaks.forEach(file -> {
 			var langFolder = file.toPath();
 			// The PAK should be named like "German_xml.pak" and placed in the game root
-			final Path destPak = Path.of(langFolder + Util.COMP_FORMAT);
+			final var destPak = Path.of(langFolder + Util.COMP_FORMAT);
 			boolean ok = Util.packFolder(langFolder, destPak, null, true);
 			
 			if (ok) {
@@ -350,7 +350,7 @@ public final class ModService {
 	}
 	
 	public static ModData loadModManifest(Path modPath) {
-		final Path manifest = modPath.resolve("mod.manifest");
+		final var manifest = modPath.resolve("mod.manifest");
 		
 		if (! Files.exists(manifest)) {
 			log.warn("manifest not found");
@@ -361,7 +361,11 @@ public final class ModService {
 			final var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			final var xmlDoc = docBuilder.parse(manifest.toFile());
 			
-			return parseModDescription(xmlDoc);
+			var mod = parseModDescription(xmlDoc);
+			if (mod.id.isBlank())
+				return null;
+			log.info("Successfully loaded mod data for: {}", mod.id);
+			return mod;
 		} catch (IOException | SAXException | ParserConfigurationException e) {
 			log.warn("could not parse manifest");
 			return null;

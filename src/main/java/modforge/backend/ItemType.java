@@ -39,10 +39,10 @@ public final class ItemType {
 		for (final var e : ItemEntry.values()) {
 			// id key (first registration wins – ItemEntry order is the priority)
 			idMap.put(e.clazz, e.idKey);
-			specs.add(new HandlerSpec(e.clazz, e.idKey, e.objName));
+			specs.add(new HandlerSpec(e.clazz, e.idKey, e.objName.toLowerCase()));
 			
 			// endpoint key set
-			epKeys.add(e.fileName);
+			epKeys.add(e.fileName.toLowerCase());
 			
 			// display dropdown
 			if (e.showInDisplay)
@@ -71,17 +71,17 @@ public final class ItemType {
 	public static boolean excludeNonEndpoints(final ZipEntry ze) {
 		if (ze.isDirectory())
 			return false;
-		final String name = ze.getName().toLowerCase(Locale.ROOT);
+		final var name = ze.getName().toLowerCase(Locale.ROOT);
 		final var isData = name.endsWith(".xml") || name.endsWith(".adb");
 		if (! isData)
 			return false;
 		// AHH STUPID STORM
 		if (name.startsWith("libs/storm/"))
 			return true;
-		final Path p = Path.of(name);
-		final String fileName = p.getFileName().toString();
-		final int delimiter = fileName.indexOf("__");
-		final String shortName = (delimiter != - 1) ? fileName.substring(0, delimiter) : fileName.substring(0, fileName.lastIndexOf('.'));
+		final var p = Path.of(name);
+		final var fileName = p.getFileName().toString();
+		final var delimiter = fileName.indexOf("__");
+		final var shortName = (delimiter != - 1) ? fileName.substring(0, delimiter) : fileName.substring(0, fileName.lastIndexOf('.'));
 		return ENDPOINT_KEYS.contains(shortName);
 	}
 	

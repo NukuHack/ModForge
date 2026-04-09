@@ -11,8 +11,9 @@ import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -600,7 +601,7 @@ public final class Util {
 			return Paths.get(home, "Library", "Application Support", APP_NAME);
 		} else {
 			// Linux/Unix: ~/.config/ {APP_NAME} (XDG Base Directory Specification)
-			String xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
+			var xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
 			if (xdgConfigHome != null && ! xdgConfigHome.isBlank()) {
 				return Paths.get(xdgConfigHome, APP_NAME.toLowerCase());
 			}
@@ -610,36 +611,33 @@ public final class Util {
 	}
 	
 	public static boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
-		if (!Files.exists(sourceFolder) || !Files.isDirectory(sourceFolder)) {
+		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
 			log.warn("Source folder does not exist: {}", sourceFolder);
 			return false;
 		}
 		
-		final Path absoluteSource = sourceFolder.toAbsolutePath().normalize();
-		final Path absoluteDest   = destPakFile.toAbsolutePath().normalize();
+		final var absoluteSource = sourceFolder.toAbsolutePath().normalize();
+		final var absoluteDest = destPakFile.toAbsolutePath().normalize();
 		
 		try {
 			Files.createDirectories(absoluteDest.getParent());
 			Files.deleteIfExists(absoluteDest);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			log.error("PAK creation failed – cannot prepare output", e);
 			return false;
 		}
 		
-		try (FileOutputStream fos = new FileOutputStream(absoluteDest.toFile());
-			 ZipOutputStream   zos = new ZipOutputStream(fos);
-			 var walk = Files.walk(absoluteSource)) {
+		try (var fos = new FileOutputStream(absoluteDest.toFile()); var zos = new ZipOutputStream(fos); var walk = Files.walk(absoluteSource)) {
 			
 			zos.setLevel(9);
-			if (stripMetadata) zos.setComment("");
+			if (stripMetadata)
+				zos.setComment("");
 			
-			walk.filter(Files::isRegularFile)
-					.filter(p -> !p.toAbsolutePath().normalize().equals(absoluteDest))   // never include self
-					.filter(p -> fileFilter == null || fileFilter.test(p))
-					.forEach(file -> {
+			walk.filter(Files::isRegularFile).filter(p -> ! p.toAbsolutePath().normalize().equals(absoluteDest))   // never include self
+					.filter(p -> fileFilter == null || fileFilter.test(p)).forEach(file -> {
 						try {
-							String   entryName = absoluteSource.relativize(file).toString().replace('\\', '/');
-							ZipEntry entry     = new ZipEntry(entryName);
+							var entryName = absoluteSource.relativize(file).toString().replace('\\', '/');
+							var entry = new ZipEntry(entryName);
 							
 							if (stripMetadata) {
 								entry.setTime(0L);
@@ -653,14 +651,14 @@ public final class Util {
 							Files.copy(file, zos);
 							zos.closeEntry();
 							
-						} catch (IOException e) {
+						} catch (final IOException e) {
 							log.warn("Cannot add to pak: {} – {}", file, e.getMessage());
 						}
 					});
 			
 			return true;
 			
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			log.error("PAK creation failed", e);
 			return false;
 		}

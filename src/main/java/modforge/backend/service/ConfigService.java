@@ -193,7 +193,7 @@ public final class ConfigService {
 	 * @return Map of config keys to their values
 	 */
 	public static Map<String, String> loadModConfig(String modId, Path modPath) {
-		Path modCfg = modPath.resolve("mod.cfg");
+		var modCfg = modPath.resolve("mod.cfg");
 		
 		if (! Files.exists(modCfg)) {
 			log.info("No mod.cfg found for mod: {}", modId);
@@ -221,7 +221,7 @@ public final class ConfigService {
 		if (! Files.exists(path))
 			return;
 		
-		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+		try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
 			String line;
 			int lineNumber = 0;
 			
@@ -238,8 +238,8 @@ public final class ConfigService {
 				var m = CONFIG_LINE.matcher(line);
 				if (! m.matches())
 					log.info("Skipping malformed config line {}: {}", lineNumber, line);
-				String key = m.group(1);
-				String value = m.group(2).trim();
+				var key = m.group(1);
+				var value = m.group(2).trim();
 				target.put(key, value);
 			}
 		} catch (IOException e) {

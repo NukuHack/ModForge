@@ -1,8 +1,6 @@
 
-icon view - load some icons into the loader and view them (atleast the mod's if the main data takes up too much space)
+icon view - load some icons into the loader and view them (at least the mod's if the main data takes up too much space)
 making icon view + *edit*
-
-// TODO : check if self-closing tag of "operations" could actually work or not - or just any self-closing tag in storm
 
 parse other files (adb - animation database)
 

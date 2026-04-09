@@ -92,7 +92,7 @@ public enum ItemEntry {
 	
 	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", "perk_script", true),
 	
-	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParam", "ScriptParam", true),
+	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParams", "ScriptParam", true),
 	
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", true),
 	
@@ -173,6 +173,8 @@ public enum ItemEntry {
 	}
 	
 	public String parentName() {
+		if (fileName.endsWith("s"))
+			return fileName;
 		return fileName + "s";
 		// TODO : some of the items have special parent stuffs so ... I'll do it later
 	}

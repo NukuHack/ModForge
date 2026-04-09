@@ -8,6 +8,7 @@ import modforge.backend.ItemType;
 import modforge.backend.ModData;
 import modforge.backend.model.Attribute;
 import modforge.backend.model.Attributes;
+import modforge.backend.model.I;
 import modforge.backend.model.I.Storm;
 import modforge.backend.model.ModItem;
 import org.w3c.dom.Document;
@@ -50,7 +51,7 @@ public final class ModItemBuilder {
 		final var list = new ArrayList<Attribute>(xmlAttrs.getLength());
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
 			final var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
-			list.add(Attributes.create(a.getLocalName(), a.getValue()));
+			list.add(Attributes.create(a.getName(), a.getValue()));
 		}
 		item.setAttribute(list);
 		return item;
@@ -59,7 +60,7 @@ public final class ModItemBuilder {
 	public static ModItem create(final Element element) {
 		Attributes.traverseElement(element);
 		// glue it together yet again, barely works
-		final var elementName = element.getLocalName().toLowerCase(Locale.ROOT);
+		final var elementName = element.getTagName().toLowerCase(Locale.ROOT);
 		final var handler = HANDLER_MAP.get(elementName);
 		
 		if (handler != null) {
@@ -69,7 +70,7 @@ public final class ModItemBuilder {
 		log.info("No creater matched element <{}>", elementName);
 		if (log.isDebugEnabled()) {
 			final var attributes = element.getAttributes();
-			final Map<String, String> map = new HashMap<>();
+			final var map = new HashMap<>();
 			
 			for (int i = 0; i < attributes.getLength(); i++) {
 				var attr = attributes.item(i);
@@ -164,7 +165,7 @@ public final class ModItemBuilder {
 			try {
 				final M item = type.getDeclaredConstructor().newInstance();
 				
-				final String idValue = element.getAttribute(IdKey);
+				final var idValue = element.getAttribute(IdKey);
 				item.setId(idValue.isBlank() ? null : idValue);
 				
 				return ModItemBuilder.create(element, item);

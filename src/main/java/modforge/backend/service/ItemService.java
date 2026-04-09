@@ -77,50 +77,46 @@ public final class ItemService {
 	
 	static Document parseXml(InputStream is) {
 		try {
-			var f = DocumentBuilderFactory.newInstance();
-			f.setNamespaceAware(true);
-			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			f.setFeature("http://xml.org/sax/features/validation", false);
-			f.setFeature("http://xml.org/sax/features/external-general-entities", false);
-			f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-			
-			
-			// Wrap in BufferedInputStream if not already marked-supported
-			if (! is.markSupported()) {
+			// Wrap in BufferedInputStream if not already mark-supported
+			if (!is.markSupported())
 				is = new BufferedInputStream(is);
-			}
 			
-			// Read and skip BOM if present
 			is.mark(3);
-			int b1 = is.read();
-			int b2 = is.read();
-			int b3 = is.read();
+			byte[] bom = new byte[3];
+			int bytesRead = is.read(bom);
 			
-			if (b1 == 0xEF && b2 == 0xBB && b3 == 0xBF) {
-				// BOM found, we already skipped it, continue with stream position after BOM
-				// Don't reset, just continue
-			} else {
-				// No BOM, reset the stream to the beginning
-				is.reset();
-			}
-			// If BOM present, we already skipped it, continue with stream position after BOM
+			// Reset to beginning regardless
+			is.reset();
 			
-			// Use a proper encoding-aware reader
-			try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-				var doc = f.newDocumentBuilder();
-				return doc.parse(new InputSource(reader));
-			} catch (final ParserConfigurationException e) {
-				log.warn("Could not create document builder");
-				return null;
+			String encoding = "UTF-8";
+			
+			// Check for BOM only if we read enough bytes
+			if (bytesRead >= 3 && bom[0] == (byte)0xEF && bom[1] == (byte)0xBB && bom[2] == (byte)0xBF) {
+				// BOM found, skip it by reading past it
+				is.skip(3);
+				encoding = "UTF-8";
+			} else if (bytesRead >= 2 && bom[0] == (byte)0xFE && bom[1] == (byte)0xFF) {
+				// UTF-16BE BOM
+				is.skip(2);
+				encoding = "UTF-16BE";
+			} else if (bytesRead >= 2 && bom[0] == (byte)0xFF && bom[1] == (byte)0xFE) {
+				// UTF-16LE BOM
+				is.skip(2);
+				encoding = "UTF-16LE";
 			}
-		} catch (final ParserConfigurationException e) {
-			log.warn("Could not configure the parser");
-			return null;
+			
+			// Use the detected encoding
+			try (var reader = new BufferedReader(new InputStreamReader(is, encoding))) {
+				return docBuilder.parse(new InputSource(reader));
+			}
 		} catch (final SAXException e) {
-			log.warn("Could not parse the file");
+			log.warn("Could not parse the file", e);
 			return null;
 		} catch (final IOException e) {
-			log.warn("Could not access the file");
+			log.warn("Could not access the file", e);
+			return null;
+		} catch (final Exception e) {
+			log.warn("Unknown exception at xml parsing", e);
 			return null;
 		}
 	}
@@ -289,7 +285,7 @@ public final class ItemService {
 		final Set<ModItem> items = new HashSet<>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
 			for (final var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
-				final String entryName = entry.getName().replace('\\', '/');
+				final var entryName = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
 				} catch (final Exception ex) {
@@ -302,7 +298,7 @@ public final class ItemService {
 		return items.stream();
 	}
 	
-	private static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) {
+	static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) {
 		final var doc = parseXml(is);
 		if (doc == null) {
 			log.debug("Parse failed for : {}", sourcePath);
@@ -310,7 +306,7 @@ public final class ItemService {
 		}
 		final var root = doc.getDocumentElement();
 		if (ModItemBuilder.FILE_PARSERS.contains(root.getTagName())) {
-			final ModItem item = ModItemBuilder.create(root);
+			final var item = ModItemBuilder.create(root);
 			if (item == null || item.getId() == null)
 				return;
 			
@@ -329,7 +325,7 @@ public final class ItemService {
 				if (! (items.item(j) instanceof Element itemElement))
 					continue;
 				
-				final ModItem item = ModItemBuilder.create(itemElement);
+				final var item = ModItemBuilder.create(itemElement);
 				if (item == null || item.getId() == null)
 					continue;
 				
@@ -372,7 +368,7 @@ public final class ItemService {
 				return Set.of();
 			}
 			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
-			final Set<ModItem> result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
+			final var result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
 			
 			log.info("Loaded {} items from {} PAK file(s)", result.size(), pakFiles.size());
 			return result;

@@ -14,14 +14,13 @@ import org.junit.jupiter.api.io.TempDir;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static modforge.backend.service.IconService.indexDdsFromPak;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -103,17 +102,6 @@ class IconServiceTest extends BaseServiceTest {
 	}
 	
 	// =========================================================================
-	// 1. PAK indexing
-	// =========================================================================
-	
-	@SuppressWarnings("unchecked")
-	private Map<String, byte[]> indexDdsFromPak(String pakPath) throws Exception {
-		Method m = IconService.class.getDeclaredMethod("indexDdsFromPak", String.class);
-		m.setAccessible(true);
-		return (Map<String, byte[]>) m.invoke(null, pakPath);
-	}
-	
-	// =========================================================================
 	// 2. DDS → PNG conversion  (convertToImage)
 	// =========================================================================
 	
@@ -167,31 +155,31 @@ class IconServiceTest extends BaseServiceTest {
 		
 		@Test
 		@DisplayName("indexes DDS entries from a valid PAK")
-		void indexesEntriesFromValidPak() throws Exception {
+		void indexesEntriesFromValidPak() {
 			requireTestPak();
 			
-			Map<String, byte[]> icons = indexDdsFromPak(TEST_PAK.toString());
+			var icons = indexDdsFromPak(TEST_PAK.toString());
 			
 			assertNotNull(icons, "result must not be null");
 			assertFalse(icons.isEmpty(), "PAK must contain at least one DDS file");
 			
-			icons.forEach((name, data) -> System.out.printf("  indexed: %-40s  (%,d bytes)%n", name, data.length));
+			icons.forEach((name, data) -> System.out.printf("  indexed: %-40s  (%,d bytes)%n", name, data.data().length));
 		}
 		
 		@Test
 		@DisplayName("returns empty map for a missing PAK – no exception")
-		void returnsEmptyMapForMissingPak() throws Exception {
-			Map<String, byte[]> icons = indexDdsFromPak(tempDir.resolve("nonexistent.pak").toString());
+		void returnsEmptyMapForMissingPak() {
+			var icons = indexDdsFromPak(tempDir.resolve("nonexistent.pak").toString());
 			assertNotNull(icons);
 			assertTrue(icons.isEmpty(), "missing PAK must yield an empty map");
 		}
 		
 		@Test
 		@DisplayName("keys are lower-cased stems without extension")
-		void keysAreLowerCasedStems() throws Exception {
+		void keysAreLowerCasedStems() {
 			requireTestPak();
 			
-			Map<String, byte[]> icons = indexDdsFromPak(TEST_PAK.toString());
+			var icons = indexDdsFromPak(TEST_PAK.toString());
 			
 			icons.keySet().forEach(key -> {
 				assertFalse(key.endsWith(".dds"), "key must not keep the .dds extension: " + key);
@@ -214,11 +202,11 @@ class IconServiceTest extends BaseServiceTest {
 		void convertsAllDdsEntriesToImages() throws Exception {
 			requireTestPak();
 			
-			Map<String, byte[]> icons = indexDdsFromPak(TEST_PAK.toString());
+			var icons = indexDdsFromPak(TEST_PAK.toString());
 			assertFalse(icons.isEmpty(), "PAK must contain DDS files for this test");
 			
 			for (var entry : icons.entrySet()) {
-				BufferedImage img = IconService.convertToImage(entry.getValue());
+				BufferedImage img = IconService.convertToImage(entry.getValue().data());
 				assertNotNull(img, "conversion must succeed for: " + entry.getKey());
 				assertTrue(img.getWidth() > 0, "image width must be positive: " + entry.getKey());
 				assertTrue(img.getHeight() > 0, "image height must be positive: " + entry.getKey());
@@ -247,11 +235,11 @@ class IconServiceTest extends BaseServiceTest {
 		void ddsToPng() throws Exception {
 			requireTestPak();
 			
-			Map<String, byte[]> icons = indexDdsFromPak(TEST_PAK.toString());
+			var icons = indexDdsFromPak(TEST_PAK.toString());
 			var firstEntry = icons.entrySet().iterator().next();
 			
 			Path ddsFile = tempDir.resolve(firstEntry.getKey() + ".dds");
-			Files.write(ddsFile, firstEntry.getValue());
+			Files.write(ddsFile, firstEntry.getValue().data());
 			
 			IconService.convertImages(ddsFile.toString(), true);
 			
@@ -320,9 +308,9 @@ class IconServiceTest extends BaseServiceTest {
 			requireTestPak();
 			
 			// Populate tempDir with real DDS files from the test PAK
-			Map<String, byte[]> icons = indexDdsFromPak(TEST_PAK.toString());
+			var icons = indexDdsFromPak(TEST_PAK.toString());
 			for (var entry : icons.entrySet()) {
-				Files.write(tempDir.resolve(entry.getKey() + ".dds"), entry.getValue());
+				Files.write(tempDir.resolve(entry.getKey() + ".dds"), entry.getValue().data());
 			}
 			
 			IconService.convertImages(tempDir.toString(), true);
@@ -404,7 +392,7 @@ class IconServiceTest extends BaseServiceTest {
 			assumeTrue(Files.exists(TEST_PAK), "Test PAK not found – run createTestPakFile() once to generate it: " + TEST_PAK);
 			
 			// Step 1: Index all DDS files from the PAK
-			Map<String, byte[]> indexedDds = IconService.loadModIcons(TEST_PAK.getParent());
+			var indexedDds = IconService.loadModIcons(TEST_PAK.getParent());
 			assertFalse(indexedDds.isEmpty(), "PAK must contain at least one DDS file");
 			
 			System.out.printf("Found %d DDS entries in %s%n", indexedDds.size(), TEST_PAK.getFileName());
@@ -417,9 +405,9 @@ class IconServiceTest extends BaseServiceTest {
 			int failureCount = 0;
 			
 			// Step 3: Process each DDS entry
-			for (Map.Entry<String, byte[]> entry : indexedDds.entrySet()) {
+			for (var entry : indexedDds.entrySet()) {
 				String archivePath = entry.getKey(); // e.g., "libs/ui/textures/test_icon_1"
-				byte[] ddsBytes = entry.getValue();
+				byte[] ddsBytes = entry.getValue().data();
 				
 				try {
 					// Step 3a: Convert DDS → BufferedImage
@@ -501,7 +489,7 @@ class IconServiceTest extends BaseServiceTest {
 			Files.createDirectories(modData);
 			Files.copy(TEST_PAK, modData.resolve("test.pak"));
 			
-			Map<String, byte[]> loaded = IconService.loadModIcons(modData);
+			var loaded = IconService.loadModIcons(modData);
 			
 			assertNotNull(loaded, "result must not be null");
 			assertFalse(loaded.isEmpty(), "should have loaded at least one icon");
@@ -513,7 +501,7 @@ class IconServiceTest extends BaseServiceTest {
 		@Test
 		@DisplayName("returns empty map for a non-existent mod path – no exception")
 		void returnsEmptyMapForMissingModPath() {
-			Map<String, byte[]> result = IconService.loadModIcons(tempDir.resolve("nonexistent/Data"));
+			var result = IconService.loadModIcons(tempDir.resolve("nonexistent/Data"));
 			assertNotNull(result);
 			assertTrue(result.isEmpty(), "missing path must yield an empty map");
 		}
@@ -525,7 +513,7 @@ class IconServiceTest extends BaseServiceTest {
 			Files.createDirectories(emptyData);
 			// Intentionally leave the folder empty
 			
-			Map<String, byte[]> result = IconService.loadModIcons(emptyData);
+			var result = IconService.loadModIcons(emptyData);
 			assertNotNull(result);
 			assertTrue(result.isEmpty(), "folder with no PAKs must yield an empty map");
 		}
@@ -537,10 +525,10 @@ class IconServiceTest extends BaseServiceTest {
 		
 		@Test
 		@DisplayName("resolves icon from mod index for a ModItem with icon_id attribute")
-		void resolvesIconFromModIndex() throws Exception {
+		void resolvesIconFromModIndex() {
 			requireTestPak();
 			
-			Map<String, byte[]> icons = indexDdsFromPak(TEST_PAK.toString());
+			var icons = indexDdsFromPak(TEST_PAK.toString());
 			testMod.setIcon(icons);
 			
 			String firstKey = icons.keySet().iterator().next();

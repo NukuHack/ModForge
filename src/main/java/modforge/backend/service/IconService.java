@@ -2,7 +2,6 @@ package modforge.backend.service;
 
 import image.DDSUtil;
 import lombok.NonNull;
-import lombok.Value;
 import modforge.Singleton;
 import modforge.Util;
 import modforge.backend.ModData;
@@ -28,10 +27,8 @@ public final class IconService {
 	
 	private final UserConfig userConfig;
 	
-	@Value
-	public static class Icon {
-		@NonNull byte[] data;
-		@NonNull String path;
+	public IconService(UserConfig userConfig) {
+		this.userConfig = userConfig;
 	}
 	
 	
@@ -39,15 +36,11 @@ public final class IconService {
 	// Construction & lifecycle
 	// =====================================================================
 	
-	public IconService(UserConfig userConfig) {
-		this.userConfig = userConfig;
-	}
-	
 	/**
 	 * Scan a single PAK file for DDS textures under {@value #TEXTURES_ROOT} and
 	 * add them to {@code target}. Returns the number of entries indexed.
 	 */
-	private static Map<String, Icon> indexDdsFromPak(String pakPath) {
+	static Map<String, Icon> indexDdsFromPak(String pakPath) {
 		final var pakFile = Path.of(pakPath);
 		final var pak = pakFile.getFileName().toString();
 		
@@ -69,7 +62,7 @@ public final class IconService {
 					final String stem = Util.stemOf(name);
 					if (stem.isBlank())
 						continue;
-					map.put(stem, new Icon(is.readAllBytes(), pak+':'+name));
+					map.put(stem, new Icon(is.readAllBytes(), pak + ':' + name));
 				} catch (Exception ex) {
 					log.info("Could not read icon entry {}: {}", name, ex.getMessage());
 				}
@@ -133,10 +126,6 @@ public final class IconService {
 		}
 	}
 	
-	// =====================================================================
-	// Bulk conversion utilities
-	// =====================================================================
-	
 	/** Recurse into a directory, converting every matching file. */
 	private static void convertDirectory(Path dir, Path outputBase, boolean toPng) throws IOException {
 		try (var stream = Files.walk(dir)) {
@@ -144,6 +133,10 @@ public final class IconService {
 			stream.filter(Files::isRegularFile).filter(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(srcExt)).forEach(p -> convertSingleFile(p, p.getParent(), toPng));
 		}
 	}
+	
+	// =====================================================================
+	// Bulk conversion utilities
+	// =====================================================================
 	
 	/**
 	 * Extract a ZIP/PAK, convert each matching entry, and write results into
@@ -185,10 +178,6 @@ public final class IconService {
 		log.info("Archive conversion complete → {}", outRoot);
 	}
 	
-	// ------------------------------------------------------------------ //
-	//  Internal helpers                                                    //
-	// ------------------------------------------------------------------ //
-	
 	/**
 	 * Convert one file (DDS↔PNG), writing the output into {@code outputDir}.
 	 * Backs up any pre-existing output file before overwriting.
@@ -205,19 +194,15 @@ public final class IconService {
 		final String stem = srcName.substring(0, srcName.length() - srcExt.length());
 		final Path dstPath = outputDir.resolve(stem + dstExt);
 		
-		backupIfExists(dstPath);
-		if (toPng) {
-			try {
+		try {
+			backupIfExists(dstPath);
+			if (toPng) {
 				// DDS → PNG
 				final byte[] ddsBytes = Files.readAllBytes(src);
 				final BufferedImage img = convertToImage(ddsBytes);
 				ImageIO.write(img, "png", dstPath.toFile());
 				log.info("DDS→PNG: {} → {}", src, dstPath);
-			} catch (IOException ex) {
-				log.warn("Conversion failed for '{}': {}", src, ex.getMessage());
-			}
-		} else {
-			try {
+			} else {
 				// caller gets a clear error rather than silent data loss.
 				final BufferedImage img = ImageIO.read(src.toFile());
 				if (img == null)
@@ -225,11 +210,15 @@ public final class IconService {
 				final byte[] ddsBytes = DDSUtil.encodeBC7(img);
 				Files.write(dstPath, ddsBytes);
 				log.info("PNG→DDS: {} → {}", src, dstPath);
-			} catch (IOException ex) {
-				log.warn("Conversion failed for '{}': {}", src, ex.getMessage());
 			}
+		} catch (IOException ex) {
+			log.warn("Conversion failed for '{}': {}", src, ex.getMessage());
 		}
 	}
+	
+	// ------------------------------------------------------------------ //
+	//  Internal helpers                                                    //
+	// ------------------------------------------------------------------ //
 	
 	/**
 	 * If {@code path} already exists, move it to an {@code image_backup/}
@@ -265,21 +254,6 @@ public final class IconService {
 	}
 	
 	/**
-	 * (Re-)scan IPL_GameData.pak and index every DDS file found under
-	 * Libs/UI/Textures/. Safe to call again after a game-directory change.
-	 * Only populates the base-game index; mod icons are loaded per-mod.
-	 */
-	public void init() {
-		final ModData game = Singleton.INSTANCE.getGame();
-		
-		final String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank())
-			return;
-		
-		game.setIcon(loadModIcons(Util.icons(gameDir)));
-	}
-	
-	/**
 	 * Scan all PAK files inside Mods/<modId>/Data/ for DDS textures and store
 	 * the raw bytes in mod.iconIndex. Clears any previously cached PNGs for
 	 * the mod so stale data-URIs are never returned.
@@ -300,15 +274,12 @@ public final class IconService {
 				log.info("No PAK files found in: {}", modPath);
 				return Map.of();
 			}
-			for (Path pakPath : pakFiles) {
+			for (Path pakPath : pakFiles)
 				map.putAll(indexDdsFromPak(pakPath.toString()));
-			}
+			
+			log.info("Loaded {} icons from {} PAK file(s)", map.size(), pakFiles.size());
 		} catch (IOException e) {
 			log.warn("Cannot list Data folder for path {}: {}", modPath, e.getMessage());
-		}
-		int total = map.size();
-		if (total > 0) {
-			log.info("Mod path '{}': indexed {} icon(s) from Data PAK(s).", modPath, total);
 		}
 		return map;
 	}
@@ -430,5 +401,23 @@ public final class IconService {
 			}
 		}
 		log.info("Icons written for mod: {}", mod.id);
+	}
+	
+	/**
+	 * (Re-)scan IPL_GameData.pak and index every DDS file found under
+	 * Libs/UI/Textures/. Safe to call again after a game-directory change.
+	 * Only populates the base-game index; mod icons are loaded per-mod.
+	 */
+	public void init() {
+		final ModData game = Singleton.INSTANCE.getGame();
+		
+		final String gameDir = userConfig.getGameDirectory();
+		if (gameDir == null || gameDir.isBlank())
+			return;
+		
+		game.setIcon(loadModIcons(Util.icons(gameDir)));
+	}
+	
+	public record Icon(@NonNull byte[] data, @NonNull String path) {
 	}
 }
