@@ -185,7 +185,7 @@ public class ConvertPage extends BasePage {
 		String directionSimple = wasToPng ? "DDS → PNG" : "PNG → DDS";
 		
 		if (success) {
-			window.snackbar.show(getLocalText("ui_conversion_complete"), BarManager.Type.SUCCESS, directionSimple);
+			window.snackbar.show("ui_conversion_complete", BarManager.Type.SUCCESS, directionSimple);
 			
 			String message = String.format("<html><b>%s</b><br/><br/>" + "%s: <tt>%s</tt><br/>" + "%s: <tt>%s</tt><br/><br/>" + "%s</html>", getLocalText("ui_conversion_complete"), getLocalText("ui_conversion_direction"), directionSimple, getLocalText("ui_conversion_source"), selectedPath, getLocalText("ui_conversion_output_info"));
 			
@@ -193,7 +193,7 @@ public class ConvertPage extends BasePage {
 			return;
 		}
 		
-		window.snackbar.show(getLocalText("ui_conversion_failed"), BarManager.Type.ERROR);
+		window.snackbar.show("ui_conversion_failed", BarManager.Type.ERROR);
 		
 		String reason = (errorMsg != null && ! errorMsg.isBlank()) ? errorMsg : getLocalText("ui_conversion_unknown_error");
 		

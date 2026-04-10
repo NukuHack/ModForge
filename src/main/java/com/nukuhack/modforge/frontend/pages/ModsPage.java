@@ -103,18 +103,18 @@ public class ModsPage extends BasePage {
 		
 		var mod = ModService.loadMod(modPath);
 		if (mod == null) {
-			window.snackbar.show(MainWindow.getLocalText("ui_import_failed_mod_null"), BarManager.Type.ERROR);
+			window.snackbar.show("ui_import_failed_mod_null", BarManager.Type.ERROR);
 			return;
 		}
 		if (ModService.modCollection.contains(mod)) {
-			window.snackbar.show(MainWindow.getLocalText("ui_mod_already_exists"), BarManager.Type.WARNING, mod.id);
+			window.snackbar.show("ui_mod_already_exists", BarManager.Type.WARNING, mod.id);
 			return;
 		}
 		
 		ModService.modCollection.add(mod);
 		
 		refreshMods();
-		window.snackbar.show(MainWindow.getLocalText("ui_mod_imported"), BarManager.Type.SUCCESS, mod.name);
+		window.snackbar.show("ui_mod_imported", BarManager.Type.SUCCESS, mod.name);
 	}
 	
 	private static class ModListCellRenderer extends JPanel implements ListCellRenderer<ModData> {

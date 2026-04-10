@@ -96,7 +96,7 @@ public abstract class BasePage extends JPanel {
 			var item = itemSupplier.get();
 			if (item != null) {
 				copyText(item.getId());
-				window.snackbar.show(getLocalText("ui_copied_id"), BarManager.Type.INFO, item.getId());
+				window.snackbar.show("ui_copied_id", BarManager.Type.INFO, item.getId());
 			}
 		});
 		menu.add(copyId);
@@ -106,7 +106,7 @@ public abstract class BasePage extends JPanel {
 			var item = itemSupplier.get();
 			if (item != null) {
 				copyText(item.details());
-				window.snackbar.show(getLocalText("ui_copied_all_details"), BarManager.Type.INFO);
+				window.snackbar.show("ui_copied_all_details", BarManager.Type.INFO);
 			}
 		});
 		menu.add(copyAll);
@@ -156,15 +156,14 @@ public abstract class BasePage extends JPanel {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2 && item != null) {
 					Util.copyText(item.getId());
-					window.snackbar.show(getLocalText("ui_copied_id"), BarManager.Type.INFO, item.getId());
+					window.snackbar.show("ui_copied_id", BarManager.Type.INFO, item.getId());
 				}
 			}
 		};
 	}
 	
 	protected void showAddToModDialog(ModItem item) {
-		var dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
-				getLocalText("ui_add_to_mod_title"), true);
+		var dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), getLocalText("ui_add_to_mod_title"), true);
 		dialog.setSize(400, 180);
 		dialog.setLocationRelativeTo(this);
 		dialog.setLayout(new BorderLayout());
@@ -197,16 +196,16 @@ public abstract class BasePage extends JPanel {
 		addBtn.addActionListener(e -> {
 			var sel = (String) modCombo.getSelectedItem();
 			if (sel == null) {
-				window.snackbar.show(getLocalText("ui_select_mod_first"), BarManager.Type.WARNING);
+				window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 				return;
 			}
 			var mod = ModService.modCollection.stream()
 							  .filter(m -> m.name.equals(sel)).findFirst();
 			mod.ifPresentOrElse(m -> {
 				m.addItem(ModItemBuilder.deepCopy(item, m));
-				window.snackbar.show(getLocalText("ui_item_added_to_mod"), BarManager.Type.SUCCESS, m.name);
+				window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, m.name);
 				dialog.dispose();
-			}, () -> window.snackbar.show(getLocalText("ui_select_mod_first"), BarManager.Type.WARNING));
+			}, () -> window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING));
 		});
 		
 		var cancelBtn = new JButton(getLocalText("ui_cancel"));

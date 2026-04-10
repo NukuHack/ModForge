@@ -8,6 +8,7 @@ import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import java.awt.*;
@@ -108,17 +109,17 @@ public class ItemEdit extends BaseEditPage {
 	
 	private void addCurrentItemToSelectedMod() {
 		if (currentItem == null) {
-			window.snackbar.show(getLocalText("ui_no_item_selected"), BarManager.Type.WARNING);
+			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
 			return;
 		}
 		final var targetMod = getSelectedMod();
 		if (targetMod.isEmpty()) {
-			window.snackbar.show(getLocalText("ui_select_mod_first"), BarManager.Type.WARNING);
+			window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 			return;
 		}
 		var mod = targetMod.get();
 		mod.addItem(ModItemBuilder.deepCopy(currentItem, mod));
-		window.snackbar.show(getLocalText("ui_item_added_to_mod"), BarManager.Type.SUCCESS, mod.name);
+		window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, mod.name);
 	}
 	
 	private void buildAttributeEditor() {
@@ -165,7 +166,7 @@ public class ItemEdit extends BaseEditPage {
 		
 		JButton copyBtn = smallBtn("⎘", e -> {
 			Util.copyText(field.getText());
-			window.snackbar.show(getLocalText("ui_copied_id"), BarManager.Type.INFO, field.getText());
+			window.snackbar.show("ui_copied_id", BarManager.Type.INFO, field.getText());
 		});
 		copyBtn.setToolTipText(getLocalText("ui_copy_id"));
 		
@@ -186,7 +187,7 @@ public class ItemEdit extends BaseEditPage {
 		lbl.setForeground(MainWindow.TEXT);
 		lbl.setFont(new Font("Roboto", Font.PLAIN, 12));
 		
-		JComponent editor = createEditorForAttribute(attr);
+		var editor = createEditorForAttribute(attr);
 		
 		attributesPanel.add(lbl, labelGbc(row));
 		attributesPanel.add(editor, editorGbc(row));
@@ -254,7 +255,7 @@ public class ItemEdit extends BaseEditPage {
 		if (attr instanceof Attribute.DoubleAttribute doubleAttr) {
 			double billion = 1_000_000_000;
 			JSpinner sp = new JSpinner(new SpinnerNumberModel(
-					(Number) doubleAttr.getValue(), -billion, billion, 0.001));
+					(Number) doubleAttr.getValue(), -billion, billion, 1));
 			sp.setEditor(new JSpinner.NumberEditor(sp, "#.####"));
 			styleSpinner(sp);
 			sp.addChangeListener(e -> markChanged());
@@ -324,9 +325,9 @@ public class ItemEdit extends BaseEditPage {
 	
 	private void addChangeListeners(Document doc) {
 		doc.addDocumentListener(new DocumentListener() {
-			public void insertUpdate(javax.swing.event.DocumentEvent e) { markChanged(); }
-			public void removeUpdate(javax.swing.event.DocumentEvent e) { markChanged(); }
-			public void changedUpdate(javax.swing.event.DocumentEvent e) { markChanged(); }
+			public void insertUpdate(DocumentEvent e) { markChanged(); }
+			public void removeUpdate(DocumentEvent e) { markChanged(); }
+			public void changedUpdate(DocumentEvent e) { markChanged(); }
 		});
 	}
 	
