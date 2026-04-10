@@ -5,6 +5,7 @@ import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.ModItem;
+import com.nukuhack.util.IOUtil;
 import lombok.NonNull;
 
 import javax.imageio.ImageIO;
@@ -116,7 +117,7 @@ public final class IconService {
 		try {
 			if (Files.isDirectory(source)) {
 				convertDirectory(source, source, toPng);
-			} else if (Util.isZipLike(source)) {
+			} else if (IOUtil.isZipLike(source)) {
 				convertArchive(source, toPng);
 			} else {
 				convertSingleFile(source, source.getParent(), toPng);

@@ -1,6 +1,5 @@
 package com.nukuhack.modforge;
 
-import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.service.LocalService;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.LoadingScreen;
@@ -11,18 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static com.nukuhack.modforge.backend.service.LocalService.makeLocalizationXml;
 
 /**
  * <p> ███╗   ███╗ ██████╗ ██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗</p>

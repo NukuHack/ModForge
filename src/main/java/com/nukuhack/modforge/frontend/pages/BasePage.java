@@ -2,8 +2,8 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.model.I.Storm;
+import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.service.ModItemBuilder;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
@@ -16,6 +16,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import static com.nukuhack.modforge.Util.copyText;
@@ -25,7 +27,7 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 @Slf4j
 public abstract class BasePage extends JPanel {
 	protected final MainWindow window;
-	
+	protected final ExecutorService executor = Executors.newSingleThreadExecutor();
 	protected final JComboBox<String> modSelector = new JComboBox<>(new DefaultComboBoxModel<>());
 	protected final JTextField search = styledField("ui_search_all");
 	
@@ -83,11 +85,7 @@ public abstract class BasePage extends JPanel {
 			modSelector.addActionListener(l);
 	}
 	
-	protected JPopupMenu buildItemPopupMenu(
-			Supplier<ModItem> itemSupplier,
-			boolean showEditItem,
-			boolean showEditLang,
-			boolean showAddToMod) {
+	protected JPopupMenu buildItemPopupMenu(Supplier<ModItem> itemSupplier, boolean showEditItem, boolean showEditLang, boolean showAddToMod) {
 		
 		var menu = new JPopupMenu();
 		
@@ -118,7 +116,8 @@ public abstract class BasePage extends JPanel {
 			JMenuItem editItem = new JMenuItem(getLocalText("ui_edit_item"));
 			editItem.addActionListener(e -> {
 				var item = itemSupplier.get();
-				if (item == null) return;
+				if (item == null)
+					return;
 				if (item instanceof Storm stormItem)
 					window.navigate(MainWindow.Page.STORM, stormItem);
 				else
@@ -199,8 +198,7 @@ public abstract class BasePage extends JPanel {
 				window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 				return;
 			}
-			var mod = ModService.modCollection.stream()
-							  .filter(m -> m.name.equals(sel)).findFirst();
+			var mod = ModService.modCollection.stream().filter(m -> m.name.equals(sel)).findFirst();
 			mod.ifPresentOrElse(m -> {
 				m.addItem(ModItemBuilder.deepCopy(item, m));
 				window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, m.name);
@@ -280,9 +278,7 @@ public abstract class BasePage extends JPanel {
 		f.setBackground(new Color(0x313244));
 		f.setForeground(MainWindow.TEXT);
 		f.setCaretColor(MainWindow.TEXT);
-		f.setBorder(BorderFactory.createCompoundBorder(
-				new LineBorder(new Color(0x45475a), 1),
-				BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+		f.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(0x45475a), 1), BorderFactory.createEmptyBorder(6, 10, 6, 10)));
 		f.setFont(new Font("Roboto", Font.PLAIN, 13));
 		return getJTextField(getLocalText(placeholder), f);
 	}
@@ -330,9 +326,7 @@ public abstract class BasePage extends JPanel {
 	
 	protected static String htmlForItem(ModItem item) {
 		if (item == null) {
-			return "<html><body style='background:#181825;color:#6c6f85;"
-						   + "font-family:sans-serif;padding:12px;'>"
-						   + "<i>" + getLocalText("ui_no_item") + "</i></body></html>";
+			return "<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:12px;'>" + "<i>" + getLocalText("ui_no_item") + "</i></body></html>";
 		}
 		
 		var html = new StringBuilder();
@@ -348,7 +342,7 @@ public abstract class BasePage extends JPanel {
 		html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(item.getPath())).append("</span>");
 		html.append("</div>");
 		
-		if (!item.getAttributes().isEmpty()) {
+		if (! item.getAttributes().isEmpty()) {
 			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_attributes")).append("</span><br/><br/>");
 			for (var attr : item.getAttributes()) {
@@ -359,7 +353,7 @@ public abstract class BasePage extends JPanel {
 			}
 		}
 		
-		if (!item.getLinkedItems().isEmpty()) {
+		if (! item.getLinkedItems().isEmpty()) {
 			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_linked_items")).append("</span><br/><br/>");
 			for (var linkedId : item.getLinkedItems()) {

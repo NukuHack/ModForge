@@ -15,7 +15,7 @@ public interface ModItem {
 	// ── Attribute names that hold localization keys (checked case-insensitively)
 	// TODO : right now you can only filter on actual items and since we don't have any item with like straight "UIName" because that si a special item, we can't filter on them
 	Set<String> LANG_ATTR_HINTS = Set.of("UIName", "Desc", "UIInfo", "UiSound", "LatinName", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
-	Set<String> LANG_FIELD_HINTS = Set.of("__", "ui_in_", "ui_item_category", "ui_item_selection", "ui_item_info_category", "alch", "ui_key_", "ui_nm_", "ui_keybinds", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_", "char_", "cr2_", "cr_", "ui_photo", "ui_skill_", "ui_tutorial_", "game_over_", "lore_", "stat_", "skillbook_", "lorebook_", "npc_", "ui_codex_", "ui_Exit", "ui_fac_", "ui_helpoverlay", "ui_hud");
+	Set<String> LANG_FIELD_HINTS = Set.of("perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name");
 	
 	String getId();
 	
@@ -182,7 +182,7 @@ public interface ModItem {
 	
 	@NoArgsConstructor
 	@Slf4j
-	class EmptyImpl extends BaseModItem{
+	class EmptyImpl extends BaseModItem {
 		@Getter
 		@Setter
 		private String idKey;

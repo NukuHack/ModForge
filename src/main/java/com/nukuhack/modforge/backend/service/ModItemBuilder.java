@@ -61,7 +61,7 @@ public final class ModItemBuilder {
 	
 	public static ModItem create(final Element element) {
 		// glue it together yet again, barely works
-		final var elementName = element.getTagName().toLowerCase(Locale.ROOT);
+		final var elementName = element.getTagName();
 		final var handler = HANDLER_MAP.getOrDefault(elementName, fallbackBuilder);
 		
 		return handler.create(element);
@@ -185,7 +185,7 @@ public final class ModItemBuilder {
 		
 		@Override
 		public Element build(final Document document, final ModItem item) {
-			final var typeName = group(item).fileName;
+			final var typeName = group(item).xmlObjName;
 			final var el = document.createElement(typeName);
 			for (var attr : item.getAttributes()) {
 				el.setAttribute(attr.getName(), attr.serialize());
@@ -197,11 +197,12 @@ public final class ModItemBuilder {
 	private static class FallbackBuilder implements BuildHandler {
 		@Override
 		public ModItem create(Element element) {
-			final var elementName = element.getTagName().toLowerCase(Locale.ROOT);
+			final var elementName = element.getTagName();
 			log.info("No creater matched element <{}>", elementName);
 			
 			// using if- so the compiler sees it as good code
-			if (true) return null;
+			if (true)
+				return null;
 			
 			final var attributes = element.getAttributes();
 			final Map<String, String> map = new HashMap<>();
@@ -212,7 +213,8 @@ public final class ModItemBuilder {
 			
 			log.trace("No creater matched element data {}", map);
 			final var item = new ModItem.EmptyImpl();
-			String id = null; String name = null;
+			String id = null;
+			String name = null;
 			for (var key : map.keySet()) {
 				if (id == null && key.toLowerCase().endsWith("id"))
 					id = key;

@@ -1,5 +1,6 @@
 package com.nukuhack.modforge.frontend.pages;
 
+import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.E.Language;
@@ -15,6 +16,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.nukuhack.modforge.Util.escHtml;
 import static com.nukuhack.modforge.Util.unescapeXml;
@@ -61,7 +63,7 @@ public class LocalizationPage extends BasePage {
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%-50s", key));
-		if (!le.attrName.isBlank())
+		if (! le.attrName.isBlank())
 			sb.append("  [").append(le.attrName).append("]");
 		if (le.item != null) {
 			String itemId = le.item.getId();
@@ -73,20 +75,17 @@ public class LocalizationPage extends BasePage {
 	}
 	
 	private static String emptyDetailHtml() {
-		return "<html><body style='background:#181825;color:#6c6f85;"
-					   + "font-family:sans-serif;padding:16px;'>"
-					   + "<i>" + getLocalText("ui_select_entry") + "</i></body></html>";
+		return "<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:16px;'>" + "<i>" + getLocalText("ui_select_entry") + "</i></body></html>";
 	}
 	
 	private static String buildDetailHtml(LangEntry le) {
 		StringBuilder html = new StringBuilder();
-		html.append("<html><body style='background:#181825;color:#cdd6f4;"
-							+ "font-family:sans-serif;padding:14px;'>");
+		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:14px;'>");
 		
 		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(unescapeXml(le.langKey))).append("</b>");
 		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 		
-		if (!le.attrName.isBlank()) {
+		if (! le.attrName.isBlank()) {
 			html.append("<div style='margin-bottom:8px;'>");
 			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_attribute")).append("</span><br/>");
 			html.append("<span style='color:#cba6f7;'>").append(escHtml(unescapeXml(le.attrName))).append("</span>");
@@ -129,13 +128,15 @@ public class LocalizationPage extends BasePage {
 		
 		for (var item : source.getItems()) {
 			for (var attr : item.getLangAttributes()) {
-				final String key = attr.getValue();
-				if (key.isEmpty()) continue;
-				final LangEntry existing = entryByKey.get(key);
+				var key = attr.getValue();
+				if (key.isEmpty())
+					continue;
+				var existing = entryByKey.get(key);
 				if (existing != null && existing.item == null)
 					entryByKey.put(key, new LangEntry(existing.langKey, existing.value, attr.getName(), item));
 			}
 		}
+		log.debug("set: {}", entryByKey.values().stream().map(l -> l.attrName).collect(Collectors.toSet()));
 		return entryByKey;
 	}
 	
@@ -172,9 +173,17 @@ public class LocalizationPage extends BasePage {
 		
 		search.setPreferredSize(new Dimension(220, 28));
 		search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-			public void insertUpdate(DocumentEvent e) { applyFilters(); }
-			public void removeUpdate(DocumentEvent e) { applyFilters(); }
-			public void changedUpdate(DocumentEvent e) { applyFilters(); }
+			public void insertUpdate(DocumentEvent e) {
+				applyFilters();
+			}
+			
+			public void removeUpdate(DocumentEvent e) {
+				applyFilters();
+			}
+			
+			public void changedUpdate(DocumentEvent e) {
+				applyFilters();
+			}
 		});
 		
 		controls.add(muted("ui_mod"));
@@ -197,9 +206,11 @@ public class LocalizationPage extends BasePage {
 		entryList.setFont(new Font("Roboto Mono", Font.PLAIN, 12));
 		entryList.setFixedCellHeight(30);
 		entryList.addListSelectionListener(e -> {
-			if (e.getValueIsAdjusting()) return;
+			if (e.getValueIsAdjusting())
+				return;
 			int idx = entryList.getSelectedIndex();
-			if (idx < 0 || idx >= filteredIndices.length) return;
+			if (idx < 0 || idx >= filteredIndices.length)
+				return;
 			selectedEntry = allEntries.get(filteredIndices[idx]);
 			detailPane.setText(buildDetailHtml(selectedEntry));
 			detailPane.setCaretPosition(0);
@@ -210,23 +221,17 @@ public class LocalizationPage extends BasePage {
 		entryList.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (e.getClickCount() == 2 && selectedEntry != null) {
-					Util.copyText(selectedEntry.langKey);
-					window.snackbar.show(getLocalText("ui_copied_key"), BarManager.Type.INFO, selectedEntry.langKey);
-				}
+			if (e.getClickCount() == 2 && selectedEntry != null) {
+				Util.copyText(selectedEntry.langKey);
+				window.snackbar.show(getLocalText("ui_copied_key"), BarManager.Type.INFO, selectedEntry.langKey);
+			}
 			}
 		});
 		
 		var listScroll = new JScrollPane(entryList);
 		listScroll.setBackground(MainWindow.SURFACE);
 		listScroll.getViewport().setBackground(new Color(0x181825));
-		listScroll.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createLineBorder(new Color(0x313244)),
-				getLocalText("ui_entries"),
-				javax.swing.border.TitledBorder.LEFT,
-				javax.swing.border.TitledBorder.TOP,
-				new Font("Roboto", Font.BOLD, 12),
-				MainWindow.ACCENT));
+		listScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), getLocalText("ui_entries"), javax.swing.border.TitledBorder.LEFT, javax.swing.border.TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		
 		detailPane.setContentType("text/html");
 		detailPane.setEditable(false);
@@ -237,13 +242,7 @@ public class LocalizationPage extends BasePage {
 		
 		var detailScroll = new JScrollPane(detailPane);
 		detailScroll.setBackground(MainWindow.SURFACE);
-		detailScroll.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createLineBorder(new Color(0x313244)),
-				getLocalText("ui_detail"),
-				javax.swing.border.TitledBorder.LEFT,
-				javax.swing.border.TitledBorder.TOP,
-				new Font("Roboto", Font.BOLD, 12),
-				MainWindow.ACCENT));
+		detailScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), getLocalText("ui_detail"), javax.swing.border.TitledBorder.LEFT, javax.swing.border.TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		
 		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, listScroll, detailScroll);
 		split.setResizeWeight(0.55);
@@ -296,9 +295,11 @@ public class LocalizationPage extends BasePage {
 		
 		var defLang = window.getRegistry().userConfig.getLanguage();
 		var ordered = new ArrayList<Language>();
-		if (defLang != null) ordered.add(defLang);
+		if (defLang != null)
+			ordered.add(defLang);
 		for (var lang : Language.values())
-			if (lang != defLang) ordered.add(lang);
+			if (lang != defLang)
+				ordered.add(lang);
 		for (var lang : ordered)
 			langSelector.addItem(lang.getDisplayName());
 		
@@ -316,12 +317,10 @@ public class LocalizationPage extends BasePage {
 		
 		var source = getSelectedMod();
 		var lang = resolveSelectedLang();
+		if (lang == null)
+			lang = Singleton.INSTANCE.getRegistry().userConfig.getLanguage();
 		
-		if (source.isEmpty() || lang == null) {
-			applyFilters();
-			return;
-		}
-		var mod = source.get();
+		var mod = source.orElseGet(Singleton.INSTANCE::getGame);
 		var langMap = mod.getLang(lang);
 		if (langMap.isEmpty()) {
 			applyFilters();
@@ -330,8 +329,7 @@ public class LocalizationPage extends BasePage {
 		}
 		
 		allEntries.addAll(getLangEntryMap(langMap, mod).values());
-		allEntries.sort(Comparator.comparing((LangEntry le) -> le.attrName, Comparator.nullsLast(String::compareToIgnoreCase))
-								.thenComparing(le -> le.langKey, String.CASE_INSENSITIVE_ORDER));
+		allEntries.sort(Comparator.comparing((LangEntry le) -> le.attrName, Comparator.nullsLast(String::compareToIgnoreCase)).thenComparing(le -> le.langKey, String.CASE_INSENSITIVE_ORDER));
 		
 		applyFilters();
 		window.snackbar.show(getLocalText("ui_localization_loaded"), BarManager.Type.SUCCESS, allEntries.size());
@@ -362,7 +360,8 @@ public class LocalizationPage extends BasePage {
 	
 	private Language resolveSelectedLang() {
 		var sel = langSelector.getSelectedItem();
-		if (sel == null) return null;
+		if (sel == null)
+			return null;
 		return Language.fromDisplayName((String) sel);
 	}
 	

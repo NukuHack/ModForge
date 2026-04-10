@@ -26,64 +26,64 @@ import java.util.function.Predicate;
 public enum ItemEntry {
 	
 	// ── Weapons ─────────────────────────────────────────────────────────────
-	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", true),
+	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", "MeleeWeapon", true),
 	
-	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", true),
+	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", "MissileWeapon", true),
 	
-	AMMO(I.Ammo.class, "Id", "item", true),
+	AMMO(I.Ammo.class, "Id", "item", "Ammo", true),
 	
-	MELEE_WEAPON_CLASS(I.MeleeWeaponClass.class, "id", "weapon_class", false),
+	MELEE_WEAPON_CLASS(I.MeleeWeaponClass.class, "id", "weapon_class", "MeleeWeaponClass", false),
 	
-	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", false),
+	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", "MissileWeaponClass", false),
 	
 	// ── Armor ────────────────────────────────────────────────────────────────
-	ARMOR(I.Armor.class, "Id", "item", true),
+	ARMOR(I.Armor.class, "Id", "item", "Armor", true),
 	
-	HELMET(I.Helmet.class, "Id", "item", true),
+	HELMET(I.Helmet.class, "Id", "item", "Helmet", true),
 	
-	HOOD(I.Hood.class, "Id", "item", true),
+	HOOD(I.Hood.class, "Id", "item", "Hood", true),
 	
 	// ── Consumables ──────────────────────────────────────────────────────────
-	FOOD(I.Food.class, "Id", "item", true),
+	FOOD(I.Food.class, "Id", "item", "Food", true),
 	
-	POISON(I.Poison.class, "Id", "item", true),
+	POISON(I.Poison.class, "Id", "item", "Poison", true),
 	
 	// ── Crafting ─────────────────────────────────────────────────────────────
-	HERB(I.Herb.class, "Id", "item", true),
+	HERB(I.Herb.class, "Id", "item", "Herb", true),
 	
-	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", true),
+	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", "CraftingMaterial", true),
 	
 	// ── Misc ─────────────────────────────────────────────────────────────────
-	NPC_TOOL(I.NPCTool.class, "Id", "item", true),
+	NPC_TOOL(I.NPCTool.class, "Id", "item", "NPCTool", true),
 	
-	MISC_ITEM(I.MiscItem.class, "Id", "item", true),
+	MISC_ITEM(I.MiscItem.class, "Id", "item", "MiscItem", true),
 	
-	DOCUMENT(I.Document.class, "Id", "item", true), // ItemClasses version="8" - BlacksmithRecipeId
+	DOCUMENT(I.Document.class, "Id", "item", "Document", true), // ItemClasses version="8" - BlacksmithRecipeId
 	
-	DIE(I.Die.class, "Id", "item", true),
+	DIE(I.Die.class, "Id", "item", "Die", true),
 	
-	ITEM_ALIAS(I.ItemAlias.class, "Id", "item", true),
+	ITEM_ALIAS(I.ItemAlias.class, "Id", "item", "ItemAlias", true),
 	
-	QUICK_SLOT_CONTAINER(I.QuickSlotContainer.class, "Id", "item", true),
+	QUICK_SLOT_CONTAINER(I.QuickSlotContainer.class, "Id", "item", "QuickSlotContainer", true),
 	
-	DICE_BADGE(I.DiceBadge.class, "Id", "item", true),
+	DICE_BADGE(I.DiceBadge.class, "Id", "item", "DiceBadge", true),
 	
-	PICKABLE_ITEM(I.PickableItem.class, "Id", "item", true),
+	PICKABLE_ITEM(I.PickableItem.class, "Id", "item", "PickableItem", true),
 	
-	KEY(I.Key.class, "Id", "item", true),
+	KEY(I.Key.class, "Id", "item", "Key", true),
 	
-	MONEY(I.Money.class, "Id", "item", true),
+	MONEY(I.Money.class, "Id", "item", "Money", true),
 	
-	KEY_RING(I.KeyRing.class, "Id", "item", true),
+	KEY_RING(I.KeyRing.class, "Id", "item", "KeyRing", true),
 	
-	OINTMENT(I.Ointment.class, "Id", "item", true),
+	OINTMENT(I.Ointment.class, "Id", "item", "Ointment", true),
 	
-	ALCHEMY_BASE(I.AlchemyBase.class, "Id", "item", true),
+	ALCHEMY_BASE(I.AlchemyBase.class, "Id", "item", "AlchemyBase", true),
 	
 	// ── Perks / Buffs related ───────────────────────────────────────────────
-	PERK(I.Perk.class, "perk_id", "perk", true),
+	PERK(I.Perk.class, "perk_id", "perk", "perk", true),
 	
-	BUFF(I.Buff.class, "buff_id", "buff", true),
+	BUFF(I.Buff.class, "buff_id", "buff", "buff", true),
 	
 	RPG_PARAM(I.RpgParam.class, "rpg_param_key", "rpg_param", "rpg_param", true),
 	
@@ -93,12 +93,12 @@ public enum ItemEntry {
 	
 	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", "perk_script", true),
 	
-	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParams", "scriptparam", true),
+	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParams", "ScriptParam", true),
 	
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", true),
 	
 	// ── Storm ────────────────────────────────────────────────────────────────
-	STORM(I.Storm.class, "id", "storm", true);
+	STORM(I.Storm.class, "id", "storm", "storm", true);
 	
 	// ────────────────────────────────────────────────────────────────────────
 	// Inner data
@@ -147,10 +147,6 @@ public enum ItemEntry {
 		this.fileName = fileName;
 		this.showInDisplay = showInDisplay;
 		this.xmlObjName = xmlObjName;
-	}
-	
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, boolean showInDisplay) {
-		this(clazz, idKey, fileName, clazz.getSimpleName().toLowerCase(), showInDisplay);
 	}
 	
 	public static ItemEntry forClass(Class<? extends ModItem> clazz) {

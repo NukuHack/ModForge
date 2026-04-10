@@ -2,14 +2,12 @@ package com.nukuhack.image;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 /**
  * DDS codec — single public API for all supported formats.
@@ -546,15 +544,7 @@ public class DDSUtil {
 			aBits |= (long) Math.min(15, alphas[i] / 17) << (i * 4);
 		for (int i = 0; i < 8; i++)
 			out[off + i] = (byte) ((aBits >> (i * 8)) & 0xFF);
-		int[] c0c1 = minMaxColors(colors);
-		int c0 = c0c1[0], c1 = c0c1[1];
-		if (c0 <= c1) {
-			int t = c0;
-			c0 = c1;
-			c1 = t;
-		}
-		int[] pal = expandDXT3_5(c0, c1);
-		compressColorBlock(colors, out, off, c0, c1, pal);
+		compDXT3_5(colors, out, off);
 	}
 	
 	private static void compressDXT5Block(int[] colors, int[] alphas, byte[] out, int off) {
@@ -573,6 +563,10 @@ public class DDSUtil {
 		out[off + 1] = (byte) a1;
 		for (int i = 0; i < 6; i++)
 			out[off + 2 + i] = (byte) ((aBits >> (i * 8)) & 0xFF);
+		compDXT3_5(colors, out, off);
+	}
+	
+	private static void compDXT3_5(int[] colors, byte[] out, int off) {
 		int[] c0c1 = minMaxColors(colors);
 		int c0 = c0c1[0], c1 = c0c1[1];
 		if (c0 <= c1) {
@@ -581,10 +575,7 @@ public class DDSUtil {
 			c1 = t;
 		}
 		int[] pal = expandDXT3_5(c0, c1);
-		compressColorBlock(colors, out, off, c0, c1, pal);
-	}
-	
-	private static void compressColorBlock(int[] colors, byte[] out, int off, int c0, int c1, int[] pal) {
+		
 		long bits = buildColorBits(colors, pal);
 		out[off + 8] = (byte) (c0 & 0xFF);
 		out[off + 9] = (byte) (c0 >> 8);
@@ -763,51 +754,8 @@ public class DDSUtil {
 		return u48le(b, i) | ((b[i + 6] & 0xFFL) << 48) | ((b[i + 7] & 0xFFL) << 56);
 	}
 	
-	/** LSB-first bit reader over a fixed byte array. Package-private for BC7Util. */
-	@RequiredArgsConstructor
-	static class BitReader {
-		private final byte[] data;
-		private int pos;
-		
-		int read(int n) {
-			if (n == 0)
-				return 0;
-			int v = 0;
-			for (int i = 0; i < n; i++) {
-				int by = pos / 8;
-				if (by >= data.length)
-					break;
-				v |= ((data[by] >> (pos % 8)) & 1) << i;
-				pos++;
-			}
-			return v;
-		}
-	}
-	
-	/** LSB-first bit writer over a fixed byte array region. Package-private for BC7Util. */
-	@RequiredArgsConstructor
-	static class BitWriter {
-		private final byte[] data;
-		private int pos;
-		
-		BitWriter(byte[] data, int byteOffset) {
-			this(data);
-			this.pos = byteOffset * 8;
-			Arrays.fill(data, byteOffset, byteOffset + 16, (byte) 0);
-		}
-		
-		void write(int val, int n) {
-			for (int i = 0; i < n; i++) {
-				if (((val >> i) & 1) == 1)
-					data[pos / 8] |= (byte) (1 << (pos % 8));
-				pos++;
-			}
-		}
-	}
-	
 	static class ImgData {
 		final int h, w, code, length;
-		final Dds.ExtendedHeader header;
 		byte[] data;
 		
 		ImgData(int h, int w, int code, int length, byte[] data) {
@@ -815,7 +763,6 @@ public class DDSUtil {
 			this.w = w;
 			this.code = code;
 			this.length = length;
-			this.header = null;
 			this.data = data;
 		}
 	}

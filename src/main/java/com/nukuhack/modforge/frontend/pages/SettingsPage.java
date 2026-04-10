@@ -114,17 +114,24 @@ public class SettingsPage extends BasePage {
 			if (sel != null)
 				userConfig.setLanguage(Language.fromDisplayName(sel));
 			userConfig.setAutoLoadGameData(loadGameData.isSelected());
-			
-			userConfig.save();
-			w.snackbar.show("ui_settings_saved", BarManager.Type.SUCCESS);
+			executor.submit(() -> {
+				userConfig.save();
+				SwingUtilities.invokeLater(() -> {
+					w.snackbar.show("ui_settings_saved", BarManager.Type.SUCCESS);
+				});
+			});
 		}), gc);
 		gc.gridx = 2;
 		gc.gridy = 5;
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("ui_refresh_all", e -> {
-			Singleton.INSTANCE.getRegistry().init();
-			w.snackbar.show("ui_refresh_success", BarManager.Type.SUCCESS);
+			executor.submit(() -> {
+				Singleton.INSTANCE.getRegistry().init();
+				SwingUtilities.invokeLater(() -> {
+					w.snackbar.show("ui_refresh_success", BarManager.Type.SUCCESS);
+				});
+			});
 		}), gc);
 		
 		return card;

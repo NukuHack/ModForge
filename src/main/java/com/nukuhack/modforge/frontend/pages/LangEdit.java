@@ -47,9 +47,7 @@ public class LangEdit extends BaseEditPage {
 	}
 	
 	private static String emptyPreviewHtml() {
-		return "<html><body style='background:#181825;color:#6c6f85;"
-					   + "font-family:sans-serif;padding:12px;'>"
-					   + "<i>" + getLocalText("ui_lang_edit_empty_preview") + "</i></body></html>";
+		return "<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:12px;'>" + "<i>" + getLocalText("ui_lang_edit_empty_preview") + "</i></body></html>";
 	}
 	
 	@Override
@@ -126,7 +124,8 @@ public class LangEdit extends BaseEditPage {
 	
 	@Override
 	protected void updatePreview() {
-		if (previewPane == null) return;
+		if (previewPane == null)
+			return;
 		if (currentItem == null || workingEntries.isEmpty()) {
 			previewPane.setText(emptyPreviewHtml());
 			return;
@@ -142,10 +141,7 @@ public class LangEdit extends BaseEditPage {
 		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 		
 		if (lang != null) {
-			html.append("<span style='color:#6c6f85;font-size:10px;'>")
-					.append(getLocalText("ui_language")).append(": ")
-					.append(escHtml(lang.getDisplayName()))
-					.append("</span><br/><br/>");
+			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_language")).append(": ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
 		}
 		
 		for (var entry : workingEntries.entrySet()) {
@@ -189,7 +185,8 @@ public class LangEdit extends BaseEditPage {
 		
 		for (var attr : currentItem.getLangAttributes()) {
 			final String langKey = attr.getValue().trim();
-			if (langKey.isBlank()) continue;
+			if (langKey.isBlank())
+				continue;
 			
 			String translated = local.resolve(langKey, baseGame, lang);
 			if (translated == null)
@@ -201,7 +198,8 @@ public class LangEdit extends BaseEditPage {
 		
 		if (workingEntries.isEmpty()) {
 			GridBagConstraints gc = new GridBagConstraints();
-			gc.gridx = 0; gc.gridy = 0;
+			gc.gridx = 0;
+			gc.gridy = 0;
 			gc.insets = new Insets(24, 0, 0, 0);
 			fieldsPanel.add(muted("ui_local_not_found"), gc);
 			fieldsPanel.revalidate();
@@ -219,7 +217,8 @@ public class LangEdit extends BaseEditPage {
 			attrLabel.setForeground(MainWindow.MUTED);
 			attrLabel.setFont(new Font("Roboto", Font.PLAIN, 10));
 			GridBagConstraints attrGc = new GridBagConstraints();
-			attrGc.gridx = 0; attrGc.gridy = row;
+			attrGc.gridx = 0;
+			attrGc.gridy = row;
 			attrGc.anchor = GridBagConstraints.NORTHEAST;
 			attrGc.insets = new Insets(2, 4, 0, 8);
 			fieldsPanel.add(attrLabel, attrGc);
@@ -238,7 +237,8 @@ public class LangEdit extends BaseEditPage {
 				}
 			});
 			GridBagConstraints keyGc = new GridBagConstraints();
-			keyGc.gridx = 0; keyGc.gridy = row;
+			keyGc.gridx = 0;
+			keyGc.gridy = row;
 			keyGc.anchor = GridBagConstraints.NORTHEAST;
 			keyGc.insets = new Insets(4, 4, 4, 8);
 			fieldsPanel.add(keyLabel, keyGc);
@@ -251,13 +251,22 @@ public class LangEdit extends BaseEditPage {
 			ta.setFont(new Font("Roboto", Font.PLAIN, 12));
 			ta.setLineWrap(true);
 			ta.setWrapStyleWord(true);
-			ta.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(new Color(0x45475a)),
-					BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+			ta.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 			ta.getDocument().addDocumentListener(new DocumentListener() {
-				public void insertUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
-				public void removeUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
-				public void changedUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
+				public void insertUpdate(DocumentEvent e) {
+					markChanged();
+					updatePreview();
+				}
+				
+				public void removeUpdate(DocumentEvent e) {
+					markChanged();
+					updatePreview();
+				}
+				
+				public void changedUpdate(DocumentEvent e) {
+					markChanged();
+					updatePreview();
+				}
 			});
 			
 			JScrollPane taSp = new JScrollPane(ta);
@@ -266,7 +275,8 @@ public class LangEdit extends BaseEditPage {
 			taSp.setBorder(BorderFactory.createEmptyBorder());
 			
 			GridBagConstraints editorGc = new GridBagConstraints();
-			editorGc.gridx = 1; editorGc.gridy = row;
+			editorGc.gridx = 1;
+			editorGc.gridy = row;
 			editorGc.weightx = 1.0;
 			editorGc.fill = GridBagConstraints.HORIZONTAL;
 			editorGc.anchor = GridBagConstraints.NORTHWEST;
@@ -278,7 +288,9 @@ public class LangEdit extends BaseEditPage {
 			JSeparator sep = new JSeparator();
 			sep.setForeground(new Color(0x313244));
 			GridBagConstraints sepGc = new GridBagConstraints();
-			sepGc.gridx = 0; sepGc.gridy = row; sepGc.gridwidth = 2;
+			sepGc.gridx = 0;
+			sepGc.gridy = row;
+			sepGc.gridwidth = 2;
 			sepGc.fill = GridBagConstraints.HORIZONTAL;
 			sepGc.insets = new Insets(2, 0, 2, 0);
 			fieldsPanel.add(sep, sepGc);
@@ -286,7 +298,8 @@ public class LangEdit extends BaseEditPage {
 		}
 		
 		GridBagConstraints spacerGc = new GridBagConstraints();
-		spacerGc.gridx = 0; spacerGc.gridy = row;
+		spacerGc.gridx = 0;
+		spacerGc.gridy = row;
 		spacerGc.weighty = 1.0;
 		spacerGc.fill = GridBagConstraints.VERTICAL;
 		fieldsPanel.add(Box.createVerticalGlue(), spacerGc);

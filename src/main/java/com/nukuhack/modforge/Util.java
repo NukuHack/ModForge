@@ -1,6 +1,7 @@
 package com.nukuhack.modforge;
 
 import com.nukuhack.modforge.backend.model.E.Language;
+import com.nukuhack.util.IOUtil;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,16 +15,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * Utility class providing common file operations, path handling, XML/JSON escaping,
@@ -328,7 +325,7 @@ public final class Util {
 	 */
 	public static void writeXml(String inp, Path outFile) throws IOException {
 		Files.createDirectories(outFile.getParent());
-		inp = removeEmpty(inp);
+		inp = removeBlankLines(inp);
 		if (! inp.startsWith(XML_HEADER))
 			inp = XML_HEADER + "\n" + inp;
 		
@@ -338,13 +335,8 @@ public final class Util {
 		}
 	}
 	
-	private static String removeEmpty(String inp) {
-		var nL = "\n";
-		var sb = new StringBuilder();
-		for (var line : inp.split(nL))
-			if (! line.isBlank())
-				sb.append(line).append(nL);
-		return sb.toString();
+	public static String removeBlankLines(String inp) {
+		return inp.lines().filter(Predicate.not(String::isBlank)).collect(Collectors.joining("\n"));
 	}
 	
 	/**
@@ -352,9 +344,11 @@ public final class Util {
 	 * Handles quotes, backslashes, control characters, and Unicode.
 	 *
 	 * @param s Input string
-	 * @return JSON-escaped string
+	 * @return JSON-escaped string, or empty string if input is null
 	 */
 	public static String escapeJson(String s) {
+		if (s == null)
+			return "";
 		final var sb = new StringBuilder();
 		for (char c : s.toCharArray()) {
 			switch (c) {
@@ -393,9 +387,11 @@ public final class Util {
 	 * Escapes special characters for XML.
 	 *
 	 * @param s Input string
-	 * @return XML-escaped string
+	 * @return XML-escaped string, or empty string if input is null
 	 */
 	public static String escapeXml(String s) {
+		if (s == null)
+			return "";
 		// theoretically escapeHtml could work, but I made this just in case
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
 	}
@@ -404,12 +400,11 @@ public final class Util {
 	 * Unescapes common XML entities back to their original characters.
 	 *
 	 * @param s XML-escaped string (maybe null)
-	 * @return Unescaped string, or null if input is null
+	 * @return Unescaped string, or empty string if input is null
 	 */
 	public static String unescapeXml(String s) {
-		if (s == null) {
-			return null;
-		}
+		if (s == null)
+			return "";
 		return s.replace("&nbsp;", " ").replace("&apos;", "'").replace("&quot;", "\"").replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&");
 	}
 	
@@ -481,57 +476,20 @@ public final class Util {
 	 * @param dirPath Directory path to open
 	 */
 	public static void openDirectory(JPanel w, String dirPath) {
-		if (dirPath == null || dirPath.isBlank()) {
-			JOptionPane.showMessageDialog(w, "Game directory not set. Please configure it in Settings.", "Directory Not Set", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-		
-		final File gameDir = new File(dirPath);
-		if (! gameDir.exists() || ! gameDir.isDirectory()) {
-			JOptionPane.showMessageDialog(w, "Game directory does not exist or is invalid:\n" + dirPath, "Invalid Directory", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		
+		boolean isOpen = false;
 		try {
-			// Cross-platform directory opening
-			if (Desktop.isDesktopSupported()) {
-				Desktop.getDesktop().open(gameDir);
-				return;
-			}
-			// Fallback for systems without Desktop support
-			final Runtime runtime = Runtime.getRuntime();
-			
-			if (os.contains("win")) {
-				runtime.exec(new String[] { "explorer", dirPath });
-			} else if (os.contains("mac")) {
-				runtime.exec(new String[] { "open", dirPath });
-			} else if (os.contains("nix") || os.contains("nux")) {
-				runtime.exec(new String[] { "xdg-open", dirPath });
-			} else {
-				JOptionPane.showMessageDialog(w, "Cannot open directory on this operating system.", "Unsupported OS", JOptionPane.ERROR_MESSAGE);
-			}
+			IOUtil.openDirectory(dirPath);
+			isOpen = true;
+		} catch (IllegalArgumentException e) {
+			JOptionPane.showMessageDialog(w, "Game directory not correct. Please configure it in Settings.", "Directory Incorrect", JOptionPane.WARNING_MESSAGE);
+		} catch (FileNotFoundException e) {
+			JOptionPane.showMessageDialog(w, "Game directory does not exist or is invalid:\n" + dirPath, "Invalid Directory", JOptionPane.ERROR_MESSAGE);
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(w, "Failed to open game directory:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-			log.warn("IOException while chosing folder", ex);
-		}
-	}
-	
-	/**
-	 * Determines if a file is ZIP-like (ZIP or PAK) by checking extension or magic bytes.
-	 *
-	 * @param path Path to the file
-	 * @return true if file has .zip/.pak extension or starts with ZIP magic bytes (PK\x03\x04)
-	 */
-	public static boolean isZipLike(Path path) {
-		final String lower = path.getFileName().toString().toLowerCase(Locale.ROOT);
-		if (lower.endsWith(".zip") || lower.endsWith(".pak"))
-			return true;
-		try (var in = Files.newInputStream(path)) {
-			final byte[] magic = in.readNBytes(4);
-			// ZIP local-file header signature: 0x50 0x4B 0x03 0x04
-			return magic.length >= 4 && magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04;
-		} catch (IOException ex) {
-			return false;
+			log.warn("IOException while choosing folder", ex);
+		} finally {
+			if (! isOpen)
+				JOptionPane.showMessageDialog(w, "Cannot open directory on this operating system.", "Unsupported OS", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -565,81 +523,6 @@ public final class Util {
 			}
 			// Fallback to ~/.config/ {APP_NAME}
 			return Paths.get(home, ".config", APP_NAME.toLowerCase());
-		}
-	}
-	
-	public static boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
-		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
-			log.warn("Source folder does not exist: {}", sourceFolder);
-			return false;
-		}
-		
-		final var absoluteSource = sourceFolder.toAbsolutePath().normalize();
-		final var absoluteDest = destPakFile.toAbsolutePath().normalize();
-		
-		try {
-			Files.createDirectories(absoluteDest.getParent());
-			Files.deleteIfExists(absoluteDest);
-		} catch (final IOException e) {
-			log.error("PAK creation failed – cannot prepare output", e);
-			return false;
-		}
-		
-		try (var fos = new FileOutputStream(absoluteDest.toFile()); var zos = new ZipOutputStream(fos); var walk = Files.walk(absoluteSource)) {
-			
-			zos.setLevel(9);
-			if (stripMetadata)
-				zos.setComment("");
-			
-			walk.filter(Files::isRegularFile).filter(p -> ! p.toAbsolutePath().normalize().equals(absoluteDest))   // never include self
-					.filter(p -> fileFilter == null || fileFilter.test(p)).forEach(file -> {
-						try {
-							var entryName = absoluteSource.relativize(file).toString().replace('\\', '/');
-							var entry = new ZipEntry(entryName);
-							
-							if (stripMetadata) {
-								entry.setTime(0L);
-								// *** KEY FIX: wipe the extra-field that Java adds automatically ***
-								entry.setExtra(new byte[0]);
-							} else {
-								entry.setTime(Files.getLastModifiedTime(file).toMillis());
-							}
-							
-							zos.putNextEntry(entry);
-							Files.copy(file, zos);
-							zos.closeEntry();
-							
-						} catch (final IOException e) {
-							log.warn("Cannot add to pak: {} – {}", file, e.getMessage());
-						}
-					});
-			
-			return true;
-			
-		} catch (final IOException e) {
-			log.error("PAK creation failed", e);
-			return false;
-		}
-	}
-	
-	/**
-	 * Recursively deletes a file or directory and all its contents.
-	 *
-	 * @param path Path to delete (file or directory)
-	 */
-	public static void deleteRecursively(Path path) {
-		if (! Files.exists(path))
-			return;
-		try (var walk = Files.walk(path)) {
-			walk.sorted(Comparator.reverseOrder()).forEach(p -> {
-				try {
-					Files.deleteIfExists(p);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			});
-		} catch (IOException ex) {
-			log.info("Could not delete file/folder {}", path, ex);
 		}
 	}
 	

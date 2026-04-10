@@ -1,9 +1,10 @@
 package com.nukuhack.image;
 
-import com.nukuhack.image.DDSUtil.BitReader;
-import com.nukuhack.image.DDSUtil.BitWriter;
+import com.nukuhack.util.BitReader;
+import com.nukuhack.util.BitWriter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -368,13 +369,14 @@ public class BCUtil {
 		return - 1;
 	}
 	
+	@SneakyThrows
 	private static int[] decodeBC7Block(byte[] src, int off) {
 		BitReader br = new BitReader(Arrays.copyOfRange(src, off, off + 16));
 		
 		// Detect mode
 		int mode = - 1;
 		for (int i = 0; i < 8; i++) {
-			if (br.read(1) == 1) {
+			if (br.read()) {
 				mode = i;
 				break;
 			}
@@ -399,6 +401,7 @@ public class BCUtil {
 		};
 	}
 	
+	@SneakyThrows
 	private static int[] decodeBC7Mode0_2(int mode, BitReader br) {
 		int subsets = 3;
 		int partBits = (mode == 0) ? 4 : 6;
@@ -406,7 +409,7 @@ public class BCUtil {
 		int weightBits = (mode == 0) ? 3 : 2;
 		int pbits = (mode == 0) ? 6 : 0;
 		
-		int partIdx = br.read(partBits);
+		int partIdx = br.readBits(partBits);
 		int[] part = PARTITION3[partIdx];
 		
 		// Read endpoints (R,G,B only)
@@ -414,7 +417,7 @@ public class BCUtil {
 		for (int c = 0; c < 3; c++) {
 			for (int s = 0; s < subsets; s++) {
 				for (int e = 0; e < 2; e++) {
-					ep[s][e][c] = br.read(endpointBits);
+					ep[s][e][c] = br.readBits(endpointBits);
 				}
 			}
 		}
@@ -422,7 +425,7 @@ public class BCUtil {
 		// Read P-bits
 		int[] p = new int[pbits];
 		for (int i = 0; i < pbits; i++)
-			p[i] = br.read(1);
+			p[i] = br.readBits(1);
 		
 		// Read weights
 		int[] weights = new int[16];
@@ -432,7 +435,7 @@ public class BCUtil {
 			int bits = weightBits;
 			if (i == 0 || i == anchor1 || i == anchor2)
 				bits--;
-			weights[i] = br.read(bits);
+			weights[i] = br.readBits(bits);
 		}
 		
 		// Dequantize endpoints
@@ -466,6 +469,7 @@ public class BCUtil {
 		return out;
 	}
 	
+	@SneakyThrows
 	private static int[] decodeBC7Mode1_3_7(int mode, BitReader br) {
 		int subsets = 2;
 		int partBits = 6;
@@ -475,7 +479,7 @@ public class BCUtil {
 		int pbits = (mode == 1) ? 2 : 4;
 		boolean sharedP = (mode == 1);
 		
-		int partIdx = br.read(partBits);
+		int partIdx = br.readBits(partBits);
 		int[] part = PARTITION2[partIdx];
 		
 		// Read endpoints
@@ -483,7 +487,7 @@ public class BCUtil {
 		for (int c = 0; c < comps; c++) {
 			for (int s = 0; s < subsets; s++) {
 				for (int e = 0; e < 2; e++) {
-					ep[s][e][c] = br.read(endpointBits);
+					ep[s][e][c] = br.readBits(endpointBits);
 				}
 			}
 		}
@@ -491,7 +495,7 @@ public class BCUtil {
 		// Read P-bits
 		int[] p = new int[pbits];
 		for (int i = 0; i < pbits; i++)
-			p[i] = br.read(1);
+			p[i] = br.readB();
 		
 		// Read weights
 		int[] weights = new int[16];
@@ -500,7 +504,7 @@ public class BCUtil {
 			int bits = weightBits;
 			if (i == 0 || i == anchor)
 				bits--;
-			weights[i] = br.read(bits);
+			weights[i] = br.readBits(bits);
 		}
 		
 		// Dequantize and interpolate
@@ -531,9 +535,10 @@ public class BCUtil {
 		return out;
 	}
 	
+	@SneakyThrows
 	private static int[] decodeBC7Mode4_5(int mode, BitReader br) {
-		int rot = br.read(2);
-		int idxMode = (mode == 4) ? br.read(1) : 0;
+		int rot = br.readBits(2);
+		int idxMode = (mode == 4) ? br.readB() : 0;
 		
 		int epBitsC = (mode == 4) ? 5 : 7;
 		int epBitsA = (mode == 4) ? 6 : 8;
@@ -544,11 +549,11 @@ public class BCUtil {
 		int[][] ep = new int[2][4]; // [0/1][R,G,B,A]
 		for (int c = 0; c < 3; c++) {
 			for (int e = 0; e < 2; e++) {
-				ep[e][c] = br.read(epBitsC);
+				ep[e][c] = br.readBits(epBitsC);
 			}
 		}
 		for (int e = 0; e < 2; e++) {
-			ep[e][3] = br.read(epBitsA);
+			ep[e][3] = br.readBits(epBitsA);
 		}
 		
 		// Read weights
@@ -561,13 +566,13 @@ public class BCUtil {
 			int bits = bits1;
 			if (i == 0)
 				bits--;
-			(idxMode == 0 ? wA : wC)[i] = br.read(bits);
+			(idxMode == 0 ? wA : wC)[i] = br.readBits(bits);
 		}
 		for (int i = 0; i < 16; i++) {
 			int bits = bits2;
 			if (i == 0)
 				bits--;
-			(idxMode == 0 ? wC : wA)[i] = br.read(bits);
+			(idxMode == 0 ? wC : wA)[i] = br.readBits(bits);
 		}
 		
 		// Dequantize
@@ -635,6 +640,7 @@ public class BCUtil {
 		return ((64 - weight) * e0 + weight * e1 + 32) >> 6;
 	}
 	
+	@SneakyThrows
 	private static int[] decodeBC7BlockMode6(int mode, BitReader br) {
 		// Mode 6 uses a fixed layout; we can read bits directly
 		// This is a placeholder; integrate new Mode 6 decode here.
@@ -646,9 +652,9 @@ public class BCUtil {
 		final int[] idxBits = { 3, 3, 2, 2, 2, 2, 4, 2 };
 		
 		int ns = nSubsets[mode];
-		int pi = br.read(partBits[mode]);
-		int rot = (mode == 4 || mode == 5) ? br.read(2) : 0;
-		int sel = (mode == 4) ? br.read(1) : 0;
+		int pi = br.readBits(partBits[mode]);
+		int rot = (mode == 4 || mode == 5) ? br.readBits(2) : 0;
+		int sel = (mode == 4) ? br.readBits(1) : 0;
 		
 		int cb = cBits[mode], ab = aBits[mode];
 		int icb = (mode == 4) ? (sel == 0 ? 2 : 3) : idxBits[mode];
@@ -656,32 +662,32 @@ public class BCUtil {
 		
 		int[][] r = new int[ns][2], g = new int[ns][2], b = new int[ns][2], a = new int[ns][2];
 		for (int s = 0; s < ns; s++) {
-			r[s][0] = br.read(cb);
-			r[s][1] = br.read(cb);
+			r[s][0] = br.readBits(cb);
+			r[s][1] = br.readBits(cb);
 		}
 		for (int s = 0; s < ns; s++) {
-			g[s][0] = br.read(cb);
-			g[s][1] = br.read(cb);
+			g[s][0] = br.readBits(cb);
+			g[s][1] = br.readBits(cb);
 		}
 		for (int s = 0; s < ns; s++) {
-			b[s][0] = br.read(cb);
-			b[s][1] = br.read(cb);
+			b[s][0] = br.readBits(cb);
+			b[s][1] = br.readBits(cb);
 		}
 		if (ab > 0)
 			for (int s = 0; s < ns; s++) {
-				a[s][0] = br.read(ab);
-				a[s][1] = br.read(ab);
+				a[s][0] = br.readBits(ab);
+				a[s][1] = br.readBits(ab);
 			}
 		
 		int[][] pb = new int[ns][2];
 		if (mode == 0 || mode == 3 || mode == 6 || mode == 7) {
 			for (int s = 0; s < ns; s++) {
-				pb[s][0] = br.read(1);
-				pb[s][1] = br.read(1);
+				pb[s][0] = br.readBits(1);
+				pb[s][1] = br.readBits(1);
 			}
 		} else if (mode == 1) {
 			for (int s = 0; s < ns; s++) {
-				int p = br.read(1);
+				int p = br.readBits(1);
 				pb[s][0] = pb[s][1] = p;
 			}
 		}
@@ -706,10 +712,10 @@ public class BCUtil {
 		int[] ci = new int[16], ai = new int[16];
 		
 		for (int i = 0; i < 16; i++)
-			ci[i] = br.read(icb - (i == anchors[part[i]] ? 1 : 0));
+			ci[i] = br.readBits(icb - (i == anchors[part[i]] ? 1 : 0));
 		if (mode == 4 || mode == 5)
 			for (int i = 0; i < 16; i++)
-				ai[i] = br.read(iab - (i == anchors[0] ? 1 : 0));
+				ai[i] = br.readBits(iab - (i == anchors[0] ? 1 : 0));
 		else
 			ai = ci;
 		
@@ -878,6 +884,7 @@ public class BCUtil {
 		throw new UnsupportedOperationException("BC7-mode5 compression is not supported yet");
 	}
 	
+	@SneakyThrows
 	private static void encodeBC7Mode6(int[] block, byte[] out, int off) {
 		// Find the two most-distant colours as endpoints
 		int minC = block[0], maxC = block[0], maxDist = - 1;
@@ -923,20 +930,20 @@ public class BCUtil {
 			idx[i] = closestIdx4(block[i], e0r8, e0g8, e0b8, e0a8, e1r8, e1g8, e1b8, e1a8, W4);
 		
 		BitWriter bw = new BitWriter(out, off);
-		bw.write(0x40, 7); // mode 6 marker (bit 6 set)
-		bw.write(e0r, 7);
-		bw.write(e1r, 7);
-		bw.write(e0g, 7);
-		bw.write(e1g, 7);
-		bw.write(e0b, 7);
-		bw.write(e1b, 7);
-		bw.write(e0a, 7);
-		bw.write(e1a, 7);
-		bw.write(0, 1);
-		bw.write(0, 1); // P-bits
-		bw.write(idx[0], 3); // anchor index (MSB implicit)
+		bw.writeBits(0x40, 7); // mode 6 marker (bit 6 set)
+		bw.writeBits(e0r, 7);
+		bw.writeBits(e1r, 7);
+		bw.writeBits(e0g, 7);
+		bw.writeBits(e1g, 7);
+		bw.writeBits(e0b, 7);
+		bw.writeBits(e1b, 7);
+		bw.writeBits(e0a, 7);
+		bw.writeBits(e1a, 7);
+		bw.writeBits(0, 1);
+		bw.writeBits(0, 1); // P-bits
+		bw.writeBits(idx[0], 3); // anchor index (MSB implicit)
 		for (int i = 1; i < 16; i++)
-			bw.write(idx[i], 4);
+			bw.writeBits(idx[i], 4);
 	}
 	
 	private static int closestIdx4(int color, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int[] W) {

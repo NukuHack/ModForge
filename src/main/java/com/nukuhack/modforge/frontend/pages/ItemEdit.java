@@ -12,8 +12,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +94,8 @@ public class ItemEdit extends BaseEditPage {
 	
 	@Override
 	protected void updatePreview() {
-		if (previewPane == null) return;
+		if (previewPane == null)
+			return;
 		previewPane.setText(htmlForItem(currentItem));
 		previewPane.setCaretPosition(0);
 	}
@@ -196,7 +195,8 @@ public class ItemEdit extends BaseEditPage {
 	}
 	
 	private void saveChanges() {
-		if (currentItem == null) return;
+		if (currentItem == null)
+			return;
 		
 		JComponent idComp = attributeComponents.get("__id__");
 		if (idComp instanceof JPanel idPanel) {
@@ -219,7 +219,8 @@ public class ItemEdit extends BaseEditPage {
 	
 	private <T> void handleAttribute(Attribute<T> attr) {
 		var comp = attributeComponents.get(attr.getName());
-		if (comp == null) return;
+		if (comp == null)
+			return;
 		T val = extractValue(comp, attr);
 		if (val != null) {
 			currentItem.removeAttribute(attr);
@@ -235,8 +236,7 @@ public class ItemEdit extends BaseEditPage {
 			return (T) sp.getValue();
 		if (attr instanceof Attribute.StringAttribute && comp instanceof JTextField tf)
 			return (T) tf.getText();
-		if (attr instanceof Attribute.ListAttribute<?> && comp instanceof JScrollPane sp
-					&& sp.getViewport().getView() instanceof JTextArea ta)
+		if (attr instanceof Attribute.ListAttribute<?> && comp instanceof JScrollPane sp && sp.getViewport().getView() instanceof JTextArea ta)
 			return (T) List.of(ta.getText().split("\\s+"));
 		if (comp instanceof JTextField tf)
 			return (T) tf.getText();
@@ -254,8 +254,7 @@ public class ItemEdit extends BaseEditPage {
 		}
 		if (attr instanceof Attribute.DoubleAttribute doubleAttr) {
 			double billion = 1_000_000_000;
-			JSpinner sp = new JSpinner(new SpinnerNumberModel(
-					(Number) doubleAttr.getValue(), -billion, billion, 1));
+			JSpinner sp = new JSpinner(new SpinnerNumberModel((Number) doubleAttr.getValue(), - billion, billion, 1));
 			sp.setEditor(new JSpinner.NumberEditor(sp, "#.####"));
 			styleSpinner(sp);
 			sp.addChangeListener(e -> markChanged());
@@ -275,9 +274,7 @@ public class ItemEdit extends BaseEditPage {
 			ta.setFont(new Font("Roboto", Font.PLAIN, 12));
 			ta.setLineWrap(true);
 			ta.setWrapStyleWord(true);
-			ta.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createLineBorder(new Color(0x45475a)),
-					BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+			ta.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 			addChangeListeners(ta.getDocument());
 			JScrollPane sp = new JScrollPane(ta);
 			sp.setPreferredSize(new Dimension(0, 80));
@@ -296,9 +293,7 @@ public class ItemEdit extends BaseEditPage {
 		f.setForeground(MainWindow.TEXT);
 		f.setCaretColor(MainWindow.TEXT);
 		f.setFont(new Font("Roboto", Font.PLAIN, 12));
-		f.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(0x45475a)),
-				BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+		f.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 	}
 	
 	private void styleSpinner(JSpinner sp) {
@@ -325,15 +320,25 @@ public class ItemEdit extends BaseEditPage {
 	
 	private void addChangeListeners(Document doc) {
 		doc.addDocumentListener(new DocumentListener() {
-			public void insertUpdate(DocumentEvent e) { markChanged(); }
-			public void removeUpdate(DocumentEvent e) { markChanged(); }
-			public void changedUpdate(DocumentEvent e) { markChanged(); }
+			public void insertUpdate(DocumentEvent e) {
+				markChanged();
+			}
+			
+			public void removeUpdate(DocumentEvent e) {
+				markChanged();
+			}
+			
+			public void changedUpdate(DocumentEvent e) {
+				markChanged();
+			}
 		});
 	}
 	
 	private GridBagConstraints labelGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
-		gc.gridx = 0; gc.gridy = row; gc.weightx = 0.0;
+		gc.gridx = 0;
+		gc.gridy = row;
+		gc.weightx = 0.0;
 		gc.fill = GridBagConstraints.NONE;
 		gc.anchor = GridBagConstraints.NORTHEAST;
 		gc.insets = new Insets(5, 4, 5, 8);
@@ -342,7 +347,9 @@ public class ItemEdit extends BaseEditPage {
 	
 	private GridBagConstraints editorGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
-		gc.gridx = 1; gc.gridy = row; gc.weightx = 1.0;
+		gc.gridx = 1;
+		gc.gridy = row;
+		gc.weightx = 1.0;
 		gc.fill = GridBagConstraints.HORIZONTAL;
 		gc.anchor = GridBagConstraints.NORTHWEST;
 		gc.insets = new Insets(5, 0, 5, 4);
@@ -351,7 +358,10 @@ public class ItemEdit extends BaseEditPage {
 	
 	private GridBagConstraints separatorGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
-		gc.gridx = 0; gc.gridy = row; gc.gridwidth = 2; gc.weightx = 1.0;
+		gc.gridx = 0;
+		gc.gridy = row;
+		gc.gridwidth = 2;
+		gc.weightx = 1.0;
 		gc.fill = GridBagConstraints.HORIZONTAL;
 		gc.insets = new Insets(6, 0, 6, 0);
 		return gc;
@@ -359,7 +369,9 @@ public class ItemEdit extends BaseEditPage {
 	
 	private GridBagConstraints defaultGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
-		gc.gridx = 0; gc.gridy = row; gc.gridwidth = 2;
+		gc.gridx = 0;
+		gc.gridy = row;
+		gc.gridwidth = 2;
 		gc.anchor = GridBagConstraints.CENTER;
 		gc.insets = new Insets(24, 0, 0, 0);
 		return gc;

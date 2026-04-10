@@ -67,9 +67,17 @@ public class ItemsPage extends BasePage {
 		top.add(filterPanel, BorderLayout.CENTER);
 		
 		search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-			public void insertUpdate(DocumentEvent e) { refreshDisplay(false); }
-			public void removeUpdate(DocumentEvent e) { refreshDisplay(false); }
-			public void changedUpdate(DocumentEvent e) { refreshDisplay(false); }
+			public void insertUpdate(DocumentEvent e) {
+				refreshDisplay(false);
+			}
+			
+			public void removeUpdate(DocumentEvent e) {
+				refreshDisplay(false);
+			}
+			
+			public void changedUpdate(DocumentEvent e) {
+				refreshDisplay(false);
+			}
 		});
 		
 		add(top, BorderLayout.NORTH);
@@ -89,9 +97,7 @@ public class ItemsPage extends BasePage {
 		styleCombo(modSelector);
 		modSelector.setPreferredSize(new Dimension(200, 28));
 		modSelector.setToolTipText(getLocalText("ui_mod_source_tip"));
-		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(0x2a2a3a)),
-				BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
 		// ActionListener is added AFTER setupModSourceSelector returns,
 		// so it will never fire during refreshModSelector's model rebuild.
 		modSelector.addActionListener(e -> {
@@ -130,10 +136,7 @@ public class ItemsPage extends BasePage {
 		detailPane.setForeground(MainWindow.TEXT);
 		detailPane.setFont(new Font("Roboto", Font.PLAIN, 12));
 		detailPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
-		detailPane.setText("<html><body style='background:#181825;color:#6c6f85;"
-								   + "font-family:sans-serif;padding:12px;'>"
-								   + "<b style='color:#cdd6f4;'>" + getLocalText("ui_select_item") + "</b><br/><br/>"
-								   + "<i>" + getLocalText("ui_details_appear_here") + "</i></body></html>");
+		detailPane.setText("<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:12px;'>" + "<b style='color:#cdd6f4;'>" + getLocalText("ui_select_item") + "</b><br/><br/>" + "<i>" + getLocalText("ui_details_appear_here") + "</i></body></html>");
 		
 		detailPane.addMouseListener(new MouseAdapter() {
 			@Override
@@ -145,20 +148,13 @@ public class ItemsPage extends BasePage {
 			}
 		});
 		
-		detailPane.setComponentPopupMenu(
-				buildItemPopupMenu(() -> selectedItem, true, true, true));
+		detailPane.setComponentPopupMenu(buildItemPopupMenu(() -> selectedItem, true, true, true));
 		
 		var detailScroll = new JScrollPane(detailPane);
 		detailScroll.setPreferredSize(new Dimension(400, 0));
 		detailScroll.setBackground(new Color(0x181825));
 		detailScroll.getViewport().setBackground(new Color(0x181825));
-		detailScroll.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createLineBorder(new Color(0x313244)),
-				getLocalText("ui_detail"),
-				javax.swing.border.TitledBorder.LEFT,
-				javax.swing.border.TitledBorder.TOP,
-				new Font("Roboto", Font.BOLD, 12),
-				MainWindow.ACCENT));
+		detailScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), getLocalText("ui_detail"), javax.swing.border.TitledBorder.LEFT, javax.swing.border.TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		detailScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		detailScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
@@ -193,11 +189,14 @@ public class ItemsPage extends BasePage {
 			itemList.removeListSelectionListener(listener);
 		
 		itemList.addListSelectionListener(e -> {
-			if (e.getValueIsAdjusting()) return;
+			if (e.getValueIsAdjusting())
+				return;
 			int displayIndex = itemList.getSelectedIndex();
-			if (displayIndex < 0 || displayIndex >= displayToUnderlyingIndex.size()) return;
+			if (displayIndex < 0 || displayIndex >= displayToUnderlyingIndex.size())
+				return;
 			int underlyingIndex = displayToUnderlyingIndex.get(displayIndex);
-			if (underlyingIndex < 0 || underlyingIndex >= underlyingItems.size()) return;
+			if (underlyingIndex < 0 || underlyingIndex >= underlyingItems.size())
+				return;
 			selectedItem = underlyingItems.get(underlyingIndex);
 			if (detailPane != null) {
 				detailPane.setText(htmlForItem(selectedItem));

@@ -141,7 +141,7 @@ public final class LocalService {
 						// this is true at case 0
 						if (cellIndex == 1)
 							key = text;
-						// this is true at case 2
+							// this is true at case 2
 						else if (cellIndex == 3 && key != null)
 							result.put(key, text);
 						break;
@@ -386,6 +386,7 @@ public final class LocalService {
 		Singleton.getLangMap().putAll(langMap);
 	}
 }
+
 /**
  * Wraps an InputStream but ignores close() calls.
  * This allows the XML parser to "close" its stream without closing the underlying ZIP stream.
@@ -394,6 +395,7 @@ class NonClosingInputStream extends FilterInputStream {
 	protected NonClosingInputStream(InputStream in) {
 		super(in);
 	}
+	
 	@Override
 	public void close() {
 	}

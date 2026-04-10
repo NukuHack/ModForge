@@ -2,6 +2,7 @@ package com.nukuhack.modforge.backend.service;
 
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
+import com.nukuhack.util.IOUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -242,7 +243,7 @@ public final class ModService {
 			}
 			final var dataDir = Util.modData(gameDir, mod.id);
 			final var destPak = Path.of(dataDir, stageDir.getName() + ".pak");
-			final var ok = Util.packFolder(stageDir.toPath(), destPak, null, true);
+			final var ok = IOUtil.packFolder(stageDir.toPath(), destPak, null, true);
 			if (ok) {
 				log.trace("PAK created: {}", destPak.getFileName());
 			} else {
@@ -252,7 +253,7 @@ public final class ModService {
 		}
 		
 		// Clean up the staging tree regardless of individual failures
-		Util.deleteRecursively(stageRoot);
+		IOUtil.deleteRecursively(stageRoot);
 		
 		if (allOk)
 			log.trace("All PAKs created for mod {} ({} PAK(s)).", mod.id, pakList.length);
@@ -284,10 +285,10 @@ public final class ModService {
 			var langFolder = file.toPath();
 			// The PAK should be named like "German_xml.pak" and placed in the game root
 			final var destPak = Path.of(langFolder + Util.COMP_FORMAT);
-			boolean ok = Util.packFolder(langFolder, destPak, null, true);
+			boolean ok = IOUtil.packFolder(langFolder, destPak, null, true);
 			
 			if (ok) {
-				Util.deleteRecursively(langFolder);
+				IOUtil.deleteRecursively(langFolder);
 			} else {
 				log.warn("Failed to pack localization: {}", file);
 				success.set(false);

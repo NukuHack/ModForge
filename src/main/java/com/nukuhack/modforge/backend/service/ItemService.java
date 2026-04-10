@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.ItemEntry;
 import com.nukuhack.modforge.backend.ItemType;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class ItemService {
 	
 	final static DocumentBuilder docBuilder;
@@ -50,7 +51,7 @@ public final class ItemService {
 	});
 	// TODO : make this kind of data load or ... idk
 	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
-
+	
 	static {
 		try {
 			var f = DocumentBuilderFactory.newInstance();
@@ -63,16 +64,12 @@ public final class ItemService {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	private final UserConfig userConfig;
 	
 	public ItemService(UserConfig userConfig) {
 		this.userConfig = userConfig;
 	}
-	
-	// ==================================================================
-	// PRIVATE HELPERS
-	// ==================================================================
 	
 	static Document parseXml(InputStream is) {
 		try {
@@ -184,7 +181,6 @@ public final class ItemService {
 		}
 		if (fileName.isBlank())
 			fileName = "apple.txt";
-		log.debug("file name: {}", fileName);
 		
 		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
 		// Capitalize the L in Libs
@@ -194,53 +190,54 @@ public final class ItemService {
 	private static Document makeDocument(final File outFile, final ModItem item, final String groupName) throws Exception {
 		final Document document;
 		
-		if (outFile.exists()) {
-			document = docBuilder.parse(outFile);
-			Element group = (Element) document.getElementsByTagName(groupName).item(0);
-			if (group == null) {
-				group = document.createElement(groupName);
-				group.setAttribute("version", "1");
-				document.getDocumentElement().appendChild(group);
-			}
-			
-			final var ele = ModItemBuilder.build(document, item);
-			if (ele.isEmpty())
-				return document;
-			final var newEl = ele.get();
-			final String idKey = item.getIdKey();
-			final String idVal = newEl.getAttribute(idKey);
-			
-			if (! idVal.isBlank()) {
-				final NodeList existing = group.getElementsByTagName(newEl.getTagName());
-				boolean replaced = false;
-				for (int i = 0; i < existing.getLength(); i++) {
-					var el = (Element) existing.item(i);
-					if (idVal.equals(el.getAttribute(idKey))) {
-						group.replaceChild(newEl, el);
-						replaced = true;
-						break;
-					}
-				}
-				if (! replaced)
-					group.appendChild(newEl);
-			} else {
-				group.appendChild(newEl);
-			}
-		} else {
+		if (! outFile.exists()) {
 			document = docBuilder.newDocument();
-			final Element temp = document.createElement("database");
+			var temp = document.createElement("database");
 			temp.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			temp.setAttribute("name", "barbora");
 			temp.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
 			document.appendChild(temp);
-			final Element group = document.createElement(groupName);
+			var group = document.createElement(groupName);
 			group.setAttribute("version", "1");
 			temp.appendChild(group);
 			
 			final var newEl = ModItemBuilder.build(document, item);
 			newEl.ifPresent(group::appendChild);
+			return document;
+		}
+		document = docBuilder.parse(outFile);
+		var group = (Element) document.getElementsByTagName(groupName).item(0);
+		if (group == null) {
+			group = document.createElement(groupName);
+			group.setAttribute("version", "1");
+			document.getDocumentElement().appendChild(group);
+		}
+		
+		final var ele = ModItemBuilder.build(document, item);
+		if (ele.isEmpty())
+			return document;
+		final var newEl = ele.get();
+		final String idKey = item.getIdKey();
+		final String idVal = newEl.getAttribute(idKey);
+		
+		if (! idVal.isBlank()) {
+			final NodeList existing = group.getElementsByTagName(newEl.getTagName());
+			boolean replaced = false;
+			for (int i = 0; i < existing.getLength(); i++) {
+				var el = (Element) existing.item(i);
+				if (idVal.equals(el.getAttribute(idKey))) {
+					group.replaceChild(newEl, el);
+					replaced = true;
+					break;
+				}
+			}
+			if (! replaced)
+				group.appendChild(newEl);
+		} else {
+			group.appendChild(newEl);
 		}
 		return document;
+		
 	}
 	
 	/**
@@ -409,7 +406,7 @@ public final class ItemService {
 				log.error("writeModItem failed for {}: {}", item.getClass().getSimpleName(), e.getMessage());
 			}
 		}
-		log.error("ModItem written to {}", Util.modStaging(gameDir, mod.id));
+		log.debug("ModItem written to {}", Util.modStaging(gameDir, mod.id));
 	}
 	
 	/**

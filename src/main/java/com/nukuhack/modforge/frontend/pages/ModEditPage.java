@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.service.ConfigService;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.util.IOUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -284,15 +285,23 @@ public class ModEditPage extends BasePage {
 	}
 	
 	private void exportMod() {
-		try {
-			final String gameDir = window.getRegistry().userConfig.getGameDirectory();
-			saveManifest(gameDir);
-			ModService.exportMod(currentMod, gameDir);
-			window.snackbar.show("ui_mod_exported", BarManager.Type.SUCCESS, currentMod.id + ".pak");
-		} catch (final Exception ex) {
-			window.snackbar.show("ui_export_failed", BarManager.Type.ERROR);
-			log.warn("error while exporting", ex);
-		}
+		// Get data needed for background thread (copy to avoid threading issues)
+		final var gameDir = window.getRegistry().userConfig.getGameDirectory();
+		final var mod = currentMod;
+		// SwingUtilities.invokeLater(()->exportButton.setEnabled(false));
+		// Run heavy work off EDT
+		executor.submit(() -> {
+			try {
+				saveManifest(gameDir);  // Heavy?
+				ModService.exportMod(mod, gameDir);  // Heavy!
+				
+				// UI updates back on EDT
+				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_mod_exported", BarManager.Type.SUCCESS, mod.id + ".pak"));
+			} catch (final Exception ex) {
+				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_export_failed", BarManager.Type.ERROR));
+				log.warn("error while exporting", ex);
+			}
+		});
 	}
 	
 	private void deleteMod() {
@@ -303,7 +312,7 @@ public class ModEditPage extends BasePage {
 			
 			try {
 				if (Files.exists(modPath)) {
-					Util.deleteRecursively(modPath);
+					IOUtil.deleteRecursively(modPath);
 					window.snackbar.show("ui_mod_deleted", BarManager.Type.SUCCESS, currentMod.name);
 				}
 				
