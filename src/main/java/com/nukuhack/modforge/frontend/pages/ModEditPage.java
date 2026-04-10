@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.service.ConfigService;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,12 +15,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 
-// =============================================================================
-//  MOD EDIT PAGE
-// =============================================================================
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class ModEditPage extends BasePage {
 	
 	private final List<JTextField> versionFields = new ArrayList<>();
@@ -39,22 +36,20 @@ public class ModEditPage extends BasePage {
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 		
 		setLayout(new BorderLayout(0, 16));
-		add(header("Mod Editor"), BorderLayout.NORTH);
+		add(header("ui_mod_editor"), BorderLayout.NORTH);
 		
-		// Main content with scroll
 		JScrollPane scrollPane = new JScrollPane(buildForm());
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
 		scrollPane.getViewport().setBackground(MainWindow.BG);
 		scrollPane.setBackground(MainWindow.BG);
 		add(scrollPane, BorderLayout.CENTER);
 		
-		// Bottom buttons
 		JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
 		bottomBar.setOpaque(false);
-		bottomBar.add(primaryBtn("Save Manifest", e -> saveManifest(window.getRegistry().userConfig.getGameDirectory())));
-		bottomBar.add(primaryBtn("Export to PAK", e -> exportMod()));
-		bottomBar.add(primaryBtn("Delete Mod", e -> deleteMod()));
-		bottomBar.add(primaryBtn("Back", e -> window.navigate(MainWindow.Page.MODS)));
+		bottomBar.add(primaryBtn("ui_save_changes", e -> saveManifest(window.getRegistry().userConfig.getGameDirectory())));
+		bottomBar.add(primaryBtn("ui_mod_export", e -> exportMod()));
+		bottomBar.add(primaryBtn("ui_mod_delete", e -> deleteMod()));
+		bottomBar.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.MODS)));
 		add(bottomBar, BorderLayout.SOUTH);
 	}
 	
@@ -76,17 +71,16 @@ public class ModEditPage extends BasePage {
 		gc.insets = new Insets(8, 12, 8, 12);
 		gc.fill = GridBagConstraints.HORIZONTAL;
 		
-		addFormRow(form, gc, "Mod ID", idField = styledField(""), 0);
-		addFormRow(form, gc, "Name *", nameField = styledField(""), 1);
-		addFormRow(form, gc, "Author", authorField = styledField(""), 2);
-		addFormRow(form, gc, "Version *", versionField = styledField(""), 3);
-		addFormRow(form, gc, "Created On", createdOnField = styledField(""), 4);
+		addFormRow(form, gc, "ui_mod_id", idField = styledField(""), 0);
+		addFormRow(form, gc, "ui_mod_name", nameField = styledField(""), 1);
+		addFormRow(form, gc, "ui_mod_author", authorField = styledField(""), 2);
+		addFormRow(form, gc, "ui_mod_version", versionField = styledField(""), 3);
+		addFormRow(form, gc, "ui_mod_creation", createdOnField = styledField(""), 4);
 		
-		// Description
 		gc.gridy = 5;
 		gc.gridx = 0;
 		gc.weightx = 0.2;
-		JLabel descLabel = new JLabel("Description");
+		JLabel descLabel = new JLabel(MainWindow.getLocalText("ui_mod_description"));
 		descLabel.setForeground(MainWindow.TEXT);
 		descLabel.setFont(new Font("Roboto", Font.PLAIN, 13));
 		form.add(descLabel, gc);
@@ -108,11 +102,10 @@ public class ModEditPage extends BasePage {
 		descScroll.setBorder(null);
 		form.add(descScroll, gc);
 		
-		// Modifies Level
 		gc.gridy = 6;
 		gc.gridx = 0;
 		gc.weightx = 0.2;
-		JLabel levelLabel = new JLabel("Modifies Level");
+		JLabel levelLabel = new JLabel(MainWindow.getLocalText("ui_mod_modifies_level"));
 		levelLabel.setForeground(MainWindow.TEXT);
 		levelLabel.setFont(new Font("Roboto", Font.PLAIN, 13));
 		form.add(levelLabel, gc);
@@ -124,10 +117,9 @@ public class ModEditPage extends BasePage {
 		modifiesLevelCheck.setForeground(MainWindow.TEXT);
 		form.add(modifiesLevelCheck, gc);
 		
-		// Supported Game Versions
 		gc.gridy = 7;
 		gc.gridx = 0;
-		JLabel versionsLabel = new JLabel("Supported Versions");
+		JLabel versionsLabel = new JLabel(MainWindow.getLocalText("ui_mod_supported_versions"));
 		versionsLabel.setForeground(MainWindow.TEXT);
 		versionsLabel.setFont(new Font("Roboto", Font.PLAIN, 13));
 		form.add(versionsLabel, gc);
@@ -138,7 +130,6 @@ public class ModEditPage extends BasePage {
 		versionsPanel.setOpaque(false);
 		versionsPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a), 1), BorderFactory.createEmptyBorder(8, 8, 8, 8)));
 		
-		// Add the "Add Version" button as the last component
 		versionsPanel.add(VersionButton());
 		
 		JScrollPane versionsScroll = new JScrollPane(versionsPanel);
@@ -151,7 +142,7 @@ public class ModEditPage extends BasePage {
 	}
 	
 	private JButton VersionButton() {
-		JButton addVersionBtn = new JButton("+ Add Version");
+		JButton addVersionBtn = new JButton(MainWindow.getLocalText("ui_add_version"));
 		addVersionBtn.setBackground(new Color(0x313244));
 		addVersionBtn.setForeground(MainWindow.ACCENT);
 		addVersionBtn.setBorderPainted(false);
@@ -178,7 +169,7 @@ public class ModEditPage extends BasePage {
 	}
 	
 	private void refreshVersionFields() {
-		// Clear all version fields except the add button
+		
 		while (versionsPanel.getComponentCount() > 1) {
 			Component comp = versionsPanel.getComponent(0);
 			if (comp instanceof JPanel) {
@@ -187,15 +178,13 @@ public class ModEditPage extends BasePage {
 		}
 		versionFields.clear();
 		
-		// Add version fields for each supported version
 		for (String version : currentMod.getSupportsGameVersions()) {
 			addVersionField(version);
 		}
 		
-		// Ensure the add button is at the end
 		Component addButton = versionsPanel.getComponent(versionsPanel.getComponentCount() - 1);
 		if (! (addButton instanceof JButton) || ! ((JButton) addButton).getText().equals("+ Add Version")) {
-			// If the last component isn't the add button, add it
+			
 			if (versionsPanel.getComponentCount() == 0 || ! ((JButton) versionsPanel.getComponent(versionsPanel.getComponentCount() - 1)).getText().equals("+ Add Version")) {
 				versionsPanel.add(VersionButton());
 			}
@@ -207,7 +196,7 @@ public class ModEditPage extends BasePage {
 	
 	public void refreshFieldData(ModData currentMod) {
 		this.currentMod = currentMod;
-		// Update text fields
+		
 		idField.setText(currentMod.id);
 		nameField.setText(currentMod.name);
 		descriptionArea.setText(currentMod.description);
@@ -216,7 +205,6 @@ public class ModEditPage extends BasePage {
 		createdOnField.setText(currentMod.createdOn);
 		modifiesLevelCheck.setSelected(currentMod.modifiesLevel);
 		
-		// Refresh the versions panel with current supported versions
 		refreshVersionFields();
 	}
 	
@@ -247,7 +235,6 @@ public class ModEditPage extends BasePage {
 		row.add(versionField, BorderLayout.CENTER);
 		row.add(removeBtn, BorderLayout.EAST);
 		
-		// Insert before the add button (which should be the last component)
 		int addButtonIndex = versionsPanel.getComponentCount() - 1;
 		if (addButtonIndex >= 0 && versionsPanel.getComponent(addButtonIndex) instanceof JButton) {
 			versionsPanel.add(row, addButtonIndex);
@@ -261,13 +248,13 @@ public class ModEditPage extends BasePage {
 	}
 	
 	private void saveManifest(String gameDir) {
-		// Validate required fields
+		
 		if (nameField.getText().isBlank()) {
-			window.snackbar.show("Mod name is required", BarManager.Type.ERROR);
+			window.snackbar.show("ui_error_mod_name_required", BarManager.Type.ERROR);
 			return;
 		}
 		if (versionField.getText().isBlank()) {
-			window.snackbar.show("Mod version is required", BarManager.Type.ERROR);
+			window.snackbar.show("ui_error_mod_version_required", BarManager.Type.ERROR);
 			return;
 		}
 		
@@ -277,15 +264,6 @@ public class ModEditPage extends BasePage {
 			if (! version.isBlank())
 				list.add(version);
 		}
-		var m = new ModData(
-				idField.getText(),
-				nameField.getText(),
-				descriptionArea.getText(),
-				authorField.getText(),
-				versionField.getText(),
-				createdOnField.getText(),
-				modifiesLevelCheck.isSelected()
-		);
 		currentMod.id = idField.getText();
 		currentMod.name = nameField.getText();
 		currentMod.description = descriptionArea.getText();
@@ -295,14 +273,13 @@ public class ModEditPage extends BasePage {
 		currentMod.modifiesLevel = modifiesLevelCheck.isSelected();
 		currentMod.setSupportsGameVersions(list);
 		
-		// Write manifest
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
 		ConfigService.saveModConfig(Util.modFolder(gameDir, currentMod.id), currentMod);
 		
 		if (success) {
-			window.snackbar.show("Manifest saved for ", BarManager.Type.SUCCESS, currentMod.name);
+			window.snackbar.show("ui_manifest_saved", BarManager.Type.SUCCESS, currentMod.name);
 		} else {
-			window.snackbar.show("Failed to save manifest", BarManager.Type.ERROR);
+			window.snackbar.show("ui_manifest_save_failed", BarManager.Type.ERROR);
 		}
 	}
 	
@@ -311,17 +288,15 @@ public class ModEditPage extends BasePage {
 			final String gameDir = window.getRegistry().userConfig.getGameDirectory();
 			saveManifest(gameDir);
 			ModService.exportMod(currentMod, gameDir);
-			window.snackbar.show("Mod exported to PAK: ", BarManager.Type.SUCCESS, currentMod.id + ".pak");
+			window.snackbar.show("ui_mod_exported", BarManager.Type.SUCCESS, currentMod.id + ".pak");
 		} catch (final Exception ex) {
-			window.snackbar.show("Failed to export mod", BarManager.Type.ERROR);
-			Logger log = Logger.getLogger(ModEditPage.class.getName());
-			log.warning("error while exporting: " + ex);
+			window.snackbar.show("ui_export_failed", BarManager.Type.ERROR);
+			log.warn("error while exporting", ex);
 		}
 	}
 	
 	private void deleteMod() {
-		int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete mod '" + currentMod.name + "'?\nThis will remove the mod folder from your game directory.", "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-		
+		int confirm = JOptionPane.showConfirmDialog(this, MainWindow.getLocalText("ui_delete_mod_confirm", currentMod.name), MainWindow.getLocalText("ui_confirm_delete"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		if (confirm == JOptionPane.YES_OPTION) {
 			String gameDir = window.getRegistry().userConfig.getGameDirectory();
 			Path modPath = Path.of(gameDir, "Mods", currentMod.id);
@@ -329,13 +304,13 @@ public class ModEditPage extends BasePage {
 			try {
 				if (Files.exists(modPath)) {
 					Util.deleteRecursively(modPath);
-					window.snackbar.show("Mod deleted: ", BarManager.Type.SUCCESS, currentMod.name);
+					window.snackbar.show("ui_mod_deleted", BarManager.Type.SUCCESS, currentMod.name);
 				}
 				
 				ModService.modCollection.remove(currentMod);
 				window.navigate(MainWindow.Page.MODS);
 			} catch (Exception e) {
-				window.snackbar.show("Failed to delete mod: ", BarManager.Type.ERROR, e.getMessage(), e.getClass().getSimpleName());
+				window.snackbar.show("ui_delete_failed", BarManager.Type.ERROR, e.getMessage());
 			}
 		}
 	}

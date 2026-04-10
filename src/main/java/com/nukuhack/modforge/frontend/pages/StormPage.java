@@ -24,25 +24,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// =============================================================================
-//  STORM PAGE  –  view & edit Storm rules
-// =============================================================================
 @lombok.extern.slf4j.Slf4j
 public class StormPage extends BasePage {
 	
-	// ── palette helpers ───────────────────────────────────────────────────────
-	private static final Color COMBINATOR_AND = new Color(0x89b4fa); // blue
-	private static final Color COMBINATOR_OR = new Color(0xa6e3a1); // green
-	private static final Color COMBINATOR_NOT = new Color(0xf38ba8); // red
-	private static final Color SELECTOR_FG = new Color(0xcba6f7); // mauve
-	private static final Color OPERATION_FG = new Color(0xf9e2af); // yellow
-	private static final Color ATTR_KEY = new Color(0x89dceb); // sky
+	private static final Color COMBINATOR_AND = new Color(0x89b4fa);
+	
+	private static final Color COMBINATOR_OR = new Color(0xa6e3a1);
+	
+	private static final Color COMBINATOR_NOT = new Color(0xf38ba8);
+	
+	private static final Color SELECTOR_FG = new Color(0xcba6f7);
+	
+	private static final Color OPERATION_FG = new Color(0xf9e2af);
+	
+	private static final Color ATTR_KEY = new Color(0x89dceb);
+	
 	private static final Color SURFACE2 = new Color(0x1e1e2e);
 	private static final Color INPUT_BG = new Color(0x313244);
 	private static final Color BORDER_COL = new Color(0x45475a);
 	
-	// ── state ─────────────────────────────────────────────────────────────────
-	// ── left panel – rule list ────────────────────────────────────────────────
 	private final DefaultListModel<StormRule> ruleListModel = new DefaultListModel<>();
 	private final JList<StormRule> ruleList = new JList<>(ruleListModel);
 	/**
@@ -53,7 +53,7 @@ public class StormPage extends BasePage {
 	 * The mod context when opened from a mod item (maybe null = view-only).
 	 */
 	private ModData currentMod;
-	// ── right panel – rule editor ─────────────────────────────────────────────
+	
 	private JLabel ruleNameLabel;
 	private JLabel ruleCommentLabel;
 	private DefaultTreeModel selectorTreeModel;
@@ -62,12 +62,10 @@ public class StormPage extends BasePage {
 	private JTree operationTree;
 	private JEditorPane xmlPreviewPane;
 	
-	// ── header ────────────────────────────────────────────────────────────────
 	private JLabel breadcrumbLabel;
 	private JLabel categoryLabel;
 	private JLabel fileIdLabel;
 	
-	// ── status ────────────────────────────────────────────────────────────────
 	private JLabel statusLabel;
 	
 	public StormPage(MainWindow w) {
@@ -80,20 +78,12 @@ public class StormPage extends BasePage {
 		add(buildBottomBar(), BorderLayout.SOUTH);
 	}
 	
-	// =========================================================================
-	//  BasePage contract
-	// =========================================================================
-	
 	private static String xmlToHtml(String xml) {
 		String escaped = xml.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-		// Basic syntax coloring
+		
 		escaped = escaped.replaceAll("(&lt;/?)([a-zA-Z_][a-zA-Z0-9_]*)", "$1<font color='#89b4fa'>$2</font>").replaceAll("([a-zA-Z_][a-zA-Z0-9_]*)=&quot;", "<font color='#89dceb'>$1</font>=<font color='#a6e3a1'>&quot;").replaceAll("&quot;(?=[^=])", "&quot;</font>");
 		return "<html><body style='background:#11111b;color:#cdd6f4;font-family:monospace;font-size:11px;padding:8px;white-space:pre;'>" + escaped + "</body></html>";
 	}
-	
-	// =========================================================================
-	//  Top bar
-	// =========================================================================
 	
 	private static String xmlPlaceholderHtml() {
 		return "<html><body style='background:#11111b;color:#6c6f85;font-family:monospace;padding:12px;'>" + "<i>Open a Storm item from the Items page to see its XML here.</i></body></html>";
@@ -102,7 +92,7 @@ public class StormPage extends BasePage {
 	@Override
 	public void refresh(Object... input) {
 		if (input.length > 0 && input[0] instanceof Storm stormItem) {
-			// Opened via "Edit Item" on a Storm ModItem
+			
 			final StormData sd = stormItem.getStormData();
 			if (sd == null) {
 				window.snackbar.show("Storm data not parsed yet", BarManager.Type.WARNING);
@@ -117,15 +107,10 @@ public class StormPage extends BasePage {
 		populateFromStorm();
 	}
 	
-	// =========================================================================
-	//  Main area – 3-column layout
-	// =========================================================================
-	
 	private JPanel buildTopBar() {
 		JPanel top = new JPanel(new BorderLayout(12, 0));
 		top.setOpaque(false);
 		
-		// Breadcrumb
 		breadcrumbLabel = new JLabel("Storm  ›  (no file selected)");
 		breadcrumbLabel.setForeground(MainWindow.TEXT);
 		breadcrumbLabel.setFont(new Font("Roboto", Font.BOLD, 22));
@@ -139,12 +124,11 @@ public class StormPage extends BasePage {
 		});
 		breadcrumbLabel.setToolTipText("Click to deselect current file");
 		
-		// Meta labels
 		JPanel metaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
 		metaPanel.setOpaque(false);
 		
-		categoryLabel = LangEdit.muted("Category: —");
-		fileIdLabel = LangEdit.muted("ID: —");
+		categoryLabel = muted("ui_category");
+		fileIdLabel = muted("ui_id");
 		metaPanel.add(categoryLabel);
 		metaPanel.add(fileIdLabel);
 		
@@ -153,24 +137,21 @@ public class StormPage extends BasePage {
 		leftSide.add(breadcrumbLabel, BorderLayout.NORTH);
 		leftSide.add(metaPanel, BorderLayout.SOUTH);
 		
-		// Right: action buttons
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		actions.setOpaque(false);
-		actions.add(primaryBtn("+ Add Rule", e -> openRuleDialog(null)));
-		actions.add(primaryBtn("Save to Mod", e -> saveToMod()));
-		actions.add(primaryBtn("← Back", e -> window.navigate(MainWindow.Page.ITEMS)));
+		actions.add(primaryBtn("ui_rule_new", e -> openRuleDialog(null)));
+		actions.add(primaryBtn("ui_save_to_mod", e -> saveToMod()));
+		actions.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.ITEMS)));
 		
 		top.add(leftSide, BorderLayout.WEST);
 		top.add(actions, BorderLayout.EAST);
 		return top;
 	}
 	
-	// ── Right: detail area ────────────────────────────────────────────────────
-	
 	private JSplitPane buildMainArea() {
-		// Left column – rule list
+		
 		JPanel leftPanel = buildRuleListPanel();
-		// Right area  – rule detail (selector tree + operation tree + XML preview)
+		
 		JSplitPane rightSplit = buildRuleDetailArea();
 		
 		JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightSplit);
@@ -202,7 +183,6 @@ public class StormPage extends BasePage {
 				showRule(ruleList.getSelectedValue());
 		});
 		
-		// Double-click → edit rule
 		ruleList.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -214,7 +194,6 @@ public class StormPage extends BasePage {
 			}
 		});
 		
-		// Right-click context menu
 		JPopupMenu ruleMenu = new JPopupMenu();
 		JMenuItem editItem = new JMenuItem("✏  Edit Rule");
 		JMenuItem deleteItem = new JMenuItem("🗑  Delete Rule");
@@ -232,7 +211,7 @@ public class StormPage extends BasePage {
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		scroll.getViewport().setBackground(new Color(0x181825));
 		
-		JButton addBtn = primaryBtn("+ New Rule", e -> openRuleDialog(null));
+		JButton addBtn = primaryBtn("ui_rule_new", e -> openRuleDialog(null));
 		
 		panel.add(title, BorderLayout.NORTH);
 		panel.add(scroll, BorderLayout.CENTER);
@@ -252,14 +231,11 @@ public class StormPage extends BasePage {
 		return split;
 	}
 	
-	// ── Tree helpers ──────────────────────────────────────────────────────────
-	
 	private JPanel buildRuleHeaderAndTrees() {
 		JPanel panel = new JPanel(new BorderLayout(0, 8));
 		panel.setBackground(MainWindow.BG);
 		panel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 0));
 		
-		// Rule name + comment header
 		ruleNameLabel = new JLabel("(select a rule)");
 		ruleNameLabel.setForeground(MainWindow.TEXT);
 		ruleNameLabel.setFont(new Font("Roboto", Font.BOLD, 16));
@@ -275,7 +251,6 @@ public class StormPage extends BasePage {
 		header.add(ruleCommentLabel);
 		header.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
 		
-		// Trees side by side
 		selectorTreeModel = buildPlaceholderTreeModel("Selectors");
 		operationTreeModel = buildPlaceholderTreeModel("Operations");
 		
@@ -327,10 +302,6 @@ public class StormPage extends BasePage {
 		return card;
 	}
 	
-	// =========================================================================
-	//  Bottom bar
-	// =========================================================================
-	
 	private JTree buildTree(DefaultTreeModel model) {
 		JTree tree = new JTree(model);
 		tree.setBackground(new Color(0x181825));
@@ -342,15 +313,11 @@ public class StormPage extends BasePage {
 		tree.setRowHeight(22);
 		tree.putClientProperty("JTree.lineStyle", "Angled");
 		tree.setCellRenderer(new StormTreeRenderer());
-		// Expand all by default
+		
 		for (int i = 0; i < tree.getRowCount(); i++)
 			tree.expandRow(i);
 		return tree;
 	}
-	
-	// =========================================================================
-	//  Data → UI
-	// =========================================================================
 	
 	private DefaultTreeModel buildPlaceholderTreeModel(String rootLabel) {
 		return new DefaultTreeModel(new DefaultMutableTreeNode(rootLabel));
@@ -392,7 +359,6 @@ public class StormPage extends BasePage {
 		
 		setStatus("Loaded " + currentStorm.getRules().size() + " rule(s)  |  " + currentStorm.getTasks().size() + " task(s)", new Color(0xa6e3a1));
 		
-		// Select first rule automatically
 		if (! ruleListModel.isEmpty()) {
 			ruleList.setSelectedIndex(0);
 		}
@@ -409,7 +375,6 @@ public class StormPage extends BasePage {
 		ruleNameLabel.setText(rule.getName().isEmpty() ? "(unnamed)" : rule.getName());
 		ruleCommentLabel.setText(rule.getComment().isEmpty() ? " " : "// " + rule.getComment());
 		
-		// Build selector tree
 		DefaultMutableTreeNode selRoot = new DefaultMutableTreeNode("Conditions");
 		for (GenericSelector sel : rule.getSelectors()) {
 			selRoot.add(buildSelectorNode(sel));
@@ -417,7 +382,6 @@ public class StormPage extends BasePage {
 		selectorTreeModel.setRoot(selRoot);
 		expandAll(selectorTree);
 		
-		// Build operation tree
 		DefaultMutableTreeNode opRoot = new DefaultMutableTreeNode("Operations");
 		for (GenericOperation op : rule.getOperations()) {
 			opRoot.add(buildOperationNode(op));
@@ -465,10 +429,6 @@ public class StormPage extends BasePage {
 		return sb.toString().trim();
 	}
 	
-	// =========================================================================
-	//  XML preview
-	// =========================================================================
-	
 	private void clearRuleDetail() {
 		ruleNameLabel.setText("(select a rule)");
 		ruleCommentLabel.setText(" ");
@@ -495,16 +455,12 @@ public class StormPage extends BasePage {
 		}
 	}
 	
-	// =========================================================================
-	//  Save
-	// =========================================================================
-	
 	private void saveToMod() {
 		if (currentStorm == null) {
 			window.snackbar.show("No Storm file loaded", BarManager.Type.WARNING);
 			return;
 		}
-		// Pick a mod
+		
 		var mods = ModService.modCollection;
 		if (mods.isEmpty()) {
 			window.snackbar.show("No mods available — create one", BarManager.Type.WARNING);
@@ -521,10 +477,6 @@ public class StormPage extends BasePage {
 		
 		});
 	}
-	
-	// =========================================================================
-	//  Delete rule
-	// =========================================================================
 	
 	private void deleteSelectedRule() {
 		if (currentStorm == null)
@@ -544,10 +496,6 @@ public class StormPage extends BasePage {
 		setStatus("Rule deleted.", MainWindow.ACCENT);
 	}
 	
-	// =========================================================================
-	//  Rule dialog (3-step wizard: Name → Selectors → Operations)
-	// =========================================================================
-	
 	/**
 	 * Opens a wizard to create a new rule or edit an existing one.
 	 */
@@ -564,13 +512,13 @@ public class StormPage extends BasePage {
 			return;
 		
 		if (existingRule == null) {
-			// New rule
+			
 			currentStorm.getRules().add(result);
 			ruleListModel.addElement(result);
 			ruleList.setSelectedValue(result, true);
 			setStatus("Rule '" + result.getName() + "' added.", new Color(0xa6e3a1));
 		} else {
-			// In-place edit — the rule object was mutated by the wizard
+			
 			ruleList.repaint();
 			showRule(result);
 			setStatus("Rule '" + result.getName() + "' updated.", new Color(0xa6e3a1));
@@ -578,18 +526,10 @@ public class StormPage extends BasePage {
 		refreshXmlPreview();
 	}
 	
-	// =========================================================================
-	//  Status
-	// =========================================================================
-	
 	private void setStatus(String text, Color color) {
 		statusLabel.setText(text);
 		statusLabel.setForeground(color);
 	}
-	
-	// =========================================================================
-	//  Custom tree node types (carry the model object for the renderer)
-	// =========================================================================
 	
 	static final class SelectorNode extends DefaultMutableTreeNode {
 		final GenericSelector selector;
@@ -608,10 +548,6 @@ public class StormPage extends BasePage {
 			this.operation = op;
 		}
 	}
-	
-	// =========================================================================
-	//  Custom renderers
-	// =========================================================================
 	
 	/**
 	 * Colors rule names in the left list
@@ -662,40 +598,33 @@ public class StormPage extends BasePage {
 		}
 	}
 	
-	// =========================================================================
-	//  INNER CLASS: Rule Wizard Dialog  (3 steps)
-	// =========================================================================
-	
 	static final class RuleWizardDialog extends JDialog {
 		
 		private static final String[] STEP_TITLES = { "Step 1 — Name & Comment", "Step 2 — Selectors  (conditions)", "Step 3 — Operations" };
 		
 		private final JLabel stepLabel = new JLabel();
-		// Step panels
+		
 		private final JPanel stepContainer = new JPanel(new CardLayout());
-		private final StormRule workingRule; // the rule being built / edited
+		private final StormRule workingRule;
+		
 		private StormRule result = null;
-		// Step indicator
+		
 		private int currentStep = 0;
-		// Step 1 component
+		
 		private JTextField nameField;
 		private JTextField commentField;
 		private JLabel nameError;
 		
-		// Step 2 – selector editor
 		private JPanel selectorContainer;
 		
-		// Step 3 – operation editor
 		private JPanel operationContainer;
 		
-		// Nav buttons
 		private JButton backBtn;
 		private JButton nextBtn;
 		
 		RuleWizardDialog(Frame owner, StormRule existing) {
 			super(owner, existing == null ? "New Rule" : "Edit Rule — " + existing.getName(), true);
 			
-			// Clone or create working rule
 			workingRule = new StormRule();
 			if (existing != null) {
 				workingRule.setName(existing.getName());
@@ -714,15 +643,12 @@ public class StormPage extends BasePage {
 			
 			buildDialog();
 			
-			// If editing an existing rule, skip straight to step 1 populated
 			if (existing != null) {
 				nameField.setText(existing.getName());
 				commentField.setText(existing.getComment());
 			}
 			updateStep();
 		}
-		
-		// ── Dialog construction ───────────────────────────────────────────
 		
 		private static JPanel stepPanel() {
 			JPanel p = new JPanel(new GridBagLayout());
@@ -752,23 +678,11 @@ public class StormPage extends BasePage {
 			p.add(field, fc);
 		}
 		
-		// ── Step 1: Name & Comment ────────────────────────────────────────
-		
-		private static JTextField dialogField(String placeholder) {
-			JTextField f = new JTextField();
-			styleField(f);
-			return getJTextField(placeholder, f);
-		}
-		
-		// ── Step 2: Selectors ─────────────────────────────────────────────
-		
 		private static JTextField dialogField(int cols) {
 			JTextField f = new JTextField(cols);
 			styleField(f);
 			return f;
 		}
-		
-		// ── Step 3: Operations ────────────────────────────────────────────
 		
 		private static void styleField(JTextField f) {
 			f.setBackground(INPUT_BG);
@@ -777,8 +691,6 @@ public class StormPage extends BasePage {
 			f.setFont(new Font("Roboto", Font.PLAIN, 12));
 			f.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(BORDER_COL), BorderFactory.createEmptyBorder(5, 8, 5, 8)));
 		}
-		
-		// ── Step navigation ───────────────────────────────────────────────
 		
 		private static JButton btn(String text, ActionListener a) {
 			JButton b = new JButton(text);
@@ -819,10 +731,8 @@ public class StormPage extends BasePage {
 			};
 		}
 		
-		// ── Step validators ───────────────────────────────────────────────
-		
 		private void buildDialog() {
-			// ── Header ────────────────────────────────────────────────────
+			
 			JPanel header = new JPanel(new BorderLayout());
 			header.setBackground(new Color(0x11111b));
 			header.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
@@ -835,13 +745,11 @@ public class StormPage extends BasePage {
 			header.add(stepLabel, BorderLayout.NORTH);
 			header.add(stepsRow, BorderLayout.SOUTH);
 			
-			// ── Step panels ───────────────────────────────────────────────
 			stepContainer.setBackground(SURFACE2);
 			stepContainer.add(buildStep1(), "0");
 			stepContainer.add(buildStep2(), "1");
 			stepContainer.add(buildStep3(), "2");
 			
-			// ── Bottom nav ────────────────────────────────────────────────
 			JPanel nav = new JPanel(new BorderLayout());
 			nav.setBackground(new Color(0x11111b));
 			nav.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
@@ -899,14 +807,14 @@ public class StormPage extends BasePage {
 		private JPanel buildStep1() {
 			JPanel p = stepPanel();
 			
-			nameField = dialogField("e.g. attack_enemy_on_sight");
-			commentField = dialogField("Optional description");
+			nameField = styledField("ui_rule_name_placeholder");
+			commentField = styledField("ui_comment_placeholder");
 			nameError = new JLabel(" ");
 			nameError.setForeground(MainWindow.DANGER);
 			nameError.setFont(new Font("Roboto", Font.ITALIC, 11));
 			
-			addRow(p, "Rule Name *", nameField, 0);
-			addRow(p, "Comment", commentField, 1);
+			addRow(p, "ui_rule_name", nameField, 0);
+			addRow(p, "ui_comment", commentField, 1);
 			
 			GridBagConstraints gc = new GridBagConstraints();
 			gc.gridx = 1;
@@ -953,8 +861,6 @@ public class StormPage extends BasePage {
 			p.add(addBar, BorderLayout.SOUTH);
 			return p;
 		}
-		
-		// ── Selector rows (step 2) ────────────────────────────────────────
 		
 		private JPanel buildStep3() {
 			JPanel p = new JPanel(new BorderLayout(0, 8));
@@ -1004,13 +910,11 @@ public class StormPage extends BasePage {
 			boolean isLast = currentStep == STEP_TITLES.length - 1;
 			nextBtn.setText(isLast ? "✓ Save Rule" : "Next →");
 			
-			// Populate step 2/3 when entering them
 			if (currentStep == 1)
 				repopulateSelectorContainer();
 			if (currentStep == 2)
 				repopulateOperationContainer();
 			
-			// Update step indicator dots
 			Container header = (Container) getContentPane().getComponent(0);
 			if (header.getComponentCount() > 1) {
 				Container stepsRow = (Container) header.getComponent(1);
@@ -1033,7 +937,7 @@ public class StormPage extends BasePage {
 				return;
 			
 			if (currentStep == STEP_TITLES.length - 1) {
-				// Final step — validate & commit
+				
 				if (! validateStep3())
 					return;
 				applyStep1();
@@ -1041,13 +945,12 @@ public class StormPage extends BasePage {
 				dispose();
 			} else {
 				if (currentStep == 0)
-					applyStep1(); // commit name/comment immediately
+					applyStep1();
+				
 				currentStep++;
 				updateStep();
 			}
 		}
-		
-		// ── Operation rows (step 3) ───────────────────────────────────────
 		
 		private void goBack() {
 			if (currentStep > 0) {
@@ -1069,8 +972,6 @@ public class StormPage extends BasePage {
 			nameError.setText(" ");
 			return true;
 		}
-		
-		// ── Attribute editor popup ────────────────────────────────────────
 		
 		private boolean validateStep2() {
 			if (workingRule.getSelectors().isEmpty()) {
@@ -1099,8 +1000,6 @@ public class StormPage extends BasePage {
 			}
 			return true;
 		}
-		
-		// ── Utilities ─────────────────────────────────────────────────────
 		
 		private void applyStep1() {
 			workingRule.setName(nameField.getText().trim().replace(" ", "_").toLowerCase(Locale.ROOT));
@@ -1141,12 +1040,10 @@ public class StormPage extends BasePage {
 			outer.setLayout(new BoxLayout(outer, BoxLayout.Y_AXIS));
 			outer.setOpaque(false);
 			
-			// Row itself
 			JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
 			row.setOpaque(false);
 			row.setBorder(BorderFactory.createEmptyBorder(0, depth * 20, 0, 0));
 			
-			// Name field / combinator label
 			boolean isCombinator = sel.isCombinator();
 			if (isCombinator) {
 				JLabel tag = new JLabel("<" + sel.getName() + ">");
@@ -1164,14 +1061,12 @@ public class StormPage extends BasePage {
 				nameF.getDocument().addDocumentListener(simpleListener(() -> sel.setName(nameF.getText().trim())));
 				row.add(nameF);
 				
-				// Attribute editor button
 				JButton attrBtn = miniBtn("attrs (" + sel.getAttributes().size() + ")", e -> openAttributeEditor(sel.getAttributes(), "Selector Attributes", () -> {
-					// refresh nothing — just in-place
+				
 				}));
 				row.add(attrBtn);
 			}
 			
-			// Delete button
 			JButton delBtn = miniBtn("✕", e -> {
 				parentList.remove(sel);
 				parentContainer.remove(outer);
@@ -1183,7 +1078,6 @@ public class StormPage extends BasePage {
 			
 			outer.add(row);
 			
-			// Children panel (indented)
 			if (isCombinator) {
 				JPanel childrenPanel = new JPanel();
 				childrenPanel.setLayout(new BoxLayout(childrenPanel, BoxLayout.Y_AXIS));
@@ -1194,7 +1088,6 @@ public class StormPage extends BasePage {
 				}
 				outer.add(childrenPanel);
 				
-				// Add-child bar
 				JPanel addChildBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 				addChildBar.setOpaque(false);
 				addChildBar.setBorder(BorderFactory.createEmptyBorder(0, (depth + 1) * 20, 0, 0));
@@ -1261,7 +1154,7 @@ public class StormPage extends BasePage {
 			JButton addChildBtn = miniBtn("+ child op", e -> {
 				GenericOperation child = new GenericOperation();
 				op.getChildren().add(child);
-				// Add child after the row separator
+				
 				outer.add(buildOperationRow(child, op.getChildren(), outer));
 				outer.revalidate();
 				outer.repaint();
@@ -1294,7 +1187,6 @@ public class StormPage extends BasePage {
 			attrList.setBackground(new Color(0x181825));
 			attrList.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 			
-			// Build a row per existing attribute
 			List<JTextField> keyFields = new ArrayList<>();
 			List<JTextField> valFields = new ArrayList<>();
 			
@@ -1326,7 +1218,7 @@ public class StormPage extends BasePage {
 			addRow.setForeground(MainWindow.TEXT);
 			
 			JButton saveClose = btn("Save & Close", e -> {
-				// Commit key/value pairs back to the map
+				
 				attrs.clear();
 				for (int i = 0; i < keyFields.size(); i++) {
 					String k = keyFields.get(i).getText().trim();

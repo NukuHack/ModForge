@@ -129,16 +129,21 @@ public final class LocalService {
 					case "Cell":
 						if (! inRow)
 							break;
+						// case 0 - false incements it to 1
+						// case 1 - true incements it to 2
+						// case 2 - false increments it to 3
+						// this first checks then increments
 						if (cellIndex++ == 1)
-							break;  // skip the middle cell (index 1)
+							break;  // skip the middle cell (case 1)
 						final var text = reader.getElementText().strip();
 						if (text.isEmpty())
 							break;
-						if (cellIndex == 1) {
+						// this is true at case 0
+						if (cellIndex == 1)
 							key = text;
-						} else if (cellIndex == 3 && key != null) {
+						// this is true at case 2
+						else if (cellIndex == 3 && key != null)
 							result.put(key, text);
-						}
 						break;
 				}
 			}
@@ -343,7 +348,7 @@ public final class LocalService {
 	}
 	
 	public static void loadUILocalizations() {
-		var zipPath = "lang/localization.zip";
+		var zipPath = "localization.zip";
 		var zipStream = Main.class.getClassLoader().getResourceAsStream(zipPath);
 		
 		if (zipStream == null) {
@@ -363,7 +368,7 @@ public final class LocalService {
 				var entryName = entry.getName();
 				String langCode = entryName.substring(0, entryName.length() - 4).toUpperCase();
 				
-				var map = langMap.computeIfAbsent(E.Language.fromName(langCode), l -> new HashMap<>());
+				var map = langMap.computeIfAbsent(E.Language.fromName(langCode), l -> new LinkedHashMap<>());
 				
 				// Wrap the ZipInputStream so close() doesn't propagate
 				try (var nonClosingStream = new NonClosingInputStream(zis)) {

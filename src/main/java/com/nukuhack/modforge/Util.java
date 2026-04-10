@@ -457,16 +457,16 @@ public final class Util {
 	 * @return CompletableFuture that completes with selected folder path, or null if canceled
 	 */
 	public static CompletableFuture<String> pickAsync(String title, int mode, String extension, String description) {
-		CompletableFuture<String> future = new CompletableFuture<>();
+		var future = new CompletableFuture<String>();
 		SwingUtilities.invokeLater(() -> {
-			JFileChooser chooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+			var chooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
 			chooser.setFileSelectionMode(mode);
 			chooser.setDialogTitle(title);
 			if (extension != null) {
 				chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(description, extension.substring(1)));
 			}
 			int result = chooser.showSaveDialog(null);
-			String selectedPath = result == JFileChooser.APPROVE_OPTION ? chooser.getSelectedFile().getAbsolutePath() : null;
+			var selectedPath = result == JFileChooser.APPROVE_OPTION ? chooser.getSelectedFile().getAbsolutePath() : null;
 			
 			future.complete(selectedPath);
 		});

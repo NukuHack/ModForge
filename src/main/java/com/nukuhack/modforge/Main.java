@@ -10,20 +10,19 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
-import javax.xml.stream.XMLStreamException;
 import java.awt.*;
-import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.nukuhack.modforge.backend.service.LocalService.makeLocalizationXml;
 
 /**
  * <p> ███╗   ███╗ ██████╗ ██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗</p>

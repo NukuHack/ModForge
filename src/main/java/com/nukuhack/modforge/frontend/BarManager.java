@@ -25,11 +25,9 @@ public class BarManager {
 		JWindow toast = new JWindow(owner);
 		toast.setSize(BAR_WIDTH, BAR_HEIGHT);
 		
-		var sb = new StringBuilder(MainWindow.getLocalText(message));
-		for (var o : variables)
-			sb.append(o).append(" ");
+		var text = MainWindow.getLocalText(message, variables);
 		
-		JLabel lbl = new JLabel(sb.toString());
+		JLabel lbl = new JLabel(text);
 		lbl.setForeground(fg);
 		lbl.setBackground(bg);
 		lbl.setOpaque(true);
@@ -64,7 +62,10 @@ public class BarManager {
 	}
 	
 	public enum Type {
-		INFO(Color.LIGHT_GRAY), SUCCESS(Color.GREEN), WARNING(Color.YELLOW), ERROR(Color.RED);
+		INFO(Color.LIGHT_GRAY),
+		SUCCESS(Color.GREEN),
+		WARNING(Color.YELLOW),
+		ERROR(Color.RED);
 		public final Color c;
 		
 		Type(Color c) {

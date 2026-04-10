@@ -13,7 +13,7 @@ public class LoadingScreen extends JWindow {
 		setLocationRelativeTo(null);
 		setBackground(new Color(0, 0, 0, 0));
 		
-		JPanel panel = getJPanel(); // Has BorderLayout + padding
+		JPanel panel = getJPanel();
 		
 		JLabel logo = new JLabel("⚒  ModForge", SwingConstants.CENTER);
 		logo.setFont(new Font("Roboto", Font.BOLD, 36));
@@ -29,7 +29,6 @@ public class LoadingScreen extends JWindow {
 		bar.setBackground(new Color(0x313244));
 		bar.setBorderPainted(false);
 		
-		// Center panel: logo + subtitle stacked
 		JPanel centerPanel = new JPanel(new GridBagLayout());
 		centerPanel.setOpaque(false);
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -40,12 +39,10 @@ public class LoadingScreen extends JWindow {
 		gbc.insets = new Insets(0, 0, 0, 0);
 		centerPanel.add(sub, gbc);
 		
-		// Bottom panel: progress bar, inside the styled panel
 		JPanel bottomPanel = new JPanel(new BorderLayout());
 		bottomPanel.setOpaque(false);
 		bottomPanel.add(bar, BorderLayout.CENTER);
 		
-		// Everything goes inside the rounded, dark `panel`
 		panel.add(centerPanel, BorderLayout.CENTER);
 		panel.add(bottomPanel, BorderLayout.SOUTH);
 		

@@ -1,16 +1,14 @@
 package com.nukuhack.modforge.frontend.pages;
 
-import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.ModItem;
-import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Optional;
 
 /**
  *
@@ -39,38 +37,21 @@ import java.util.Optional;
  • navigateBack()          – where "Back" goes (with unsaved-changes guard)
  =============================================================================
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public abstract class BaseEditPage extends BasePage {
 	
-	protected JComboBox<String> modSelector;
-	
-	// ── Shared UI state ──────────────────────────────────────────────────────
 	protected ModItem currentItem;
 	protected boolean hasChanges = false;
 	
-	// ── Shared UI components ─────────────────────────────────────────────────
 	protected JEditorPane previewPane;
 	protected JLabel statusLabel;
-	
-	// ── Constructor ──────────────────────────────────────────────────────────
 	
 	protected BaseEditPage(MainWindow w) {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 		setLayout(new BorderLayout(0, 16));
-		// NOTE: do NOT call buildUI() here.
-		// Subclasses must call initUI() at the end of their own constructor,
-		// after their own fields (attributesPanel, fieldsPanel, etc.) are initialized.
+		
 	}
-	
-	protected static void styleCombo(JComboBox<?> cb) {
-		cb.setFont(new Font("Roboto", Font.PLAIN, 12));
-		cb.setBackground(MainWindow.SURFACE);
-		cb.setForeground(MainWindow.TEXT);
-		cb.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-	}
-	
-	// ── Template methods (subclasses must implement) ──────────────────────────
 	
 	/**
 	 * Wire up the three-zone layout.  Must be called by each subclass
@@ -79,7 +60,7 @@ public abstract class BaseEditPage extends BasePage {
 	 *   public ItemEdit(MainWindow w) {
 	 *       super(w);
 	 *       attributesPanel = new JPanel(...);
-	 *       initUI();          // ← here
+	 *       initUI();
 	 *   }
 	 * </pre>
 	 */
@@ -120,15 +101,11 @@ public abstract class BaseEditPage extends BasePage {
 	/** Regenerate the HTML shown in {@link #previewPane}. */
 	protected abstract void updatePreview();
 	
-	// ── Public API ────────────────────────────────────────────────────────────
-	
 	/**
 	 * Navigate away from this page.  Implementations should guard with an
 	 * unsaved-changes dialog when {@code hasChanges} is true.
 	 */
 	protected abstract void navigateBack();
-	
-	// ── BasePage contract ─────────────────────────────────────────────────────
 	
 	/**
 	 * Store the item and trigger a full UI refresh.
@@ -142,11 +119,9 @@ public abstract class BaseEditPage extends BasePage {
 		updateStatus();
 	}
 	
-	// ── Shared status helpers ─────────────────────────────────────────────────
-	
 	@Override
 	public void refresh(Object... input) {
-		populateModSelector();
+		refreshModSelector();
 		if (input.length > 0 && input[0] instanceof ModItem item)
 			setCurrentItem(item);
 		else
@@ -158,40 +133,19 @@ public abstract class BaseEditPage extends BasePage {
 		updateStatus();
 	}
 	
-	// ── Shared combo styling ──────────────────────────────────────────────────
-	
 	protected void updateStatus() {
 		if (statusLabel == null)
 			return;
 		if (hasChanges) {
-			statusLabel.setText("⚠  Unsaved changes");
+			statusLabel.setText(MainWindow.getLocalText("ui_unsaved_changes"));
 			statusLabel.setForeground(new Color(0xf9e2af));
 		} else if (currentItem != null) {
-			statusLabel.setText("✓  No pending changes");
+			statusLabel.setText(MainWindow.getLocalText("ui_no_pending_changes"));
 			statusLabel.setForeground(new Color(0xa6e3a1));
 		} else {
 			statusLabel.setText(" ");
 		}
 	}
-	
-	/** Shared helper to populate a mod combo-box from the live mod collection. */
-	protected void populateModSelector() {
-		modSelector.removeAllItems();
-		for (var mod : ModService.modCollection) {
-			modSelector.addItem(mod.id + " | " + mod.name);
-		}
-	}
-	
-	/** Resolve the selected "id | name" entry back to a ModData. */
-	protected Optional<ModData> getSelectedMod() {
-		String sel = (String) modSelector.getSelectedItem();
-		if (sel == null || sel.startsWith("—"))
-			return Optional.empty();
-		String modId = sel.split(" \\| ")[0];
-		return ModService.modCollection.stream().filter(m -> m.id.equals(modId)).findFirst();
-	}
-	
-	// ── Unsaved-changes guard ─────────────────────────────────────────────────
 	
 	/**
 	 * Show a discard-changes dialog when {@code hasChanges} is true.
@@ -202,15 +156,13 @@ public abstract class BaseEditPage extends BasePage {
 	protected boolean confirmDiscard() {
 		if (! hasChanges)
 			return true;
-		int choice = JOptionPane.showConfirmDialog(this, "You have unsaved changes. Discard them?", "Unsaved Changes", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		int choice = JOptionPane.showConfirmDialog(this, MainWindow.getLocalText("ui_discard_changes_confirm"), MainWindow.getLocalText("ui_unsaved_changes_title"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		if (choice == JOptionPane.YES_OPTION) {
 			hasChanges = false;
 			return true;
 		}
 		return false;
 	}
-	
-	// ── UI assembly ───────────────────────────────────────────────────────────
 	
 	private void buildUI() {
 		add(buildTopBar(), BorderLayout.NORTH);
@@ -229,15 +181,14 @@ public abstract class BaseEditPage extends BasePage {
 		JPanel top = new JPanel(new BorderLayout(12, 0));
 		top.setOpaque(false);
 		
-		// ── Breadcrumb ────────────────────────────────────────────────────
 		JPanel breadcrumbPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		breadcrumbPanel.setOpaque(false);
 		
-		JLabel base = new JLabel("Items  ›  ");
+		JLabel base = new JLabel(MainWindow.getLocalText("ui_items") + "  ›  ");
 		base.setForeground(MainWindow.ACCENT);
 		base.setFont(new Font("Roboto", Font.BOLD, 22));
 		base.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		base.setToolTipText("Back to Items");
+		base.setToolTipText(MainWindow.getLocalText("ui_back_to_items"));
 		base.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -245,7 +196,7 @@ public abstract class BaseEditPage extends BasePage {
 			}
 		});
 		
-		JLabel pageTitleLabel = new JLabel(getPageTitle());
+		JLabel pageTitleLabel = new JLabel(MainWindow.getLocalText(getPageTitle()));
 		pageTitleLabel.setForeground(MainWindow.TEXT);
 		pageTitleLabel.setFont(new Font("Roboto", Font.BOLD, 22));
 		
@@ -261,15 +212,14 @@ public abstract class BaseEditPage extends BasePage {
 	 * Center: horizontal split — scrollable form (left) | live preview (right).
 	 */
 	private JSplitPane buildCenter() {
-		// ── Left: form panel in a scroll pane ────────────────────────────
-		JScrollPane formScroll = new JScrollPane(buildFormPanel());
+		
+		var formScroll = new JScrollPane(buildFormPanel());
 		formScroll.setBackground(MainWindow.SURFACE);
 		formScroll.getViewport().setBackground(MainWindow.SURFACE);
 		formScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), getFormPanelTitle(), TitledBorder.LEFT, TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		formScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		formScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
-		// ── Right: live HTML preview ──────────────────────────────────────
 		previewPane = new JEditorPane();
 		previewPane.setContentType("text/html");
 		previewPane.setEditable(false);
@@ -278,7 +228,7 @@ public abstract class BaseEditPage extends BasePage {
 		previewPane.setFont(new Font("Roboto", Font.PLAIN, 12));
 		previewPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 		
-		JScrollPane previewScroll = new JScrollPane(previewPane);
+		var previewScroll = new JScrollPane(previewPane);
 		previewScroll.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), getPreviewTitle(), TitledBorder.LEFT, TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		previewScroll.setBackground(MainWindow.SURFACE);
 		
@@ -294,7 +244,7 @@ public abstract class BaseEditPage extends BasePage {
 	 * Bottom bar: status label (left) | subclass action buttons (right).
 	 */
 	private JPanel buildBottomBar() {
-		JPanel bar = new JPanel(new BorderLayout());
+		var bar = new JPanel(new BorderLayout());
 		bar.setOpaque(false);
 		bar.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 		

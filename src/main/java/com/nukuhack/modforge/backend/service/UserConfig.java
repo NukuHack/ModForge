@@ -82,10 +82,16 @@ public interface UserConfig {
 				return;
 			if (obj.get("gameDirectory") instanceof JsonIO.JsonString string)
 				gameDirectory = string.getValue();
+			if (gameDirectory == null)
+				gameDirectory = "";
 			if (obj.get("userName") instanceof JsonIO.JsonString string)
 				userName = string.getValue();
+			if (userName == null)
+				userName = "";
 			if (obj.get("language") instanceof JsonIO.JsonString string)
 				language = Language.fromIsoCode(string.getValue());
+			if (language == null)
+				language = Language.ENGLISH;
 			if (obj.get("autoLoadGameData") instanceof JsonIO.JsonBoolean bool)
 				autoLoadGameData = bool.getValue();
 		}

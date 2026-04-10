@@ -10,15 +10,14 @@ import com.nukuhack.modforge.frontend.MainWindow;
 import javax.swing.*;
 import java.awt.*;
 
-// =============================================================================
-//  SETTINGS PAGE
-// =============================================================================
+import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
+
 @lombok.extern.slf4j.Slf4j
 public class SettingsPage extends BasePage {
 	
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");
 	private final JPanel card = card(null);
-	private final JTextField userName = styledField("Your name (used as mod author)");
+	private final JTextField userName = styledField("ui_username_placeholder");
 	private final JComboBox<String> langBox = new JComboBox<>(Language.getAllLang());
 	private final JCheckBox loadGameData = new JCheckBox();
 	private final UserConfig userConfig;
@@ -27,17 +26,16 @@ public class SettingsPage extends BasePage {
 		super(w);
 		userConfig = w.getRegistry().userConfig;
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
-		add(header("Settings"), BorderLayout.NORTH);
+		add(header("ui_settings"), BorderLayout.NORTH);
 		
 		card.setLayout(new GridBagLayout());
 		
-		// Create UI components
 		JPanel cardWithComponents = createSettingsCard(w);
 		add(cardWithComponents, BorderLayout.CENTER);
 	}
 	
 	private static JLabel label(String text) {
-		JLabel l = new JLabel(text);
+		JLabel l = new JLabel(getLocalText(text));
 		l.setForeground(MainWindow.TEXT);
 		l.setFont(new Font("Roboto", Font.PLAIN, 13));
 		return l;
@@ -53,21 +51,19 @@ public class SettingsPage extends BasePage {
 		gc.insets = new Insets(8, 6, 8, 6);
 		gc.fill = GridBagConstraints.HORIZONTAL;
 		
-		// Reset gridwidth and increment gridy for the next row
 		gc.gridwidth = 1;
 		gc.gridy = 1;
 		
-		// Game directory row
 		gc.gridx = 0;
 		gc.weightx = 0.15;
-		card.add(label("Game Directory"), gc);
+		card.add(label("ui_game_directory"), gc);
 		gc.gridx = 1;
 		gc.weightx = 0.75;
 		gameDir.setForeground(MainWindow.TEXT);
 		card.add(gameDir, gc);
 		gc.gridx = 2;
 		gc.weightx = 0.1;
-		card.add(primaryBtn("Browse…", e -> Util.pickFolderAsync().thenAccept(path -> {
+		card.add(primaryBtn("ui_browse", e -> Util.pickFolderAsync().thenAccept(path -> {
 			if (path != null) {
 				gameDir.setText(path);
 				gameDir.setForeground(MainWindow.TEXT);
@@ -75,23 +71,21 @@ public class SettingsPage extends BasePage {
 			}
 		})), gc);
 		
-		// Username row (gridy = 2)
 		gc.gridx = 0;
 		gc.gridy = 2;
 		gc.weightx = 0.15;
-		card.add(label("Author Name"), gc);
+		card.add(label("ui_author_name"), gc);
 		gc.gridx = 1;
 		gc.weightx = 0.85;
 		gc.gridwidth = 2;
 		userName.setForeground(MainWindow.TEXT);
 		card.add(userName, gc);
 		
-		// Language row (gridy = 3)
 		gc.gridx = 0;
 		gc.gridy = 3;
 		gc.weightx = 0.15;
 		gc.gridwidth = 1;
-		card.add(label("Language"), gc);
+		card.add(label("ui_language"), gc);
 		gc.gridx = 1;
 		gc.weightx = 0.85;
 		gc.gridwidth = 2;
@@ -100,22 +94,20 @@ public class SettingsPage extends BasePage {
 		langBox.setFont(new Font("Roboto", Font.PLAIN, 13));
 		card.add(langBox, gc);
 		
-		// Username row (gridy = 4)
 		gc.gridx = 0;
 		gc.gridy = 4;
 		gc.gridwidth = 1;
 		gc.weightx = 0.15;
-		card.add(label("Load game data at Startup"), gc);
+		card.add(label("ui_load_game_data_startup"), gc);
 		gc.gridx = 1;
 		gc.gridwidth = 1;
 		card.add(loadGameData, gc);
 		
-		// Save button (gridy = 5)
 		gc.gridx = 1;
 		gc.gridy = 5;
 		gc.weightx = 0;
 		gc.gridwidth = 1;
-		card.add(primaryBtn("Save Settings", e -> {
+		card.add(primaryBtn("ui_settings_save", e -> {
 			userConfig.setGameDirectory(gameDir.getText());
 			userConfig.setUserName(userName.getText());
 			final var sel = (String) langBox.getSelectedItem();
@@ -124,34 +116,32 @@ public class SettingsPage extends BasePage {
 			userConfig.setAutoLoadGameData(loadGameData.isSelected());
 			
 			userConfig.save();
-			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
+			w.snackbar.show("ui_settings_saved", BarManager.Type.SUCCESS);
 		}), gc);
 		gc.gridx = 2;
 		gc.gridy = 5;
 		gc.weightx = 0;
 		gc.gridwidth = 1;
-		card.add(primaryBtn("Refresh game&mod data", e -> {
+		card.add(primaryBtn("ui_refresh_all", e -> {
 			Singleton.INSTANCE.getRegistry().init();
-			w.snackbar.show("Data refreshed", BarManager.Type.SUCCESS);
+			w.snackbar.show("ui_refresh_success", BarManager.Type.SUCCESS);
 		}), gc);
 		
 		return card;
 	}
 	
 	private void loadSettings() {
-		// Load game directory if exists
+		
 		var gameDire = userConfig.getGameDirectory();
 		if (! gameDire.isEmpty()) {
 			gameDir.setText(gameDire);
 			gameDir.setForeground(MainWindow.TEXT);
 		}
 		
-		// Load username if exists
 		var userNam = userConfig.getUserName();
 		if (! userNam.isEmpty())
 			userName.setText(userNam);
 		
-		// Load language if exists
 		var lang = userConfig.getLanguage().getDisplayName();
 		for (int i = 0; i < langBox.getItemCount(); i++) {
 			final var item = langBox.getItemAt(i);
@@ -165,3 +155,4 @@ public class SettingsPage extends BasePage {
 		loadGameData.setSelected(loadData);
 	}
 }
+

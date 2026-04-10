@@ -14,9 +14,6 @@ import java.awt.event.MouseEvent;
 import java.time.LocalDate;
 import java.util.Set;
 
-// =============================================================================
-//  MODS PAGE
-// =============================================================================
 @lombok.extern.slf4j.Slf4j
 public class ModsPage extends BasePage {
 	
@@ -29,16 +26,15 @@ public class ModsPage extends BasePage {
 		
 		JPanel top = new JPanel(new BorderLayout());
 		top.setOpaque(false);
-		top.add(header("My Mods"), BorderLayout.WEST);
+		top.add(header("ui_mods_loaded"), BorderLayout.WEST);
 		
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		actions.setOpaque(false);
-		actions.add(primaryBtn("+ New Mod", e -> createNewMod()));
-		actions.add(primaryBtn("Refresh", e -> refreshMods()));
-		actions.add(primaryBtn("Import Mod", e -> importMod()));
+		actions.add(primaryBtn("ui_mod_new", e -> createNewMod()));
+		actions.add(primaryBtn("ui_refresh", e -> refreshMods()));
+		actions.add(primaryBtn("ui_mod_import", e -> importMod()));
 		top.add(actions, BorderLayout.EAST);
 		
-		// Mod list with custom renderer
 		listModel = new DefaultListModel<>();
 		modList = new JList<>(listModel);
 		modList.setCellRenderer(new ModListCellRenderer());
@@ -49,7 +45,6 @@ public class ModsPage extends BasePage {
 		modList.setFixedCellHeight(60);
 		modList.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
 		
-		// Double-click to edit
 		modList.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -66,7 +61,7 @@ public class ModsPage extends BasePage {
 		scroll.setBackground(MainWindow.SURFACE);
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		
-		JPanel card = card("Installed Mods");
+		JPanel card = card("ui_mods_loaded");
 		card.add(scroll, BorderLayout.CENTER);
 		
 		add(top, BorderLayout.NORTH);
@@ -80,16 +75,16 @@ public class ModsPage extends BasePage {
 	
 	public void refreshMods() {
 		listModel.clear();
-		// Add user-created mods
+		
 		for (var mod : ModService.modCollection) {
 			listModel.addElement(mod);
 		}
 		
-		window.snackbar.show("Loaded mods: ", BarManager.Type.SUCCESS, listModel.size());
+		window.snackbar.show("ui_mods_loaded_count", BarManager.Type.SUCCESS, listModel.size());
 	}
 	
 	private void createNewMod() {
-		// Create a new mod with default values
+		
 		String defaultId = "new_mod_" + Util.getRandomString(32);
 		
 		final var newMod = window.getRegistry().modService.createNewMod("New Mod", "Your mod description", window.getRegistry().userConfig.getUserName(), "1.0", LocalDate.now().toString(), defaultId, false);
@@ -100,7 +95,7 @@ public class ModsPage extends BasePage {
 	private void importMod() {
 		var chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		chooser.setDialogTitle("Select mod folder to import");
+		chooser.setDialogTitle(MainWindow.getLocalText("ui_select_mod_folder"));
 		
 		if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 			return;
@@ -108,21 +103,20 @@ public class ModsPage extends BasePage {
 		
 		var mod = ModService.loadMod(modPath);
 		if (mod == null) {
-			window.snackbar.show("Import failed, Mod can not be null", BarManager.Type.ERROR);
+			window.snackbar.show(MainWindow.getLocalText("ui_import_failed_mod_null"), BarManager.Type.ERROR);
 			return;
 		}
 		if (ModService.modCollection.contains(mod)) {
-			window.snackbar.show("Mod already exists: ", BarManager.Type.WARNING, mod.id);
+			window.snackbar.show(MainWindow.getLocalText("ui_mod_already_exists"), BarManager.Type.WARNING, mod.id);
 			return;
 		}
 		
 		ModService.modCollection.add(mod);
 		
 		refreshMods();
-		window.snackbar.show("Imported mod: ", BarManager.Type.SUCCESS, mod.name);
+		window.snackbar.show(MainWindow.getLocalText("ui_mod_imported"), BarManager.Type.SUCCESS, mod.name);
 	}
 	
-	// Custom cell renderer for mod list items
 	private static class ModListCellRenderer extends JPanel implements ListCellRenderer<ModData> {
 		private final JLabel nameLabel = new JLabel();
 		private final JLabel versionLabel = new JLabel();
@@ -134,7 +128,6 @@ public class ModsPage extends BasePage {
 			setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 			setBackground(MainWindow.SURFACE);
 			
-			// Left panel with icon and info
 			JPanel leftPanel = new JPanel(new BorderLayout(8, 4));
 			leftPanel.setOpaque(false);
 			
@@ -164,15 +157,14 @@ public class ModsPage extends BasePage {
 		public Component getListCellRendererComponent(JList<? extends ModData> list, ModData mod, int index, boolean isSelected, boolean cellHasFocus) {
 			nameLabel.setText(mod.name != null && ! mod.name.isBlank() ? mod.name : mod.id);
 			versionLabel.setText("v" + (mod.modVersion != null ? mod.modVersion : "?"));
-			authorLabel.setText(mod.author != null ? mod.author : "Unknown");
+			authorLabel.setText(mod.author != null ? mod.author : "ui_unknown");
 			
-			// Check if mod is external (read-only)
 			boolean isExternal = mod.author.isBlank() || ! mod.author.equals(Singleton.INSTANCE.getRegistry().userConfig.getUserName());
 			if (isExternal) {
-				statusLabel.setText("📥 External");
+				statusLabel.setText(MainWindow.getLocalText("ui_external"));
 				statusLabel.setForeground(Color.YELLOW);
 			} else {
-				statusLabel.setText("✏️ Editable");
+				statusLabel.setText(MainWindow.getLocalText("ui_editable"));
 				statusLabel.setForeground(Color.GREEN);
 			}
 			

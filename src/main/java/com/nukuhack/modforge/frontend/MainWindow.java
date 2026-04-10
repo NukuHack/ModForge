@@ -1,6 +1,7 @@
 package com.nukuhack.modforge.frontend;
 
 import com.nukuhack.modforge.Singleton;
+import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.pages.*;
 import lombok.Getter;
@@ -13,14 +14,12 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.HashMap;
+import java.text.MessageFormat;
+import java.util.Arrays;
 
-// =============================================================================
-//  MAIN WINDOW
-// =============================================================================
 @Slf4j
 public class MainWindow extends JFrame {
-	// ── palette ──────────────────────────────────────────────────────────────
+	
 	public static final Color BG = new Color(0x1e1e2e);
 	public static final Color SURFACE = new Color(0x181825);
 	public static final Color TITLEBAR = new Color(0x11111b);
@@ -29,36 +28,32 @@ public class MainWindow extends JFrame {
 	public static final Color MUTED = new Color(0x6c6f85);
 	public static final Color DANGER = new Color(0xf38ba8);
 	public final BarManager snackbar;
-	// ── navigation ───────────────────────────────────────────────────────────
+	
 	private final CardLayout cardLayout = new CardLayout();
+	private Page current = null;
 	private final JPanel pageHolder = new JPanel(cardLayout);
-	// backend ---------------
+	
 	@Getter
 	private final ServiceRegistry registry;
 	
 	public MainWindow(ServiceRegistry registry) {
 		super("ModForge");
 		
-		//backend ---
 		this.registry = registry;
 		
-		// Load window icon before setting up the UI
 		setWindowIcon();
 		
-		// basic properties
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(1280, 800);
 		setMinimumSize(new Dimension(900, 600));
 		setLocationRelativeTo(null);
-		setUndecorated(true);   // custom title bar
+		setUndecorated(true);
 		
-		// Allow dragging via title bar
 		MouseAdapter tbm = new MouseAdapter(this);
 		
-		// ── root layout ───────────────────────────────────────────────────
 		JPanel root = new JPanel(new BorderLayout());
 		root.setBackground(BG);
-		root.setBorder(new LineBorder(MUTED, 1)); // thin frame border
+		root.setBorder(new LineBorder(MUTED, 1));
 		
 		root.add(buildTitleBar(tbm), BorderLayout.NORTH);
 		root.add(buildSidebar(), BorderLayout.WEST);
@@ -66,24 +61,46 @@ public class MainWindow extends JFrame {
 		
 		setContentPane(root);
 		
-		// ── snackbar overlay ──────────────────────────────────────────────
 		snackbar = new BarManager(this);
 		
-		// ── zoom block (mirrors js/functions.js Ctrl+scroll / Ctrl±) ─────
 		installZoomBlock();
 		
-		// Initialize all pages
 		initializePages();
 		
-		// show home by default
 		navigate(Page.HOME);
 	}
 	
-	public static String getLocalText(String key) {
-		// some nice lookup
+	public static String getLocalText(String key, Object... args) {
+		if (key == null || key.isBlank()) {
+			if (args == null || args.length == 0)
+				return "";
+			else if (args.length == 1)
+				return args[0].toString();
+			else
+				return Arrays.toString(args);
+		}
+		
 		var lang = Singleton.INSTANCE.getRegistry().userConfig.getLanguage();
 		var langMap = Singleton.getLangMap();
-		return langMap.get(lang).getOrDefault(key, key);
+		var engMap = langMap.get(E.Language.ENGLISH);
+		var fMap = langMap.get(lang);
+		String text = null;
+		if (fMap != null)
+			text = fMap.get(key);
+		if (text == null && engMap != null)
+			text = engMap.get(key);
+		
+		if (text == null || text.isBlank())
+			return key;
+		
+		var safeArgs = new Object[args.length];
+		for (var i = 0; i < args.length; i++) {
+			safeArgs[i] = (args[i] == null) ? "" : args[i];
+		}
+		
+		var result = MessageFormat.format(text, safeArgs);
+		
+		return result.replaceAll("\\{\\D+\\}", "").replaceAll("\\s+", " ").trim();
 	}
 	
 	/**
@@ -91,9 +108,9 @@ public class MainWindow extends JFrame {
 	 * Falls back to default Java icon if not found
 	 */
 	private void setWindowIcon() {
-		// Try PNG first (better cross-platform support)
+		
 		final var f = new String[] {
-				// most modern systems should allow the first but left the rest for fallback is ... extreme cases
+				
 				"/images/Icons/modforge.png", "/images/Icons/modforge.ico", "/resources/images/Icons/modforge.png", "/resources/images/Icons/modforge.ico", "resources/images/Icons/modforge.png", "resources/images/Icons/modforge.ico" };
 		
 		for (final var el : f) {
@@ -120,7 +137,6 @@ public class MainWindow extends JFrame {
 		}
 	}
 	
-	// ── title bar ─────────────────────────────────────────────────────────────
 	private JPanel buildTitleBar(MouseAdapter drag) {
 		JPanel bar = new JPanel(new BorderLayout());
 		bar.setBackground(TITLEBAR);
@@ -160,7 +176,6 @@ public class MainWindow extends JFrame {
 		return getJButton(action, b, TITLEBAR);
 	}
 	
-	// ── sidebar ───────────────────────────────────────────────────────────────
 	private JPanel buildSidebar() {
 		JPanel side = new JPanel();
 		side.setLayout(new BoxLayout(side, BoxLayout.Y_AXIS));
@@ -173,7 +188,7 @@ public class MainWindow extends JFrame {
 		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.CONVERT }) {
 			side.add(navBtn(page.getDisplayName(), e -> navigate(page)));
 		}
-		side.add(navBtn("ui_kdc2_image_button", e -> SwingUtilities.invokeLater(() -> new KCDConverterGUI().setVisible(true))));
+		side.add(navBtn("ui_image_convert_window", e -> SwingUtilities.invokeLater(Singleton.INSTANCE::getImageEditor)));
 		
 		side.add(Box.createVerticalGlue());
 		side.add(navBtn(Page.SETTINGS.getDisplayName(), e -> navigate(Page.SETTINGS)));
@@ -212,25 +227,22 @@ public class MainWindow extends JFrame {
 		return b;
 	}
 	
-	// ── page area ─────────────────────────────────────────────────────────────
 	private JPanel buildPageArea() {
 		pageHolder.setBackground(BG);
 		return pageHolder;
 	}
 	
 	public void navigate(Page page, Object... input) {
-		// Show the page
+		if (current != null && current == page)
+			return;
+		current = page;
 		cardLayout.show(pageHolder, page.name());
 		
 		page.instance.refresh(input);
 		
-		// Update active nav button styling
-		// (You might want to implement this to highlight the current page in sidebar)
-		
-		snackbar.show("Navigated to ", BarManager.Type.INFO, page.getDisplayName());
+		snackbar.show("ui_navigate_page", BarManager.Type.INFO, getLocalText(page.getDisplayName()));
 	}
 	
-	// ── zoom-block (mirrors js/functions.js) ──────────────────────────────────
 	private void installZoomBlock() {
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
 			if (e.getID() == KeyEvent.KEY_PRESSED && e.isControlDown()) {
@@ -244,10 +256,18 @@ public class MainWindow extends JFrame {
 		});
 	}
 	
-	// ── navigation enum ──────────────────────────────────────────────────────
 	@Getter
 	public enum Page {
-		HOME("Home", HomePage.class), MODS("Mods", ModsPage.class), MOD_EDIT("Edit Mod", ModEditPage.class), ITEMS("Items", ItemsPage.class), STORM("Storm", StormPage.class), ITEM_EDIT("Item Edit", ItemEdit.class), LANG_EDIT("Lang Edit", LangEdit.class), SETTINGS("Settings", SettingsPage.class), LANG("Localizations", LocalizationPage.class), CONVERT("Image convert", ConvertPage.class);
+		HOME("ui_home", HomePage.class),
+		MODS("ui_mods", ModsPage.class),
+		MOD_EDIT("ui_mod_edit", ModEditPage.class),
+		ITEMS("ui_items", ItemsPage.class),
+		STORM("ui_storm", StormPage.class),
+		ITEM_EDIT("ui_item_edit", ItemEdit.class),
+		LANG_EDIT("ui_localization_edit", LangEdit.class),
+		SETTINGS("ui_settings", SettingsPage.class),
+		LANG("ui_localization", LocalizationPage.class),
+		CONVERT("ui_image_convert", ConvertPage.class);
 		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;

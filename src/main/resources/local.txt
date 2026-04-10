@@ -1,0 +1,37 @@
+// this is a Lang - TODO ... yeah even more localization
+ui_copy_id                  : Copy ID
+ui_copy_all_details         : Copy All Details
+ui_edit_item                : Edit Item
+ui_edit_lang                : Edit Lang
+ui_add_to_mod               : Add to Mod
+ui_add_to_mod_title         : Add to Mod
+ui_add_to_mod_prompt        : Select a mod to add this item to:
+ui_add                      : Add
+ui_cancel                   : Cancel
+ui_copied_id                : ID copied: {0}
+ui_copied_all_details       : All details copied to clipboard
+ui_copied_key               : Key copied: {0}
+ui_copied_value             : Value copied
+ui_target_mod               : Target mod:
+ui_attributes               : Attributes
+ui_linked_items             : Linked Items
+ui_live_preview             : Live Preview
+ui_localization_entries     : Localization Entries
+ui_select_item              : Select an item
+ui_details_appear_here      : Details will appear here.
+ui_no_item_selected         : No item selected
+ui_no_item_selected_hint    : No item selected — go to Items and right-click an entry.
+ui_select_mod_first         : Please select a mod first
+ui_item_added_to_mod        : Added item to mod: {0}
+ui_item_changes_saved       : Item changes saved
+ui_translation_not_found    : (translation not found)
+ui_click_to_copy_key        : Click to copy key
+ui_lang_edit_empty_preview  : No item selected or no lang keys found.
+ui_language                 : Language
+ui_unknown_language         : Unknown language
+ui_no_entries_to_add        : No entries to add
+ui_entries_added            : Added {0} entries
+ui_no_localization_data     : No localization data for {0}
+ui_localization_loaded      : Loaded {0} localization entries
+ui_no_items_to_display      : No items to display
+ui_showing_items            : Showing {0} items
