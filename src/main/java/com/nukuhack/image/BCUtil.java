@@ -375,19 +375,19 @@ public class BCUtil {
 		
 		// Detect mode
 		int mode = - 1;
-		for (int i = 0; i < 8; i++) {
-			if (br.read()) {
-				mode = i;
-				break;
-			}
-		}
-		if (mode < 0) {
-			int[] e = new int[16];
-			Arrays.fill(e, 0xFF000000);
-			return e;
-		}
-		mode = detectBC7Mode((byte) (src[off] & 0xFF));
-		
+//		for (int i = 0; i < 8; i++) {
+//			if (br.read()) {
+//				mode = i;
+//				break;
+//			}
+//		}
+//		if (mode < 0) {
+//			int[] e = new int[16];
+//			Arrays.fill(e, 0xFF000000);
+//			return e;
+//		}
+//		mode = detectBC7Mode((byte) (src[off] & 0xFF));
+//
 		// for now force it to be 6
 		mode = 6;
 		// TODO : make this work, check other modes, etc

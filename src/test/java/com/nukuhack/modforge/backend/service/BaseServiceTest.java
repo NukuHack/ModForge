@@ -4,6 +4,7 @@ package com.nukuhack.modforge.backend.service;
 
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.model.E.Language;
+import com.nukuhack.util.IOUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +51,7 @@ public abstract class BaseServiceTest {
 	@AfterAll
 	static void cleanupBaseTempDir() {
 		if (tmp != null && Files.exists(tmp)) {
-			Util.deleteRecursively(tmp);
+			IOUtil.deleteRecursively(tmp);
 		}
 	}
 	
