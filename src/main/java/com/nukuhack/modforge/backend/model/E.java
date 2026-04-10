@@ -286,6 +286,9 @@ public class E {
 		 * This is how files get stored in the disc
 		 */
 		public static Language fromName(String name) {
+			try {
+				return Language.valueOf(name);
+			} catch (IllegalArgumentException ex) {}
 			return Arrays.stream(values()).filter(lang -> lang.name.equals(name)).findFirst().orElse(null);
 		}
 		

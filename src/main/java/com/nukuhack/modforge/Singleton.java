@@ -1,6 +1,7 @@
 package com.nukuhack.modforge;
 
 import com.nukuhack.modforge.backend.ModData;
+import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.MainWindow;
 import lombok.AccessLevel;
@@ -11,7 +12,9 @@ import lombok.Setter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @lombok.extern.slf4j.Slf4j
@@ -21,6 +24,8 @@ public enum Singleton {
 	private static final Path userConfigDir = Util.getConfigDir();
 	@Getter
 	private static final Path userConfig = userConfigDir.resolve("userconfig.json");
+	@Getter
+	private static final Map<E.Language, Map<String, String>> langMap = new EnumMap<>(E.Language.class);
 	@Getter
 	private final ModData game = new ModData();
 	@Setter

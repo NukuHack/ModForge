@@ -1,8 +1,10 @@
 package com.nukuhack.modforge.backend.service;
 
+import com.nukuhack.modforge.Main;
 import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
+import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.modforge.backend.model.ModItem;
 import lombok.NonNull;
@@ -12,12 +14,16 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 @Slf4j
 public final class LocalService {
@@ -334,5 +340,56 @@ public final class LocalService {
 			final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
 			return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
 		}
+	}
+	
+	public static void loadUILocalizations() {
+		var zipPath = "lang/localization.zip";
+		var zipStream = Main.class.getClassLoader().getResourceAsStream(zipPath);
+		
+		if (zipStream == null) {
+			log.warn("ZIP file not found: {}", zipPath);
+			return;
+		}
+		
+		Map<E.Language, Map<String, String>> langMap = new EnumMap<>(E.Language.class);
+		try (ZipInputStream zis = new ZipInputStream(zipStream)) {
+			ZipEntry entry;
+			
+			while ((entry = zis.getNextEntry()) != null) {
+				if (entry.isDirectory()) {
+					continue;
+				}
+				
+				var entryName = entry.getName();
+				String langCode = entryName.substring(0, entryName.length() - 4).toUpperCase();
+				
+				var map = langMap.computeIfAbsent(E.Language.fromName(langCode), l -> new HashMap<>());
+				
+				// Wrap the ZipInputStream so close() doesn't propagate
+				try (var nonClosingStream = new NonClosingInputStream(zis)) {
+					map.putAll(LocalService.parseLocalizationXml(nonClosingStream));
+				}
+				
+				zis.closeEntry();
+			}
+		} catch (IOException e) {
+			log.error("Failed to read ZIP from resources", e);
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+		Arrays.stream(Language.values()).forEach(l -> langMap.putIfAbsent(l, new HashMap<>()));
+		Singleton.getLangMap().putAll(langMap);
+	}
+}
+/**
+ * Wraps an InputStream but ignores close() calls.
+ * This allows the XML parser to "close" its stream without closing the underlying ZIP stream.
+ */
+class NonClosingInputStream extends FilterInputStream {
+	protected NonClosingInputStream(InputStream in) {
+		super(in);
+	}
+	@Override
+	public void close() {
 	}
 }

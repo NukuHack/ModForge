@@ -21,11 +21,11 @@ public class SettingsPage extends BasePage {
 	private final JTextField userName = styledField("Your name (used as mod author)");
 	private final JComboBox<String> langBox = new JComboBox<>(Language.getAllLang());
 	private final JCheckBox loadGameData = new JCheckBox();
-	private final UserConfig configService;
+	private final UserConfig userConfig;
 	
 	public SettingsPage(MainWindow w) {
 		super(w);
-		configService = w.getRegistry().userConfig;
+		userConfig = w.getRegistry().userConfig;
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 		add(header("Settings"), BorderLayout.NORTH);
 		
@@ -116,13 +116,14 @@ public class SettingsPage extends BasePage {
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("Save Settings", e -> {
-			configService.setGameDirectory(gameDir.getText());
-			configService.setUserName(userName.getText());
-			final var sel = (Language) langBox.getSelectedItem();
+			userConfig.setGameDirectory(gameDir.getText());
+			userConfig.setUserName(userName.getText());
+			final var sel = (String) langBox.getSelectedItem();
 			if (sel != null)
-				configService.setLanguage(sel);
-			configService.setAutoLoadGameData(loadGameData.isSelected());
+				userConfig.setLanguage(Language.fromDisplayName(sel));
+			userConfig.setAutoLoadGameData(loadGameData.isSelected());
 			
+			userConfig.save();
 			w.snackbar.show("Settings saved", BarManager.Type.SUCCESS);
 		}), gc);
 		gc.gridx = 2;
@@ -139,19 +140,19 @@ public class SettingsPage extends BasePage {
 	
 	private void loadSettings() {
 		// Load game directory if exists
-		var gameDire = configService.getGameDirectory();
+		var gameDire = userConfig.getGameDirectory();
 		if (! gameDire.isEmpty()) {
 			gameDir.setText(gameDire);
 			gameDir.setForeground(MainWindow.TEXT);
 		}
 		
 		// Load username if exists
-		var userNam = configService.getUserName();
+		var userNam = userConfig.getUserName();
 		if (! userNam.isEmpty())
 			userName.setText(userNam);
 		
 		// Load language if exists
-		var lang = configService.getLanguage().getDisplayName();
+		var lang = userConfig.getLanguage().getDisplayName();
 		for (int i = 0; i < langBox.getItemCount(); i++) {
 			final var item = langBox.getItemAt(i);
 			if (lang.equals(item)) {
@@ -160,7 +161,7 @@ public class SettingsPage extends BasePage {
 			}
 		}
 		
-		boolean loadData = configService.isAutoLoadGameData();
+		boolean loadData = userConfig.isAutoLoadGameData();
 		loadGameData.setSelected(loadData);
 	}
 }

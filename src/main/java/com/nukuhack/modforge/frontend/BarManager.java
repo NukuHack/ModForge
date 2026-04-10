@@ -25,7 +25,7 @@ public class BarManager {
 		JWindow toast = new JWindow(owner);
 		toast.setSize(BAR_WIDTH, BAR_HEIGHT);
 		
-		var sb = new StringBuilder(message);
+		var sb = new StringBuilder(MainWindow.getLocalText(message));
 		for (var o : variables)
 			sb.append(o).append(" ");
 		

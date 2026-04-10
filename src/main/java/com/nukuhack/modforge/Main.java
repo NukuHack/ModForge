@@ -1,5 +1,7 @@
 package com.nukuhack.modforge;
 
+import com.nukuhack.modforge.backend.model.E;
+import com.nukuhack.modforge.backend.service.LocalService;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.LoadingScreen;
 import com.nukuhack.modforge.frontend.MainWindow;
@@ -8,10 +10,20 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
+import javax.xml.stream.XMLStreamException;
 import java.awt.*;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * <p> ███╗   ███╗ ██████╗ ██████╗ ███████╗ ██████╗ ██████╗  ██████╗ ███████╗</p>
@@ -42,6 +54,7 @@ public class Main {
 				""", LocalDateTime.now().format(fmt), Util.username);
 		
 		applyTheme();
+		LocalService.loadUILocalizations();
 		SwingUtilities.invokeLater(() -> {
 			// Show loading splash while services boot
 			final var splash = new LoadingScreen();

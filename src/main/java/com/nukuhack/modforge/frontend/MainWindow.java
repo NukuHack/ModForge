@@ -1,5 +1,6 @@
 package com.nukuhack.modforge.frontend;
 
+import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.pages.*;
 import lombok.Getter;
@@ -12,6 +13,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
 
 // =============================================================================
 //  MAIN WINDOW
@@ -75,6 +77,13 @@ public class MainWindow extends JFrame {
 		
 		// show home by default
 		navigate(Page.HOME);
+	}
+	
+	public static String getLocalText(String key) {
+		// some nice lookup
+		var lang = Singleton.INSTANCE.getRegistry().userConfig.getLanguage();
+		var langMap = Singleton.getLangMap();
+		return langMap.get(lang).getOrDefault(key, key);
 	}
 	
 	/**
@@ -164,7 +173,7 @@ public class MainWindow extends JFrame {
 		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.CONVERT }) {
 			side.add(navBtn(page.getDisplayName(), e -> navigate(page)));
 		}
-		side.add(navBtn("KCD2 image", e -> SwingUtilities.invokeLater(() -> new KCDConverterGUI().setVisible(true))));
+		side.add(navBtn("ui_kdc2_image_button", e -> SwingUtilities.invokeLater(() -> new KCDConverterGUI().setVisible(true))));
 		
 		side.add(Box.createVerticalGlue());
 		side.add(navBtn(Page.SETTINGS.getDisplayName(), e -> navigate(Page.SETTINGS)));
@@ -173,7 +182,7 @@ public class MainWindow extends JFrame {
 	}
 	
 	private JButton navBtn(String text, ActionListener event) {
-		final JButton b = new JButton(text);
+		final JButton b = new JButton(getLocalText(text));
 		b.setAlignmentX(Component.LEFT_ALIGNMENT);
 		b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
 		b.setHorizontalAlignment(SwingConstants.LEFT);
