@@ -217,9 +217,9 @@ public final class LocalService {
 	 * (Re-)load from disk. Call after the user sets a new game directory.
 	 */
 	public void init() {
-		final long start = System.currentTimeMillis();
-		final String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank())
+		var start = System.currentTimeMillis();
+		var gameDir = userConfig.getGameDirectory();
+		if (gameDir.isBlank())
 			return;
 		final var game = Singleton.INSTANCE.getGame();
 		try {

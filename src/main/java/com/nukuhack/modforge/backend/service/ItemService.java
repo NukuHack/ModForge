@@ -421,9 +421,9 @@ public final class ItemService {
 	 * Returns false if the game directory is not configured.
 	 */
 	public void init() {
-		final long start = System.currentTimeMillis();
-		final String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank())
+		var start = System.currentTimeMillis();
+		var gameDir = userConfig.getGameDirectory();
+		if (gameDir.isBlank())
 			return;
 		final var game = Singleton.INSTANCE.getGame();
 		try {

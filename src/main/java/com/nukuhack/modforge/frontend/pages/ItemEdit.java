@@ -88,7 +88,7 @@ public class ItemEdit extends BaseEditPage {
 				previewPane.putClientProperty("itemEditListenerInstalled", Boolean.TRUE);
 			}
 			
-			previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, false, true, true));
+			previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, false, true));
 		}
 	}
 	

@@ -29,7 +29,7 @@ public final class ServiceRegistry {
 			itemService.init();
 			// DISABLING since it uses up over 3gigs of memory, so i will rework it
 			// TODO : rework
-			//iconService.init();
+			// iconService.init();
 		}
 		
 		modService.init();

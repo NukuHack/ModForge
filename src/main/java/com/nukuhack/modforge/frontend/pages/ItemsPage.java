@@ -148,7 +148,7 @@ public class ItemsPage extends BasePage {
 			}
 		});
 		
-		detailPane.setComponentPopupMenu(buildItemPopupMenu(() -> selectedItem, true, true, true));
+		detailPane.setComponentPopupMenu(buildItemPopupMenu(() -> selectedItem, true, true));
 		
 		var detailScroll = new JScrollPane(detailPane);
 		detailScroll.setPreferredSize(new Dimension(400, 0));

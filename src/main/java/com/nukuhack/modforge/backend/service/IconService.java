@@ -410,13 +410,13 @@ public final class IconService {
 	 * Only populates the base-game index; mod icons are loaded per-mod.
 	 */
 	public void init() {
-		final ModData game = Singleton.INSTANCE.getGame();
-		
-		final String gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank())
+		var start = System.currentTimeMillis();
+		var gameDir = userConfig.getGameDirectory();
+		if (gameDir.isBlank())
 			return;
-		
+		final ModData game = Singleton.INSTANCE.getGame();
 		game.setIcon(loadModIcons(Util.icons(gameDir)));
+		log.info("Game Icon Load took: {}", System.currentTimeMillis() - start);
 	}
 	
 	public record Icon(@NonNull byte[] data, @NonNull String path) {

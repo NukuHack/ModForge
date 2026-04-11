@@ -109,7 +109,7 @@ public class LangEdit extends BaseEditPage {
 				previewPane.putClientProperty("langEditListenerInstalled", Boolean.TRUE);
 			}
 			
-			previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, true, false, true));
+			previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, true, false));
 		}
 	}
 	

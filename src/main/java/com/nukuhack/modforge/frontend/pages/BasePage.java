@@ -112,7 +112,7 @@ public abstract class BasePage extends JPanel {
 			langSelector.addActionListener(l);
 	}
 	
-	protected JPopupMenu buildItemPopupMenu(Supplier<ModItem> itemSupplier, boolean showEditItem, boolean showEditLang, boolean showAddToMod) {
+	protected JPopupMenu buildItemPopupMenu(Supplier<ModItem> itemSupplier, boolean showEditItem, boolean showEditLang) {
 		
 		var menu = new JPopupMenu();
 		
@@ -136,8 +136,7 @@ public abstract class BasePage extends JPanel {
 		});
 		menu.add(copyAll);
 		
-		if (showEditItem || showEditLang || showAddToMod)
-			menu.addSeparator();
+		menu.addSeparator();
 		
 		if (showEditItem) {
 			JMenuItem editItem = new JMenuItem(getLocalText("ui_edit_item"));
@@ -163,15 +162,13 @@ public abstract class BasePage extends JPanel {
 			menu.add(editLang);
 		}
 		
-		if (showAddToMod) {
-			JMenuItem addToMod = new JMenuItem(getLocalText("ui_add_to_mod"));
-			addToMod.addActionListener(e -> {
-				var item = itemSupplier.get();
-				if (item != null)
-					showAddToModDialog(item);
-			});
-			menu.add(addToMod);
-		}
+		JMenuItem addToMod = new JMenuItem(getLocalText("ui_add_to_mod"));
+		addToMod.addActionListener(e -> {
+			var item = itemSupplier.get();
+			if (item != null)
+				showAddToModDialog(item);
+		});
+		menu.add(addToMod);
 		
 		return menu;
 	}

@@ -134,7 +134,6 @@ public class LocalizationPage extends BasePage {
 					entryByKey.put(key, new LangEntry(existing.langKey, existing.value, attr.getName(), item));
 			}
 		}
-		log.debug("set: {}", entryByKey.values().stream().map(l -> l.attrName).collect(Collectors.toSet()));
 		return entryByKey;
 	}
 	
@@ -238,6 +237,16 @@ public class LocalizationPage extends BasePage {
 		detailPane.setForeground(MainWindow.TEXT);
 		detailPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 		detailPane.setText(emptyDetailHtml());
+		detailPane.setComponentPopupMenu(buildDetailPopupMenu());
+		detailPane.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (e.getClickCount() == 2 && selectedEntry != null) {
+					Util.copyText(selectedEntry.langKey);
+					window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
+				}
+			}
+		});
 		
 		var detailScroll = new JScrollPane(detailPane);
 		detailScroll.setBackground(MainWindow.SURFACE);
@@ -251,7 +260,7 @@ public class LocalizationPage extends BasePage {
 		return split;
 	}
 	
-	/** Popup specific to the localization entry list. */
+	/** Popup for the entry list — copy actions only. */
 	private JPopupMenu buildEntryPopupMenu() {
 		var popup = new JPopupMenu();
 		
@@ -271,16 +280,49 @@ public class LocalizationPage extends BasePage {
 			}
 		});
 		
-		var goToItem = new JMenuItem(getLocalText("ui_go_to_item_edit"));
-		goToItem.addActionListener(e -> {
-			if (selectedEntry != null && selectedEntry.item != null)
-				window.navigate(MainWindow.Page.LANG_EDIT, selectedEntry.item);
+		popup.add(copyKey);
+		popup.add(copyVal);
+		return popup;
+	}
+	
+	/** Popup for the detail pane — copy actions + navigation. */
+	private JPopupMenu buildDetailPopupMenu() {
+		var popup = new JPopupMenu();
+		
+		var copyKey = new JMenuItem(getLocalText("ui_copy_key"));
+		copyKey.addActionListener(e -> {
+			if (selectedEntry != null) {
+				Util.copyText(selectedEntry.langKey);
+				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
+			}
+		});
+		
+		var copyVal = new JMenuItem(getLocalText("ui_copy_value"));
+		copyVal.addActionListener(e -> {
+			if (selectedEntry != null) {
+				Util.copyText(selectedEntry.value);
+				window.snackbar.show("ui_copied_value", BarManager.Type.INFO);
+			}
 		});
 		
 		popup.add(copyKey);
 		popup.add(copyVal);
 		popup.addSeparator();
-		popup.add(goToItem);
+		
+		var editItem = new JMenuItem(getLocalText("ui_edit_item"));
+		editItem.addActionListener(e -> {
+			if (selectedEntry != null && selectedEntry.item != null)
+				window.navigate(MainWindow.Page.ITEM_EDIT, selectedEntry.item);
+		});
+		
+		var editLang = new JMenuItem(getLocalText("ui_edit_lang"));
+		editLang.addActionListener(e -> {
+			if (selectedEntry != null && selectedEntry.item != null)
+				window.navigate(MainWindow.Page.LANG_EDIT, selectedEntry.item);
+		});
+		
+		popup.add(editItem);
+		popup.add(editLang);
 		return popup;
 	}
 	
