@@ -4,10 +4,7 @@ import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.E.Language;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -19,15 +16,15 @@ import java.util.stream.Collectors;
 
 public interface UserConfig {
 	
-	String getGameDirectory();
+	@NonNull String getGameDirectory();
 	
 	void setGameDirectory(String gameDirectory);
 	
-	Language getLanguage();
+	@NonNull Language getLanguage();
 	
 	void setLanguage(Language language);
 	
-	String getUserName();
+	@NonNull String getUserName();
 	
 	void setUserName(String username);
 	
@@ -48,9 +45,9 @@ public interface UserConfig {
 		
 		private static final Path configFile = Singleton.getUserConfig();
 		
-		private String gameDirectory = "";
-		private String userName = "";
-		private Language language = Language.ENGLISH;
+		@NonNull private String gameDirectory = "";
+		@NonNull private String userName = "";
+		@NonNull private Language language = Language.ENGLISH;
 		/**
 		 * Load all game-data or not at startup, added so debugging is faster
 		 */
@@ -109,7 +106,7 @@ public interface UserConfig {
 		 * idk what this is and how to use it so left it alone ...
 		 */
 		public void writeLoadout(List<ModData> orderedMods) {
-			if (gameDirectory == null || gameDirectory.isBlank())
+			if (gameDirectory.isBlank())
 				return;
 			Path loadOrder = Path.of(Util.modFolder(gameDirectory).toString(), "mod_order.txt");
 			try {

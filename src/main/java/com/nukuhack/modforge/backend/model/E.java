@@ -618,17 +618,18 @@ public class E {
 	@Slf4j
 	@RequiredArgsConstructor
 	public enum MathOperation {
-		ADD("+", 0),
-		SUBTRACT("-", 1),
-		SET("=", 2),
-		MULTIPLY("*", 3),
-		DIVIDE("%", 4),
-		MINIMUM("<", 5),
-		MAXIMUM(">", 6),
-		NEGATE("!", 7);
+		ADD("+", 0, "AddAbsolute"),
+		SUBTRACT("-", 1, "SubtractAbsolute"),
+		SET("=", 2, "SetAbsolute"),
+		MULTIPLY("*", 3, "AddRelativeToBase"),
+		DIVIDE("%", 4, "MultiplyCurrent"),
+		MINIMUM("<", 5, "Minimum"),
+		MAXIMUM(">", 6, "Maximum"),
+		NEGATE("!", 7, "NegateRelativeToValue");
 		
 		private final String symbol;
 		private final int value;
+		private final String name;
 		
 		public static MathOperation fromSymbol(String s) {
 			for (var op : values()) {
@@ -708,7 +709,7 @@ public class E {
 		FENCING(2),
 		THIEVERY(4),
 		ALCHEMY(6),
-		CRAFTMANSHIP(8),
+		CRAFTSMANSHIP(8),
 		DRINKING(13),
 		SURVIVAL(14),
 		DEFENSE(15),

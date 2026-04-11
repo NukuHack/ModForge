@@ -50,12 +50,12 @@ public class HomePage extends BasePage {
 		sub.setFont(new Font("Roboto", Font.PLAIN, 14));
 		sub.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
-		JPanel btns = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
-		btns.setOpaque(false);
-		btns.add(primaryBtn("ui_open_mods", e -> w.navigate(MainWindow.Page.MODS)));
-		btns.add(primaryBtn("ui_open_items", e -> w.navigate(MainWindow.Page.ITEMS)));
-		btns.add(primaryBtn("ui_settings", e -> w.navigate(MainWindow.Page.SETTINGS)));
-		btns.setAlignmentX(Component.CENTER_ALIGNMENT);
+		var but = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
+		but.setOpaque(false);
+		but.add(primaryBtn("ui_open_mods", e -> w.navigate(MainWindow.Page.MODS)));
+		but.add(primaryBtn("ui_open_items", e -> w.navigate(MainWindow.Page.ITEMS)));
+		but.add(primaryBtn("ui_settings", e -> w.navigate(MainWindow.Page.SETTINGS)));
+		but.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		JButton openGameDirBtn = primaryBtn("ui_open_game_dir", e -> Util.openDirectory(this, gameDir));
 		openGameDirBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -64,7 +64,7 @@ public class HomePage extends BasePage {
 		contentPanel.add(Box.createVerticalStrut(8));
 		contentPanel.add(sub);
 		contentPanel.add(Box.createVerticalStrut(24));
-		contentPanel.add(btns);
+		contentPanel.add(but);
 		contentPanel.add(Box.createVerticalStrut(16));
 		
 		contentPanel.add(openGameDirBtn);

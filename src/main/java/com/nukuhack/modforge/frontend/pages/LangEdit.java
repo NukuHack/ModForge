@@ -2,10 +2,7 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
-import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.modforge.backend.model.ModItem;
-import com.nukuhack.modforge.backend.service.LocalService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
 import lombok.extern.slf4j.Slf4j;
@@ -29,14 +26,13 @@ public class LangEdit extends BaseEditPage {
 	/** Working copy: langKey → current translated value (editable). */
 	private final Map<String, String> workingEntries = new LinkedHashMap<>();
 	
-	/** langKey → attribute name on the item (for labelling). */
+	/** langKey → attribute name on the item (for labeling). */
 	private final Map<String, String> keyToAttrName = new LinkedHashMap<>();
 	
 	/** langKey → the JTextArea the user edits. */
 	private final Map<String, JTextArea> keyToEditor = new LinkedHashMap<>();
 	
 	private final JPanel fieldsPanel;
-	private JComboBox<String> langSelector;
 	
 	public LangEdit(MainWindow w) {
 		super(w);
@@ -70,12 +66,7 @@ public class LangEdit extends BaseEditPage {
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		panel.setOpaque(false);
 		
-		langSelector = new JComboBox<>();
-		for (String name : Language.getAllLang())
-			langSelector.addItem(name);
-		final var defLang = window.getRegistry().userConfig.getLanguage();
-		if (defLang != null)
-			langSelector.setSelectedItem(defLang.getDisplayName());
+		refreshLangSelector();
 		styleCombo(langSelector);
 		langSelector.setPreferredSize(new Dimension(130, 28));
 		langSelector.addActionListener(e -> rebuildFields());
@@ -133,16 +124,14 @@ public class LangEdit extends BaseEditPage {
 		
 		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
 		
-		final Language lang = selectedLanguage();
-		final StringBuilder html = new StringBuilder();
+		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
+		var html = new StringBuilder();
 		html.append("<html><body style='background:#181825;color:#cdd6f4;font-family:sans-serif;padding:12px;'>");
 		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(currentItem.getId())).append("</b><br/>");
 		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(currentItem.getClass().getSimpleName()).append("</span>");
 		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 		
-		if (lang != null) {
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_language")).append(": ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
-		}
+		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_language")).append(": ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
 		
 		for (var entry : workingEntries.entrySet()) {
 			final String attrName = keyToAttrName.getOrDefault(entry.getKey(), "");
@@ -179,9 +168,9 @@ public class LangEdit extends BaseEditPage {
 			return;
 		}
 		
-		final Language lang = selectedLanguage();
-		final LocalService local = window.getRegistry().localService;
-		final ModData baseGame = Singleton.INSTANCE.getGame();
+		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
+		var local = window.getRegistry().localService;
+		var baseGame = Singleton.INSTANCE.getGame();
 		
 		for (var attr : currentItem.getLangAttributes()) {
 			final String langKey = attr.getValue().trim();
@@ -233,7 +222,7 @@ public class LangEdit extends BaseEditPage {
 				@Override
 				public void mouseClicked(MouseEvent e) {
 					Util.copyText(langKey);
-					window.snackbar.show(getLocalText("ui_copied_key"), BarManager.Type.INFO, langKey);
+					window.snackbar.show("ui_copied_key", BarManager.Type.INFO, langKey);
 				}
 			});
 			GridBagConstraints keyGc = new GridBagConstraints();
@@ -315,41 +304,30 @@ public class LangEdit extends BaseEditPage {
 	 */
 	private void addEntriesToSelectedMod() {
 		if (currentItem == null) {
-			window.snackbar.show(getLocalText("ui_no_item_selected"), BarManager.Type.WARNING);
+			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
 			return;
 		}
 		final var targetMod = getSelectedMod();
 		if (targetMod.isEmpty()) {
-			window.snackbar.show(getLocalText("ui_select_mod_first"), BarManager.Type.WARNING);
+			window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 			return;
 		}
 		var mod = targetMod.get();
-		final Language lang = selectedLanguage();
-		if (lang == null) {
-			window.snackbar.show(getLocalText("ui_unknown_language"), BarManager.Type.INFO);
+		var lang = getSelectedLang();
+		if (lang.isEmpty()) {
+			window.snackbar.show("ui_unknown_language", BarManager.Type.INFO);
 			return;
 		}
 		
 		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
 		
 		if (workingEntries.isEmpty()) {
-			window.snackbar.show(getLocalText("ui_no_entries_to_add"), BarManager.Type.INFO);
+			window.snackbar.show("ui_no_entries_to_add", BarManager.Type.INFO);
 			return;
 		}
-		mod.addLocal(lang, new HashMap<>(workingEntries));
+		mod.addLocal(lang.get(), new HashMap<>(workingEntries));
 		hasChanges = false;
 		updateStatus();
-		window.snackbar.show(getLocalText("ui_entries_added"), BarManager.Type.SUCCESS, workingEntries.size());
-	}
-	
-	private void refreshLangSelector() {
-		final var defLang = window.getRegistry().userConfig.getLanguage();
-		if (defLang != null)
-			langSelector.setSelectedItem(defLang.getDisplayName());
-	}
-	
-	private Language selectedLanguage() {
-		Object sel = langSelector.getSelectedItem();
-		return sel == null ? null : Language.fromDisplayName(sel.toString());
+		window.snackbar.show("ui_entries_added", BarManager.Type.SUCCESS, workingEntries.size());
 	}
 }

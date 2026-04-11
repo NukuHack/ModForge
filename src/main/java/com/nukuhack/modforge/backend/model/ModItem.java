@@ -1,6 +1,7 @@
 package com.nukuhack.modforge.backend.model;
 
 import com.nukuhack.modforge.backend.ItemType;
+import com.nukuhack.modforge.backend.service.ModItemBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +27,10 @@ public interface ModItem {
 	 */
 	default String getIdKey() {
 		return ItemType.getIdKey(this.getClass());
+	}
+	
+	default int getGroupVersion() {
+		return 1;//ModItemBuilder.group(this).parentName;
 	}
 	
 	String getPath();
@@ -182,9 +187,9 @@ public interface ModItem {
 	
 	@NoArgsConstructor
 	@Slf4j
+	@Getter
+	@Setter
 	class EmptyImpl extends BaseModItem {
-		@Getter
-		@Setter
 		private String idKey;
 	}
 	

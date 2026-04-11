@@ -2,6 +2,7 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
+import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.model.I.Storm;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.service.ModItemBuilder;
@@ -29,6 +30,7 @@ public abstract class BasePage extends JPanel {
 	protected final MainWindow window;
 	protected final ExecutorService executor = Executors.newSingleThreadExecutor();
 	protected final JComboBox<String> modSelector = new JComboBox<>(new DefaultComboBoxModel<>());
+	protected final JComboBox<String> langSelector = new JComboBox<>();
 	protected final JTextField search = styledField("ui_search_all");
 	
 	BasePage(MainWindow window) {
@@ -47,9 +49,14 @@ public abstract class BasePage extends JPanel {
 		if (sel == null || modSelector.getSelectedIndex() < 1)
 			return Optional.empty();
 		var modName = sel.trim();
-		var mod = ModService.modCollection.stream().filter(m -> m.name.equals(modName)).findFirst();
-		log.debug("selected: {}", mod);
-		return mod;
+		return ModService.modCollection.stream().filter(m -> m.name.equals(modName)).findFirst();
+	}
+	
+	protected Optional<E.Language> getSelectedLang() {
+		var sel = langSelector.getSelectedItem();
+		if (sel == null)
+			return Optional.empty();
+		return Optional.ofNullable(E.Language.fromDisplayName((String) sel));
 	}
 	
 	/**
@@ -83,6 +90,26 @@ public abstract class BasePage extends JPanel {
 		// Re-attach listeners after model is fully built
 		for (ActionListener l : listeners)
 			modSelector.addActionListener(l);
+	}
+	
+	protected void refreshLangSelector() {
+		// Detach listener during rebuild to avoid cascading refreshAll() calls
+		var listeners = langSelector.getActionListeners();
+		for (var l : listeners)
+			langSelector.removeActionListener(l);
+		
+		langSelector.removeAllItems();
+		
+		var defLang = window.getRegistry().userConfig.getLanguage();
+		
+		for (var lang : E.Language.getAllLang())
+			langSelector.addItem(lang);
+		
+		langSelector.setSelectedItem(defLang.getDisplayName());
+		
+		// Re-attach listeners, then do a single refresh
+		for (var l : listeners)
+			langSelector.addActionListener(l);
 	}
 	
 	protected JPopupMenu buildItemPopupMenu(Supplier<ModItem> itemSupplier, boolean showEditItem, boolean showEditLang, boolean showAddToMod) {

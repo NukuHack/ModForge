@@ -26,79 +26,79 @@ import java.util.function.Predicate;
 public enum ItemEntry {
 	
 	// ── Weapons ─────────────────────────────────────────────────────────────
-	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", "MeleeWeapon", true),
+	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", "MeleeWeapon", "ItemClasses", true),
 	
-	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", "MissileWeapon", true),
+	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", "MissileWeapon", "ItemClasses", true),
 	
-	AMMO(I.Ammo.class, "Id", "item", "Ammo", true),
+	AMMO(I.Ammo.class, "Id", "item", "Ammo", "ItemClasses", true),
 	
-	MELEE_WEAPON_CLASS(I.MeleeWeaponClass.class, "id", "weapon_class", "MeleeWeaponClass", false),
+	MELEE_WEAPON_CLASS(I.MeleeWeaponClass.class, "id", "weapon_class", "MeleeWeaponClass", "MeleeWeaponClass", false),
 	
-	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", "MissileWeaponClass", false),
+	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", "MissileWeaponClass", "MissileWeaponClass", false),
 	
 	// ── Armor ────────────────────────────────────────────────────────────────
-	ARMOR(I.Armor.class, "Id", "item", "Armor", true),
+	ARMOR(I.Armor.class, "Id", "item", "Armor", "ItemClasses", true),
 	
-	HELMET(I.Helmet.class, "Id", "item", "Helmet", true),
+	HELMET(I.Helmet.class, "Id", "item", "Helmet", "ItemClasses", true),
 	
-	HOOD(I.Hood.class, "Id", "item", "Hood", true),
+	HOOD(I.Hood.class, "Id", "item", "Hood", "ItemClasses", true),
 	
 	// ── Consumables ──────────────────────────────────────────────────────────
-	FOOD(I.Food.class, "Id", "item", "Food", true),
+	FOOD(I.Food.class, "Id", "item", "Food", "ItemClasses", true),
 	
-	POISON(I.Poison.class, "Id", "item", "Poison", true),
+	POISON(I.Poison.class, "Id", "item", "Poison", "ItemClasses", true),
 	
 	// ── Crafting ─────────────────────────────────────────────────────────────
-	HERB(I.Herb.class, "Id", "item", "Herb", true),
+	HERB(I.Herb.class, "Id", "item", "Herb", "ItemClasses", true),
 	
-	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", "CraftingMaterial", true),
+	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", "CraftingMaterial", "ItemClasses", true),
 	
 	// ── Misc ─────────────────────────────────────────────────────────────────
-	NPC_TOOL(I.NPCTool.class, "Id", "item", "NPCTool", true),
+	NPC_TOOL(I.NPCTool.class, "Id", "item", "NPCTool", "ItemClasses", true),
 	
-	MISC_ITEM(I.MiscItem.class, "Id", "item", "MiscItem", true),
+	MISC_ITEM(I.MiscItem.class, "Id", "item", "MiscItem", "ItemClasses", true),
 	
-	DOCUMENT(I.Document.class, "Id", "item", "Document", true), // ItemClasses version="8" - BlacksmithRecipeId
+	DOCUMENT(I.Document.class, "Id", "item", "Document", "ItemClasses", true), // eg: ItemClasses version="8" - BlacksmithRecipeId
 	
-	DIE(I.Die.class, "Id", "item", "Die", true),
+	DIE(I.Die.class, "Id", "item", "Die", "ItemClasses", true),
 	
-	ITEM_ALIAS(I.ItemAlias.class, "Id", "item", "ItemAlias", true),
+	ITEM_ALIAS(I.ItemAlias.class, "Id", "item", "ItemAlias", "ItemClasses", true),
 	
-	QUICK_SLOT_CONTAINER(I.QuickSlotContainer.class, "Id", "item", "QuickSlotContainer", true),
+	QUICK_SLOT_CONTAINER(I.QuickSlotContainer.class, "Id", "item", "QuickSlotContainer", "ItemClasses", true),
 	
-	DICE_BADGE(I.DiceBadge.class, "Id", "item", "DiceBadge", true),
+	DICE_BADGE(I.DiceBadge.class, "Id", "item", "DiceBadge", "ItemClasses", true),
 	
-	PICKABLE_ITEM(I.PickableItem.class, "Id", "item", "PickableItem", true),
+	PICKABLE_ITEM(I.PickableItem.class, "Id", "item", "PickableItem", "ItemClasses", true),
 	
-	KEY(I.Key.class, "Id", "item", "Key", true),
+	KEY(I.Key.class, "Id", "item", "Key", "ItemClasses", true),
 	
-	MONEY(I.Money.class, "Id", "item", "Money", true),
+	MONEY(I.Money.class, "Id", "item", "Money", "ItemClasses", true),
 	
-	KEY_RING(I.KeyRing.class, "Id", "item", "KeyRing", true),
+	KEY_RING(I.KeyRing.class, "Id", "item", "KeyRing", "ItemClasses", true),
 	
-	OINTMENT(I.Ointment.class, "Id", "item", "Ointment", true),
+	OINTMENT(I.Ointment.class, "Id", "item", "Ointment", "ItemClasses", true),
 	
-	ALCHEMY_BASE(I.AlchemyBase.class, "Id", "item", "AlchemyBase", true),
+	ALCHEMY_BASE(I.AlchemyBase.class, "Id", "item", "AlchemyBase", "ItemClasses", true),
 	
 	// ── Perks / Buffs related ───────────────────────────────────────────────
-	PERK(I.Perk.class, "perk_id", "perk", "perk", true),
+	PERK(I.Perk.class, "perk_id", "perk", "perk", "perks", true),
 	
-	BUFF(I.Buff.class, "buff_id", "buff", "buff", true),
+	BUFF(I.Buff.class, "buff_id", "buff", "buff", "buffs", true),
 	
-	RPG_PARAM(I.RpgParam.class, "rpg_param_key", "rpg_param", "rpg_param", true),
+	RPG_PARAM(I.RpgParam.class, "rpg_param_key", "rpg_param", "rpg_param", "rpg_params", true),
 	
-	PERK_BUFF(I.PerkBuff.class, "perk_id", "perk_buff", "perk_buff", true),
+	PERK_BUFF(I.PerkBuff.class, "perk_id", "perk_buff", "perk_buff", "perk_buffs", true),
 	
-	PERK_BUFF_OVERRIDE(I.PerkBuffOverride.class, "perk_id", "perk_buff_override", "perk_buff_override", true),
+	PERK_BUFF_OVERRIDE(I.PerkBuffOverride.class, "perk_id", "perk_buff_override", "perk_buff_override", "perk_buff_overrides", true),
 	
-	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", "perk_script", true),
+	PERK_SCRIPT(I.PerkScript.class, "perk_id", "perk_script", "perk_script", "perk_scripts", true),
 	
-	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParams", "ScriptParam", true),
+	SCRIPT_PARAM(I.ScriptParam.class, "Name", "ScriptParams", "ScriptParam", "ScriptParams", true),
 	
-	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", true),
+	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", "perk2perk_exclusivitys", true),
 	
 	// ── Storm ────────────────────────────────────────────────────────────────
-	STORM(I.Storm.class, "id", "storm", "storm", true);
+	STORM(I.Storm.class, "id", "storm", "storm", "storm", true);
 	
 	// ────────────────────────────────────────────────────────────────────────
 	// Inner data
@@ -127,9 +127,17 @@ public enum ItemEntry {
 	/**
 	 * The short key used to create Object from XML Elements and vice versa
 	 * (e.g. {@code "MeleeWeapon"} → {@code "meleeweapon"},
-	 *  {@code "NPCTool"} → {@code "npctool"}).
+	 *  {@code "NPCTool"} → {@code "npctool"}),
+	 *  {@code "ScriptParam"} → {@code "ScriptParams"}).
 	 */
+	// todo : eliminate this field, with the use of "parentName" and the version
 	public final String xmlObjName;
+	/**
+	 * The short key used to create the Root/Parent XML Element
+	 * (e.g. {@code "MeleeWeapon"} → {@code "ItemClasses"},
+	 *  {@code "Storm"} → {@code "storm"}).
+	 */
+	public final String parentName;
 	/**
 	 * Whether this class should appear in the frontend item-type dropdown.
 	 * Weapon-class entries are excluded ({@code false}); everything else is {@code true}.
@@ -140,12 +148,12 @@ public enum ItemEntry {
 	// Constructors
 	// ────────────────────────────────────────────────────────────────────────
 	
-	/** Constructor with an explicit label override. */
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String xmlObjName, boolean showInDisplay) {
+	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String xmlObjName, String parentName, boolean showInDisplay) {
 		this.clazz = clazz;
 		this.idKey = idKey;
 		this.fileName = fileName;
 		this.showInDisplay = showInDisplay;
+		this.parentName = parentName;
 		this.xmlObjName = xmlObjName;
 	}
 	
@@ -167,15 +175,5 @@ public enum ItemEntry {
 		var s = clazz.getSimpleName();
 		s = s.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", " ");
 		return s.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2");
-	}
-	
-	public String parentName() {
-		if (fileName.endsWith("s"))
-			return fileName;
-		if (fileName.equals("item"))
-			// TODO : this cares about the version attribute it has so this has to be reworked quiet a bit
-			return "ItemClasses";
-		return fileName + "s";
-		// TODO : some of the items have special parent stuffs so ... I'll do it later
 	}
 }

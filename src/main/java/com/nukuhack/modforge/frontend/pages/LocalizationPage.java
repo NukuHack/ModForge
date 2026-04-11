@@ -3,7 +3,6 @@ package com.nukuhack.modforge.frontend.pages;
 import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
@@ -36,7 +35,6 @@ public class LocalizationPage extends BasePage {
 		ATTR_TYPE_OPTIONS = Collections.unmodifiableList(sorted);
 	}
 	
-	private final JComboBox<String> langSelector = new JComboBox<>();
 	private final JComboBox<String> attrSelector = new JComboBox<>();
 	
 	private final List<LangEntry> allEntries = new ArrayList<>();
@@ -143,7 +141,8 @@ public class LocalizationPage extends BasePage {
 	@Override
 	public void refresh(Object... input) {
 		refreshModSelector();
-		populateLangSelector();
+		refreshLangSelector();
+		refreshAll();
 	}
 	
 	private JPanel buildTopBar() {
@@ -223,7 +222,7 @@ public class LocalizationPage extends BasePage {
 			public void mouseClicked(MouseEvent e) {
 			if (e.getClickCount() == 2 && selectedEntry != null) {
 				Util.copyText(selectedEntry.langKey);
-				window.snackbar.show(getLocalText("ui_copied_key"), BarManager.Type.INFO, selectedEntry.langKey);
+				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
 			}
 			}
 		});
@@ -260,7 +259,7 @@ public class LocalizationPage extends BasePage {
 		copyKey.addActionListener(e -> {
 			if (selectedEntry != null) {
 				Util.copyText(selectedEntry.langKey);
-				window.snackbar.show(getLocalText("ui_copied_key"), BarManager.Type.INFO, selectedEntry.langKey);
+				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
 			}
 		});
 		
@@ -268,7 +267,7 @@ public class LocalizationPage extends BasePage {
 		copyVal.addActionListener(e -> {
 			if (selectedEntry != null) {
 				Util.copyText(selectedEntry.value);
-				window.snackbar.show(getLocalText("ui_copied_value"), BarManager.Type.INFO);
+				window.snackbar.show("ui_copied_value", BarManager.Type.INFO);
 			}
 		});
 		
@@ -285,46 +284,19 @@ public class LocalizationPage extends BasePage {
 		return popup;
 	}
 	
-	private void populateLangSelector() {
-		// Detach listener during rebuild to avoid cascading refreshAll() calls
-		var listeners = langSelector.getActionListeners();
-		for (var l : listeners)
-			langSelector.removeActionListener(l);
-		
-		langSelector.removeAllItems();
-		
-		var defLang = window.getRegistry().userConfig.getLanguage();
-		var ordered = new ArrayList<Language>();
-		if (defLang != null)
-			ordered.add(defLang);
-		for (var lang : Language.values())
-			if (lang != defLang)
-				ordered.add(lang);
-		for (var lang : ordered)
-			langSelector.addItem(lang.getDisplayName());
-		
-		// Re-attach listeners, then do a single refresh
-		for (var l : listeners)
-			langSelector.addActionListener(l);
-		
-		refreshAll();
-	}
-	
 	private void refreshAll() {
 		allEntries.clear();
 		selectedEntry = null;
 		detailPane.setText(emptyDetailHtml());
 		
 		var source = getSelectedMod();
-		var lang = resolveSelectedLang();
-		if (lang == null)
-			lang = Singleton.INSTANCE.getRegistry().userConfig.getLanguage();
+		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
 		
 		var mod = source.orElseGet(Singleton.INSTANCE::getGame);
 		var langMap = mod.getLang(lang);
 		if (langMap.isEmpty()) {
 			applyFilters();
-			window.snackbar.show(getLocalText("ui_no_localization_data"), BarManager.Type.WARNING, lang.getDisplayName());
+			window.snackbar.show("ui_no_localization_data", BarManager.Type.WARNING, lang.getDisplayName());
 			return;
 		}
 		
@@ -332,7 +304,7 @@ public class LocalizationPage extends BasePage {
 		allEntries.sort(Comparator.comparing((LangEntry le) -> le.attrName, Comparator.nullsLast(String::compareToIgnoreCase)).thenComparing(le -> le.langKey, String.CASE_INSENSITIVE_ORDER));
 		
 		applyFilters();
-		window.snackbar.show(getLocalText("ui_localization_loaded"), BarManager.Type.SUCCESS, allEntries.size());
+		window.snackbar.show("ui_localization_loaded", BarManager.Type.SUCCESS, allEntries.size());
 	}
 	
 	private void applyFilters() {
@@ -356,13 +328,6 @@ public class LocalizationPage extends BasePage {
 		for (var idx : filteredIndices)
 			listModel.addElement(formatRow(allEntries.get(idx)));
 		entryList.setValueIsAdjusting(false);
-	}
-	
-	private Language resolveSelectedLang() {
-		var sel = langSelector.getSelectedItem();
-		if (sel == null)
-			return null;
-		return Language.fromDisplayName((String) sel);
 	}
 	
 	record LangEntry(String langKey, String value, String attrName, ModItem item) {

@@ -143,7 +143,7 @@ public class ItemsPage extends BasePage {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2 && selectedItem != null) {
 					copyText(selectedItem.getId());
-					window.snackbar.show(getLocalText("ui_copied_id"), BarManager.Type.INFO, selectedItem.getId());
+					window.snackbar.show("ui_copied_id", BarManager.Type.INFO, selectedItem.getId());
 				}
 			}
 		});
@@ -241,9 +241,9 @@ public class ItemsPage extends BasePage {
 		
 		if (tellUser) {
 			if (displayModel.isEmpty())
-				window.snackbar.show(getLocalText("ui_no_items_to_display"), BarManager.Type.WARNING);
+				window.snackbar.show("ui_no_items_to_display", BarManager.Type.WARNING);
 			else
-				window.snackbar.show(getLocalText("ui_showing_items"), BarManager.Type.SUCCESS, displayModel.size());
+				window.snackbar.show("ui_showing_items", BarManager.Type.SUCCESS, displayModel.size());
 		}
 	}
 }

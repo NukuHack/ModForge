@@ -214,7 +214,7 @@ public class ItemEdit extends BaseEditPage {
 		updatePreview();
 		updateStatus();
 		setCurrentItem(currentItem);
-		window.snackbar.show(getLocalText("ui_item_changes_saved"), BarManager.Type.SUCCESS);
+		window.snackbar.show("ui_item_changes_saved", BarManager.Type.SUCCESS);
 	}
 	
 	private <T> void handleAttribute(Attribute<T> attr) {

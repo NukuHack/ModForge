@@ -313,7 +313,7 @@ public final class ModService {
 			var mod = parseModDescription(xmlDoc);
 			if (mod.id.isBlank())
 				return null;
-			log.info("Successfully loaded mod data for: {}", mod.id);
+			log.info("Successfully loaded mod manifest for: {}", mod.id);
 			return mod;
 		} catch (IOException | SAXException | ParserConfigurationException e) {
 			log.warn("could not parse manifest");

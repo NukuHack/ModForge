@@ -116,23 +116,17 @@ public class SettingsPage extends BasePage {
 			userConfig.setAutoLoadGameData(loadGameData.isSelected());
 			executor.submit(() -> {
 				userConfig.save();
-				SwingUtilities.invokeLater(() -> {
-					w.snackbar.show("ui_settings_saved", BarManager.Type.SUCCESS);
-				});
+				SwingUtilities.invokeLater(() -> w.snackbar.show("ui_settings_saved", BarManager.Type.SUCCESS));
 			});
 		}), gc);
 		gc.gridx = 2;
 		gc.gridy = 5;
 		gc.weightx = 0;
 		gc.gridwidth = 1;
-		card.add(primaryBtn("ui_refresh_all", e -> {
-			executor.submit(() -> {
-				Singleton.INSTANCE.getRegistry().init();
-				SwingUtilities.invokeLater(() -> {
-					w.snackbar.show("ui_refresh_success", BarManager.Type.SUCCESS);
-				});
-			});
-		}), gc);
+		card.add(primaryBtn("ui_refresh_all", e -> executor.submit(() -> {
+			Singleton.INSTANCE.getRegistry().init();
+			SwingUtilities.invokeLater(() -> w.snackbar.show("ui_refresh_success", BarManager.Type.SUCCESS));
+		})), gc);
 		
 		return card;
 	}

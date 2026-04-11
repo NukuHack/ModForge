@@ -57,7 +57,7 @@ public class ModsPage extends BasePage {
 			}
 		});
 		
-		JScrollPane scroll = new JScrollPane(modList);
+		var scroll = new JScrollPane(modList);
 		scroll.setBackground(MainWindow.SURFACE);
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		

@@ -5,5 +5,8 @@ making icon view + *edit*
 parse other files (adb - animation database)
 
 TODO : Make the other models - items
+// perk_rpg_param_override
 
 make the ID system work - recipes, perk_buff, perk_script
+
+make a files page - for inner files of the pak-s make them able to overwrite the base game data with a 0-byte .tbl file

@@ -8,6 +8,7 @@ import com.nukuhack.modforge.backend.model.Attributes;
 import com.nukuhack.modforge.backend.model.I.Storm;
 import com.nukuhack.modforge.backend.model.ModItem;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,28 +24,23 @@ import java.util.*;
 public final class ModItemBuilder {
 	
 	// O(1) lookup map - element name to handler
-	static final Set<String> FILE_PARSERS = new HashSet<>();
 	static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
 	static final Map<Class<? extends ModItem>, CreateHandler> MAKER_MAP = new HashMap<>();
 	static final FallbackBuilder fallbackBuilder = new FallbackBuilder();
 	
 	static {
-		FILE_PARSERS.add("storm");
 		// Build the handler map once at class initialization
 		for (var spec : ItemEntry.values()) {
 			var name = spec.xmlObjName;
-			if (! FILE_PARSERS.contains(name)) {
-				HANDLER_MAP.put(name, new GeneralBuilder<>(spec.clazz, spec.idKey));
-				MAKER_MAP.put(spec.clazz, new GeneralCreater<>(spec.clazz, spec.idKey));
+			if (! name.equals(spec.parentName)) {
+				var handler = new GeneralBuilder<>(spec.clazz, spec.idKey);
+				HANDLER_MAP.put(name, handler);
+				MAKER_MAP.put(spec.clazz, handler);
 				continue;
 			}
-			
-			if ("storm".equals(name)) {
-				HANDLER_MAP.put(name, new StormBuilder(spec.clazz, spec.idKey));
-				MAKER_MAP.put(spec.clazz, new StormCreater(spec.clazz, spec.idKey));
-			} else if (true) {
-				// do future stuff here
-			}
+			var fileH = new FileBuilder<>(spec.clazz, spec.idKey);
+			HANDLER_MAP.put(name, fileH);
+			MAKER_MAP.put(spec.clazz, fileH);
 		}
 	}
 	
@@ -64,16 +60,16 @@ public final class ModItemBuilder {
 		final var elementName = element.getTagName();
 		final var handler = HANDLER_MAP.getOrDefault(elementName, fallbackBuilder);
 		
-		return handler.create(element);
+		return handler.handle(element);
 	}
 	
-	public static Optional<Element> build(final Document document, final ModItem item) {
+	public static Optional<Element> handle(final Document document, final ModItem item) {
 		// getting the correct one from HANDLER_MAP
 		final var maker = MAKER_MAP.get(item.getClass());
 		
 		// Intentional - No serialization if item is not correct, we don't want incorrect data to be serialized
 		if (maker != null)
-			return Optional.of(maker.build(document, item));
+			return Optional.of(maker.handle(document, item));
 		
 		log.info("No builder matched item <{}>", item);
 		return Optional.empty();
@@ -129,11 +125,11 @@ public final class ModItemBuilder {
 	}
 	
 	protected interface BuildHandler {
-		ModItem create(final Element element);
+		ModItem handle(final Element element);
 	}
 	
 	protected interface CreateHandler {
-		Element build(final Document document, final ModItem item);
+		Element handle(final Document document, final ModItem item);
 	}
 	
 	/**
@@ -141,10 +137,10 @@ public final class ModItemBuilder {
 	 * simple class name (case-insensitive) and populates a configurable ID attribute.
 	 */
 	@Slf4j
-	protected static class GeneralBuilder<M extends ModItem> implements BuildHandler {
-		private final Class<M> type;
-		private final String idKey;
-		private final Constructor<M> cons;
+	protected static class GeneralBuilder<M extends ModItem> implements BuildHandler, CreateHandler {
+		protected final Class<M> type;
+		protected final String idKey;
+		protected final Constructor<M> cons;
 		
 		protected GeneralBuilder(Class<M> type, String idKey) {
 			this.type = type;
@@ -160,10 +156,10 @@ public final class ModItemBuilder {
 		}
 		
 		@Override
-		public ModItem create(final Element element) {
+		public ModItem handle(final Element element) {
 			try {
 				if (cons == null)
-					return fallbackBuilder.create(element);
+					return fallbackBuilder.handle(element);
 				final M item = cons.newInstance();
 				
 				final var idValue = element.getAttribute(idKey);
@@ -175,16 +171,9 @@ public final class ModItemBuilder {
 				return null;
 			}
 		}
-	}
-	
-	@Slf4j
-	@RequiredArgsConstructor
-	protected static class GeneralCreater<M extends ModItem> implements CreateHandler {
-		private final Class<M> type;
-		private final String IdKey;
 		
 		@Override
-		public Element build(final Document document, final ModItem item) {
+		public Element handle(final Document document, final ModItem item) {
 			final var typeName = group(item).xmlObjName;
 			final var el = document.createElement(typeName);
 			for (var attr : item.getAttributes()) {
@@ -194,9 +183,9 @@ public final class ModItemBuilder {
 		}
 	}
 	
-	private static class FallbackBuilder implements BuildHandler {
+	protected static class FallbackBuilder implements BuildHandler, CreateHandler {
 		@Override
-		public ModItem create(Element element) {
+		public ModItem handle(Element element) {
 			final var elementName = element.getTagName();
 			log.info("No creater matched element <{}>", elementName);
 			
@@ -232,42 +221,47 @@ public final class ModItemBuilder {
 			
 			return item;
 		}
-	}
-	
-	@Slf4j
-	@RequiredArgsConstructor
-	protected static class StormBuilder implements BuildHandler {
-		private final Class<? extends ModItem> type;
-		private final String IdKey;
 		
 		@Override
-		public ModItem create(final Element element) {
-			try {
-				final Storm item = Storm.class.getDeclaredConstructor().newInstance();
-				
-				item.setId("storm_" + Util.getRandomString(32));
-				
-				var data = StormService.parse(element);
-				item.setStormData(data);
-				
-				return item;
-			} catch (final Exception e) {
-				log.warn("Handler failed for {}: {}", type.getSimpleName(), e.getMessage());
-				return null;
-			}
+		public Element handle(Document document, ModItem item) {
+			return null;
 		}
 	}
 	
 	@Slf4j
-	@RequiredArgsConstructor
-	protected static class StormCreater implements CreateHandler {
-		private final Class<? extends ModItem> type;
-		private final String IdKey;
+	protected static class FileBuilder<M extends ModItem> extends GeneralBuilder<M> {
+		protected FileBuilder(Class<M> type, String idKey) {
+			super(type, idKey);
+		}
+		
 		
 		@Override
-		public Element build(final Document document, final ModItem item) {
+		public ModItem handle(final Element element) {
 			try {
-				return StormService.serialize(((Storm) item).getStormData(), document);
+				if (cons == null)
+					return fallbackBuilder.handle(element);
+				var item = cons.newInstance();
+				item.setId("storm_" + Util.getRandomString(32));
+				
+				if (item instanceof Storm storm) {
+					var data = StormService.parse(element);
+					storm.setStormData(data);
+				}
+				
+				return item;
+			} catch (Exception e) {
+				log.warn("Handler failed for {}", type.getSimpleName(), e);
+				return null;
+			}
+		}
+		
+		@Override
+		public Element handle(final Document document, final ModItem item) {
+			try {
+				if (item instanceof Storm storm) {
+					return StormService.serialize(storm.getStormData(), document);
+				}
+				return fallbackBuilder.handle(document, item);
 			} catch (final Exception e) {
 				log.warn("Creating Storm xml failed for {}: {}", item, e.getMessage());
 				return null;

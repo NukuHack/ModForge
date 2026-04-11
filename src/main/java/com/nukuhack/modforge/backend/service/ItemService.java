@@ -198,10 +198,10 @@ public final class ItemService {
 			temp.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
 			document.appendChild(temp);
 			var group = document.createElement(groupName);
-			group.setAttribute("version", "1");
+			group.setAttribute("version", String.valueOf(item.getGroupVersion()));
 			temp.appendChild(group);
 			
-			final var newEl = ModItemBuilder.build(document, item);
+			final var newEl = ModItemBuilder.handle(document, item);
 			newEl.ifPresent(group::appendChild);
 			return document;
 		}
@@ -209,11 +209,11 @@ public final class ItemService {
 		var group = (Element) document.getElementsByTagName(groupName).item(0);
 		if (group == null) {
 			group = document.createElement(groupName);
-			group.setAttribute("version", "1");
+			group.setAttribute("version", String.valueOf(item.getGroupVersion()));
 			document.getDocumentElement().appendChild(group);
 		}
 		
-		final var ele = ModItemBuilder.build(document, item);
+		final var ele = ModItemBuilder.handle(document, item);
 		if (ele.isEmpty())
 			return document;
 		final var newEl = ele.get();
@@ -253,16 +253,14 @@ public final class ItemService {
 		final File outFile = getOutputFile(gameDir, item, mod);
 		Files.createDirectories(outFile.toPath().getParent());
 		
-		final var groupName = ModItemBuilder.group(item).parentName();
+		var groupName = ModItemBuilder.group(item).parentName;
 		final Document doc;
 		final String doctype;
 		
-		if (groupName.startsWith("storm")) {
+		if (ModItemBuilder.HANDLER_MAP.get(groupName) != null) {
 			doc = docBuilder.newDocument();
-			final Element group = doc.createElement("storm");
-			var el = ModItemBuilder.build(doc, item);
-			el.ifPresent(group::appendChild);
-			doc.appendChild(group);
+			var el = ModItemBuilder.handle(doc, item);
+			el.ifPresent(doc::appendChild);
 			doctype = Util.STORM_HEADER + "\n";
 		} else {
 			doc = makeDocument(outFile, item, groupName);
@@ -293,11 +291,11 @@ public final class ItemService {
 				try (var is = zf.getInputStream(entry)) {
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
 				} catch (final Exception ex) {
-					log.warn("Parse error in {} from {}: {}", entryName, pakFile.getFileName(), ex.getMessage());
+					log.warn("Parse error in {} from {}", entryName, pakFile.getFileName(), ex);
 				}
 			}
 		} catch (IOException e) {
-			log.error("Cannot open PAK file: {} - {}", pakFile, e.getMessage());
+			log.error("Cannot open PAK file: {}", pakFile, e);
 		}
 		return items.stream();
 	}
@@ -309,7 +307,9 @@ public final class ItemService {
 			return;
 		}
 		final var root = doc.getDocumentElement();
-		if (ModItemBuilder.FILE_PARSERS.contains(root.getTagName())) {
+		var group = root.getTagName();
+		if (ModItemBuilder.HANDLER_MAP.get(group) != null) {
+			log.debug("file parser for {}", group);
 			final var item = ModItemBuilder.create(root);
 			if (item == null || item.getId() == null)
 				return;
@@ -322,7 +322,13 @@ public final class ItemService {
 		for (int i = 0; i < tableNodes.getLength(); i++) {
 			if (! (tableNodes.item(i) instanceof Element tableEl))
 				continue;
-			
+			var ver = tableEl.getAttribute("version");
+			int version = 1;
+			try {
+				version = Integer.parseInt(ver);
+			} catch (NumberFormatException n) {
+				log.warn("could not get version from {}, input was: '{}'", sourcePath, ver);
+			}
 			
 			final var items = tableEl.getChildNodes();
 			for (int j = 0; j < items.getLength(); j++) {
@@ -403,7 +409,7 @@ public final class ItemService {
 			try {
 				writeModItem(gameDir, mod, item);
 			} catch (final Exception e) {
-				log.error("writeModItem failed for {}: {}", item.getClass().getSimpleName(), e.getMessage());
+				log.error("writeModItem failed for {}", item.getClass().getSimpleName(), e);
 			}
 		}
 		log.debug("ModItem written to {}", Util.modStaging(gameDir, mod.id));
