@@ -176,4 +176,10 @@ public enum ItemEntry {
 		s = s.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", " ");
 		return s.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2");
 	}
+	
+	public String getVersion() {
+		if (parentName.equals("ItemClasses"))
+			return "8";
+		return "1";
+	}
 }

@@ -110,13 +110,13 @@ public final class ItemService {
 			try (var reader = new BufferedReader(new InputStreamReader(is, encoding))) {
 				return docBuilder.parse(new InputSource(reader));
 			}
-		} catch (final SAXException e) {
+		} catch (SAXException e) {
 			log.warn("Could not parse the file", e);
 			return null;
-		} catch (final IOException e) {
+		} catch (IOException e) {
 			log.warn("Could not access the file", e);
 			return null;
-		} catch (final Exception e) {
+		} catch (Exception e) {
 			log.warn("Unknown exception at xml parsing", e);
 			return null;
 		}
@@ -136,10 +136,10 @@ public final class ItemService {
 	 * @return the file, according to the Structure
 	 */
 	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod) {
-		final String rawPath = item.getPath() == null ? "" : item.getPath();
-		final var targetDir = getOutputFile(gameDir, rawPath, mod).getParent();
-		final var typeName = ModItemBuilder.group(item).fileName;
-		final var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
+		var rawPath = item.getPath() == null ? "" : item.getPath();
+		var targetDir = getOutputFile(gameDir, rawPath, mod).getParent();
+		var typeName = ModItemBuilder.group(item).fileName;
+		var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
 		return outFile.toFile();
 	}
 	
@@ -187,9 +187,10 @@ public final class ItemService {
 		return dirSuffix.isEmpty() ? Util.joinP(stageRoot, fileName) : Util.joinP(stageRoot, Util.capitalStart(dirSuffix), fileName);
 	}
 	
-	private static Document makeDocument(final File outFile, final ModItem item, final String groupName) throws Exception {
+	private static Document makeDocument(final File outFile, final ModItem item, final ItemEntry groupT) throws Exception {
 		final Document document;
 		
+		var groupName = groupT.parentName;
 		if (! outFile.exists()) {
 			document = docBuilder.newDocument();
 			var temp = document.createElement("database");
@@ -198,10 +199,10 @@ public final class ItemService {
 			temp.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:noNamespaceSchemaLocation", "../database.xsd");
 			document.appendChild(temp);
 			var group = document.createElement(groupName);
-			group.setAttribute("version", String.valueOf(item.getGroupVersion()));
+			group.setAttribute("version", groupT.getVersion());
 			temp.appendChild(group);
 			
-			final var newEl = ModItemBuilder.handle(document, item);
+			final var newEl = ModItemBuilder.create(document, item);
 			newEl.ifPresent(group::appendChild);
 			return document;
 		}
@@ -209,33 +210,34 @@ public final class ItemService {
 		var group = (Element) document.getElementsByTagName(groupName).item(0);
 		if (group == null) {
 			group = document.createElement(groupName);
-			group.setAttribute("version", String.valueOf(item.getGroupVersion()));
+			group.setAttribute("version", groupT.getVersion());
 			document.getDocumentElement().appendChild(group);
 		}
 		
-		final var ele = ModItemBuilder.handle(document, item);
-		if (ele.isEmpty())
+		var elem = ModItemBuilder.create(document, item);
+		if (elem.isEmpty())
 			return document;
-		final var newEl = ele.get();
-		final String idKey = item.getIdKey();
-		final String idVal = newEl.getAttribute(idKey);
+		var newEl = elem.get();
+		var idKey = item.getIdKey();
+		var idVal = newEl.getAttribute(idKey);
 		
-		if (! idVal.isBlank()) {
-			final NodeList existing = group.getElementsByTagName(newEl.getTagName());
-			boolean replaced = false;
-			for (int i = 0; i < existing.getLength(); i++) {
-				var el = (Element) existing.item(i);
-				if (idVal.equals(el.getAttribute(idKey))) {
-					group.replaceChild(newEl, el);
-					replaced = true;
-					break;
-				}
-			}
-			if (! replaced)
-				group.appendChild(newEl);
-		} else {
+		if (idVal.isBlank()) {
 			group.appendChild(newEl);
+			return document;
 		}
+		
+		var existing = group.getElementsByTagName(newEl.getTagName());
+		var replaced = false;
+		for (int i = 0; i < existing.getLength(); i++) {
+			var el = (Element) existing.item(i);
+			if (idVal.equals(el.getAttribute(idKey))) {
+				group.replaceChild(newEl, el);
+				replaced = true;
+				break;
+			}
+		}
+		if (! replaced)
+			group.appendChild(newEl);
 		return document;
 		
 	}
@@ -253,17 +255,17 @@ public final class ItemService {
 		final File outFile = getOutputFile(gameDir, item, mod);
 		Files.createDirectories(outFile.toPath().getParent());
 		
-		var groupName = ModItemBuilder.group(item).parentName;
+		var group = ModItemBuilder.group(item);
 		final Document doc;
 		final String doctype;
 		
-		if (ModItemBuilder.HANDLER_MAP.get(groupName) != null) {
+		if (ModItemBuilder.HANDLER_MAP.get(group.parentName) != null) {
 			doc = docBuilder.newDocument();
-			var el = ModItemBuilder.handle(doc, item);
+			var el = ModItemBuilder.create(doc, item);
 			el.ifPresent(doc::appendChild);
 			doctype = Util.STORM_HEADER + "\n";
 		} else {
-			doc = makeDocument(outFile, item, groupName);
+			doc = makeDocument(outFile, item, group);
 			doctype = null;
 		}
 		

@@ -25,7 +25,7 @@ public final class ModItemBuilder {
 	
 	// O(1) lookup map - element name to handler
 	static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
-	static final Map<Class<? extends ModItem>, CreateHandler> MAKER_MAP = new HashMap<>();
+	static final Map<Class<?>, CreateHandler> MAKER_MAP = new HashMap<>();
 	static final FallbackBuilder fallbackBuilder = new FallbackBuilder();
 	
 	static {
@@ -56,23 +56,15 @@ public final class ModItemBuilder {
 	}
 	
 	public static ModItem create(final Element element) {
-		// glue it together yet again, barely works
-		final var elementName = element.getTagName();
-		final var handler = HANDLER_MAP.getOrDefault(elementName, fallbackBuilder);
+		final var handler = HANDLER_MAP.getOrDefault(element.getTagName(), fallbackBuilder);
 		
 		return handler.handle(element);
 	}
 	
-	public static Optional<Element> handle(final Document document, final ModItem item) {
-		// getting the correct one from HANDLER_MAP
-		final var maker = MAKER_MAP.get(item.getClass());
+	public static Optional<Element> create(final Document document, final ModItem item) {
+		final var maker = MAKER_MAP.getOrDefault(item.getClass(), fallbackBuilder);
 		
-		// Intentional - No serialization if item is not correct, we don't want incorrect data to be serialized
-		if (maker != null)
-			return Optional.of(maker.handle(document, item));
-		
-		log.info("No builder matched item <{}>", item);
-		return Optional.empty();
+		return Optional.ofNullable(maker.handle(document, item));
 	}
 	
 	
@@ -133,8 +125,7 @@ public final class ModItemBuilder {
 	}
 	
 	/**
-	 * Generic build handler: recognizes elements whose local name matches the
-	 * simple class name (case-insensitive) and populates a configurable ID attribute.
+	 * Generic build handler: recognizes elements whose name matches the predefined ones
 	 */
 	@Slf4j
 	protected static class GeneralBuilder<M extends ModItem> implements BuildHandler, CreateHandler {
@@ -183,6 +174,10 @@ public final class ModItemBuilder {
 		}
 	}
 	
+	/**
+	 * Fallbakc : pretty obvious
+	 */
+	@Slf4j
 	protected static class FallbackBuilder implements BuildHandler, CreateHandler {
 		@Override
 		public ModItem handle(Element element) {
@@ -224,10 +219,17 @@ public final class ModItemBuilder {
 		
 		@Override
 		public Element handle(Document document, ModItem item) {
+			
+			// Intentional - No serialization if item is not correct, we don't want incorrect data to be serialized
+			log.info("No builder matched item <{}>", item);
+			
 			return null;
 		}
 	}
 	
+	/**
+	 * File builder for times when the entire file is a single object
+	 */
 	@Slf4j
 	protected static class FileBuilder<M extends ModItem> extends GeneralBuilder<M> {
 		protected FileBuilder(Class<M> type, String idKey) {

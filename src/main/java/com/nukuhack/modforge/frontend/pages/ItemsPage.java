@@ -215,8 +215,7 @@ public class ItemsPage extends BasePage {
 	private void refreshDisplay(boolean tellUser) {
 		var rawSearch = search.getText().trim().toLowerCase(Locale.ROOT);
 		// Treat both empty and the placeholder text as "no filter"
-		var placeholder = getLocalText("ui_search_all").toLowerCase(Locale.ROOT);
-		var noSearch = rawSearch.isEmpty() || rawSearch.equals(placeholder);
+		var noSearch = rawSearch.isEmpty() || rawSearch.equals(getLocalText("ui_search_all").toLowerCase(Locale.ROOT));
 		var selectedType = (String) itemTypeSelector.getSelectedItem();
 		
 		displayModel.clear();

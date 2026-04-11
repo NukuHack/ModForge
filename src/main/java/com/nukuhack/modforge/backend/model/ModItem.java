@@ -29,10 +29,6 @@ public interface ModItem {
 		return ItemType.getIdKey(this.getClass());
 	}
 	
-	default int getGroupVersion() {
-		return 1;//ModItemBuilder.group(this).parentName;
-	}
-	
 	String getPath();
 	
 	void setPath(final String path);

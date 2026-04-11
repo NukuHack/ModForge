@@ -371,7 +371,7 @@ public abstract class BasePage extends JPanel {
 		
 		if (! item.getAttributes().isEmpty()) {
 			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_attributes")).append("</span><br/><br/>");
+			html.append("<span style='color:#cdd6f4;font-size:10px;'>").append(getLocalText("ui_attributes")).append("</span><br/><br/>");
 			for (var attr : item.getAttributes()) {
 				html.append("<div style='margin-bottom:8px;'>");
 				html.append("<span style='color:#6c6f85;font-size:10px;'>").append(escHtml(attr.getName())).append("</span><br/>");
