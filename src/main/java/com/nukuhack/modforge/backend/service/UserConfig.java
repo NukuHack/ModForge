@@ -16,15 +16,18 @@ import java.util.stream.Collectors;
 
 public interface UserConfig {
 	
-	@NonNull String getGameDirectory();
+	@NonNull
+	String getGameDirectory();
 	
 	void setGameDirectory(String gameDirectory);
 	
-	@NonNull Language getLanguage();
+	@NonNull
+	Language getLanguage();
 	
 	void setLanguage(Language language);
 	
-	@NonNull String getUserName();
+	@NonNull
+	String getUserName();
 	
 	void setUserName(String username);
 	
@@ -45,9 +48,12 @@ public interface UserConfig {
 		
 		private static final Path configFile = Singleton.getUserConfig();
 		
-		@NonNull private String gameDirectory = "";
-		@NonNull private String userName = "";
-		@NonNull private Language language = Language.ENGLISH;
+		@NonNull
+		private String gameDirectory = "";
+		@NonNull
+		private String userName = "";
+		@NonNull
+		private Language language = Language.ENGLISH;
 		/**
 		 * Load all game-data or not at startup, added so debugging is faster
 		 */

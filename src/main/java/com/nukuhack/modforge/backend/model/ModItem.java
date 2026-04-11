@@ -1,7 +1,6 @@
 package com.nukuhack.modforge.backend.model;
 
 import com.nukuhack.modforge.backend.ItemType;
-import com.nukuhack.modforge.backend.service.ModItemBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

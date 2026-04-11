@@ -220,10 +220,10 @@ public class LocalizationPage extends BasePage {
 		entryList.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-			if (e.getClickCount() == 2 && selectedEntry != null) {
-				Util.copyText(selectedEntry.langKey);
-				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
-			}
+				if (e.getClickCount() == 2 && selectedEntry != null) {
+					Util.copyText(selectedEntry.langKey);
+					window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
+				}
 			}
 		});
 		

@@ -4,7 +4,7 @@ import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.MainWindow;
-import com.nukuhack.modforge.frontend.pages.KCDConverterGUI;
+import com.nukuhack.modforge.frontend.pages.KCDConverterPage;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,7 +35,6 @@ public enum Singleton {
 	@Setter
 	@Getter
 	private MainWindow mainWindow;
-	private KCDConverterGUI imageEditor;
 	
 	static {
 		ensureConfigDirExists();
@@ -62,12 +61,5 @@ public enum Singleton {
 		} catch (final IOException e) {
 			log.error("Failed to create config directory: {}", dir, e);
 		}
-	}
-	
-	public KCDConverterGUI getImageEditor() {
-		if (imageEditor == null)
-			imageEditor = new KCDConverterGUI();
-		imageEditor.setVisible(true);
-		return imageEditor;
 	}
 }

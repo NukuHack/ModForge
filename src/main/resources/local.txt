@@ -1,4 +1,5 @@
 // this is a Lang - TODO ... yeah even more localization
+
 ui_copy_id                  : Copy ID
 ui_copy_all_details         : Copy All Details
 ui_edit_item                : Edit Item
@@ -35,3 +36,30 @@ ui_no_localization_data     : No localization data for {0}
 ui_localization_loaded      : Loaded {0} localization entries
 ui_no_items_to_display      : No items to display
 ui_showing_items            : Showing {0} items
+
+
+ui_kcd_title : KCD Texture Exporter
+ui_kcd_input_label : Input (DDS file or folder):
+ui_kcd_output_label : Output (TIFF file or folder):
+ui_kcd_file : File...
+ui_kcd_folder : Folder...
+ui_kcd_options : Options
+ui_kcd_save_raw : Save raw DDS
+ui_kcd_separate_gloss : Separate gloss map
+ui_kcd_delete_source : Delete source files
+ui_kcd_recursive : Process subfolders
+ui_kcd_convert : Convert
+ui_kcd_log : Log
+ui_kcd_select_dds_file : Select DDS file
+ui_kcd_save_tiff_as : Save TIFF file as
+ui_kcd_missing_paths : Please select both input and output paths.
+ui_kcd_log_starting : Starting conversion...
+ui_kcd_log_input : Input: {0}
+ui_kcd_log_output : Output: {0}
+ui_kcd_log_batch : Batch converting {0} (recursive: {1})
+ui_kcd_log_single : Converting single file: {0}
+ui_kcd_log_invalid_input : Input path is not a .dds file or a directory: {0}
+ui_kcd_log_done : Conversion completed successfully!
+ui_kcd_log_error : ERROR: {0}
+ui_kcd_success_message : Conversion completed!
+ui_kcd_failed_message : Conversion failed: {0}

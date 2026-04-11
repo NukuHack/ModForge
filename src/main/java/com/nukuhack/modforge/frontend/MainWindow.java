@@ -109,9 +109,7 @@ public class MainWindow extends JFrame {
 	 */
 	private void setWindowIcon() {
 		
-		final var f = new String[] {
-				
-				"/images/Icons/modforge.png", "/images/Icons/modforge.ico", "/resources/images/Icons/modforge.png", "/resources/images/Icons/modforge.ico", "resources/images/Icons/modforge.png", "resources/images/Icons/modforge.ico" };
+		final var f = new String[] {"/images/Icons/modforge.png", "/images/Icons/modforge.ico", "/resources/images/Icons/modforge.png", "/resources/images/Icons/modforge.ico", "resources/images/Icons/modforge.png", "resources/images/Icons/modforge.ico" };
 		
 		for (final var el : f) {
 			final var out = getClass().getResource(el);
@@ -185,10 +183,9 @@ public class MainWindow extends JFrame {
 		
 		side.add(Box.createVerticalStrut(8));
 		
-		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.CONVERT }) {
+		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.CONVERT, Page.KCD_CONVERTER }) {
 			side.add(navBtn(page.getDisplayName(), e -> navigate(page)));
 		}
-		side.add(navBtn("ui_image_convert_window", e -> SwingUtilities.invokeLater(Singleton.INSTANCE::getImageEditor)));
 		
 		side.add(Box.createVerticalGlue());
 		side.add(navBtn(Page.SETTINGS.getDisplayName(), e -> navigate(Page.SETTINGS)));
@@ -267,7 +264,8 @@ public class MainWindow extends JFrame {
 		LANG_EDIT("ui_localization_edit", LangEdit.class),
 		SETTINGS("ui_settings", SettingsPage.class),
 		LANG("ui_localization", LocalizationPage.class),
-		CONVERT("ui_image_convert", ConvertPage.class);
+		CONVERT("ui_image_convert", ConvertPage.class),
+		KCD_CONVERTER("ui_kcd_title", KCDConverterPage.class),;
 		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;
