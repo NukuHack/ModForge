@@ -15,7 +15,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.nukuhack.modforge.Util.escHtml;
 import static com.nukuhack.modforge.Util.unescapeXml;
@@ -25,6 +29,9 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 public class LocalizationPage extends BasePage {
 	
 	private static final String ALL_ATTR_TYPES = "All Attributes";
+	private static final int CHUNK_SIZE = 5_000;
+	
+	private static final int DEBOUNCE_MS = 250;
 	
 	private static final List<String> ATTR_TYPE_OPTIONS;
 	
@@ -35,16 +42,35 @@ public class LocalizationPage extends BasePage {
 		ATTR_TYPE_OPTIONS = Collections.unmodifiableList(sorted);
 	}
 	
+	/** Full unfiltered list — written only on EDT after background load. */
+	private final List<LangEntry> allEntries = new ArrayList<>();
+	
+	/** Indices into allEntries that pass the current filter. */
+	private int[] filteredIndices = new int[0];
+	
+	private LangEntry selectedEntry = null;
+	
+	private final ScheduledExecutorService debouncer = Executors.newSingleThreadScheduledExecutor(r -> {
+		Thread t = new Thread(r, "localization-debounce");
+		t.setDaemon(true);
+		return t;
+	});
+	private ScheduledFuture<?> pendingFilter;
+	
+	/** Version counter — incremented on every new filter run so stale results are dropped. */
+	private final AtomicLong filterVersion = new AtomicLong(0);
+	
 	private final JComboBox<String> attrSelector = new JComboBox<>();
 	
-	private final List<LangEntry> allEntries = new ArrayList<>();
+	/** Virtual list — model holds only the VISIBLE row strings. */
 	private final DefaultListModel<String> listModel = new DefaultListModel<>();
 	private final JList<String> entryList = new JList<>(listModel);
 	
 	private final JEditorPane detailPane = new JEditorPane();
 	
-	private int[] filteredIndices = new int[0];
-	private LangEntry selectedEntry = null;
+	/** Status / progress bar shown while filtering. */
+	private final JLabel statusLabel = new JLabel(" ");
+	private final JProgressBar progressBar = new JProgressBar();
 	
 	public LocalizationPage(MainWindow w) {
 		super(w);
@@ -52,89 +78,7 @@ public class LocalizationPage extends BasePage {
 		setLayout(new BorderLayout(0, 12));
 		add(buildTopBar(), BorderLayout.NORTH);
 		add(buildCenter(), BorderLayout.CENTER);
-	}
-	
-	private static String formatRow(LangEntry le) {
-		String key = le.langKey;
-		if (key.length() > 48)
-			key = key.substring(0, 45) + "…";
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("%-50s", key));
-		if (! le.attrName.isBlank())
-			sb.append("  [").append(le.attrName).append("]");
-		if (le.item != null) {
-			String itemId = le.item.getId();
-			if (itemId.length() > 30)
-				itemId = itemId.substring(0, 27) + "…";
-			sb.append("  ·  ").append(itemId);
-		}
-		return sb.toString();
-	}
-	
-	private static String emptyDetailHtml() {
-		return "<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:16px;'>" + "<i>" + getLocalText("ui_select_entry") + "</i></body></html>";
-	}
-	
-	private static String buildDetailHtml(LangEntry le) {
-		StringBuilder html = new StringBuilder();
-		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:14px;'>");
-		
-		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(unescapeXml(le.langKey))).append("</b>");
-		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
-		
-		if (! le.attrName.isBlank()) {
-			html.append("<div style='margin-bottom:8px;'>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_attribute")).append("</span><br/>");
-			html.append("<span style='color:#cba6f7;'>").append(escHtml(unescapeXml(le.attrName))).append("</span>");
-			html.append("</div>");
-		}
-		
-		html.append("<div style='margin-bottom:10px;'>");
-		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_value")).append("</span><br/>");
-		html.append("<span style='color:#a6e3a1;font-size:13px;'>").append(escHtml(unescapeXml(le.value))).append("</span>");
-		html.append("</div>");
-		
-		if (le.item != null) {
-			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_item_context")).append("</span><br/><br/>");
-			
-			html.append("<div style='margin-bottom:6px;'>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_id")).append("</span><br/>");
-			html.append("<span style='color:#89b4fa;font-family:monospace;font-size:11px;'>").append(escHtml(le.item.getId())).append("</span>");
-			html.append("</div>");
-			
-			html.append("<div style='margin-bottom:6px;'>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_type")).append("</span><br/>");
-			html.append("<span style='color:#cdd6f4;font-size:11px;'>").append(escHtml(le.item.getClass().getSimpleName())).append("</span>");
-			html.append("</div>");
-			
-			html.append("<div style='margin-bottom:6px;'>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_path")).append("</span><br/>");
-			html.append("<span style='color:#89b4fa;font-family:monospace;font-size:10px;'>").append(escHtml(le.item.getPath())).append("</span>");
-			html.append("</div>");
-		}
-		
-		html.append("</body></html>");
-		return html.toString();
-	}
-	
-	private static Map<String, LangEntry> getLangEntryMap(Map<String, String> langMap, ModData source) {
-		final Map<String, LangEntry> entryByKey = new LinkedHashMap<>(langMap.size());
-		for (var e : langMap.entrySet())
-			entryByKey.put(e.getKey(), new LangEntry(e.getKey(), e.getValue(), "", null));
-		
-		for (var item : source.getItems()) {
-			for (var attr : item.getLangAttributes()) {
-				var key = attr.getValue();
-				if (key.isEmpty())
-					continue;
-				var existing = entryByKey.get(key);
-				if (existing != null && existing.item == null)
-					entryByKey.put(key, new LangEntry(existing.langKey, existing.value, attr.getName(), item));
-			}
-		}
-		return entryByKey;
+		add(buildStatusBar(), BorderLayout.SOUTH);
 	}
 	
 	@Override
@@ -142,6 +86,121 @@ public class LocalizationPage extends BasePage {
 		refreshModSelector();
 		refreshLangSelector();
 		refreshAll();
+	}
+	
+	private void refreshAll() {
+		allEntries.clear();
+		selectedEntry = null;
+		filteredIndices = new int[0];
+		listModel.clear();
+		detailPane.setText(emptyDetailHtml());
+		setStatus(getLocalText("ui_loading"), true);
+		
+		var source = getSelectedMod();
+		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
+		var mod = source.orElseGet(Singleton.INSTANCE::getGame);
+		
+		executor.submit(() -> {
+			var langMap = mod.getLang(lang);
+			if (langMap.isEmpty()) {
+				SwingUtilities.invokeLater(() -> {
+					setStatus(" ", false);
+					window.snackbar.show("ui_no_localization_data", BarManager.Type.WARNING, lang.getDisplayName());
+				});
+				return;
+			}
+			
+			var entryMap = buildLangEntryMap(langMap, mod);
+			var sorted = new ArrayList<>(entryMap.values());
+			sorted.sort(Comparator.comparing((LangEntry le) -> le.attrName, Comparator.nullsLast(String::compareToIgnoreCase)).thenComparing(le -> le.langKey, String.CASE_INSENSITIVE_ORDER));
+			
+			SwingUtilities.invokeLater(() -> {
+				allEntries.addAll(sorted);
+				window.snackbar.show("ui_localization_loaded", BarManager.Type.SUCCESS, allEntries.size());
+				scheduleFilter();
+				
+			});
+		});
+	}
+	
+	/** Builds the key→LangEntry map off the EDT. */
+	private static Map<String, LangEntry> buildLangEntryMap(Map<String, String> langMap, ModData source) {
+		
+		final Map<String, LangEntry> map = new LinkedHashMap<>(langMap.size());
+		for (var e : langMap.entrySet())
+			map.put(e.getKey(), new LangEntry(e.getKey(), e.getValue(), "", null));
+		
+		for (var item : source.getItems()) {
+			for (var attr : item.getLangAttributes()) {
+				var key = attr.getValue();
+				if (key.isEmpty())
+					continue;
+				var existing = map.get(key);
+				if (existing != null && existing.item == null)
+					map.put(key, new LangEntry(existing.langKey, existing.value, attr.getName(), item));
+			}
+		}
+		return map;
+	}
+	
+	private void scheduleFilter() {
+		if (pendingFilter != null)
+			pendingFilter.cancel(false);
+		pendingFilter = debouncer.schedule(this::runFilter, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
+	}
+	
+	/** Runs the filter computation on a background thread, then chunks results onto EDT. */
+	private void runFilter() {
+		final long version = filterVersion.incrementAndGet();
+		
+		final String rawSearch = search.getText().trim().toLowerCase(Locale.ROOT);
+		final String placeholder = getLocalText("ui_search_all").toLowerCase(Locale.ROOT);
+		final boolean noSearch = rawSearch.isEmpty() || rawSearch.equals(placeholder);
+		final String attrFilter = (String) attrSelector.getSelectedItem();
+		final boolean allAttrs = attrFilter == null || attrFilter.equals(ALL_ATTR_TYPES);
+		
+		final List<LangEntry> snapshot = List.copyOf(allEntries);
+		
+		SwingUtilities.invokeLater(() -> setStatus(getLocalText("ui_filtering"), true));
+		
+		executor.submit(() -> {
+			int[] indices = new int[snapshot.size()];
+			int count = 0;
+			
+			for (int i = 0; i < snapshot.size(); i++) {
+				if (filterVersion.get() != version)
+					return;
+				
+				var entry = snapshot.get(i);
+				if ((allAttrs || entry.attrName.startsWith(attrFilter)) && (noSearch || entry.has(rawSearch)))
+					indices[count++] = i;
+			}
+			
+			if (filterVersion.get() != version)
+				return;
+			
+			final int[] result = Arrays.copyOf(indices, count);
+			final int totalCount = count;
+			
+			SwingUtilities.invokeLater(() -> {
+				if (filterVersion.get() != version)
+					return;
+				filteredIndices = result;
+				entryList.setValueIsAdjusting(true);
+				listModel.clear();
+				
+				int pushed = 0;
+				while (pushed < totalCount) {
+					int end = Math.min(pushed + CHUNK_SIZE, totalCount);
+					for (int i = pushed; i < end; i++)
+						listModel.addElement(formatRow(snapshot.get(result[i])));
+					pushed = end;
+				}
+				
+				entryList.setValueIsAdjusting(false);
+				setStatus(totalCount + " " + getLocalText("ui_entries"), false);
+			});
+		});
 	}
 	
 	private JPanel buildTopBar() {
@@ -167,20 +226,20 @@ public class LocalizationPage extends BasePage {
 		styleCombo(attrSelector);
 		attrSelector.setPreferredSize(new Dimension(170, 28));
 		attrSelector.setToolTipText(getLocalText("ui_filter_by_attribute_tip"));
-		attrSelector.addActionListener(e -> applyFilters());
+		attrSelector.addActionListener(e -> scheduleFilter());
 		
-		search.setPreferredSize(new Dimension(220, 28));
+		search.setPreferredSize(new Dimension(240, 28));
 		search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
 			public void insertUpdate(DocumentEvent e) {
-				applyFilters();
+				scheduleFilter();
 			}
 			
 			public void removeUpdate(DocumentEvent e) {
-				applyFilters();
+				scheduleFilter();
 			}
 			
 			public void changedUpdate(DocumentEvent e) {
-				applyFilters();
+				scheduleFilter();
 			}
 		});
 		
@@ -191,18 +250,19 @@ public class LocalizationPage extends BasePage {
 		controls.add(muted("ui_type"));
 		controls.add(attrSelector);
 		controls.add(search);
-		
 		bar.add(controls, BorderLayout.EAST);
 		return bar;
 	}
 	
 	private JSplitPane buildCenter() {
+		
 		entryList.setBackground(new Color(0x181825));
 		entryList.setForeground(MainWindow.TEXT);
 		entryList.setSelectionBackground(new Color(0x313244));
 		entryList.setSelectionForeground(MainWindow.TEXT);
 		entryList.setFont(new Font("Roboto Mono", Font.PLAIN, 12));
 		entryList.setFixedCellHeight(30);
+		
 		entryList.addListSelectionListener(e -> {
 			if (e.getValueIsAdjusting())
 				return;
@@ -215,7 +275,6 @@ public class LocalizationPage extends BasePage {
 		});
 		
 		entryList.setComponentPopupMenu(buildEntryPopupMenu());
-		
 		entryList.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -260,10 +319,33 @@ public class LocalizationPage extends BasePage {
 		return split;
 	}
 	
-	/** Popup for the entry list — copy actions only. */
+	private JPanel buildStatusBar() {
+		var bar = new JPanel(new BorderLayout(8, 0));
+		bar.setOpaque(false);
+		bar.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
+		
+		statusLabel.setFont(new Font("Roboto", Font.ITALIC, 11));
+		statusLabel.setForeground(MainWindow.MUTED);
+		bar.add(statusLabel, BorderLayout.WEST);
+		
+		progressBar.setPreferredSize(new Dimension(120, 8));
+		progressBar.setIndeterminate(true);
+		progressBar.setVisible(false);
+		progressBar.setBackground(new Color(0x313244));
+		progressBar.setForeground(MainWindow.ACCENT);
+		progressBar.setBorderPainted(false);
+		bar.add(progressBar, BorderLayout.EAST);
+		return bar;
+	}
+	
+	private void setStatus(String text, boolean busy) {
+		statusLabel.setText(text);
+		statusLabel.setForeground(busy ? new Color(0xf9e2af) : MainWindow.MUTED);
+		progressBar.setVisible(busy);
+	}
+	
 	private JPopupMenu buildEntryPopupMenu() {
 		var popup = new JPopupMenu();
-		
 		var copyKey = new JMenuItem(getLocalText("ui_copy_key"));
 		copyKey.addActionListener(e -> {
 			if (selectedEntry != null) {
@@ -271,7 +353,6 @@ public class LocalizationPage extends BasePage {
 				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
 			}
 		});
-		
 		var copyVal = new JMenuItem(getLocalText("ui_copy_value"));
 		copyVal.addActionListener(e -> {
 			if (selectedEntry != null) {
@@ -279,16 +360,13 @@ public class LocalizationPage extends BasePage {
 				window.snackbar.show("ui_copied_value", BarManager.Type.INFO);
 			}
 		});
-		
 		popup.add(copyKey);
 		popup.add(copyVal);
 		return popup;
 	}
 	
-	/** Popup for the detail pane — copy actions + navigation. */
 	private JPopupMenu buildDetailPopupMenu() {
 		var popup = new JPopupMenu();
-		
 		var copyKey = new JMenuItem(getLocalText("ui_copy_key"));
 		copyKey.addActionListener(e -> {
 			if (selectedEntry != null) {
@@ -296,7 +374,6 @@ public class LocalizationPage extends BasePage {
 				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
 			}
 		});
-		
 		var copyVal = new JMenuItem(getLocalText("ui_copy_value"));
 		copyVal.addActionListener(e -> {
 			if (selectedEntry != null) {
@@ -304,7 +381,6 @@ public class LocalizationPage extends BasePage {
 				window.snackbar.show("ui_copied_value", BarManager.Type.INFO);
 			}
 		});
-		
 		popup.add(copyKey);
 		popup.add(copyVal);
 		popup.addSeparator();
@@ -314,62 +390,70 @@ public class LocalizationPage extends BasePage {
 			if (selectedEntry != null && selectedEntry.item != null)
 				window.navigate(MainWindow.Page.ITEM_EDIT, selectedEntry.item);
 		});
-		
 		var editLang = new JMenuItem(getLocalText("ui_edit_lang"));
 		editLang.addActionListener(e -> {
 			if (selectedEntry != null && selectedEntry.item != null)
 				window.navigate(MainWindow.Page.LANG_EDIT, selectedEntry.item);
 		});
-		
 		popup.add(editItem);
 		popup.add(editLang);
 		return popup;
 	}
 	
-	private void refreshAll() {
-		allEntries.clear();
-		selectedEntry = null;
-		detailPane.setText(emptyDetailHtml());
-		
-		var source = getSelectedMod();
-		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
-		
-		var mod = source.orElseGet(Singleton.INSTANCE::getGame);
-		var langMap = mod.getLang(lang);
-		if (langMap.isEmpty()) {
-			applyFilters();
-			window.snackbar.show("ui_no_localization_data", BarManager.Type.WARNING, lang.getDisplayName());
-			return;
+	private static String formatRow(LangEntry le) {
+		String key = le.langKey;
+		if (key.length() > 48)
+			key = key.substring(0, 45) + "…";
+		var sb = new StringBuilder();
+		sb.append(String.format("%-50s", key));
+		if (! le.attrName.isBlank())
+			sb.append("  [").append(le.attrName).append("]");
+		if (le.item != null) {
+			String itemId = le.item.getId();
+			if (itemId.length() > 30)
+				itemId = itemId.substring(0, 27) + "…";
+			sb.append("  ·  ").append(itemId);
 		}
-		
-		allEntries.addAll(getLangEntryMap(langMap, mod).values());
-		allEntries.sort(Comparator.comparing((LangEntry le) -> le.attrName, Comparator.nullsLast(String::compareToIgnoreCase)).thenComparing(le -> le.langKey, String.CASE_INSENSITIVE_ORDER));
-		
-		applyFilters();
-		window.snackbar.show("ui_localization_loaded", BarManager.Type.SUCCESS, allEntries.size());
+		return sb.toString();
 	}
 	
-	private void applyFilters() {
-		var rawSearch = search.getText().trim().toLowerCase(Locale.ROOT);
-		var placeholder = getLocalText("ui_search_all").toLowerCase(Locale.ROOT);
-		var noSearch = rawSearch.isEmpty() || rawSearch.equals(placeholder);
-		var attrFilter = (String) attrSelector.getSelectedItem();
-		var allAttrs = attrFilter == null || attrFilter.equals(ALL_ATTR_TYPES);
+	private static String emptyDetailHtml() {
+		return "<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:16px;'>" + "<i>" + getLocalText("ui_select_entry") + "</i></body></html>";
+	}
+	
+	private static String buildDetailHtml(LangEntry le) {
+		var html = new StringBuilder();
+		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:14px;margin:0;'>");
 		
-		var indices = new int[allEntries.size()];
-		int count = 0;
-		for (int i = 0; i < allEntries.size(); i++) {
-			var entry = allEntries.get(i);
-			if ((allAttrs || entry.attrName.startsWith(attrFilter)) && (noSearch || entry.has(rawSearch)))
-				indices[count++] = i;
+		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(unescapeXml(le.langKey))).append("</b>");
+		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
+		
+		if (! le.attrName.isBlank()) {
+			html.append("<div style='margin-bottom:8px;" + "background:#1e1e2e;border-left:3px solid #cba6f7;" + "padding:6px 10px;border-radius:3px;'>");
+			html.append("<span style='color:#6c6f85;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(getLocalText("ui_attribute")).append("</span><br/>");
+			html.append("<span style='color:#cba6f7;font-size:11px;'>").append(escHtml(unescapeXml(le.attrName))).append("</span>");
+			html.append("</div>");
 		}
-		filteredIndices = Arrays.copyOf(indices, count);
 		
-		entryList.setValueIsAdjusting(true);
-		listModel.clear();
-		for (var idx : filteredIndices)
-			listModel.addElement(formatRow(allEntries.get(idx)));
-		entryList.setValueIsAdjusting(false);
+		html.append("<div style='margin-bottom:10px;" + "background:#1e1e2e;border-left:3px solid #a6e3a1;" + "padding:8px 10px;border-radius:3px;'>");
+		html.append("<span style='color:#6c6f85;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(getLocalText("ui_value")).append("</span><br/>");
+		html.append("<span style='color:#a6e3a1;font-size:13px;'>").append(escHtml(unescapeXml(le.value))).append("</span>");
+		html.append("</div>");
+		
+		if (le.item != null) {
+			html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
+			html.append("<span style='color:#6c6f85;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(getLocalText("ui_item_context")).append("</span><br/><br/>");
+			
+			String itemHtml = htmlForItem(le.item);
+			int bodyStart = itemHtml.indexOf("<body");
+			int bodyTagEnd = itemHtml.indexOf('>', bodyStart) + 1;
+			int bodyClose = itemHtml.lastIndexOf("</body>");
+			if (bodyStart >= 0 && bodyClose >= 0)
+				html.append(itemHtml, bodyTagEnd, bodyClose);
+		}
+		
+		html.append("</body></html>");
+		return html.toString();
 	}
 	
 	record LangEntry(String langKey, String value, String attrName, ModItem item) {

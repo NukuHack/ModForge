@@ -20,6 +20,19 @@ import java.util.Map;
 import static com.nukuhack.modforge.Util.escHtml;
 import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
+/**
+ * Localization edit page.
+ *
+ * Layout per entry (vertical, generous space):
+ *   ┌──────────────────────────────────────┐
+ *   │ ATTRIBUTE NAME (muted label)         │
+ *   │ lang.key.monospace  [copy]           │
+ *   │ ┌────────────────────────────────┐   │
+ *   │ │  editable text area            │   │
+ *   │ └────────────────────────────────┘   │
+ *   │ ──────────────────────────────────── │
+ *   └──────────────────────────────────────┘
+ */
 @Slf4j
 public class LangEdit extends BaseEditPage {
 	
@@ -36,7 +49,8 @@ public class LangEdit extends BaseEditPage {
 	
 	public LangEdit(MainWindow w) {
 		super(w);
-		fieldsPanel = new JPanel(new GridBagLayout());
+		fieldsPanel = new JPanel();
+		fieldsPanel.setLayout(new BoxLayout(fieldsPanel, BoxLayout.Y_AXIS));
 		fieldsPanel.setBackground(MainWindow.SURFACE);
 		fieldsPanel.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 		initUI();
@@ -102,21 +116,15 @@ public class LangEdit extends BaseEditPage {
 		refreshLangSelector();
 		rebuildFields();
 		
-		if (previewPane != null) {
-			if (previewPane.getClientProperty("langEditListenerInstalled") == null) {
-				
-				previewPane.addMouseListener(mouseClicked(currentItem));
-				previewPane.putClientProperty("langEditListenerInstalled", Boolean.TRUE);
-			}
-			
-			previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, true, false));
+		if (previewPane.getClientProperty("langEditListenerInstalled") == null) {
+			previewPane.addMouseListener(mouseClicked(currentItem));
+			previewPane.putClientProperty("langEditListenerInstalled", Boolean.TRUE);
 		}
+		previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, true, false));
 	}
 	
 	@Override
 	protected void updatePreview() {
-		if (previewPane == null)
-			return;
 		if (currentItem == null || workingEntries.isEmpty()) {
 			previewPane.setText(emptyPreviewHtml());
 			return;
@@ -125,20 +133,24 @@ public class LangEdit extends BaseEditPage {
 		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
 		
 		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
-		var html = new StringBuilder();
-		html.append("<html><body style='background:#181825;color:#cdd6f4;font-family:sans-serif;padding:12px;'>");
-		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(currentItem.getId())).append("</b><br/>");
-		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(currentItem.getClass().getSimpleName()).append("</span>");
-		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 		
-		html.append("<span style='color:#6c6f85;font-size:10px;'>").append(getLocalText("ui_language")).append(": ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
+		var html = new StringBuilder();
+		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:12px;margin:0;'>");
+		
+		// ── Item header (reuse shared renderer) ──────────────────────────────
+		
+		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(currentItem.getId())).append("</b><br/>");
+		
+		html.append("<hr style='border-color:#313244;margin:10px 0;'/>");
+		html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;" + "letter-spacing:0.5px;'>").append(getLocalText("ui_language")).append(": ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
 		
 		for (var entry : workingEntries.entrySet()) {
 			final String attrName = keyToAttrName.getOrDefault(entry.getKey(), "");
-			html.append("<div style='margin-bottom:10px;'>");
-			html.append("<span style='color:#6c6f85;font-size:10px;'>").append(escHtml(attrName)).append("</span><br/>");
-			html.append("<span style='color:#89b4fa;font-size:11px;font-family:monospace;'>").append(escHtml(entry.getKey())).append("</span><br/>");
-			html.append("<span style='color:#cdd6f4;'>").append(escHtml(entry.getValue())).append("</span>");
+			html.append("<div style='margin-bottom:10px;background:#1e1e2e;" + "border-left:3px solid #cba6f7;padding:8px 10px;border-radius:3px;'>");
+			if (! attrName.isBlank())
+				html.append("<span style='color:#cba6f7;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(escHtml(attrName)).append("</span><br/>");
+			html.append("<span style='color:#6c6f85;font-size:10px;font-family:monospace;'>").append(escHtml(entry.getKey())).append("</span><br/>");
+			html.append("<span style='color:#cdd6f4;font-size:12px;'>").append(escHtml(entry.getValue())).append("</span>");
 			html.append("</div>");
 		}
 		html.append("</body></html>");
@@ -153,8 +165,11 @@ public class LangEdit extends BaseEditPage {
 	}
 	
 	/**
-	 * Walk the current item's attributes to find localization-key attributes,
-	 * resolve each key to its translation, and build one labeled JTextArea per entry.
+	 * Walk the current item's lang attributes, resolve each key, and build
+	 * one card per entry with a VERTICAL layout:
+	 *   attribute-name label
+	 *   lang key (monospace, clickable copy)
+	 *   text area for the translation
 	 */
 	private void rebuildFields() {
 		fieldsPanel.removeAll();
@@ -186,112 +201,24 @@ public class LangEdit extends BaseEditPage {
 		}
 		
 		if (workingEntries.isEmpty()) {
-			GridBagConstraints gc = new GridBagConstraints();
-			gc.gridx = 0;
-			gc.gridy = 0;
-			gc.insets = new Insets(24, 0, 0, 0);
-			fieldsPanel.add(muted("ui_local_not_found"), gc);
+			var empty = muted("ui_local_not_found");
+			empty.setBorder(BorderFactory.createEmptyBorder(24, 0, 0, 0));
+			empty.setAlignmentX(Component.LEFT_ALIGNMENT);
+			fieldsPanel.add(empty);
 			fieldsPanel.revalidate();
 			fieldsPanel.repaint();
 			updatePreview();
 			return;
 		}
 		
-		int row = 0;
 		for (var entry : workingEntries.entrySet()) {
 			final String langKey = entry.getKey();
 			final String attrName = keyToAttrName.get(langKey);
-			
-			JLabel attrLabel = new JLabel(attrName + ":");
-			attrLabel.setForeground(MainWindow.MUTED);
-			attrLabel.setFont(new Font("Roboto", Font.PLAIN, 10));
-			GridBagConstraints attrGc = new GridBagConstraints();
-			attrGc.gridx = 0;
-			attrGc.gridy = row;
-			attrGc.anchor = GridBagConstraints.NORTHEAST;
-			attrGc.insets = new Insets(2, 4, 0, 8);
-			fieldsPanel.add(attrLabel, attrGc);
-			row++;
-			
-			JLabel keyLabel = new JLabel(langKey);
-			keyLabel.setForeground(MainWindow.ACCENT);
-			keyLabel.setFont(new Font("Roboto Mono", Font.PLAIN, 11));
-			keyLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			keyLabel.setToolTipText(getLocalText("ui_click_to_copy_key"));
-			keyLabel.addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseClicked(MouseEvent e) {
-					Util.copyText(langKey);
-					window.snackbar.show("ui_copied_key", BarManager.Type.INFO, langKey);
-				}
-			});
-			GridBagConstraints keyGc = new GridBagConstraints();
-			keyGc.gridx = 0;
-			keyGc.gridy = row;
-			keyGc.anchor = GridBagConstraints.NORTHEAST;
-			keyGc.insets = new Insets(4, 4, 4, 8);
-			fieldsPanel.add(keyLabel, keyGc);
-			
-			JTextArea ta = new JTextArea(entry.getValue());
-			ta.setRows(3);
-			ta.setBackground(new Color(0x313244));
-			ta.setForeground(MainWindow.TEXT);
-			ta.setCaretColor(MainWindow.TEXT);
-			ta.setFont(new Font("Roboto", Font.PLAIN, 12));
-			ta.setLineWrap(true);
-			ta.setWrapStyleWord(true);
-			ta.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
-			ta.getDocument().addDocumentListener(new DocumentListener() {
-				public void insertUpdate(DocumentEvent e) {
-					markChanged();
-					updatePreview();
-				}
-				
-				public void removeUpdate(DocumentEvent e) {
-					markChanged();
-					updatePreview();
-				}
-				
-				public void changedUpdate(DocumentEvent e) {
-					markChanged();
-					updatePreview();
-				}
-			});
-			
-			JScrollPane taSp = new JScrollPane(ta);
-			taSp.setPreferredSize(new Dimension(0, 80));
-			taSp.setBackground(MainWindow.SURFACE);
-			taSp.setBorder(BorderFactory.createEmptyBorder());
-			
-			GridBagConstraints editorGc = new GridBagConstraints();
-			editorGc.gridx = 1;
-			editorGc.gridy = row;
-			editorGc.weightx = 1.0;
-			editorGc.fill = GridBagConstraints.HORIZONTAL;
-			editorGc.anchor = GridBagConstraints.NORTHWEST;
-			editorGc.insets = new Insets(4, 0, 4, 4);
-			fieldsPanel.add(taSp, editorGc);
-			keyToEditor.put(langKey, ta);
-			row++;
-			
-			JSeparator sep = new JSeparator();
-			sep.setForeground(new Color(0x313244));
-			GridBagConstraints sepGc = new GridBagConstraints();
-			sepGc.gridx = 0;
-			sepGc.gridy = row;
-			sepGc.gridwidth = 2;
-			sepGc.fill = GridBagConstraints.HORIZONTAL;
-			sepGc.insets = new Insets(2, 0, 2, 0);
-			fieldsPanel.add(sep, sepGc);
-			row++;
+			fieldsPanel.add(buildEntryCard(langKey, attrName, entry.getValue()));
+			fieldsPanel.add(Box.createVerticalStrut(4));
 		}
 		
-		GridBagConstraints spacerGc = new GridBagConstraints();
-		spacerGc.gridx = 0;
-		spacerGc.gridy = row;
-		spacerGc.weighty = 1.0;
-		spacerGc.fill = GridBagConstraints.VERTICAL;
-		fieldsPanel.add(Box.createVerticalGlue(), spacerGc);
+		fieldsPanel.add(Box.createVerticalGlue());
 		
 		fieldsPanel.revalidate();
 		fieldsPanel.repaint();
@@ -299,9 +226,115 @@ public class LangEdit extends BaseEditPage {
 	}
 	
 	/**
-	 * Copy the working entries into the selected mod's localization map
-	 * for the selected language.
+	 * Builds a single card for one localization entry.
+	 *
+	 * <pre>
+	 *  ┌─ card ──────────────────────────────────────┐
+	 *  │  ATTRIBUTE_NAME                             │  ← muted, 9px
+	 *  │  lang.key.here                    [C Copy]  │  ← monospace accent, clickable
+	 *  │  ┌─────────────────────────────────────┐    │
+	 *  │  │  textarea (editable translation)    │    │
+	 *  │  └─────────────────────────────────────┘    │
+	 *  └─────────────────────────────────────────────┘
+	 * </pre>
 	 */
+	private JPanel buildEntryCard(String langKey, String attrName, String value) {
+		
+		JPanel card = new JPanel();
+		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+		card.setBackground(new Color(0x1e1e2e));
+		card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x313244), 1), BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+		card.setAlignmentX(Component.LEFT_ALIGNMENT);
+		card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+		
+		if (attrName != null && ! attrName.isBlank()) {
+			JLabel attrLabel = new JLabel(attrName);
+			attrLabel.setForeground(new Color(0xcba6f7));
+			attrLabel.setFont(new Font("Roboto", Font.BOLD, 9));
+			attrLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+			card.add(attrLabel);
+			card.add(Box.createVerticalStrut(4));
+		}
+		
+		JPanel keyRow = new JPanel(new BorderLayout(6, 0));
+		keyRow.setOpaque(false);
+		keyRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+		keyRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+		
+		JLabel keyLabel = new JLabel(langKey);
+		keyLabel.setForeground(MainWindow.ACCENT);
+		keyLabel.setFont(new Font("Roboto Mono", Font.PLAIN, 11));
+		keyLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		keyLabel.setToolTipText(getLocalText("ui_click_to_copy_key"));
+		keyLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				Util.copyText(langKey);
+				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, langKey);
+			}
+		});
+		
+		JButton copyBtn = makeCopyButton(langKey);
+		keyRow.add(keyLabel, BorderLayout.CENTER);
+		keyRow.add(copyBtn, BorderLayout.EAST);
+		card.add(keyRow);
+		card.add(Box.createVerticalStrut(6));
+		
+		JTextArea ta = new JTextArea(value);
+		ta.setRows(3);
+		ta.setBackground(new Color(0x313244));
+		ta.setForeground(MainWindow.TEXT);
+		ta.setCaretColor(MainWindow.TEXT);
+		ta.setFont(new Font("Roboto", Font.PLAIN, 12));
+		ta.setLineWrap(true);
+		ta.setWrapStyleWord(true);
+		ta.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+		ta.getDocument().addDocumentListener(new DocumentListener() {
+			public void insertUpdate(DocumentEvent e) {
+				markChanged();
+				updatePreview();
+			}
+			
+			public void removeUpdate(DocumentEvent e) {
+				markChanged();
+				updatePreview();
+			}
+			
+			public void changedUpdate(DocumentEvent e) {
+				markChanged();
+				updatePreview();
+			}
+		});
+		keyToEditor.put(langKey, ta);
+		
+		JScrollPane taSp = new JScrollPane(ta);
+		taSp.setAlignmentX(Component.LEFT_ALIGNMENT);
+		taSp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+		taSp.setPreferredSize(new Dimension(0, 80));
+		taSp.setBackground(MainWindow.SURFACE);
+		taSp.setBorder(BorderFactory.createEmptyBorder());
+		card.add(taSp);
+		
+		return card;
+	}
+	
+	private JButton makeCopyButton(String langKey) {
+		JButton b = new JButton("⎘");
+		b.setPreferredSize(new Dimension(28, 22));
+		b.setBackground(new Color(0x45475a));
+		b.setForeground(MainWindow.TEXT);
+		b.setFocusPainted(false);
+		b.setBorderPainted(false);
+		b.setFont(new Font("Roboto", Font.PLAIN, 11));
+		b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		b.setToolTipText(getLocalText("ui_copy_key"));
+		b.addActionListener(e -> {
+			Util.copyText(langKey);
+			window.snackbar.show("ui_copied_key", BarManager.Type.INFO, langKey);
+		});
+		return b;
+	}
+	
 	private void addEntriesToSelectedMod() {
 		if (currentItem == null) {
 			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
@@ -318,9 +351,7 @@ public class LangEdit extends BaseEditPage {
 			window.snackbar.show("ui_unknown_language", BarManager.Type.INFO);
 			return;
 		}
-		
 		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
-		
 		if (workingEntries.isEmpty()) {
 			window.snackbar.show("ui_no_entries_to_add", BarManager.Type.INFO);
 			return;

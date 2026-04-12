@@ -29,12 +29,17 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 @Slf4j
 public abstract class BasePage extends JPanel {
-	// Catppuccin accent cycle for nested XML depth levels
-	private static final String[] DEPTH_ACCENTS = { "#89b4fa",  // blue   — depth 0 (top level)
-			"#cba6f7",  // mauve  — depth 1
-			"#89dceb",  // sky    — depth 2
-			"#a6e3a1",  // green  — depth 3
-			"#f9e2af",  // yellow — depth 4+
+	
+	private static final String[] DEPTH_ACCENTS = { "#89b4fa",
+			
+			"#cba6f7",
+			
+			"#89dceb",
+			
+			"#a6e3a1",
+			
+			"#f9e2af",
+		
 	};
 	protected final MainWindow window;
 	protected final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -170,14 +175,12 @@ public abstract class BasePage extends JPanel {
 		boolean nested = depth > 0;
 		String accentColor = DEPTH_ACCENTS[Math.min(depth, DEPTH_ACCENTS.length - 1)];
 		
-		// ── Header ──────────────────────────────────────────────────────────────
 		html.append("<div style='display:flex;align-items:center;margin-bottom:4px;'>");
 		html.append("<b style='color:").append(accentColor).append(";font-size:").append(nested ? "11" : "14").append("px;'>").append(escHtml(item.getId())).append("</b>");
-		if (!nested)
+		if (! nested)
 			html.append("<br/><span style='background:#313244;color:#a6e3a1;font-size:9px;padding:2px 6px;border-radius:3px;margin-left:8px;'>").append(escHtml(item.getClass().getSimpleName())).append("</span>");
 		html.append("</div>");
 		
-		// ── Path (only meaningful at top level) ─────────────────────────────────
 		if (! nested && item.getPath() != null && ! item.getPath().isBlank()) {
 			html.append("<div style='background:#1e1e2e;padding:8px;border-radius:4px;margin:8px 0;border-left:3px solid ").append(accentColor).append(";'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;'>📁 ").append(getLocalText("ui_path")).append("</span><br/>");
@@ -185,10 +188,8 @@ public abstract class BasePage extends JPanel {
 			html.append("</div>");
 		}
 		
-		// ── Attributes ──────────────────────────────────────────────────────────
 		if (! item.getAttributes().isEmpty()) {
 			html.append("<div style='margin-top:").append(nested ? "6" : "12").append("px;'>");
-			//html.append("<span style='color:").append(accentColor).append(";font-size:10px;font-weight:bold;'>📋 ").append(getLocalText("ui_attributes")).append("</span>");
 			
 			var groupedAttrs = item.getAttributes().stream().collect(Collectors.groupingBy(BasePage::getAttributeCategory));
 			
@@ -211,7 +212,6 @@ public abstract class BasePage extends JPanel {
 			html.append("</div>");
 		}
 		
-		// ── Linked items ────────────────────────────────────────────────────────
 		if (! item.getLinkedItems().isEmpty()) {
 			html.append("<div style='margin-top:12px;'>");
 			html.append("<span style='color:").append(accentColor).append(";font-size:10px;font-weight:bold;'>🔗 ").append(getLocalText("ui_linked_items")).append("</span>");
@@ -273,92 +273,76 @@ public abstract class BasePage extends JPanel {
 	
 	private static void formatAttributeValue(StringBuilder html, Attribute attr, int depth) {
 		if (attr instanceof Attribute.BuffParamListAttribute) {
-			// Name row
+			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
 			html.append("<span style='color:#f38ba8;font-size:10px;font-family:monospace;'>⚡ ");
 			html.append(escHtml(attr.serialize())).append("</span>");
 			
 		} else if (attr instanceof Attribute.BooleanAttribute) {
-			// Name row
+			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
 			boolean val = Boolean.parseBoolean(attr.serialize());
 			html.append("<span style='color:").append(val ? "#a6e3a1" : "#f38ba8").append(";font-size:10px;font-weight:bold;'>").append(val).append("</span>");
 			
 		} else if (attr instanceof Attribute.DoubleAttribute) {
-			// Name row
+			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
 			html.append("<span style='color:#89b4fa;font-size:10px;font-family:monospace;'>").append(escHtml(attr.serialize())).append("</span>");
 			
 		} else if (attr instanceof Attribute.UUIDAttribute) {
-			// Name row
+			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
 			html.append("<span style='color:#cba6f7;font-size:10px;font-family:monospace;'>").append(escHtml(attr.serialize())).append("</span>");
 			
 		} else if (attr instanceof Attribute.ListAttribute) {
-			// Name row
+			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
 			html.append("<span style='color:#94e2d5;font-size:10px;'>[</span>");
 			html.append("<span style='color:#cdd6f4;font-size:10px;'>").append(escHtml(attr.serialize())).append("</span>");
 			html.append("<span style='color:#94e2d5;font-size:10px;'>]</span>");
 			
 		} else if (attr instanceof Attribute.EnumAttribute) {
-			// Name row
+			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
 			html.append("<span style='color:#f9e2af;font-size:10px;font-family:monospace;'>").append(escHtml(attr.serialize())).append("</span>");
 			
 		} else if (attr instanceof Attribute.XmlNodeAttribute xmlAttr) {
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
-			// ── Recursive XML rendering via asItem() ────────────────────────────
-			Attribute.XmlNode node = xmlAttr.getValue();
-			String accentColor = DEPTH_ACCENTS[Math.min(depth + 1, DEPTH_ACCENTS.length - 1)];
 			
-			//html.append("<div style='border:1px solid #313244;border-radius:4px;padding:6px 8px;margin-top:3px;background:#13131f;border-left:2px solid ").append(accentColor).append(";'>");
-			
-			appendItemContents(html, node.asItem(), depth + 1);
-			
-			//html.append("</div>");
-			
+			appendItemContents(html, xmlAttr.getValue().asItem(), depth + 1);
 		} else {
-			// Name row
+			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
-			// Value
 			html.append("<div style='margin-left:2px;'>");
-			// String / unknown
+			
 			html.append("<span style='color:#a6e3a1;font-size:10px;'>").append(escHtml(attr.serialize())).append("</span>");
 		}
 		html.append("</div>");
@@ -389,12 +373,10 @@ public abstract class BasePage extends JPanel {
 	 * Restores the previously selected mod if it still exists.
 	 */
 	protected void refreshModSelector() {
-		// Capture previous selection before clearing
+		
 		var previous = getSelectedMod();
 		var model = (DefaultComboBoxModel<String>) modSelector.getModel();
 		
-		// Temporarily remove all ActionListeners to prevent spurious events
-		// while we clear and repopulate the model
 		ActionListener[] listeners = modSelector.getActionListeners();
 		for (ActionListener l : listeners)
 			modSelector.removeActionListener(l);
@@ -412,13 +394,12 @@ public abstract class BasePage extends JPanel {
 			previous.ifPresent(m -> modSelector.setSelectedItem("    " + m.name));
 		}
 		
-		// Re-attach listeners after model is fully built
 		for (ActionListener l : listeners)
 			modSelector.addActionListener(l);
 	}
 	
 	protected void refreshLangSelector() {
-		// Detach listener during rebuild to avoid cascading refreshAll() calls
+		
 		var listeners = langSelector.getActionListeners();
 		for (var l : listeners)
 			langSelector.removeActionListener(l);
@@ -432,7 +413,6 @@ public abstract class BasePage extends JPanel {
 		
 		langSelector.setSelectedItem(defLang.getDisplayName());
 		
-		// Re-attach listeners, then do a single refresh
 		for (var l : listeners)
 			langSelector.addActionListener(l);
 	}

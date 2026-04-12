@@ -17,16 +17,16 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 @Slf4j
 public class KCDConverterPage extends BasePage {
 	
-	private final JTextField inputField  = styledField("ui_kcd_input_label");
+	private final JTextField inputField = styledField("ui_kcd_input_label");
 	private final JTextField outputField = styledField("ui_kcd_output_label");
 	
-	private final JCheckBox saveRawCheck      = new JCheckBox(getLocalText("ui_kcd_save_raw"));
+	private final JCheckBox saveRawCheck = new JCheckBox(getLocalText("ui_kcd_save_raw"));
 	private final JCheckBox separateGlossCheck = new JCheckBox(getLocalText("ui_kcd_separate_gloss"));
-	private final JCheckBox deleteSourceCheck  = new JCheckBox(getLocalText("ui_kcd_delete_source"));
-	private final JCheckBox recursiveCheck     = new JCheckBox(getLocalText("ui_kcd_recursive"));
+	private final JCheckBox deleteSourceCheck = new JCheckBox(getLocalText("ui_kcd_delete_source"));
+	private final JCheckBox recursiveCheck = new JCheckBox(getLocalText("ui_kcd_recursive"));
 	
-	private final JTextArea logArea      = new JTextArea();
-	private final JButton   convertBtn;
+	private final JTextArea logArea = new JTextArea();
+	private final JButton convertBtn;
 	
 	public KCDConverterPage(MainWindow w) {
 		super(w);
@@ -37,22 +37,20 @@ public class KCDConverterPage extends BasePage {
 		convertBtn.setFont(convertBtn.getFont().deriveFont(Font.BOLD, 14f));
 		
 		add(header("ui_kcd_title"), BorderLayout.NORTH);
-		add(buildCenter(),           BorderLayout.CENTER);
-		add(buildBottom(),           BorderLayout.SOUTH);
+		add(buildCenter(), BorderLayout.CENTER);
+		add(buildBottom(), BorderLayout.SOUTH);
 	}
 	
 	@Override
 	public void refresh(Object... input) {
-		// nothing to reload on navigation
-	}
 	
-	// ── layout ───────────────────────────────────────────────────────────────
+	}
 	
 	private JPanel buildCenter() {
 		JPanel outer = new JPanel(new BorderLayout(0, 12));
 		outer.setOpaque(false);
-		outer.add(buildFormCard(),    BorderLayout.NORTH);
-		outer.add(buildLogCard(),     BorderLayout.CENTER);
+		outer.add(buildFormCard(), BorderLayout.NORTH);
+		outer.add(buildLogCard(), BorderLayout.CENTER);
 		return outer;
 	}
 	
@@ -61,57 +59,60 @@ public class KCDConverterPage extends BasePage {
 		card.setLayout(new GridBagLayout());
 		
 		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.fill    = GridBagConstraints.HORIZONTAL;
-		gbc.insets  = new Insets(6, 6, 6, 6);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = new Insets(6, 6, 6, 6);
 		
-		// ── row 0: input ──────────────────────────────────────────────────
-		gbc.gridy   = 0;
-		gbc.gridx   = 0; gbc.weightx = 0;
+		gbc.gridy = 0;
+		gbc.gridx = 0;
+		gbc.weightx = 0;
 		card.add(muted("ui_kcd_input_label"), gbc);
 		
-		gbc.gridx   = 1; gbc.weightx = 1.0;
+		gbc.gridx = 1;
+		gbc.weightx = 1.0;
 		card.add(inputField, gbc);
 		
-		gbc.gridx   = 2; gbc.weightx = 0;
-		card.add(primaryBtn("ui_kcd_file",   e -> Util.pickFileAsync(
-						getLocalText("ui_kcd_select_dds_file"), ".dds", "DDS files")
-														  .thenAccept(p -> { if (p != null) inputField.setText(p); })), gbc);
+		gbc.gridx = 2;
+		gbc.weightx = 0;
+		card.add(primaryBtn("ui_kcd_file", e -> Util.pickFileAsync(getLocalText("ui_kcd_select_dds_file"), ".dds", "DDS files").thenAccept(p -> {
+			if (p != null)
+				inputField.setText(p);
+		})), gbc);
 		
-		gbc.gridx   = 3;
-		card.add(primaryBtn("ui_kcd_folder", e -> Util.pickFolderAsync()
-														  .thenAccept(p -> { if (p != null) inputField.setText(p); })), gbc);
+		gbc.gridx = 3;
+		card.add(primaryBtn("ui_kcd_folder", e -> Util.pickFolderAsync().thenAccept(p -> {
+			if (p != null)
+				inputField.setText(p);
+		})), gbc);
 		
-		// ── row 1: output ─────────────────────────────────────────────────
-		gbc.gridy   = 1;
-		gbc.gridx   = 0; gbc.weightx = 0;
+		gbc.gridy = 1;
+		gbc.gridx = 0;
+		gbc.weightx = 0;
 		card.add(muted("ui_kcd_output_label"), gbc);
 		
-		gbc.gridx   = 1; gbc.weightx = 1.0;
+		gbc.gridx = 1;
+		gbc.weightx = 1.0;
 		card.add(outputField, gbc);
 		
-		gbc.gridx   = 2; gbc.weightx = 0;
-		card.add(primaryBtn("ui_kcd_file",   e -> Util.pickFileAsync(
-						getLocalText("ui_kcd_save_tiff_as"), ".tif", "TIFF files")
-														  .thenAccept(p -> { if (p != null) outputField.setText(p); })), gbc);
+		gbc.gridx = 2;
+		gbc.weightx = 0;
+		card.add(primaryBtn("ui_kcd_file", e -> Util.pickFileAsync(getLocalText("ui_kcd_save_tiff_as"), ".tif", "TIFF files").thenAccept(p -> {
+			if (p != null)
+				outputField.setText(p);
+		})), gbc);
 		
-		gbc.gridx   = 3;
-		card.add(primaryBtn("ui_kcd_folder", e -> Util.pickFolderAsync()
-														  .thenAccept(p -> { if (p != null) outputField.setText(p); })), gbc);
+		gbc.gridx = 3;
+		card.add(primaryBtn("ui_kcd_folder", e -> Util.pickFolderAsync().thenAccept(p -> {
+			if (p != null)
+				outputField.setText(p);
+		})), gbc);
 		
-		// ── row 2: options ────────────────────────────────────────────────
-		gbc.gridy    = 2;
-		gbc.gridx    = 0;
+		gbc.gridy = 2;
+		gbc.gridx = 0;
 		gbc.gridwidth = 4;
 		
 		JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 5));
 		optionsPanel.setOpaque(false);
-		optionsPanel.setBorder(BorderFactory.createTitledBorder(
-				BorderFactory.createLineBorder(new Color(0x313244)),
-				getLocalText("ui_kcd_options"),
-				javax.swing.border.TitledBorder.LEFT,
-				javax.swing.border.TitledBorder.TOP,
-				new Font("Roboto", Font.BOLD, 12),
-				MainWindow.ACCENT));
+		optionsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0x313244)), getLocalText("ui_kcd_options"), javax.swing.border.TitledBorder.LEFT, javax.swing.border.TitledBorder.TOP, new Font("Roboto", Font.BOLD, 12), MainWindow.ACCENT));
 		styleCheck(saveRawCheck);
 		styleCheck(separateGlossCheck);
 		styleCheck(deleteSourceCheck);
@@ -122,11 +123,10 @@ public class KCDConverterPage extends BasePage {
 		optionsPanel.add(recursiveCheck);
 		card.add(optionsPanel, gbc);
 		
-		// ── row 3: convert button ─────────────────────────────────────────
-		gbc.gridy    = 3;
+		gbc.gridy = 3;
 		gbc.gridwidth = 4;
-		gbc.fill     = GridBagConstraints.NONE;
-		gbc.anchor   = GridBagConstraints.EAST;
+		gbc.fill = GridBagConstraints.NONE;
+		gbc.anchor = GridBagConstraints.EAST;
 		card.add(convertBtn, gbc);
 		
 		return card;
@@ -158,17 +158,16 @@ public class KCDConverterPage extends BasePage {
 		return bar;
 	}
 	
-	// ── logic ─────────────────────────────────────────────────────────────────
-	
 	private void startConversion() {
-		String input  = inputField.getText().trim();
+		String input = inputField.getText().trim();
 		String output = outputField.getText().trim();
 		
-		// treat placeholder text as empty
-		String inputPlaceholder  = getLocalText("ui_kcd_input_label");
+		String inputPlaceholder = getLocalText("ui_kcd_input_label");
 		String outputPlaceholder = getLocalText("ui_kcd_output_label");
-		if (input.equals(inputPlaceholder))  input  = "";
-		if (output.equals(outputPlaceholder)) output = "";
+		if (input.equals(inputPlaceholder))
+			input = "";
+		if (output.equals(outputPlaceholder))
+			output = "";
 		
 		if (input.isEmpty() || output.isEmpty()) {
 			window.snackbar.show("ui_kcd_missing_paths", BarManager.Type.WARNING);
@@ -178,26 +177,21 @@ public class KCDConverterPage extends BasePage {
 		convertBtn.setEnabled(false);
 		logArea.setText("");
 		
-		final String finalInput  = input;
+		final String finalInput = input;
 		final String finalOutput = output;
 		
 		executor.submit(() -> {
 			try {
 				appendLog(getLocalText("ui_kcd_log_starting"));
-				appendLog(getLocalText("ui_kcd_log_input",  finalInput));
+				appendLog(getLocalText("ui_kcd_log_input", finalInput));
 				appendLog(getLocalText("ui_kcd_log_output", finalOutput));
 				
-				Path inputPath  = Path.of(finalInput);
+				Path inputPath = Path.of(finalInput);
 				Path outputPath = Path.of(finalOutput);
 				
-				boolean isOutputFolder = !finalOutput.toLowerCase().endsWith(".tif");
+				boolean isOutputFolder = ! finalOutput.toLowerCase().endsWith(".tif");
 				
-				var opts = new ConversionOptions()
-								   .saveRawDDS(saveRawCheck.isSelected())
-								   .separateGlossMap(separateGlossCheck.isSelected())
-								   .deleteSourceFiles(deleteSourceCheck.isSelected())
-								   .outputPath(finalOutput)
-								   .isOutputFolder(isOutputFolder);
+				var opts = new ConversionOptions().saveRawDDS(saveRawCheck.isSelected()).separateGlossMap(separateGlossCheck.isSelected()).deleteSourceFiles(deleteSourceCheck.isSelected()).outputPath(finalOutput).isOutputFolder(isOutputFolder);
 				
 				if (Files.isDirectory(inputPath)) {
 					appendLog(getLocalText("ui_kcd_log_batch", inputPath, recursiveCheck.isSelected()));
@@ -208,20 +202,17 @@ public class KCDConverterPage extends BasePage {
 					ImageConverter.convertImage(inputPath, opts);
 				} else {
 					appendLog(getLocalText("ui_kcd_log_invalid_input", inputPath));
-					SwingUtilities.invokeLater(() ->
-													   window.snackbar.show("ui_kcd_log_invalid_input", BarManager.Type.ERROR, inputPath));
+					SwingUtilities.invokeLater(() -> window.snackbar.show("ui_kcd_log_invalid_input", BarManager.Type.ERROR, inputPath));
 					return;
 				}
 				
 				appendLog(getLocalText("ui_kcd_log_done"));
-				SwingUtilities.invokeLater(() ->
-												   window.snackbar.show("ui_kcd_success_message", BarManager.Type.SUCCESS));
+				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_kcd_success_message", BarManager.Type.SUCCESS));
 				
 			} catch (Exception ex) {
 				log.error("Conversion failed", ex);
 				appendLog(getLocalText("ui_kcd_log_error", ex.getMessage()));
-				SwingUtilities.invokeLater(() ->
-												   window.snackbar.show("ui_kcd_failed_message", BarManager.Type.ERROR, ex.getMessage()));
+				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_kcd_failed_message", BarManager.Type.ERROR, ex.getMessage()));
 			} finally {
 				SwingUtilities.invokeLater(() -> convertBtn.setEnabled(true));
 			}

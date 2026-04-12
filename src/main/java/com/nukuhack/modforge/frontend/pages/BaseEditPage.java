@@ -40,11 +40,11 @@ import java.awt.event.MouseEvent;
 @Slf4j
 public abstract class BaseEditPage extends BasePage {
 	
-	protected ModItem currentItem;
+	protected ModItem currentItem = null;
 	protected boolean hasChanges = false;
 	
-	protected JEditorPane previewPane;
-	protected JLabel statusLabel;
+	protected JEditorPane previewPane = new JEditorPane();
+	protected JLabel statusLabel = new JLabel(" ");
 	
 	protected BaseEditPage(MainWindow w) {
 		super(w);
@@ -134,8 +134,6 @@ public abstract class BaseEditPage extends BasePage {
 	}
 	
 	protected void updateStatus() {
-		if (statusLabel == null)
-			return;
 		if (hasChanges) {
 			statusLabel.setText(MainWindow.getLocalText("ui_unsaved_changes"));
 			statusLabel.setForeground(new Color(0xf9e2af));
@@ -220,7 +218,6 @@ public abstract class BaseEditPage extends BasePage {
 		formScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		formScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
-		previewPane = new JEditorPane();
 		previewPane.setContentType("text/html");
 		previewPane.setEditable(false);
 		previewPane.setBackground(new Color(0x181825));
@@ -248,7 +245,6 @@ public abstract class BaseEditPage extends BasePage {
 		bar.setOpaque(false);
 		bar.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 		
-		statusLabel = new JLabel(" ");
 		statusLabel.setFont(new Font("Roboto", Font.ITALIC, 11));
 		statusLabel.setForeground(new Color(0xa6e3a1));
 		

@@ -39,7 +39,6 @@ public class ItemsPage extends BasePage {
 		super(w);
 		setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 		
-		// Wire list selection FIRST before any data loads
 		setupListSelectionListener();
 		
 		var top = new JPanel(new BorderLayout(12, 0));
@@ -86,7 +85,7 @@ public class ItemsPage extends BasePage {
 	
 	@Override
 	public void refresh(Object... input) {
-		// refreshModSelector() is safe: listeners are detached during rebuild (see BasePage fix)
+		
 		refreshModSelector();
 		refreshUnderlyingList();
 		refreshDisplay(true);
@@ -98,8 +97,7 @@ public class ItemsPage extends BasePage {
 		modSelector.setPreferredSize(new Dimension(200, 28));
 		modSelector.setToolTipText(getLocalText("ui_mod_source_tip"));
 		itemTypeSelector.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x2a2a3a)), BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-		// ActionListener is added AFTER setupModSourceSelector returns,
-		// so it will never fire during refreshModSelector's model rebuild.
+		
 		modSelector.addActionListener(e -> {
 			refreshUnderlyingList();
 			refreshDisplay(false);
@@ -172,10 +170,10 @@ public class ItemsPage extends BasePage {
 		underlyingItems.clear();
 		var mod = getSelectedMod();
 		if (mod.isPresent()) {
-			// A specific mod is selected
+			
 			underlyingItems.addAll(mod.get().getItems());
 		} else {
-			// "Base Game" sentinel (index 0) or nothing selected — load base game
+			
 			var game = Singleton.INSTANCE.getGame();
 			if (game != null) {
 				underlyingItems.addAll(game.getItems());
@@ -214,7 +212,7 @@ public class ItemsPage extends BasePage {
 	
 	private void refreshDisplay(boolean tellUser) {
 		var rawSearch = search.getText().trim().toLowerCase(Locale.ROOT);
-		// Treat both empty and the placeholder text as "no filter"
+		
 		var noSearch = rawSearch.isEmpty() || rawSearch.equals(getLocalText("ui_search_all").toLowerCase(Locale.ROOT));
 		var selectedType = (String) itemTypeSelector.getSelectedItem();
 		

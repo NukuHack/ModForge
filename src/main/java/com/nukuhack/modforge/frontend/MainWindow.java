@@ -109,7 +109,7 @@ public class MainWindow extends JFrame {
 	 */
 	private void setWindowIcon() {
 		
-		final var f = new String[] {"/images/Icons/modforge.png", "/images/Icons/modforge.ico", "/resources/images/Icons/modforge.png", "/resources/images/Icons/modforge.ico", "resources/images/Icons/modforge.png", "resources/images/Icons/modforge.ico" };
+		final var f = new String[] { "/images/Icons/modforge.png", "/images/Icons/modforge.ico", "/resources/images/Icons/modforge.png", "/resources/images/Icons/modforge.ico", "resources/images/Icons/modforge.png", "resources/images/Icons/modforge.ico" };
 		
 		for (final var el : f) {
 			final var out = getClass().getResource(el);
@@ -265,7 +265,8 @@ public class MainWindow extends JFrame {
 		SETTINGS("ui_settings", SettingsPage.class),
 		LANG("ui_localization", LocalizationPage.class),
 		CONVERT("ui_image_convert", ConvertPage.class),
-		KCD_CONVERTER("ui_kcd_title", KCDConverterPage.class),;
+		KCD_CONVERTER("ui_kcd_title", KCDConverterPage.class),
+		;
 		
 		private final String displayName;
 		private final Class<? extends BasePage> pageClass;
