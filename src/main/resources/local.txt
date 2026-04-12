@@ -63,3 +63,5 @@ ui_kcd_log_done : Conversion completed successfully!
 ui_kcd_log_error : ERROR: {0}
 ui_kcd_success_message : Conversion completed!
 ui_kcd_failed_message : Conversion failed: {0}
+ui_generated_id : Generated a new ID
+ui_generate_id : Generate a new ID

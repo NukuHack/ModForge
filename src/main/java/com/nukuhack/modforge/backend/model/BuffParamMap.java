@@ -2,15 +2,18 @@ package com.nukuhack.modforge.backend.model;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Getter
+@Slf4j
 @RequiredArgsConstructor
 public enum BuffParamMap {
 	// Stats
 	STRENGTH("strength", "Stat Strength", "Affects the character's physical power, influencing melee damage and the ability to carry heavy equipment."),
+	STRENGHT("strenght", "Stat Strength", "Affects the character's physical power, influencing melee damage and the ability to carry heavy equipment."),
 	AGILITY("agility", "Stat Agility", "Determines the character's speed, reflexes, and effectiveness with ranged weapons or dodging."),
 	VITALITY("vitality", "Stat Vitality", "Represents physical resilience, influencing health regeneration and endurance."),
 	SPEECH("speech", "Stat Speech", "Affects persuasion in dialogues, trading outcomes, and social interactions."),
@@ -394,7 +397,15 @@ public enum BuffParamMap {
 	SKV("skv", "Dialogue Skill Check Modifier", "Scales the effectiveness of dialogue skill checks. The value represents a maximum multiplier (e.g., skv*1.16 = up to +16%). When used with AdjustableFadingWorldTimeTimed, the bonus scales dynamically—typically based on sleep duration—up to the defined maximum."),
 	FVH("fvh", "Food Health Regeneration Bonus", "Increases health regeneration for a limited duration after consuming fruit or vegetables. The value defines the flat amount of additional health restored over the buff's lifetime (e.g., fvh+10 restores 10 extra health)."),
 	LIP("lip", "Bone Fracture Prevention", "Prevents bone fractures by consuming charges of this buff. Each +1 negates one incoming fracture while the buff is active, though it is unclear whether multiple charges can stack to block multiple fractures."),
-	SXM("sxm", "Trainer Experience Multiplier", "Multiplies experience gained from trainers. The value acts as a multiplier (e.g., sxm*1.2 grants +20% experience) and applies only to training-based skill progression during the buff's duration.");
+	SXM("sxm", "Trainer Experience Multiplier", "Multiplies experience gained from trainers. The value acts as a multiplier (e.g., sxm*1.2 grants +20% experience) and applies only to training-based skill progression during the buff's duration."),
+	
+	// found while testing
+	Value("Value", "Value - idk ", "I guess some fallback value"),
+	CHR("chr", "Chr - idk ", "I guess some charm related"),
+	VIS("vis", "Vis - idk ", "I guess some visibility related"),
+	JRS("jrs", "Jrs - idk ", "I don't know"),
+	PLG("plg", "Plg - idk ", "I don't know"),
+	OPD("opd", "Opd - idk ", "I don't know");
 	// fba - Seasoned Drinker - If you overdo it with alcohol and pass out, you will always wake up in the bed in your bedroom - fba+1 => skill activated
 	// skv - Smooth Talker - For each hour of sleep in your bedroom (up to 8 hours), the difficulty of skill checks in dialogues is reduced by 2% for the next 24 hours - skv*1.16 => 16% maximum improvement. Hourly upgrade is presumably calculated in the background using Cpp:AdjustableFadingWorldTimeTimed
 	// fvh - Carnival - Eating fruits and vegetables restores 10 more health over the next 24 hours => fvh+10
@@ -411,7 +422,10 @@ public enum BuffParamMap {
 		}
 	}
 	public static BuffParamMap fromKey(String key) {
-		return BY_KEY.get(key);
+		var val = BY_KEY.get(key);
+		if (val == null)
+			log.warn("could not get BuffParam for {}", key);
+		return val;
 	}
 	public static BuffParamMap fromName(String name) {
 		return BY_NAME.get(name);

@@ -99,32 +99,35 @@ public final class Attributes {
 		final var v = value;
 		final Class<?> type = TYPE_MAP.computeIfAbsent(name, n -> inferType(n, v));
 		
-		try {
-			if (type == UUID.class) {
-				return new Attribute.UUIDAttribute(name, UUID.fromString(value));
-			} else if (type == String.class) {
-				return new Attribute.StringAttribute(name, value);
-			} else if (type == Attribute.BuffParam.class) {
-				return new Attribute.BuffParamListAttribute(name, value);
-			} else if (type == List.class) {
-				return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
-			} else if (type == Boolean.class) {
-				return new Attribute.BooleanAttribute(name, Boolean.parseBoolean(value));
-			} else if (type == Double.class) {
-				return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
-			} else if (type.isEnum()) {
-				int i = 1;
-				try {
-					i = Integer.parseInt(value);
-				} catch (NumberFormatException e) {
-					log.warn("could not parse enum value '{}', falling back to '1'", value, e);
-				}
-				return new Attribute.EnumAttribute(name, Enums.fromValueRaw(type, i));
-			}
-			throw new IllegalArgumentException("Attribute is not a known type");
-		} catch (Exception ex) {
-			log.warn("Cannot parse attribute '{}'='{}': {}", name, value, ex.getMessage());
+		
+		if (type == UUID.class) {
+			return new Attribute.UUIDAttribute(name, UUID.fromString(value));
+		} else if (type == String.class) {
 			return new Attribute.StringAttribute(name, value);
+		} else if (type == Attribute.BuffParam.class) {
+			return new Attribute.BuffParamListAttribute(name, value);
+		} else if (type == List.class) {
+			return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
+		} else if (type == Boolean.class) {
+			return new Attribute.BooleanAttribute(name, Boolean.parseBoolean(value));
+		} else if (type == Double.class) {
+			return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
+		} else if (type.isEnum()) {
+			int i = 1;
+			try {
+				i = Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				log.warn("could not parse enum value '{}', falling back to '1'", value, e);
+			}
+			try {
+				return new Attribute.EnumAttribute(name, Enums.fromValueRaw(type, i));
+			} catch (Exception e) {
+				log.debug("could not parse enum value '{}', for type '{}' - falling back to string", value, type.getSimpleName());
+				return new Attribute.StringAttribute(name, value);
+			}
 		}
+		
+		log.warn("Cannot parse attribute '{}'='{}' - falling back to string", name, value);
+		return new Attribute.StringAttribute(name, value);
 	}
 }
