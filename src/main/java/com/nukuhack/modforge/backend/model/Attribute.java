@@ -4,7 +4,6 @@ import com.nukuhack.modforge.backend.model.E.MathOperation;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.With;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -37,6 +36,27 @@ public interface Attribute<T> {
 		
 		public String toString() {
 			return name + "=" + value;
+		}
+		
+		
+		/**
+		 * Helper method to deep clone nested lists
+		 */
+		protected <M> List<M> deepCloneList(List<M> list) {
+			if (list == null)
+				return null;
+			
+			List<M> clonedList = new ArrayList<>(list.size());
+			for (M e : list) {
+				if (e instanceof Attribute<?> a) {
+					clonedList.add((M) a.deepClone());
+				} else if (e instanceof Collection<?>) {
+					throw new IllegalArgumentException("No nesting inside attributes, Use ListAttribute for that");
+				} else {
+					clonedList.add(e);
+				}
+			}
+			return clonedList;
 		}
 		
 		@Override
@@ -133,42 +153,22 @@ public interface Attribute<T> {
 		public ListAttribute(String name, List<M> value) {
 			super(name, value);
 		}
-		
+
 		@Override
 		public ListAttribute<M> deepClone() {
 			return new ListAttribute<>(getName(), deepCloneList(value));
 		}
-		
+
 		@Override
 		public ListAttribute<M> withValue(List<M> newValue) {
 			return new ListAttribute<>(name, deepCloneList(newValue));
 		}
-		
+
 		@Override
 		public String serialize() {
 			if (value.isEmpty())
 				return "";
 			return value.stream().map(item -> (item instanceof Attribute<?> a ? a.serialize() : item.toString()).trim()).filter(Predicate.not(String::isEmpty)).collect(Collectors.joining(","));
-		}
-		
-		/**
-		 * Helper method to deep clone nested lists
-		 */
-		private List<M> deepCloneList(List<M> list) {
-			if (list == null)
-				return null;
-			
-			List<M> clonedList = new ArrayList<>(list.size());
-			for (M e : list) {
-				if (e instanceof Attribute<?> a) {
-					clonedList.add((M) a.deepClone());
-				} else if (e instanceof Collection<?>) {
-					throw new IllegalArgumentException("No nesting inside attributes, Use ListAttribute for that");
-				} else {
-					clonedList.add(e);
-				}
-			}
-			return clonedList;
 		}
 	}
 	
@@ -180,6 +180,17 @@ public interface Attribute<T> {
 		
 		public BuffParamListAttribute(String name, String value) {
 			this(name, parse(value));
+		}
+		
+
+		@Override
+		public BuffParamListAttribute deepClone() {
+			return new BuffParamListAttribute(getName(), deepCloneList(value));
+		}
+
+		@Override
+		public BuffParamListAttribute withValue(List<BuffParam> newValue) {
+			return new BuffParamListAttribute(name, deepCloneList(newValue));
 		}
 		
 		public static List<BuffParam> parse(final String data) {

@@ -519,7 +519,8 @@ public abstract class BasePage extends JPanel {
 			}
 			var mod = ModService.modCollection.stream().filter(m -> m.name.equals(sel)).findFirst();
 			mod.ifPresentOrElse(m -> {
-				m.addItem(ModItemBuilder.deepCopy(item, m));
+				var copy = ModItemBuilder.deepCopy(item, m);
+				m.addItem(copy);
 				window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, m.name);
 				dialog.dispose();
 			}, () -> window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING));

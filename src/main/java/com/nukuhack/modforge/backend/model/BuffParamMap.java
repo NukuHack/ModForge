@@ -401,15 +401,20 @@ public enum BuffParamMap {
 	// lip - Bone shield - Prevents the first bone fracture you would suffer in the next 24 hours => lip+1 (can multiple fractures be negated here?)
 	// sxm - Apprentice - You receive a 20% experience bonus from trainers over the next 24 hours => sxm*1.2
 	
-	private static final Map<String, BuffParamMap> BY_KEY = new HashMap<>();
+	public static final Map<String, BuffParamMap> BY_KEY = new HashMap<>();
+	public static final Map<String, BuffParamMap> BY_NAME = new HashMap<>();
 	
 	static {
 		for (BuffParamMap e : values()) {
 			BY_KEY.put(e.key, e);
+			BY_NAME.put(e.name, e);
 		}
 	}
 	public static BuffParamMap fromKey(String key) {
 		return BY_KEY.get(key);
+	}
+	public static BuffParamMap fromName(String name) {
+		return BY_NAME.get(name);
 	}
 	
 	private final String key;

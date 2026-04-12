@@ -1,5 +1,6 @@
 package com.nukuhack.modforge.backend.model;
 
+import com.nukuhack.modforge.backend.model.E.Enums;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import com.nukuhack.modforge.backend.model.E.ValueEnum;
-import com.nukuhack.modforge.backend.model.E.Enums;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
