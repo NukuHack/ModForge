@@ -13,9 +13,7 @@ import java.util.*;
  */
 public interface ModItem {
 	// ── Attribute names that hold localization keys (checked case-insensitively)
-	// TODO : right now you can only filter on actual items and since we don't have any item with like straight "UIName" because that si a special item, we can't filter on them
-	Set<String> LANG_ATTR_HINTS = Set.of("UIName", "Desc", "UIInfo", "UiSound", "LatinName", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
-	Set<String> LANG_FIELD_HINTS = Set.of("perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name");
+	Set<String> LANG_ATTR_HINTS = Set.of("UIName", "Desc", "UIInfo", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
 	
 	String getId();
 	
@@ -53,7 +51,7 @@ public interface ModItem {
 	Optional<Attribute> findAttr(final String candidate);
 	
 	default List<Attribute.StringAttribute> getLangAttributes() {
-		return getAttributes().stream().filter(a -> LANG_ATTR_HINTS.contains(a.getName().toLowerCase())).map(a -> (Attribute.StringAttribute) a).toList();
+		return getAttributes().stream().filter(a -> LANG_ATTR_HINTS.contains(a.getName())).map(a -> (Attribute.StringAttribute) a).toList();
 	}
 	
 	/**

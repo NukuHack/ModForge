@@ -111,6 +111,11 @@ public final class I {
 	public static class PerkExclusivity extends BaseModItem {
 	}
 	
+	public static class InventoryPreset extends BaseModItem {
+	}
+	
+	public static class BehaviorTree extends BaseModItem {
+	}
 	
 	/**
 	 * {@code ModItem} representation of a Storm script entry.

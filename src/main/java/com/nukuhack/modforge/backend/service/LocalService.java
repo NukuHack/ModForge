@@ -25,6 +25,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
+import static com.nukuhack.modforge.backend.model.Attribute.INDENT;
+
 @Slf4j
 public final class LocalService {
 	/**
@@ -203,11 +205,11 @@ public final class LocalService {
 			if (key.isBlank())
 				continue;
 			
-			sb.append("\t<Row>\n");
-			sb.append("\t\t<Cell>").append(Util.escapeXml(key)).append("</Cell>\n");
-			sb.append("\t\t<Cell/>\n");
-			sb.append("\t\t<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n");
-			sb.append("\t</Row>\n");
+			sb.append(INDENT).append("<Row>\n");
+			sb.append(INDENT).append(INDENT).append("<Cell>").append(Util.escapeXml(key)).append("</Cell>\n");
+			sb.append(INDENT).append(INDENT).append("<Cell/>\n");
+			sb.append(INDENT).append(INDENT).append("<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n");
+			sb.append(INDENT).append("</Row>\n");
 		}
 		
 		return sb.append("</Table>\n").toString();

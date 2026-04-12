@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public interface Attribute<T> {
+	public static final String INDENT = "  ";
+	
 	String getName();
 	
 	T getValue();
@@ -192,6 +194,115 @@ public interface Attribute<T> {
 		}
 	}
 	
+	@Slf4j
+	class StringAttribute extends BaseAttribute<String> {
+		public StringAttribute(String name, String value) {
+			super(name, value);
+		}
+		
+		@Override
+		public StringAttribute deepClone() {
+			return this;
+		}
+		
+		@Override
+		public StringAttribute deepClone(String newValue) {
+			return new StringAttribute(name, newValue);
+		}
+		
+		@Override
+		public String serialize() {
+			return value;
+		}
+	}
+	
+	@Slf4j
+	class UUIDAttribute extends BaseAttribute<UUID> {
+		public UUIDAttribute(String name, UUID value) {
+			super(name, value);
+		}
+		
+		@Override
+		public UUIDAttribute deepClone() {
+			return this;
+		}
+		
+		@Override
+		public UUIDAttribute deepClone(UUID newValue) {
+			return new UUIDAttribute(name, newValue);
+		}
+		
+		@Override
+		public String serialize() {
+			return value.toString();
+		}
+	}
+	
+	
+	class XmlNodeAttribute extends BaseAttribute<XmlNode> {
+		public XmlNodeAttribute(String name, XmlNode value) {
+			super(name, value);
+		}
+		
+		@Override
+		public XmlNodeAttribute deepClone() {
+			return new XmlNodeAttribute(name, deepCloneNode(value));
+		}
+		
+		@Override
+		public XmlNodeAttribute deepClone(XmlNode newValue) {
+			return new XmlNodeAttribute(name, deepCloneNode(newValue));
+		}
+		
+		@Override
+		public String serialize() {
+			return serializeNode(value, 1);
+		}
+		
+		private XmlNode deepCloneNode(XmlNode node) {
+			var clonedAttrs = node.attributes().stream().map(Attribute::deepClone).toList();
+			var clonedChildren = node.children().stream().map(this::deepCloneNode).toList();
+			return new XmlNode(node.tag(), clonedAttrs, clonedChildren);
+		}
+		
+		private String serializeNode(XmlNode node, int depth) {
+			var indent = INDENT.repeat(depth);
+			var sb = new StringBuilder();
+			sb.append(indent).append("<").append(node.tag());
+			for (var attr : node.attributes())
+				sb.append(" ").append(attr.getName()).append("=\"").append(attr.serialize()).append("\"");
+			if (node.isLeaf())
+				return sb.append(" />").toString();
+			
+			sb.append(">\n");
+			for (var child : node.children())
+				sb.append(serializeNode(child, depth + 1)).append("\n");
+			sb.append(indent).append("</").append(node.tag()).append(">");
+			
+			return sb.toString();
+		}
+	}
+	
+	
+	
+	record XmlNode(String tag, List<Attribute> attributes, List<XmlNode> children) {
+		public boolean isLeaf() {
+			return children.isEmpty();
+		}
+		public int getDepth() {
+			if (children.isEmpty()) return 0;
+			return 1 + children.stream().mapToInt(XmlNode::getDepth).max().orElse(0);
+		}
+		public ModItem asItem() {
+			var item = new ModItem.EmptyImpl();
+			item.setId(tag);
+			item.setAttribute(attributes);
+			var xmlAttr = children.stream().map(c -> (Attribute) new XmlNodeAttribute(c.tag, c)).toList();
+			item.addAttribute(xmlAttr);
+			return item;
+		}
+	}
+	
 	/**
 	 * Simple value object for buff parameters (stat_key op value)
 	 */
@@ -215,28 +326,6 @@ public interface Attribute<T> {
 		 */
 		public String serialize() {
 			return this.name + this.operation.getSymbol() + this.value;
-		}
-	}
-	
-	@Slf4j
-	class StringAttribute extends BaseAttribute<String> {
-		public StringAttribute(String name, String value) {
-			super(name, value);
-		}
-		
-		@Override
-		public StringAttribute deepClone() {
-			return this;
-		}
-		
-		@Override
-		public StringAttribute deepClone(String newValue) {
-			return new StringAttribute(name, newValue);
-		}
-		
-		@Override
-		public String serialize() {
-			return value;
 		}
 	}
 }

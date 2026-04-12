@@ -29,7 +29,7 @@ public class LocalizationPage extends BasePage {
 	private static final List<String> ATTR_TYPE_OPTIONS;
 	
 	static {
-		List<String> sorted = new ArrayList<>(ModItem.LANG_FIELD_HINTS);
+		List<String> sorted = new ArrayList<>(ModItem.LANG_ATTR_HINTS);
 		Collections.sort(sorted);
 		sorted.add(0, ALL_ATTR_TYPES);
 		ATTR_TYPE_OPTIONS = Collections.unmodifiableList(sorted);

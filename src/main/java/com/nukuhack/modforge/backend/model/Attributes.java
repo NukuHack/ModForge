@@ -27,7 +27,7 @@ public final class Attributes {
 	 */
 	private static Class<?> inferType(final String name, final String value) {
 		final String lo = name.toLowerCase();
-		if (lo.endsWith("id") || lo.endsWith("class"))
+		if (lo.endsWith("class"))
 			return String.class;
 		
 		if ("true".equals(value) || "false".equals(value))
@@ -39,7 +39,6 @@ public final class Attributes {
 		
 		try {
 			UUID.fromString(value);
-			// TODO : actually save them as UUID
 			return UUID.class;
 		} catch (Exception ignored) {
 		}
@@ -48,7 +47,7 @@ public final class Attributes {
 			try {
 				Double.parseDouble(value);
 				return Double.class;
-			} catch (final NumberFormatException ignored) {
+			} catch (NumberFormatException ignored) {
 			}
 		}
 		
@@ -67,8 +66,7 @@ public final class Attributes {
 		
 		try {
 			if (type == UUID.class) {
-				//return new Attribute.UUID(name, UUID.fromString(value));
-				return new Attribute.StringAttribute(name, value);
+				return new Attribute.UUIDAttribute(name, UUID.fromString(value));
 			} else if (type == String.class) {
 				return new Attribute.StringAttribute(name, value);
 			} else if (type == Attribute.BuffParam.class) {

@@ -274,12 +274,13 @@ public final class ItemService {
 	private static void writeXml(Document doc, File outFile, String doctype) throws Exception {
 		final var tf = TransformerFactory.newInstance().newTransformer();
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
+		tf.setOutputProperty("{http://xml.apache.org/xalan}indent-amount", "2");
 		// We'll write the declaration + DOCTYPE ourselves
 		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 		
-		final var writer = new StringWriter();
+		var writer = new StringWriter();
 		tf.transform(new DOMSource(doc), new StreamResult(writer));
-		final String xml = doctype == null ? writer.toString() : doctype + writer;
+		var xml = doctype == null ? writer.toString() : doctype + writer;
 		
 		Util.writeXml(xml, outFile.toPath());
 	}
@@ -307,10 +308,9 @@ public final class ItemService {
 			log.debug("Parse failed for : {}", sourcePath);
 			return;
 		}
-		final var root = doc.getDocumentElement();
+		var root = doc.getDocumentElement();
 		var group = root.getTagName();
 		if (ModItemBuilder.HANDLER_MAP.get(group) != null) {
-			log.debug("file parser for {}", group);
 			final var item = ModItemBuilder.create(root);
 			if (item == null || item.getId() == null)
 				return;
@@ -319,7 +319,7 @@ public final class ItemService {
 			sink.add(item);
 			return;
 		}
-		final var tableNodes = root.getChildNodes();
+		var tableNodes = root.getChildNodes();
 		for (int i = 0; i < tableNodes.getLength(); i++) {
 			if (! (tableNodes.item(i) instanceof Element tableEl))
 				continue;
@@ -331,12 +331,12 @@ public final class ItemService {
 				log.warn("could not get version from {}, input was: '{}'", sourcePath, ver);
 			}
 			
-			final var items = tableEl.getChildNodes();
+			var items = tableEl.getChildNodes();
 			for (int j = 0; j < items.getLength(); j++) {
 				if (! (items.item(j) instanceof Element itemElement))
 					continue;
 				
-				final var item = ModItemBuilder.create(itemElement);
+				var item = ModItemBuilder.create(itemElement);
 				if (item == null || item.getId() == null)
 					continue;
 				

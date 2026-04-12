@@ -15,10 +15,7 @@ import org.w3c.dom.Element;
 
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -33,31 +30,46 @@ public final class ModItemBuilder {
 		// Build the handler map once at class initialization
 		for (var spec : ItemEntry.values()) {
 			var name = spec.xmlObjName;
-			if (! name.equals(spec.parentName)) {
+			
+			if (name.equals(spec.parentName)) {
+				// Whole-file items (Storm, etc.)
+				var fileH = new FileBuilder<>(spec.clazz, spec.idKey);
+				HANDLER_MAP.put(name, fileH);
+				MAKER_MAP.put(spec.clazz, fileH);
+				
+			} else if (spec.isTree) {
+				// Tree-structured items (InventoryPresets, BehaviorTrees, …)
+				var treeH = new TreeBuilder<>(spec.clazz, spec.idKey);
+				HANDLER_MAP.put(name, treeH);
+				MAKER_MAP.put(spec.clazz, treeH);
+				
+			} else {
+				// Normal flat items
 				var handler = new GeneralBuilder<>(spec.clazz, spec.idKey);
 				HANDLER_MAP.put(name, handler);
 				MAKER_MAP.put(spec.clazz, handler);
-				continue;
 			}
-			var fileH = new FileBuilder<>(spec.clazz, spec.idKey);
-			HANDLER_MAP.put(name, fileH);
-			MAKER_MAP.put(spec.clazz, fileH);
 		}
 	}
 	
 	public static <I extends ModItem> I create(final Element el, final I item) {
+		item.setAttribute(getAttributeFromElement(el));
+		return item;
+	}
+	
+	static List<Attribute> getAttributeFromElement(Element el) {
 		var xmlAttrs = el.getAttributes();
-		final var list = new ArrayList<Attribute>(xmlAttrs.getLength());
+		var list = new ArrayList<Attribute>(xmlAttrs.getLength());
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
 			final var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
 			list.add(Attributes.create(a.getName(), a.getValue()));
 		}
-		item.setAttribute(list);
-		return item;
+		return list;
 	}
 	
 	public static ModItem create(final Element element) {
-		final var handler = HANDLER_MAP.getOrDefault(element.getTagName(), fallbackBuilder);
+		var name = element.getTagName();
+		var handler = HANDLER_MAP.getOrDefault(name, fallbackBuilder);
 		
 		return handler.handle(element);
 	}
@@ -105,11 +117,11 @@ public final class ModItemBuilder {
 			innerPath = path;
 		}
 		
-		final var fullPath = Path.of(innerPath);
-		final var name = fullPath.getFileName().toString();
-		final var parent = fullPath.getParent();
-		final var xmlFile = Util.modXmlFile(name, mod.id);
-		final var fullFinal = prefix + (parent != null ? Util.join(parent.toString(), xmlFile) : xmlFile);
+		var fullPath = Path.of(innerPath);
+		var name = fullPath.getFileName().toString();
+		var parent = fullPath.getParent();
+		var xmlFile = Util.modXmlFile(name, mod.id);
+		var fullFinal = prefix + (parent != null ? Util.join(parent.toString(), xmlFile) : xmlFile);
 		return deepCopy(src, fullFinal);
 	}
 	

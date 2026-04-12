@@ -2,6 +2,7 @@ package com.nukuhack.modforge.backend;
 
 import com.nukuhack.modforge.backend.model.I;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.function.Predicate;
  * all public methods on {@code ItemType} are unaffected.
  */
 @Slf4j
+@AllArgsConstructor
 public enum ItemEntry {
 	
 	// ── Weapons ─────────────────────────────────────────────────────────────
@@ -98,7 +100,11 @@ public enum ItemEntry {
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", "perk2perk_exclusivitys", true),
 	
 	// ── Storm ────────────────────────────────────────────────────────────────
-	STORM(I.Storm.class, "id", "storm", "storm", "storm", true);
+	STORM(I.Storm.class, "id", "storm", "storm", "storm", true),
+	// ── Tree-structured items ────────────────────────────────────────────
+	INVENTORY_PRESET(I.InventoryPreset.class, "Name", "InventoryPreset", "InventoryPreset", "InventoryPresets", true, true),
+	
+	BEHAVIOR_TREE(I.BehaviorTree.class, "name", "behaviortrees", "BehaviorTree", "BehaviorTrees", true, true);
 	
 	// ────────────────────────────────────────────────────────────────────────
 	// Inner data
@@ -144,17 +150,13 @@ public enum ItemEntry {
 	 */
 	public final boolean showInDisplay;
 	
-	// ────────────────────────────────────────────────────────────────────────
-	// Constructors
-	// ────────────────────────────────────────────────────────────────────────
+	/** Whether children of the root element should be parsed as a nested XmlNode tree. */
+	public final boolean isTree;
 	
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String xmlObjName, String parentName, boolean showInDisplay) {
-		this.clazz = clazz;
-		this.idKey = idKey;
-		this.fileName = fileName;
-		this.showInDisplay = showInDisplay;
-		this.parentName = parentName;
-		this.xmlObjName = xmlObjName;
+	// Update the constructor signature:
+	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName,
+			  String xmlObjName, String parentName, boolean showInDisplay) {
+		this(clazz, idKey, fileName, xmlObjName, parentName, showInDisplay, false);
 	}
 	
 	public static ItemEntry forClass(Class<? extends ModItem> clazz) {
