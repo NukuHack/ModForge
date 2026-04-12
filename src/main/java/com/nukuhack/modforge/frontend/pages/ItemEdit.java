@@ -413,7 +413,7 @@ public class ItemEdit extends BaseEditPage {
 		T val = extractValue(comp, attr);
 		if (val != null) {
 			currentItem.removeAttribute(attr);
-			currentItem.addAttribute(attr.deepClone(val));
+			currentItem.addAttribute(attr.withValue(val));
 		}
 	}
 	

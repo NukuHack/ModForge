@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
@@ -799,17 +800,51 @@ public class E {
 		int getValue();
 	}
 	
-	@NoArgsConstructor(access = AccessLevel.PRIVATE)
-	public static final class Enums {
+	@UtilityClass
+	public class Enums {
 		private static final Map<Class<?>, Map<Integer, Enum<?>>> CACHE = new ConcurrentHashMap<>();
 		
-		@SuppressWarnings("unchecked")
-		public static <E extends Enum<E> & ValueEnum> E fromValue(Class<E> enumClass, int value) {
-			return (E) CACHE.computeIfAbsent(enumClass, Enums::buildLookup).get(value);
+		/**
+		 * Type-safe version — use this when you have the concrete enum class available at compile time.
+		 * e.g. Enums.fromValue(WeaponSubClass.class, 4)
+		 */
+		public <E extends Enum<E> & ValueEnum> E fromValue(Class<E> enumClass, int value) {
+			Map<Integer, Enum<?>> lookup = CACHE.computeIfAbsent(enumClass, Enums::buildLookup);
+			Enum<?> result = lookup.get(value);
+			if (result == null) {
+				throw new IllegalArgumentException(
+						"No enum constant with value " + value + " in " + enumClass.getSimpleName()
+				);
+			}
+			return enumClass.cast(result);
+		}
+		
+		/**
+		 * Raw version — use this when the class is only known at runtime (e.g. from a variable).
+		 * e.g. Enums.fromValueRaw(someClass, 4)
+		 */
+		public Enum<?> fromValueRaw(Class<?> enumClass, int value) {
+			if (!enumClass.isEnum()) {
+				throw new IllegalArgumentException(enumClass + " is not an enum class");
+			}
+			if (!ValueEnum.class.isAssignableFrom(enumClass)) {
+				throw new IllegalArgumentException(enumClass + " does not implement ValueEnum");
+			}
+			return fromValueI(enumClass.asSubclass(Enum.class), value);
+		}
+		private <E extends Enum<E>> E fromValueI(Class<E> enumClass, int value) {
+			Map<Integer, Enum<?>> lookup = CACHE.computeIfAbsent(enumClass, Enums::buildLookup);
+			Enum<?> result = lookup.get(value);
+			if (result == null) {
+				throw new IllegalArgumentException(
+						"No enum constant with value " + value + " in " + enumClass.getSimpleName()
+				);
+			}
+			return enumClass.cast(result);
 		}
 		
 		@SuppressWarnings("unchecked")
-		private static Map<Integer, Enum<?>> buildLookup(Class<?> enumClass) {
+		private Map<Integer, Enum<?>> buildLookup(Class<?> enumClass) {
 			Map<Integer, Enum<?>> map = new HashMap<>();
 			for (Enum<?> e : ((Class<? extends Enum<?>>) enumClass).getEnumConstants()) {
 				int val = ((ValueEnum) e).getValue();

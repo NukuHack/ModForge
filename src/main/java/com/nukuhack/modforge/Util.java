@@ -2,8 +2,7 @@ package com.nukuhack.modforge;
 
 import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.util.IOUtil;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -18,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -26,48 +26,48 @@ import java.util.stream.Collectors;
  * Utility class providing common file operations, path handling, XML/JSON escaping,
  * PAK file packing, and cross-platform directory utilities for the ModForge application.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
+@UtilityClass
 public final class Util {
 	// ================================================================================
 	// CONSTANTS
 	// ================================================================================
 	
 	/** Application name used for config directories and UI display */
-	public static final String APP_NAME = "ModForge";
+	public final String APP_NAME = "ModForge";
 	
 	/** Operating system name (lowercase) for cross-platform detection */
-	public static final String os = System.getProperty("os.name").toLowerCase();
+	public final String os = System.getProperty("os.name").toLowerCase();
 	
-	public final static String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-	public final static String STORM_HEADER = "<!DOCTYPE storm SYSTEM \"storm.dtd\">";
+	public final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+	public final String STORM_HEADER = "<!DOCTYPE storm SYSTEM \"storm.dtd\">";
 	
 	/** Username cross-platform */
-	public static final String username;
+	public final String username;
 	/** Main game tables PAK file containing game data tables */
-	public static final String TABLES = "Tables.pak";
+	public final String TABLES = "Tables.pak";
 	
 	/** Storm engine PAK file containing core engine resources */
-	public static final String STORM = "Storm.pak";
+	public final String STORM = "Storm.pak";
 	/** Standard compression/archive format extension for game files */
-	public static final String COMP_FORMAT = ".pak";
+	public final String COMP_FORMAT = ".pak";
 	/** Standard data file format extension for XML configuration files */
-	public static final String DATA_FORMAT = ".xml";
+	public final String DATA_FORMAT = ".xml";
 	/** Icons and UI graphics PAK file */
-	public static final String ICONS = "IPL_GameData.pak";
+	public final String ICONS = "IPL_GameData.pak";
 	/** Directory name for localization/language files */
-	public static final String LOCALIZATION_DIR = "Localization";
+	public final String LOCALIZATION_DIR = "Localization";
 	
 	/** Suffix added to language names for localization PAK files (e.g., "en_xml") */
-	public static final String LOCALIZATION_EXTRA = "_xml";
+	public final String LOCALIZATION_EXTRA = "_xml";
 	/** Main game data directory containing core game assets */
-	public static final String DATA_DIR = "Data";
+	public final String DATA_DIR = "Data";
 	/** Directory containing game libraries/dependencies */
-	public static final String LIBS_DIR = "Libs";
+	public final String LIBS_DIR = "Libs";
 	/** Directory containing game table definitions */
-	public static final String TABLES_DIR = "Tables";
+	public final String TABLES_DIR = "Tables";
 	/** Root directory for all mod installations */
-	public static final String MODS_DIR = "Mods";
+	public final String MODS_DIR = "Mods";
 	
 	
 	static {
@@ -88,7 +88,7 @@ public final class Util {
 	 * @return String containing all text from the stream
 	 * @throws IOException If an I/O error occurs
 	 */
-	public static String readAllText(InputStream is) throws IOException {
+	public String readAllText(InputStream is) throws IOException {
 		return new String(is.readAllBytes(), StandardCharsets.UTF_8);
 	}
 	
@@ -98,13 +98,13 @@ public final class Util {
 	 * @param s Input string (maybe null or empty)
 	 * @return String with first letter capitalized, or original if null/empty
 	 */
-	public static String capitalStart(String s) {
+	public String capitalStart(String s) {
 		if (s == null || s.isEmpty())
 			return s;
 		return Character.toUpperCase(s.charAt(0)) + s.substring(1);
 	}
 	
-	public static String capitalStartOnly(String s) {
+	public String capitalStartOnly(String s) {
 		if (s == null || s.isEmpty())
 			return s;
 		return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT);
@@ -117,11 +117,11 @@ public final class Util {
 	 * @param root Base game installation directory
 	 * @return Path to the Data directory
 	 */
-	public static Path dataDir(String root) {
+	public Path dataDir(String root) {
 		return joinP(root, DATA_DIR);
 	}
 	
-	public static Path dataDir(Path root) {
+	public Path dataDir(Path root) {
 		return joinP(root, DATA_DIR);
 	}
 	
@@ -133,7 +133,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Path to the mod's localization directory
 	 */
-	public static Path modLocalDir(String root, String modId) {
+	public Path modLocalDir(String root, String modId) {
 		return joinP(modFolder(root, modId), LOCALIZATION_DIR);
 	}
 	
@@ -145,7 +145,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Path to staging directory
 	 */
-	public static Path modStaging(String gameDir, String modId) {
+	public Path modStaging(String gameDir, String modId) {
 		return Path.of(Util.modData(gameDir, modId), "_stage");
 	}
 	
@@ -157,7 +157,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Path to Storm staging directory
 	 */
-	public static Path modStormStaging(String gameDir, String modId) {
+	public Path modStormStaging(String gameDir, String modId) {
 		return Path.of(Util.modStaging(gameDir, modId).toString(), DATA_DIR, "_Storm");
 	}
 	
@@ -169,7 +169,7 @@ public final class Util {
 	 * @param lang Target language
 	 * @return PAK file path string for the language localization
 	 */
-	public static String locImport(String root, Language lang) {
+	public String locImport(String root, Language lang) {
 		return join(root, LOCALIZATION_DIR, lang.getName() + LOCALIZATION_EXTRA);
 	}
 	
@@ -182,7 +182,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Path to the localization XML export file
 	 */
-	public static Path locExport(String root, Language lang, String modId) {
+	public Path locExport(String root, Language lang, String modId) {
 		return joinP(modLocalDir(root, modId), lang.getName() + LOCALIZATION_EXTRA, modXmlForce("text", modId));
 	}
 	
@@ -194,7 +194,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Formatted filename: {stem}__{modId}.xml
 	 */
-	public static String modXmlFile(String fileName, String modId) {
+	public String modXmlFile(String fileName, String modId) {
 		final int delimit = fileName.indexOf("__");
 		final String nameFinal;
 		if (delimit != - 1)
@@ -214,7 +214,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Formatted XML filename
 	 */
-	private static String modXmlForce(String fileName, String modId) {
+	private String modXmlForce(String fileName, String modId) {
 		return fileName + "__" + modId + DATA_FORMAT;
 	}
 	
@@ -226,7 +226,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Path string to mod's root folder
 	 */
-	public static String modFolder(String root, String modId) {
+	public String modFolder(String root, String modId) {
 		return join(root, MODS_DIR, modId);
 	}
 	
@@ -237,7 +237,7 @@ public final class Util {
 	 * @param root Base game installation directory
 	 * @return Path to the Mods directory
 	 */
-	public static Path modFolder(String root) {
+	public Path modFolder(String root) {
 		return joinP(root, MODS_DIR);
 	}
 	
@@ -249,7 +249,7 @@ public final class Util {
 	 * @param modId Unique identifier for the mod
 	 * @return Path string to mod's data directory
 	 */
-	public static String modData(String root, String modId) {
+	public String modData(String root, String modId) {
 		return join(root, MODS_DIR, modId, DATA_DIR);
 	}
 	
@@ -260,7 +260,7 @@ public final class Util {
 	 * @param root Base game installation directory
 	 * @return Set of PAK file paths for all languages
 	 */
-	public static Set<String> allLocPaths(String root) {
+	public Set<String> allLocPaths(String root) {
 		return Arrays.stream(Language.values()).map(l -> locImport(root, l)).collect(Collectors.toSet());
 	}
 	
@@ -271,7 +271,7 @@ public final class Util {
 	 * @param gameDir Game installation directory
 	 * @return Path to the icons PAK file
 	 */
-	public static Path icons(String gameDir) {
+	public Path icons(String gameDir) {
 		return Util.joinP(dataDir(gameDir), ICONS);
 	}
 	
@@ -284,7 +284,7 @@ public final class Util {
 	 * @example Windows: "C:\Users\name\file.txt"
 	 * @example Linux: "/home/name/file.txt"
 	 */
-	public static String join(String... parts) {
+	public String join(String... parts) {
 		if (parts.length < 1)
 			return "";
 		return String.join(File.separator, parts);
@@ -296,7 +296,7 @@ public final class Util {
 	 * @param parts Variable number of path segments
 	 * @return Path object representing the joined path
 	 */
-	public static Path joinP(String... parts) {
+	public Path joinP(String... parts) {
 		if (parts.length < 1)
 			return Path.of("");
 		else if (parts.length == 1)
@@ -311,7 +311,7 @@ public final class Util {
 	 * @param parts Additional path segments to append
 	 * @return Combined Path object
 	 */
-	public static Path joinP(Path base, String... parts) {
+	public Path joinP(Path base, String... parts) {
 		return Path.of(base.toString(), join(parts));
 	}
 	
@@ -323,7 +323,7 @@ public final class Util {
 	 * @param outFile Destination file path
 	 * @throws IOException If file writing fails
 	 */
-	public static void writeXml(String inp, Path outFile) throws IOException {
+	public void writeXml(String inp, Path outFile) throws IOException {
 		Files.createDirectories(outFile.getParent());
 		inp = removeBlankLines(inp);
 		if (! inp.startsWith(XML_HEADER))
@@ -335,7 +335,7 @@ public final class Util {
 		}
 	}
 	
-	public static String removeBlankLines(String inp) {
+	public String removeBlankLines(String inp) {
 		return inp.lines().filter(Predicate.not(String::isBlank)).collect(Collectors.joining("\n"));
 	}
 	
@@ -346,7 +346,7 @@ public final class Util {
 	 * @param s Input string
 	 * @return JSON-escaped string, or empty string if input is null
 	 */
-	public static String escapeJson(String s) {
+	public String escapeJson(String s) {
 		if (s == null)
 			return "";
 		final var sb = new StringBuilder();
@@ -377,7 +377,7 @@ public final class Util {
 	 * @param s Input string (may be null)
 	 * @return HTML-escaped string, or empty string if input is null
 	 */
-	public static String escHtml(String s) {
+	public String escHtml(String s) {
 		if (s == null)
 			return "";
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
@@ -389,7 +389,7 @@ public final class Util {
 	 * @param s Input string
 	 * @return XML-escaped string, or empty string if input is null
 	 */
-	public static String escapeXml(String s) {
+	public String escapeXml(String s) {
 		if (s == null)
 			return "";
 		// theoretically escapeHtml could work, but I made this just in case
@@ -402,7 +402,7 @@ public final class Util {
 	 * @param s XML-escaped string (maybe null)
 	 * @return Unescaped string, or empty string if input is null
 	 */
-	public static String unescapeXml(String s) {
+	public String unescapeXml(String s) {
 		if (s == null)
 			return "";
 		return s.replace("&nbsp;", " ").replace("&apos;", "'").replace("&quot;", "\"").replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&");
@@ -413,7 +413,7 @@ public final class Util {
 	 *
 	 * @param text Text to copy to clipboard
 	 */
-	public static void copyText(String text) {
+	public void copyText(String text) {
 		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
 	}
 	
@@ -423,26 +423,26 @@ public final class Util {
 	 * @param entryName ZIP entry path (e.g., "folder/file.txt")
 	 * @return Filename without path or extension (e.g., "file")
 	 */
-	public static String stemOf(String entryName) {
+	public String stemOf(String entryName) {
 		var slash = entryName.lastIndexOf('/');
 		var filename = slash >= 0 ? entryName.substring(slash + 1) : entryName;
 		var dot = filename.lastIndexOf('.');
 		return (dot > 0 ? filename.substring(0, dot) : filename).toLowerCase(Locale.ROOT);
 	}
 	
-	public static CompletableFuture<String> pickFileAsync() {
+	public CompletableFuture<String> pickFileAsync() {
 		return pickAsync("Pick a file", JFileChooser.FILES_ONLY, null, "yes");
 	}
 	
-	public static CompletableFuture<String> pickFileAsync(String title, String extension, String description) {
+	public CompletableFuture<String> pickFileAsync(String title, String extension, String description) {
 		return pickAsync(title, JFileChooser.FILES_ONLY, extension, description);
 	}
 	
-	public static CompletableFuture<String> pickFolderAsync() {
+	public CompletableFuture<String> pickFolderAsync() {
 		return pickAsync("Select target folder", JFileChooser.DIRECTORIES_ONLY, null, "yes");
 	}
 	
-	public static CompletableFuture<String> pickFolderAsync(String title, String extension, String description) {
+	public CompletableFuture<String> pickFolderAsync(String title, String extension, String description) {
 		return pickAsync(title, JFileChooser.DIRECTORIES_ONLY, extension, description);
 	}
 	
@@ -451,7 +451,7 @@ public final class Util {
 	 *
 	 * @return CompletableFuture that completes with selected folder path, or null if canceled
 	 */
-	public static CompletableFuture<String> pickAsync(String title, int mode, String extension, String description) {
+	public CompletableFuture<String> pickAsync(String title, int mode, String extension, String description) {
 		var future = new CompletableFuture<String>();
 		SwingUtilities.invokeLater(() -> {
 			var chooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
@@ -475,7 +475,7 @@ public final class Util {
 	 * @param w Parent JPanel for error dialogs
 	 * @param dirPath Directory path to open
 	 */
-	public static void openDirectory(JPanel w, String dirPath) {
+	public void openDirectory(JPanel w, String dirPath) {
 		boolean isOpen = false;
 		try {
 			IOUtil.openDirectory(dirPath);
@@ -503,7 +503,7 @@ public final class Util {
 	 * @example macOS: ~/Library/Application Support/ModForge
 	 * @example Linux: ~/.config/modforge
 	 */
-	public static Path getConfigDir() {
+	public Path getConfigDir() {
 		var home = System.getProperty("user.home");
 		if (os.contains("win")) {
 			// Windows: %APPDATA%\ {APP_NAME}
@@ -530,7 +530,7 @@ public final class Util {
 	 * Low n bits of nanoTime 32 bit → 8 hex chars, e.g. "a3f9c012"
 	 * @param n number of bits to use (must be multiple of 4, max 32)
 	 */
-	public static String getRandomString(int n) {
+	public String getRandomString(int n) {
 		if (n <= 0 || n > 32) {
 			throw new IllegalArgumentException("n must be between 1 and 32");
 		}
@@ -545,5 +545,9 @@ public final class Util {
 		long value = nanoTime & mask;
 		
 		return String.format("%0" + chars + "x", value);
+	}
+	
+	public UUID randomUUID() {
+		return UUID.randomUUID();
 	}
 }

@@ -36,7 +36,7 @@ public final class ConfigService {
 	// ==================================================================
 	
 	public void init() {
-		Singleton.INSTANCE.getGame().setConfig(loadGameConfig());
+		Singleton.getGame().setConfig(loadGameConfig());
 	}
 	
 	/**

@@ -1,10 +1,12 @@
 package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.Singleton;
+import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ItemType;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -18,10 +20,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import static com.nukuhack.modforge.Util.copyText;
 import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 @Slf4j
+@ExtensionMethod({ Util.class })
 public class ItemsPage extends BasePage {
 	
 	private final List<ModItem> underlyingItems = new ArrayList<>();
@@ -140,7 +142,7 @@ public class ItemsPage extends BasePage {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2 && selectedItem != null) {
-					copyText(selectedItem.getId());
+					Util.copyText(selectedItem.getId());
 					window.snackbar.show("ui_copied_id", BarManager.Type.INFO, selectedItem.getId());
 				}
 			}
@@ -174,10 +176,8 @@ public class ItemsPage extends BasePage {
 			underlyingItems.addAll(mod.get().getItems());
 		} else {
 			
-			var game = Singleton.INSTANCE.getGame();
-			if (game != null) {
-				underlyingItems.addAll(game.getItems());
-			}
+			var game = Singleton.getGame();
+			underlyingItems.addAll(game.getItems());
 		}
 		underlyingItems.sort(Comparator.comparing(ModItem::getId, String.CASE_INSENSITIVE_ORDER));
 	}

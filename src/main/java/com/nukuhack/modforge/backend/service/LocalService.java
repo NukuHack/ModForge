@@ -223,7 +223,7 @@ public final class LocalService {
 		var gameDir = userConfig.getGameDirectory();
 		if (gameDir.isBlank())
 			return;
-		final var game = Singleton.INSTANCE.getGame();
+		final var game = Singleton.getGame();
 		try {
 			game.setLocal(loadLocalization(gameDir));
 		} catch (Exception ex) {
@@ -256,17 +256,17 @@ public final class LocalService {
 	
 	/** Resolve the display name of a base-game item. */
 	public String getName(ModItem item) {
-		return getName(item, Singleton.INSTANCE.getGame());
+		return getName(item, Singleton.getGame());
 	}
 	
 	/** Resolve the description of a base-game item. */
 	public String getDescription(ModItem item) {
-		return getDescription(item, Singleton.INSTANCE.getGame());
+		return getDescription(item, Singleton.getGame());
 	}
 	
 	/** Resolve the lore description of a base-game item. */
 	public String getLoreDescription(ModItem item) {
-		return getLoreDescription(item, Singleton.INSTANCE.getGame());
+		return getLoreDescription(item, Singleton.getGame());
 	}
 	
 	/**
@@ -276,7 +276,7 @@ public final class LocalService {
 	public String resolve(String key, final ModData mod, final Language lang) {
 		if (key == null || (key = key.trim()).isEmpty())
 			return null;
-		final var game = Singleton.INSTANCE.getGame();
+		final var game = Singleton.getGame();
 		// 1. Mod's own strings
 		if (mod != game) {
 			final var modMap = mod.getLang(lang);
@@ -300,7 +300,7 @@ public final class LocalService {
 	 * Look up a raw localization key in the base-game strings only.
 	 */
 	public String resolve(String key) {
-		return resolve(key, Singleton.INSTANCE.getGame());
+		return resolve(key, Singleton.getGame());
 	}
 	
 	/**
@@ -314,7 +314,7 @@ public final class LocalService {
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {
 		// Pull the two lang maps once – either may be null if never populated.
-		final var game = Singleton.INSTANCE.getGame();
+		final var game = Singleton.getGame();
 		final var modMap = (mod != game) ? mod.getLang(userConfig.getLanguage()) : new HashMap<String, String>();
 		final var baseMap = game.getLang(userConfig.getLanguage());
 		

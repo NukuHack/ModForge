@@ -425,7 +425,7 @@ public final class ItemService {
 		var gameDir = userConfig.getGameDirectory();
 		if (gameDir.isBlank())
 			return;
-		final var game = Singleton.INSTANCE.getGame();
+		final var game = Singleton.getGame();
 		try {
 			game.setItems(loadItems(Path.of(gameDir, "Data")));
 			log.info("XML read done items={}", game.getItems().size());

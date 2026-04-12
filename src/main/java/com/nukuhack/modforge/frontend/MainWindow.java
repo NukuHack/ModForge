@@ -80,7 +80,7 @@ public class MainWindow extends JFrame {
 				return Arrays.toString(args);
 		}
 		
-		var lang = Singleton.INSTANCE.getRegistry().userConfig.getLanguage();
+		var lang = Singleton.getRegistry().userConfig.getLanguage();
 		var langMap = Singleton.getLangMap();
 		var engMap = langMap.get(E.Language.ENGLISH);
 		var fMap = langMap.get(lang);

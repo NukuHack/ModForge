@@ -10,6 +10,7 @@ import com.nukuhack.modforge.backend.service.ModItemBuilder;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -23,24 +24,13 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.nukuhack.modforge.Util.copyText;
-import static com.nukuhack.modforge.Util.escHtml;
 import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 @Slf4j
+@ExtensionMethod({ Util.class })
 public abstract class BasePage extends JPanel {
 	
-	private static final String[] DEPTH_ACCENTS = { "#89b4fa",
-			
-			"#cba6f7",
-			
-			"#89dceb",
-			
-			"#a6e3a1",
-			
-			"#f9e2af",
-		
-	};
+	private static final String[] DEPTH_ACCENTS = { "#89b4fa", "#cba6f7", "#89dceb", "#a6e3a1", "#f9e2af", };
 	protected final MainWindow window;
 	protected final ExecutorService executor = Executors.newSingleThreadExecutor();
 	protected final JComboBox<String> modSelector = new JComboBox<>(new DefaultComboBoxModel<>());
@@ -176,15 +166,15 @@ public abstract class BasePage extends JPanel {
 		String accentColor = DEPTH_ACCENTS[Math.min(depth, DEPTH_ACCENTS.length - 1)];
 		
 		html.append("<div style='display:flex;align-items:center;margin-bottom:4px;'>");
-		html.append("<b style='color:").append(accentColor).append(";font-size:").append(nested ? "11" : "14").append("px;'>").append(escHtml(item.getId())).append("</b>");
+		html.append("<b style='color:").append(accentColor).append(";font-size:").append(nested ? "11" : "14").append("px;'>").append(Util.escHtml(item.getId())).append("</b>");
 		if (! nested)
-			html.append("<br/><span style='background:#313244;color:#a6e3a1;font-size:9px;padding:2px 6px;border-radius:3px;margin-left:8px;'>").append(escHtml(item.getClass().getSimpleName())).append("</span>");
+			html.append("<br/><span style='background:#313244;color:#a6e3a1;font-size:9px;padding:2px 6px;border-radius:3px;margin-left:8px;'>").append(Util.escHtml(item.getClass().getSimpleName())).append("</span>");
 		html.append("</div>");
 		
 		if (! nested && item.getPath() != null && ! item.getPath().isBlank()) {
 			html.append("<div style='background:#1e1e2e;padding:8px;border-radius:4px;margin:8px 0;border-left:3px solid ").append(accentColor).append(";'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;'>📁 ").append(getLocalText("ui_path")).append("</span><br/>");
-			html.append("<span style='color:#cdd6f4;font-size:11px;font-family:monospace;'>").append(escHtml(item.getPath())).append("</span>");
+			html.append("<span style='color:#cdd6f4;font-size:11px;font-family:monospace;'>").append(Util.escHtml(item.getPath())).append("</span>");
 			html.append("</div>");
 		}
 		
@@ -219,7 +209,7 @@ public abstract class BasePage extends JPanel {
 			for (var linkedItem : item.getLinkedItems()) {
 				html.append("<div style='margin:4px 0;padding:4px 8px;background:#1e1e2e;border-radius:3px;'>");
 				html.append("<span style='color:#89dceb;font-size:10px;font-family:monospace;'>→ </span>");
-				html.append("<span style='color:#cdd6f4;font-size:10px;'>").append(escHtml(linkedItem.toString())).append("</span>");
+				html.append("<span style='color:#cdd6f4;font-size:10px;'>").append(Util.escHtml(linkedItem.toString())).append("</span>");
 				html.append("</div>");
 			}
 			html.append("</div></div>");
@@ -272,20 +262,20 @@ public abstract class BasePage extends JPanel {
 	}
 	
 	private static void formatAttributeValue(StringBuilder html, Attribute attr, int depth) {
-		if (attr instanceof Attribute.BuffParamListAttribute) {
+		if (attr instanceof Attribute.BuffParamListAttribute buff) {
 			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
-			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(Util.escHtml(buff.getName())).append("</span>");
 			html.append("</div>");
 			
 			html.append("<div style='margin-left:2px;'>");
 			html.append("<span style='color:#f38ba8;font-size:10px;font-family:monospace;'>⚡ ");
-			html.append(escHtml(attr.serialize())).append("</span>");
+			html.append(Util.escHtml(buff.getNiceName())).append("</span>");
 			
 		} else if (attr instanceof Attribute.BooleanAttribute) {
 			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
-			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(Util.escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
 			html.append("<div style='margin-left:2px;'>");
@@ -295,40 +285,40 @@ public abstract class BasePage extends JPanel {
 		} else if (attr instanceof Attribute.DoubleAttribute) {
 			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
-			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(Util.escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
 			html.append("<div style='margin-left:2px;'>");
-			html.append("<span style='color:#89b4fa;font-size:10px;font-family:monospace;'>").append(escHtml(attr.serialize())).append("</span>");
+			html.append("<span style='color:#89b4fa;font-size:10px;font-family:monospace;'>").append(Util.escHtml(attr.serialize())).append("</span>");
 			
 		} else if (attr instanceof Attribute.UUIDAttribute) {
 			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
-			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(Util.escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
 			html.append("<div style='margin-left:2px;'>");
-			html.append("<span style='color:#cba6f7;font-size:10px;font-family:monospace;'>").append(escHtml(attr.serialize())).append("</span>");
+			html.append("<span style='color:#cba6f7;font-size:10px;font-family:monospace;'>").append(Util.escHtml(attr.serialize())).append("</span>");
 			
 		} else if (attr instanceof Attribute.ListAttribute) {
 			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
-			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(Util.escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
 			html.append("<div style='margin-left:2px;'>");
 			html.append("<span style='color:#94e2d5;font-size:10px;'>[</span>");
-			html.append("<span style='color:#cdd6f4;font-size:10px;'>").append(escHtml(attr.serialize())).append("</span>");
+			html.append("<span style='color:#cdd6f4;font-size:10px;'>").append(Util.escHtml(attr.serialize())).append("</span>");
 			html.append("<span style='color:#94e2d5;font-size:10px;'>]</span>");
 			
-		} else if (attr instanceof Attribute.EnumAttribute) {
+		} else if (attr instanceof Attribute.EnumAttribute en) {
 			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
-			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(Util.escHtml(en.getName())).append("</span>");
 			html.append("</div>");
 			
 			html.append("<div style='margin-left:2px;'>");
-			html.append("<span style='color:#f9e2af;font-size:10px;font-family:monospace;'>").append(escHtml(attr.serialize())).append("</span>");
+			html.append("<span style='color:#f9e2af;font-size:10px;font-family:monospace;'>").append(Util.escHtml(en.getValue().name())).append("</span>");
 			
 		} else if (attr instanceof Attribute.XmlNodeAttribute xmlAttr) {
 			
@@ -338,12 +328,12 @@ public abstract class BasePage extends JPanel {
 		} else {
 			
 			html.append("<div style='display:flex;align-items:center;margin-bottom:3px;'>");
-			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(escHtml(attr.getName())).append("</span>");
+			html.append("<span style='color:#6c6f85;font-size:9px;font-family:monospace;'>").append(Util.escHtml(attr.getName())).append("</span>");
 			html.append("</div>");
 			
 			html.append("<div style='margin-left:2px;'>");
 			
-			html.append("<span style='color:#a6e3a1;font-size:10px;'>").append(escHtml(attr.serialize())).append("</span>");
+			html.append("<span style='color:#a6e3a1;font-size:10px;'>").append(Util.escHtml(attr.serialize())).append("</span>");
 		}
 		html.append("</div>");
 	}
@@ -425,7 +415,7 @@ public abstract class BasePage extends JPanel {
 		copyId.addActionListener(e -> {
 			var item = itemSupplier.get();
 			if (item != null) {
-				copyText(item.getId());
+				Util.copyText(item.getId());
 				window.snackbar.show("ui_copied_id", BarManager.Type.INFO, item.getId());
 			}
 		});
@@ -435,7 +425,7 @@ public abstract class BasePage extends JPanel {
 		copyAll.addActionListener(e -> {
 			var item = itemSupplier.get();
 			if (item != null) {
-				copyText(item.details());
+				Util.copyText(item.details());
 				window.snackbar.show("ui_copied_all_details", BarManager.Type.INFO);
 			}
 		});

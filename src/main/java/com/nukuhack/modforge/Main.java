@@ -50,16 +50,16 @@ public class Main {
 			splash.setVisible(true);
 			
 			// Boot services off the EDT
-			CompletableFuture.runAsync(() -> Singleton.INSTANCE.setRegistry(new ServiceRegistry())).whenComplete((v, ex) -> SwingUtilities.invokeLater(() -> {
+			CompletableFuture.runAsync(() -> Singleton.setRegistry(new ServiceRegistry())).whenComplete((v, ex) -> SwingUtilities.invokeLater(() -> {
 				splash.dispose();
 				if (ex != null) {
 					JOptionPane.showMessageDialog(null, "Startup error:\n" + ex.getMessage(), "ModForge – Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				//  should be made a bit nicer, for now most of the stuff is stored inside a String - should make data storage for more specific attributes
-				final var registry = Singleton.INSTANCE.getRegistry();
+				final var registry = Singleton.getRegistry();
 				final MainWindow window = new MainWindow(registry);
-				Singleton.INSTANCE.setMainWindow(window);
+				Singleton.setMainWindow(window);
 				window.setVisible(true);
 			}));
 		});

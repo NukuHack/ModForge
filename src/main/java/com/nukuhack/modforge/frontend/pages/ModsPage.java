@@ -159,7 +159,7 @@ public class ModsPage extends BasePage {
 			versionLabel.setText("v" + (mod.modVersion != null ? mod.modVersion : "?"));
 			authorLabel.setText(mod.author != null ? mod.author : "ui_unknown");
 			
-			boolean isExternal = mod.author.isBlank() || ! mod.author.equals(Singleton.INSTANCE.getRegistry().userConfig.getUserName());
+			boolean isExternal = mod.author.isBlank() || ! mod.author.equals(Singleton.getRegistry().userConfig.getUserName());
 			if (isExternal) {
 				statusLabel.setText(MainWindow.getLocalText("ui_external"));
 				statusLabel.setForeground(Color.YELLOW);

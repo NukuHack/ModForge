@@ -3,6 +3,9 @@ package com.nukuhack.modforge.backend.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 @RequiredArgsConstructor
 public enum BuffParamMap {
@@ -397,6 +400,17 @@ public enum BuffParamMap {
 	// fvh - Carnival - Eating fruits and vegetables restores 10 more health over the next 24 hours => fvh+10
 	// lip - Bone shield - Prevents the first bone fracture you would suffer in the next 24 hours => lip+1 (can multiple fractures be negated here?)
 	// sxm - Apprentice - You receive a 20% experience bonus from trainers over the next 24 hours => sxm*1.2
+	
+	private static final Map<String, BuffParamMap> BY_KEY = new HashMap<>();
+	
+	static {
+		for (BuffParamMap e : values()) {
+			BY_KEY.put(e.key, e);
+		}
+	}
+	public static BuffParamMap fromKey(String key) {
+		return BY_KEY.get(key);
+	}
 	
 	private final String key;
 	private final String name;

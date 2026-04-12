@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import com.nukuhack.modforge.backend.model.E.ValueEnum;
+import com.nukuhack.modforge.backend.model.E.Enums;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -20,6 +22,40 @@ public final class Attributes {
 	
 	static {
 		TYPE_MAP.put("buff_params", Attribute.BuffParam.class);
+		TYPE_MAP.put("buff_ai_tag_id", E.BuffAiTag.class);
+		TYPE_MAP.put("buff_class_id", E.BuffClass.class);
+		TYPE_MAP.put("buff_exclusivity_id", E.BuffExclusivity.class);
+		TYPE_MAP.put("buff_family_id", E.BuffFamily.class);
+		TYPE_MAP.put("buff_lifetime_id", E.BuffLifetime.class);
+		TYPE_MAP.put("buff_ui_type_id", E.BuffUiType.class);
+		TYPE_MAP.put("buff_ui_visibility_id", E.BuffUiVisibility.class);
+		TYPE_MAP.put("stat_selector", E.StatSelector.class);
+		TYPE_MAP.put("exclude_in_game_mode", E.ExcludeInGameMode.class);
+		TYPE_MAP.put("skill_selector", E.SkillSelector.class);
+		TYPE_MAP.put("visibility", E.Visibility.class);
+		TYPE_MAP.put("ArmorArchetype", E.ArmorArchetype.class);
+		TYPE_MAP.put("AmmoClass", E.AmmoClass.class);
+		TYPE_MAP.put("ArmorSurface", E.ArmorSurface.class);
+		TYPE_MAP.put("BodyLayerType", E.BodyLayerType.class);
+		TYPE_MAP.put("Class", E.WeaponClass.class);
+		TYPE_MAP.put("CraftingMaterialSubtype", E.CraftingMaterialSubtype.class);
+		TYPE_MAP.put("CraftingMaterialType", E.CraftingMaterialType.class);
+		TYPE_MAP.put("DiceBadgeSubtype", E.DiceBadgeSubtype.class);
+		TYPE_MAP.put("DiceBadgeType", E.DiceBadgeType.class);
+		TYPE_MAP.put("DocumentClass", E.DocumentClass.class);
+		TYPE_MAP.put("FoodSubtype", E.FoodSubtype.class);
+		TYPE_MAP.put("FoodType", E.FoodType.class);
+		TYPE_MAP.put("ItemCategory", E.ItemCategory.class);
+		TYPE_MAP.put("ItemTag", E.ItemTag.class);
+		TYPE_MAP.put("ItemUiSound", E.ItemUiSound.class);
+		TYPE_MAP.put("KeySubtype", E.KeySubtype.class);
+		TYPE_MAP.put("KeyType", E.KeyType.class);
+		TYPE_MAP.put("MiscSubtype", E.MiscSubtype.class);
+		TYPE_MAP.put("MiscType", E.MiscType.class);
+		TYPE_MAP.put("NpcToolSubtype", E.NpcToolSubtype.class);
+		TYPE_MAP.put("OintmentItemSubtype", E.OintmentItemSubtype.class);
+		TYPE_MAP.put("OintmentItemType", E.OintmentItemType.class);
+		TYPE_MAP.put("SubClass", E.WeaponSubClass.class);
 	}
 	
 	/**
@@ -78,7 +114,13 @@ public final class Attributes {
 			} else if (type == Double.class) {
 				return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
 			} else if (type.isEnum()) {
-				return new Attribute.EnumAttribute(name, Enum.valueOf((Class<? extends Enum>) type, value));
+				int i = 1;
+				try {
+					i = Integer.parseInt(value);
+				} catch (NumberFormatException e) {
+					log.warn("could not parse enum value '{}', falling back to '1'", value, e);
+				}
+				return new Attribute.EnumAttribute(name, Enums.fromValueRaw(type, i));
 			}
 			throw new IllegalArgumentException("Attribute is not a known type");
 		} catch (Exception ex) {

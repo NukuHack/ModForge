@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -21,11 +22,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.nukuhack.modforge.Util.escHtml;
-import static com.nukuhack.modforge.Util.unescapeXml;
 import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 @Slf4j
+@ExtensionMethod({ Util.class })
 public class LocalizationPage extends BasePage {
 	
 	private static final String ALL_ATTR_TYPES = "All Attributes";
@@ -97,8 +97,8 @@ public class LocalizationPage extends BasePage {
 		setStatus(getLocalText("ui_loading"), true);
 		
 		var source = getSelectedMod();
-		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
-		var mod = source.orElseGet(Singleton.INSTANCE::getGame);
+		var lang = getSelectedLang().orElseGet(Singleton.getRegistry().userConfig::getLanguage);
+		var mod = source.orElseGet(Singleton::getGame);
 		
 		executor.submit(() -> {
 			var langMap = mod.getLang(lang);
@@ -425,19 +425,19 @@ public class LocalizationPage extends BasePage {
 		var html = new StringBuilder();
 		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:14px;margin:0;'>");
 		
-		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(unescapeXml(le.langKey))).append("</b>");
+		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(((le.langKey)).unescapeXml().escHtml()).append("</b>");
 		html.append("<hr style='border-color:#313244;margin:8px 0;'/>");
 		
 		if (! le.attrName.isBlank()) {
 			html.append("<div style='margin-bottom:8px;" + "background:#1e1e2e;border-left:3px solid #cba6f7;" + "padding:6px 10px;border-radius:3px;'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(getLocalText("ui_attribute")).append("</span><br/>");
-			html.append("<span style='color:#cba6f7;font-size:11px;'>").append(escHtml(unescapeXml(le.attrName))).append("</span>");
+			html.append("<span style='color:#cba6f7;font-size:11px;'>").append(le.attrName.unescapeXml().escHtml()).append("</span>");
 			html.append("</div>");
 		}
 		
 		html.append("<div style='margin-bottom:10px;" + "background:#1e1e2e;border-left:3px solid #a6e3a1;" + "padding:8px 10px;border-radius:3px;'>");
 		html.append("<span style='color:#6c6f85;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(getLocalText("ui_value")).append("</span><br/>");
-		html.append("<span style='color:#a6e3a1;font-size:13px;'>").append(escHtml(unescapeXml(le.value))).append("</span>");
+		html.append("<span style='color:#a6e3a1;font-size:13px;'>").append(le.value.unescapeXml().escHtml()).append("</span>");
 		html.append("</div>");
 		
 		if (le.item != null) {

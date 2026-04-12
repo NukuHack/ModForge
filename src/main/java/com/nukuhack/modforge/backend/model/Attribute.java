@@ -4,6 +4,7 @@ import com.nukuhack.modforge.backend.model.E.MathOperation;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.With;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -12,7 +13,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public interface Attribute<T> {
-	public static final String INDENT = "  ";
+	String INDENT = "  ";
 	
 	String getName();
 	
@@ -20,9 +21,9 @@ public interface Attribute<T> {
 	
 	Attribute<T> deepClone();
 	
-	Attribute<T> deepClone(T newValue);
-	
 	String serialize();
+	
+	Attribute<T> withValue(T val);
 	
 	
 	@Getter
@@ -37,10 +38,6 @@ public interface Attribute<T> {
 		public String toString() {
 			return name + "=" + value;
 		}
-		
-		public abstract BaseAttribute<T> deepClone();
-		
-		public abstract BaseAttribute<T> deepClone(T newValue);
 		
 		@Override
 		public boolean equals(Object o) {
@@ -68,7 +65,7 @@ public interface Attribute<T> {
 		}
 		
 		@Override
-		public BooleanAttribute deepClone(Boolean newValue) {
+		public BooleanAttribute withValue(Boolean newValue) {
 			return new BooleanAttribute(name, newValue);
 		}
 		
@@ -90,7 +87,7 @@ public interface Attribute<T> {
 		}
 		
 		@Override
-		public DoubleAttribute deepClone(Double newValue) {
+		public DoubleAttribute withValue(Double newValue) {
 			return new DoubleAttribute(name, newValue);
 		}
 		
@@ -121,7 +118,7 @@ public interface Attribute<T> {
 		}
 		
 		@Override
-		public EnumAttribute deepClone(Enum<?> newValue) {
+		public EnumAttribute withValue(Enum<?> newValue) {
 			return new EnumAttribute(name, newValue);
 		}
 		
@@ -143,7 +140,7 @@ public interface Attribute<T> {
 		}
 		
 		@Override
-		public ListAttribute<M> deepClone(List<M> newValue) {
+		public ListAttribute<M> withValue(List<M> newValue) {
 			return new ListAttribute<>(name, deepCloneList(newValue));
 		}
 		
@@ -192,6 +189,10 @@ public interface Attribute<T> {
 		public String serialize() {
 			return String.join(",", value.stream().map(BuffParam::serialize).toList());
 		}
+		
+		public String getNiceName() {
+			return value.stream().map(BuffParam::beautify).collect(Collectors.joining(", "));
+		}
 	}
 	
 	@Slf4j
@@ -206,7 +207,7 @@ public interface Attribute<T> {
 		}
 		
 		@Override
-		public StringAttribute deepClone(String newValue) {
+		public StringAttribute withValue(String newValue) {
 			return new StringAttribute(name, newValue);
 		}
 		
@@ -228,7 +229,7 @@ public interface Attribute<T> {
 		}
 		
 		@Override
-		public UUIDAttribute deepClone(UUID newValue) {
+		public UUIDAttribute withValue(UUID newValue) {
 			return new UUIDAttribute(name, newValue);
 		}
 		
@@ -250,7 +251,7 @@ public interface Attribute<T> {
 		}
 		
 		@Override
-		public XmlNodeAttribute deepClone(XmlNode newValue) {
+		public XmlNodeAttribute withValue(XmlNode newValue) {
 			return new XmlNodeAttribute(name, deepCloneNode(newValue));
 		}
 		
@@ -284,15 +285,17 @@ public interface Attribute<T> {
 	}
 	
 	
-	
 	record XmlNode(String tag, List<Attribute> attributes, List<XmlNode> children) {
 		public boolean isLeaf() {
 			return children.isEmpty();
 		}
+		
 		public int getDepth() {
-			if (children.isEmpty()) return 0;
+			if (children.isEmpty())
+				return 0;
 			return 1 + children.stream().mapToInt(XmlNode::getDepth).max().orElse(0);
 		}
+		
 		public ModItem asItem() {
 			var item = new ModItem.EmptyImpl();
 			item.setId(tag);
@@ -307,25 +310,28 @@ public interface Attribute<T> {
 	 * Simple value object for buff parameters (stat_key op value)
 	 */
 	@Slf4j
-	record BuffParam(String name, MathOperation operation, double value) {
+	record BuffParam(BuffParamMap name, MathOperation operation, double value) {
 		private static final Pattern BUFF_PARAM_REGEX = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");
 		
 		public static BuffParam fromString(String part) {
 			if (part == null || (part = part.trim()).isEmpty())
 				return null;
-			final var m = BUFF_PARAM_REGEX.matcher(part);
+			var m = BUFF_PARAM_REGEX.matcher(part);
 			if (m.find()) {
-				return new BuffParam(m.group(1), MathOperation.fromSymbol(m.group(2)), Double.parseDouble(m.group(3)));
-			} else {
-				return new BuffParam(part, MathOperation.SET, 1);
+				return new BuffParam(BuffParamMap.fromKey(m.group(1)), MathOperation.fromSymbol(m.group(2)), Double.parseDouble(m.group(3)));
 			}
+			return null;
 		}
 		
 		/**
 		 * Serialize back to the game's attribute-string format, e.g. "Strength+5,Agility-2"
 		 */
 		public String serialize() {
-			return this.name + this.operation.getSymbol() + this.value;
+			return this.name.getKey() + this.operation.getSymbol() + this.value;
+		}
+		
+		public String beautify() {
+			return name.getName() + " " + operation.getSymbol() + " " + this.value;
 		}
 	}
 }

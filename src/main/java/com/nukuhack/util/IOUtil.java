@@ -1,7 +1,6 @@
 package com.nukuhack.util;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
@@ -18,13 +17,13 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 @Slf4j
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 public final class IOUtil {
 	
 	/** Operating system name (lowercase) for cross-platform detection */
-	public static final String os = System.getProperty("os.name").toLowerCase();
+	public final String os = System.getProperty("os.name").toLowerCase();
 	
-	public static void openDirectory(String dirPath) throws IllegalArgumentException, IOException {
+	public void openDirectory(String dirPath) throws IllegalArgumentException, IOException {
 		if (dirPath == null || dirPath.isBlank())
 			throw new IllegalArgumentException();
 		
@@ -55,7 +54,7 @@ public final class IOUtil {
 	 * @param path Path to the file
 	 * @return true if file has .zip/.pak extension or starts with ZIP magic bytes (PK\x03\x04)
 	 */
-	public static boolean isZipLike(Path path) {
+	public boolean isZipLike(Path path) {
 		final String lower = path.getFileName().toString().toLowerCase(Locale.ROOT);
 		if (lower.endsWith(".zip") || lower.endsWith(".pak"))
 			return true;
@@ -69,7 +68,7 @@ public final class IOUtil {
 	}
 	
 	
-	public static boolean unpackArchive(final Path sourcePakFile, final Path destFolder, final Predicate<Path> fileFilter, final boolean overwrite) {
+	public boolean unpackArchive(final Path sourcePakFile, final Path destFolder, final Predicate<Path> fileFilter, final boolean overwrite) {
 		if (! Files.exists(sourcePakFile) || ! Files.isRegularFile(sourcePakFile)) {
 			log.warn("Source archive does not exist: {}", sourcePakFile);
 			return false;
@@ -137,7 +136,7 @@ public final class IOUtil {
 	}
 	
 	
-	public static boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
+	public boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
 		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
 			log.warn("Source folder does not exist: {}", sourceFolder);
 			return false;
@@ -196,7 +195,7 @@ public final class IOUtil {
 	 *
 	 * @param path Path to delete (file or directory)
 	 */
-	public static void deleteRecursively(Path path) {
+	public void deleteRecursively(Path path) {
 		if (! Files.exists(path))
 			return;
 		try (var walk = Files.walk(path)) {
@@ -211,6 +210,4 @@ public final class IOUtil {
 			log.info("Could not delete file/folder {}", path, ex);
 		}
 	}
-	
-	
 }

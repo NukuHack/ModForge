@@ -1,6 +1,8 @@
 package com.nukuhack.modforge.backend.service;
 
+import com.nukuhack.modforge.Util;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -8,9 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-import static com.nukuhack.modforge.Util.escapeJson;
-
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class JsonIO {
 	
 	private JsonIO() {
@@ -106,7 +106,7 @@ public final class JsonIO {
 				if (! first)
 					sb.append(",");
 				first = false;
-				sb.append("\"").append(escapeJson(entry.getKey())).append("\":");
+				sb.append("\"").append(Util.escapeJson(entry.getKey())).append("\":");
 				sb.append(entry.getValue().toJsonString());
 			}
 			sb.append("}");
@@ -154,7 +154,7 @@ public final class JsonIO {
 		
 		@Override
 		public String toJsonString() {
-			return "\"" + escapeJson(value) + "\"";
+			return "\"" + Util.escapeJson(value) + "\"";
 		}
 	}
 	

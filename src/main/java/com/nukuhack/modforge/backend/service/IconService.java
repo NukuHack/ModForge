@@ -325,13 +325,13 @@ public final class IconService {
 	 * Convenience overload for base-game items (no per-mod index to check).
 	 */
 	public static BufferedImage getIcon(ModItem item) {
-		return getIcon(item, Singleton.INSTANCE.getGame());
+		return getIcon(item, Singleton.getGame());
 	}
 	
 	/**
 	 * Return a base64 data-URI for a named icon.
 	 * @param iconId Icon filename without extension.
-	 * @param mod    The owning mod; pass {@code Singleton.INSTANCE.game()} for game items.
+	 * @param mod    The owning mod; pass {@code Singleton.game()} for game items.
 	 * @return the image.
 	 */
 	private static BufferedImage getBase64Icon(String iconId, ModData mod) {
@@ -344,7 +344,7 @@ public final class IconService {
 		}
 		
 		// 2. Base-game raw DDS index
-		final var game = Singleton.INSTANCE.getGame();
+		final var game = Singleton.getGame();
 		if (mod != game) {
 			final var baseDds = game.getIcon(key);
 			if (baseDds != null) {
@@ -363,7 +363,7 @@ public final class IconService {
 		if (iconId == null || iconId.isBlank())
 			return false;
 		final String key = iconId.toLowerCase(Locale.ROOT);
-		return (mod != Singleton.INSTANCE.getGame() && mod.getIconIndex().containsKey(key));
+		return (mod != Singleton.getGame() && mod.getIconIndex().containsKey(key));
 	}
 	
 	/**
@@ -414,7 +414,7 @@ public final class IconService {
 		var gameDir = userConfig.getGameDirectory();
 		if (gameDir.isBlank())
 			return;
-		final ModData game = Singleton.INSTANCE.getGame();
+		final ModData game = Singleton.getGame();
 		game.setIcon(loadModIcons(Util.icons(gameDir)));
 		log.info("Game Icon Load took: {}", System.currentTimeMillis() - start);
 	}

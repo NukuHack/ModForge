@@ -124,7 +124,7 @@ public class SettingsPage extends BasePage {
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("ui_refresh_all", e -> executor.submit(() -> {
-			Singleton.INSTANCE.getRegistry().init();
+			Singleton.getRegistry().init();
 			SwingUtilities.invokeLater(() -> w.snackbar.show("ui_refresh_success", BarManager.Type.SUCCESS));
 		})), gc);
 		

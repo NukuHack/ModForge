@@ -5,6 +5,7 @@ import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -17,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.nukuhack.modforge.Util.escHtml;
 import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 /**
@@ -34,6 +34,7 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
  *   └──────────────────────────────────────┘
  */
 @Slf4j
+@ExtensionMethod({ Util.class })
 public class LangEdit extends BaseEditPage {
 	
 	/** Working copy: langKey → current translated value (editable). */
@@ -132,25 +133,25 @@ public class LangEdit extends BaseEditPage {
 		
 		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
 		
-		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
+		var lang = getSelectedLang().orElseGet(Singleton.getRegistry().userConfig::getLanguage);
 		
 		var html = new StringBuilder();
 		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:12px;margin:0;'>");
 		
 		// ── Item header (reuse shared renderer) ──────────────────────────────
 		
-		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(escHtml(currentItem.getId())).append("</b><br/>");
+		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(currentItem.getId().escHtml()).append("</b><br/>");
 		
 		html.append("<hr style='border-color:#313244;margin:10px 0;'/>");
-		html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;" + "letter-spacing:0.5px;'>").append(getLocalText("ui_language")).append(": ").append(escHtml(lang.getDisplayName())).append("</span><br/><br/>");
+		html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;" + "letter-spacing:0.5px;'>").append(getLocalText("ui_language")).append(": ").append(lang.getDisplayName().escHtml()).append("</span><br/><br/>");
 		
 		for (var entry : workingEntries.entrySet()) {
 			final String attrName = keyToAttrName.getOrDefault(entry.getKey(), "");
 			html.append("<div style='margin-bottom:10px;background:#1e1e2e;" + "border-left:3px solid #cba6f7;padding:8px 10px;border-radius:3px;'>");
 			if (! attrName.isBlank())
-				html.append("<span style='color:#cba6f7;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(escHtml(attrName)).append("</span><br/>");
-			html.append("<span style='color:#6c6f85;font-size:10px;font-family:monospace;'>").append(escHtml(entry.getKey())).append("</span><br/>");
-			html.append("<span style='color:#cdd6f4;font-size:12px;'>").append(escHtml(entry.getValue())).append("</span>");
+				html.append("<span style='color:#cba6f7;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(attrName.escHtml()).append("</span><br/>");
+			html.append("<span style='color:#6c6f85;font-size:10px;font-family:monospace;'>").append(entry.getKey().escHtml()).append("</span><br/>");
+			html.append("<span style='color:#cdd6f4;font-size:12px;'>").append(entry.getValue().escHtml()).append("</span>");
 			html.append("</div>");
 		}
 		html.append("</body></html>");
@@ -183,9 +184,9 @@ public class LangEdit extends BaseEditPage {
 			return;
 		}
 		
-		var lang = getSelectedLang().orElseGet(Singleton.INSTANCE.getRegistry().userConfig::getLanguage);
+		var lang = getSelectedLang().orElseGet(Singleton.getRegistry().userConfig::getLanguage);
 		var local = window.getRegistry().localService;
-		var baseGame = Singleton.INSTANCE.getGame();
+		var baseGame = Singleton.getGame();
 		
 		for (var attr : currentItem.getLangAttributes()) {
 			final String langKey = attr.getValue().trim();

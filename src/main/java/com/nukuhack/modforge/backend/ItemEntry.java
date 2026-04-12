@@ -154,8 +154,7 @@ public enum ItemEntry {
 	public final boolean isTree;
 	
 	// Update the constructor signature:
-	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName,
-			  String xmlObjName, String parentName, boolean showInDisplay) {
+	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String xmlObjName, String parentName, boolean showInDisplay) {
 		this(clazz, idKey, fileName, xmlObjName, parentName, showInDisplay, false);
 	}
 	
