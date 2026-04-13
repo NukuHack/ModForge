@@ -2,10 +2,7 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.I.Storm;
-import com.nukuhack.modforge.backend.model.storm.GenericOperation;
-import com.nukuhack.modforge.backend.model.storm.GenericSelector;
-import com.nukuhack.modforge.backend.model.storm.StormData;
-import com.nukuhack.modforge.backend.model.storm.StormRule;
+import com.nukuhack.modforge.backend.model.Storm.*;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.backend.service.StormService;
 import com.nukuhack.modforge.frontend.BarManager;

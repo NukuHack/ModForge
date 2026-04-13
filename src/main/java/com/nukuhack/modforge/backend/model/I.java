@@ -1,7 +1,7 @@
 package com.nukuhack.modforge.backend.model;
 
 import com.nukuhack.modforge.backend.model.ModItem.BaseModItem;
-import com.nukuhack.modforge.backend.model.storm.StormData;
+import com.nukuhack.modforge.backend.model.Storm.StormData;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -117,17 +117,25 @@ public final class I {
 	public static class BehaviorTree extends BaseModItem {
 	}
 	
+	@NoArgsConstructor
+	@Slf4j
+	@Getter
+	@Setter
+	public static class EmptyImpl extends BaseModItem {
+		private String idKey;
+	}
+	
 	/**
 	 * {@code ModItem} representation of a Storm script entry.
 	 *
 	 * <p>Previously this was a flat item with a {@code HashMap}, which broke as soon
 	 * as selectors/operations needed to be nested more than one level deep. Now it
-	 * carries a fully-parsed {@link com.nukuhack.modforge.backend.model.storm.StormData} object that supports arbitrary tree
+	 * carries a fully-parsed {@link com.nukuhack.modforge.backend.model.Storm.StormData} object that supports arbitrary tree
 	 * depth for both selectors and operations.</p>
 	 *
 	 * <p>The base-class {@code id} / {@code attributes} fields are still populated
 	 * by {@link com.nukuhack.modforge.backend.service.ModItemBuilder} for the normal item-list
-	 * display pipeline (search, filter, etc.).  The rich {@link com.nukuhack.modforge.backend.model.storm.StormData} payload is
+	 * display pipeline (search, filter, etc.).  The rich {@link com.nukuhack.modforge.backend.model.Storm.StormData} payload is
 	 * populated separately by {@link com.nukuhack.modforge.backend.service.StormService} after the
 	 * PAK scan.</p>
 	 */

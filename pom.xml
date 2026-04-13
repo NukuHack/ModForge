@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	
 	<groupId>com.nukuhack.modforge</groupId>
@@ -11,12 +13,14 @@
 	<description>KDC2 data view and edit</description>
 	
 	<properties>
-		<java.version>17</java.version>
-		<!-- Works with any java version from 16 to 25, gpt said 17 is the safest ... -->
+		<java.version>21</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		
 		<log4j.version>2.24.3</log4j.version>
+		<spring-boot.version>3.4.5</spring-boot.version>
+		<flatlaf.version>3.4</flatlaf.version>
 		<twelvemonkeys.version>3.10.1</twelvemonkeys.version>
 		<mockito.version>5.14.2</mockito.version>
 		<bytebuddy.version>1.15.11</bytebuddy.version>
@@ -27,12 +31,12 @@
 		<dependency>
 			<groupId>com.formdev</groupId>
 			<artifactId>flatlaf</artifactId>
-			<version>3.4</version>
+			<version>${flatlaf.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.formdev</groupId>
 			<artifactId>flatlaf-extras</artifactId>
-			<version>3.4</version>
+			<version>${flatlaf.version}</version>
 		</dependency>
 		
 		<!-- XML Processing -->
@@ -89,14 +93,6 @@
 			<version>${twelvemonkeys.version}</version>
 		</dependency>
 		
-		<!-- Testing -->
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<version>5.13.4</version>
-			<scope>test</scope>
-		</dependency>
-		
 		<!-- Mockito with explicit Byte Buddy version -->
 		<dependency>
 			<groupId>org.mockito</groupId>
@@ -147,23 +143,6 @@
 			
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.3.1</version>
-				<configuration>
-					<!-- Add the Java agent properly -->
-					<argLine>
-						-javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${bytebuddy.version}/byte-buddy-agent-${bytebuddy.version}.jar
-						-XX:+EnableDynamicAgentLoading
-						-Djdk.instrument.traceUsage=false
-						<!-- Enable experimental Byte Buddy features for Java 25 -->
-						-Dnet.bytebuddy.experimental=true
-					</argLine>
-					<useModulePath>false</useModulePath>
-				</configuration>
-			</plugin>
-			
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>3.5.1</version>
 				<executions>
@@ -179,26 +158,6 @@
 								</transformer>
 							</transformers>
 							<createDependencyReducedPom>false</createDependencyReducedPom>
-							<filters>
-								<filter>
-									<artifact>org.projectlombok:lombok</artifact>
-									<excludes>
-										<exclude>**</exclude>
-									</excludes>
-								</filter>
-								<filter>
-									<artifact>org.junit</artifact>
-									<excludes>
-										<exclude>**</exclude>
-									</excludes>
-								</filter>
-								<filter>
-									<artifact>org.mockito</artifact>
-									<excludes>
-										<exclude>**</exclude>
-									</excludes>
-								</filter>
-							</filters>
 						</configuration>
 					</execution>
 				</executions>

@@ -1,7 +1,9 @@
 package com.nukuhack.modforge.backend.service;
 
 import com.nukuhack.modforge.backend.model.I.Storm;
-import com.nukuhack.modforge.backend.model.storm.*;
+import com.nukuhack.modforge.backend.model.*;
+import com.nukuhack.modforge.backend.model.Storm.StormData;
+import com.nukuhack.modforge.backend.model.Storm.*;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.w3c.dom.*;
@@ -31,9 +33,9 @@ import java.util.function.Consumer;
  *
  * <h2>Responsibilities</h2>
  * <ol>
- *   <li>Scan PAK files for Storm XML entries and parse them into {@link com.nukuhack.modforge.backend.model.storm.StormData}.</li>
- *   <li>Attach parsed {@link com.nukuhack.modforge.backend.model.storm.StormData} to the matching {@link Storm} {@code ModItem}.</li>
- *   <li>Write modified {@link com.nukuhack.modforge.backend.model.storm.StormData} back to XML inside a mod's staging folder.</li>
+ *   <li>Scan PAK files for Storm XML entries and parse them into {@link StormData}.</li>
+ *   <li>Attach parsed {@link StormData} to the matching {@link Storm} {@code ModItem}.</li>
+ *   <li>Write modified {@link StormData} back to XML inside a mod's staging folder.</li>
  * </ol>
  *
  * <h2>Actual XML format (storm.xml)</h2>
@@ -122,10 +124,10 @@ public final class StormService {
 	// =========================================================================
 	
 	/**
-	 * Parse a Storm XML {@link InputStream} into a {@link com.nukuhack.modforge.backend.model.storm.StormData} object.
+	 * Parse a Storm XML {@link InputStream} into a {@link StormData} object.
 	 *
 	 * @param is        The XML input stream (will NOT be closed by this method).
-	 * @return Populated {@link com.nukuhack.modforge.backend.model.storm.StormData}; never {@code null}.
+	 * @return Populated {@link StormData}; never {@code null}.
 	 */
 	public static StormData parse(InputStream is) {
 		
@@ -409,10 +411,6 @@ public final class StormService {
 		
 		return op;
 	}
-	
-	// =========================================================================
-	// Serialisation (StormData → XML string)
-	// =========================================================================
 	
 	
 	public static String serialize(StormData data) throws Exception {

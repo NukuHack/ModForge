@@ -308,7 +308,7 @@ public interface Attribute<T> {
 		}
 		
 		public ModItem asItem() {
-			var item = new ModItem.EmptyImpl();
+			var item = new I.EmptyImpl();
 			item.setId(tag);
 			item.setAttribute(attributes);
 			var xmlAttr = children.stream().map(c -> (Attribute) new XmlNodeAttribute(c.tag, c)).toList();

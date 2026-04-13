@@ -177,13 +177,4 @@ public interface ModItem {
 			return this.getClass().getName() + "{attributes=" + attributes + ", linkedItems=" + linkedItems + ", id='" + id + '\'' + ", path='" + path + '\'' + '}';
 		}
 	}
-	
-	@NoArgsConstructor
-	@Slf4j
-	@Getter
-	@Setter
-	class EmptyImpl extends BaseModItem {
-		private String idKey;
-	}
-	
 }

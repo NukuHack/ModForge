@@ -1,7 +1,7 @@
 package com.nukuhack.modforge.backend.service;
 
 import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.model.storm.*;
+import com.nukuhack.modforge.backend.model.Storm.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
