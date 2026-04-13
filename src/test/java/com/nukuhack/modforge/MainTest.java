@@ -19,12 +19,6 @@ class MainTest {
 	}
 	
 	@Test
-	void classTest5() {
-		ModItem item = Mockito.mock(ModItem.BaseModItem.class, Mockito.CALLS_REAL_METHODS);
-		// this
-		log.debug("class: {}", item.getClass());
-	}
-	@Test
 	void classTest6() throws Exception {
 		Class<? extends ModItem> dynamicType = new ByteBuddy()
 			   .subclass(ModItem.BaseModItem.class)

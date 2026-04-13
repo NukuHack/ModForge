@@ -171,7 +171,7 @@ public abstract class BasePage extends JPanel {
 			html.append("<br/><span style='background:#313244;color:#a6e3a1;font-size:9px;padding:2px 6px;border-radius:3px;margin-left:8px;'>").append(Util.escHtml(item.getClass().getSimpleName())).append("</span>");
 		html.append("</div>");
 		
-		if (! nested && item.getPath() != null && ! item.getPath().isBlank()) {
+		if (! nested && ! item.getPath().isBlank()) {
 			html.append("<div style='background:#1e1e2e;padding:8px;border-radius:4px;margin:8px 0;border-left:3px solid ").append(accentColor).append(";'>");
 			html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;'>📁 ").append(getLocalText("ui_path")).append("</span><br/>");
 			html.append("<span style='color:#cdd6f4;font-size:11px;font-family:monospace;'>").append(Util.escHtml(item.getPath())).append("</span>");
@@ -200,19 +200,6 @@ public abstract class BasePage extends JPanel {
 				html.append("</div>");
 			}
 			html.append("</div>");
-		}
-		
-		if (! item.getLinkedItems().isEmpty()) {
-			html.append("<div style='margin-top:12px;'>");
-			html.append("<span style='color:").append(accentColor).append(";font-size:10px;font-weight:bold;'>🔗 ").append(getLocalText("ui_linked_items")).append("</span>");
-			html.append("<div style='margin-top:6px;'>");
-			for (var linkedItem : item.getLinkedItems()) {
-				html.append("<div style='margin:4px 0;padding:4px 8px;background:#1e1e2e;border-radius:3px;'>");
-				html.append("<span style='color:#89dceb;font-size:10px;font-family:monospace;'>→ </span>");
-				html.append("<span style='color:#cdd6f4;font-size:10px;'>").append(Util.escHtml(linkedItem.toString())).append("</span>");
-				html.append("</div>");
-			}
-			html.append("</div></div>");
 		}
 	}
 	
@@ -348,7 +335,7 @@ public abstract class BasePage extends JPanel {
 		if (sel == null || modSelector.getSelectedIndex() < 1)
 			return Optional.empty();
 		var modName = sel.trim();
-		return ModService.modCollection.stream().filter(m -> m.name.equals(modName)).findFirst();
+		return ModService.modCollection.stream().filter(m -> m.getName().equals(modName)).findFirst();
 	}
 	
 	protected Optional<E.Language> getSelectedLang() {
@@ -379,9 +366,9 @@ public abstract class BasePage extends JPanel {
 		} else {
 			model.addElement("    " + getLocalText("ui_base_game"));
 			for (var mod : mods)
-				model.addElement("    " + mod.name);
+				model.addElement("    " + mod.getName());
 			
-			previous.ifPresent(m -> modSelector.setSelectedItem("    " + m.name));
+			previous.ifPresent(m -> modSelector.setSelectedItem("    " + m.getName()));
 		}
 		
 		for (ActionListener l : listeners)
@@ -499,7 +486,7 @@ public abstract class BasePage extends JPanel {
 		styleCombo(modCombo);
 		var mods = ModService.modCollection;
 		for (var mod : mods)
-			modCombo.addItem(mod.name);
+			modCombo.addItem(mod.getName());
 		mainPanel.add(modCombo, BorderLayout.CENTER);
 		
 		var buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -517,11 +504,11 @@ public abstract class BasePage extends JPanel {
 				window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 				return;
 			}
-			var mod = ModService.modCollection.stream().filter(m -> m.name.equals(sel)).findFirst();
+			var mod = ModService.modCollection.stream().filter(m -> m.getName().equals(sel)).findFirst();
 			mod.ifPresentOrElse(m -> {
 				var copy = ModItemBuilder.deepCopy(item, m);
 				m.addItem(copy);
-				window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, m.name);
+				window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, m.getName());
 				dialog.dispose();
 			}, () -> window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING));
 		});

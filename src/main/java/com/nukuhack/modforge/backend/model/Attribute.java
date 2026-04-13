@@ -11,29 +11,30 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@NonNull
 public interface Attribute<T> {
 	String INDENT = "  ";
 	
-	String getName();
+	@NonNull String getName();
 	
-	T getValue();
+	@NonNull T getValue();
 	
-	Attribute<T> deepClone();
+	@NonNull Attribute<T> deepClone();
 	
-	String serialize();
+	@NonNull String serialize();
 	
-	Attribute<T> withValue(T val);
+	@NonNull Attribute<T> withValue(@NonNull T val);
 	
 	
 	@Getter
 	@Slf4j
+	@NonNull
 	@RequiredArgsConstructor
 	abstract class BaseAttribute<T> implements Attribute<T> {
-		@NonNull
 		protected final String name;
-		@NonNull
 		protected final T value;
 		
+		@Override
 		public String toString() {
 			return name + "=" + value;
 		}
@@ -74,45 +75,47 @@ public interface Attribute<T> {
 	}
 	
 	@Slf4j
+	@NonNull
 	class BooleanAttribute extends BaseAttribute<Boolean> {
-		public BooleanAttribute(String name, Boolean value) {
+		public BooleanAttribute(@NonNull String name, @NonNull Boolean value) {
 			super(name, value);
 		}
 		
 		@Override
-		public BooleanAttribute deepClone() {
+		public @NonNull BooleanAttribute deepClone() {
 			return this;
 		}
 		
 		@Override
-		public BooleanAttribute withValue(Boolean newValue) {
+		public @NonNull BooleanAttribute withValue(@NonNull Boolean newValue) {
 			return new BooleanAttribute(name, newValue);
 		}
 		
 		@Override
-		public String serialize() {
+		public @NonNull String serialize() {
 			return value.toString().toLowerCase();
 		}
 	}
 	
 	@Slf4j
+	@NonNull
 	class DoubleAttribute extends BaseAttribute<Double> {
-		public DoubleAttribute(String name, Double value) {
+		public DoubleAttribute(@NonNull String name, @NonNull Double value) {
 			super(name, value);
 		}
 		
 		@Override
-		public DoubleAttribute deepClone() {
+		public @NonNull DoubleAttribute deepClone() {
 			return this;
 		}
 		
 		@Override
-		public DoubleAttribute withValue(Double newValue) {
+		public @NonNull DoubleAttribute withValue(@NonNull Double newValue) {
 			return new DoubleAttribute(name, newValue);
 		}
 		
 		@Override
-		public String serialize() {
+		public @NonNull String serialize() {
 			if (Double.isInfinite(value) || Double.isNaN(value))
 				return "1";
 			long rounded = Math.round(value);
@@ -123,49 +126,52 @@ public interface Attribute<T> {
 	}
 	
 	@Slf4j
+	@NonNull
 	class EnumAttribute extends BaseAttribute<Enum<?>> {
 		@Getter
+		@NonNull
 		private final Class<? extends Enum<?>> enumType;
 		
-		public EnumAttribute(String name, Enum<?> value) {
+		public EnumAttribute(@NonNull String name, @NonNull Enum<?> value) {
 			super(name, value);
 			this.enumType = value.getDeclaringClass();
 		}
 		
 		@Override
-		public EnumAttribute deepClone() {
+		public @NonNull EnumAttribute deepClone() {
 			return this;
 		}
 		
 		@Override
-		public EnumAttribute withValue(Enum<?> newValue) {
+		public @NonNull EnumAttribute withValue(@NonNull Enum<?> newValue) {
 			return new EnumAttribute(name, newValue);
 		}
 		
 		@Override
-		public String serialize() {
+		public @NonNull String serialize() {
 			return String.valueOf(value.ordinal());
 		}
 	}
 	
 	@Slf4j
+	@NonNull
 	class ListAttribute<M> extends BaseAttribute<List<M>> {
-		public ListAttribute(String name, List<M> value) {
+		public ListAttribute(@NonNull String name, @NonNull List<M> value) {
 			super(name, value);
 		}
 
 		@Override
-		public ListAttribute<M> deepClone() {
+		public @NonNull ListAttribute<M> deepClone() {
 			return new ListAttribute<>(getName(), deepCloneList(value));
 		}
 
 		@Override
-		public ListAttribute<M> withValue(List<M> newValue) {
+		public @NonNull ListAttribute<M> withValue(@NonNull List<M> newValue) {
 			return new ListAttribute<>(name, deepCloneList(newValue));
 		}
 
 		@Override
-		public String serialize() {
+		public @NonNull String serialize() {
 			if (value.isEmpty())
 				return "";
 			return value.stream().map(item -> (item instanceof Attribute<?> a ? a.serialize() : item.toString()).trim()).filter(Predicate.not(String::isEmpty)).collect(Collectors.joining(","));
@@ -173,111 +179,115 @@ public interface Attribute<T> {
 	}
 	
 	@Slf4j
+	@NonNull
 	class BuffParamListAttribute extends ListAttribute<BuffParam> {
-		public BuffParamListAttribute(String name, List<BuffParam> value) {
+		public BuffParamListAttribute(@NonNull String name, @NonNull List<BuffParam> value) {
 			super(name, value);
 		}
 		
-		public BuffParamListAttribute(String name, String value) {
+		public BuffParamListAttribute(@NonNull String name, @NonNull String value) {
 			this(name, parse(value));
 		}
 		
 
 		@Override
-		public BuffParamListAttribute deepClone() {
+		public @NonNull BuffParamListAttribute deepClone() {
 			return new BuffParamListAttribute(getName(), deepCloneList(value));
 		}
 
 		@Override
-		public BuffParamListAttribute withValue(List<BuffParam> newValue) {
+		public @NonNull BuffParamListAttribute withValue(@NonNull List<BuffParam> newValue) {
 			return new BuffParamListAttribute(name, deepCloneList(newValue));
 		}
 		
-		public static List<BuffParam> parse(final String data) {
+		public static @NonNull List<BuffParam> parse(@NonNull String data) {
 			return Arrays.stream(data.split(",")).map(BuffParam::fromString).filter(Objects::nonNull).toList();
 		}
 		
-		public String serialize() {
+		public @NonNull String serialize() {
 			return String.join(",", value.stream().map(BuffParam::serialize).toList());
 		}
 		
-		public String getNiceName() {
+		public @NonNull String getNiceName() {
 			return value.stream().map(BuffParam::beautify).collect(Collectors.joining(", "));
 		}
 	}
 	
 	@Slf4j
+	@NonNull
 	class StringAttribute extends BaseAttribute<String> {
-		public StringAttribute(String name, String value) {
+		public StringAttribute(@NonNull String name, @NonNull String value) {
 			super(name, value);
 		}
 		
 		@Override
-		public StringAttribute deepClone() {
+		public @NonNull StringAttribute deepClone() {
 			return this;
 		}
 		
 		@Override
-		public StringAttribute withValue(String newValue) {
+		public @NonNull StringAttribute withValue(@NonNull String newValue) {
 			return new StringAttribute(name, newValue);
 		}
 		
 		@Override
-		public String serialize() {
+		public @NonNull String serialize() {
 			return value;
 		}
 	}
 	
 	@Slf4j
+	@NonNull
 	class UUIDAttribute extends BaseAttribute<UUID> {
-		public UUIDAttribute(String name, UUID value) {
+		public UUIDAttribute(@NonNull String name, @NonNull UUID value) {
 			super(name, value);
 		}
 		
 		@Override
-		public UUIDAttribute deepClone() {
+		public @NonNull UUIDAttribute deepClone() {
 			return this;
 		}
 		
 		@Override
-		public UUIDAttribute withValue(UUID newValue) {
+		public @NonNull UUIDAttribute withValue(@NonNull UUID newValue) {
 			return new UUIDAttribute(name, newValue);
 		}
 		
 		@Override
-		public String serialize() {
+		public @NonNull String serialize() {
 			return value.toString();
 		}
 	}
 	
-	
+	@Slf4j
+	@NonNull
 	class XmlNodeAttribute extends BaseAttribute<XmlNode> {
-		public XmlNodeAttribute(String name, XmlNode value) {
+		public XmlNodeAttribute(@NonNull String name, @NonNull XmlNode value) {
 			super(name, value);
 		}
 		
 		@Override
-		public XmlNodeAttribute deepClone() {
+		public @NonNull XmlNodeAttribute deepClone() {
 			return new XmlNodeAttribute(name, deepCloneNode(value));
 		}
 		
 		@Override
-		public XmlNodeAttribute withValue(XmlNode newValue) {
+		public @NonNull XmlNodeAttribute withValue(@NonNull XmlNode newValue) {
 			return new XmlNodeAttribute(name, deepCloneNode(newValue));
 		}
 		
 		@Override
-		public String serialize() {
+		public @NonNull String serialize() {
 			return serializeNode(value, 1);
 		}
 		
-		private XmlNode deepCloneNode(XmlNode node) {
+		private @NonNull XmlNode deepCloneNode(@NonNull XmlNode node) {
 			var clonedAttrs = node.attributes().stream().map(Attribute::deepClone).toList();
 			var clonedChildren = node.children().stream().map(this::deepCloneNode).toList();
 			return new XmlNode(node.tag(), clonedAttrs, clonedChildren);
 		}
 		
-		private String serializeNode(XmlNode node, int depth) {
+		private @NonNull String serializeNode(@NonNull XmlNode node, int depth) {
 			var indent = INDENT.repeat(depth);
 			var sb = new StringBuilder();
 			sb.append(indent).append("<").append(node.tag());
@@ -295,7 +305,7 @@ public interface Attribute<T> {
 		}
 	}
 	
-	
+	@NonNull
 	record XmlNode(String tag, List<Attribute> attributes, List<XmlNode> children) {
 		public boolean isLeaf() {
 			return children.isEmpty();
@@ -307,7 +317,7 @@ public interface Attribute<T> {
 			return 1 + children.stream().mapToInt(XmlNode::getDepth).max().orElse(0);
 		}
 		
-		public ModItem asItem() {
+		public @NonNull ModItem asItem() {
 			var item = new I.EmptyImpl();
 			item.setId(tag);
 			item.setAttribute(attributes);
@@ -321,6 +331,7 @@ public interface Attribute<T> {
 	 * Simple value object for buff parameters (stat_key op value)
 	 */
 	@Slf4j
+	@NonNull
 	record BuffParam(BuffParamMap name, MathOperation operation, double value) {
 		private static final Pattern BUFF_PARAM_REGEX = Pattern.compile("(\\w+)([+\\-=*%<>!])([\\-+]?\\d+(?:\\.\\d+)?)");
 		
@@ -337,11 +348,11 @@ public interface Attribute<T> {
 		/**
 		 * Serialize back to the game's attribute-string format, e.g. "Strength+5,Agility-2"
 		 */
-		public String serialize() {
+		public @NonNull String serialize() {
 			return this.name.getKey() + this.operation.getSymbol() + this.value;
 		}
 		
-		public String beautify() {
+		public @NonNull String beautify() {
 			return name.getName() + " " + operation.getSymbol() + " " + this.value;
 		}
 	}

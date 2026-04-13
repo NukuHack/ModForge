@@ -3,6 +3,7 @@ package com.nukuhack.modforge.backend.model;
 import com.nukuhack.modforge.backend.model.E.Enums;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -60,7 +61,7 @@ public final class Attributes {
 	/**
 	 * Record the best-guess Java type for an XML attribute name
 	 */
-	private static Class<?> inferType(final String name, final String value) {
+	private static @NonNull Class<?> inferType(final @NonNull String name, final @NonNull String value) {
 		final String lo = name.toLowerCase();
 		if (lo.endsWith("class"))
 			return String.class;
@@ -93,8 +94,8 @@ public final class Attributes {
 	 * Create a typed IAttribute from a raw XML name/value pair.
 	 * Falls back to String if the type is not yet discovered.
 	 */
-	public static Attribute create(final String name, String value) {
-		if (value == null || (value = value.trim()).isEmpty())
+	public static @NonNull Attribute create(final @NonNull String name, @NonNull String value) {
+		if ((value = value.trim()).isEmpty())
 			return new Attribute.StringAttribute(name, "");
 		final var v = value;
 		final Class<?> type = TYPE_MAP.computeIfAbsent(name, n -> inferType(n, v));

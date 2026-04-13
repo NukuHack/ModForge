@@ -90,7 +90,7 @@ class IconServiceTest extends BaseServiceTest {
 	@BeforeEach
 	void setUp() {
 		testMod = new ModData();
-		testMod.id = "test_mod";
+		testMod.setId("test-mod");
 	}
 	
 	// =========================================================================
@@ -495,7 +495,7 @@ class IconServiceTest extends BaseServiceTest {
 			assertFalse(loaded.isEmpty(), "should have loaded at least one icon");
 			
 			testMod.setIcon(loaded);
-			System.out.printf("  mod '%s' loaded %d icon(s)%n", testMod.id, loaded.size());
+			System.out.printf("  mod '%s' loaded %d icon(s)%n", testMod.getId(), loaded.size());
 		}
 		
 		@Test

@@ -2,7 +2,6 @@
 
 package com.nukuhack.modforge.backend.service;
 
-import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.util.IOUtil;
 import org.junit.jupiter.api.AfterAll;
@@ -134,14 +133,14 @@ public abstract class BaseServiceTest {
 	
 	protected UserConfig createStubUserService(String gameDir) {
 		UserConfig us = new UserConfig.UserConfigImpl();
-		us.setGameDirectory(gameDir);
+		us.setGameDir(gameDir);
 		us.setLanguage(Language.ENGLISH);
 		return us;
 	}
 	
 	protected UserConfig createStubUserService(String gameDir, Language language) {
 		UserConfig us = new UserConfig.UserConfigImpl();
-		us.setGameDirectory(gameDir);
+		us.setGameDir(gameDir);
 		us.setLanguage(language);
 		return us;
 	}

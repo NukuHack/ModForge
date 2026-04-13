@@ -77,7 +77,7 @@ class ConfigServiceTests extends BaseServiceTest {
 	@DisplayName("saveModConfig writes and can be re-parsed in temp dir")
 	void saveAndReadModConfig() throws Exception {
 		ModData mod = new ModData();
-		mod.id = "my-mod";
+		mod.setId("my-mod");
 		mod.setConfig(new LinkedHashMap<>(Map.of("g_difficulty", "2", "sys_spec", "4")));
 		
 		assertTrue(ConfigService.saveModConfig(tmp.toString(), mod));
@@ -97,7 +97,7 @@ class ConfigServiceTests extends BaseServiceTest {
 		Map<String, String> cfg = parseConfigBytes(modCfgBytes);
 		
 		ModData mod = new ModData();
-		mod.id = "resource-mod";
+		mod.setId("resource-mod");
 		mod.setConfig(cfg);
 		
 		Path outDir = RESOURCES_OUTPUT.resolve("cfg");

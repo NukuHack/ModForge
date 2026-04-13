@@ -66,36 +66,36 @@ public final class LocalService {
 	 */
 	public static Map<Language, Map<String, String>> loadLocalization(String root) {
 		// Collect all valid (language, pakPath) pairs upfront
-		final var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.pakPath()))).toList();
+		var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.pakPath()))).toList();
 		if (langPaks.isEmpty()) {
 			log.info("No Localization folder found for folder {}", root);
 			return new EnumMap<>(Language.class);
 		}
 		
 		// Process all PAKs in parallel; each returns a (Language -> Map) contribution
-		final Map<Language, Map<String, String>> result = new ConcurrentHashMap<>();
+		var result = new ConcurrentHashMap<Language, Map<String, String>>();
 		
 		langPaks.parallelStream().forEach(lp -> {
-			try (final var zf = new ZipFile(lp.pakPath())) {
+			try (var zf = new ZipFile(lp.pakPath())) {
 				// here using parallel is useless
 				//  for now I removed filters, so all text data will be red, but if it's too slow for you just add a filter to the base text data for items
 				zf.stream().forEach(entry -> {
 					try (var is = zf.getInputStream(entry)) {
-						final var parsed = parseLocalizationXml(is);
+						var parsed = parseLocalizationXml(is);
 						result.computeIfAbsent(lp.language(), k -> new ConcurrentHashMap<>()).putAll(parsed);
-					} catch (final Exception ex) {
+					} catch (Exception ex) {
 						log.warn("Localisation parse error ({}): {}", entry.getName(), ex.getMessage());
 					}
 				});
 				
-			} catch (final Exception ex) {
+			} catch (Exception ex) {
 				log.warn("Localisation read error ({}): {}", lp.pakPath(), ex.getMessage());
 			}
 		});
 		
 		log.info("Loaded {} languages from {} PAK file(s)", result.size(), langPaks.size());
 		// Wrap back into a plain EnumMap for the rest of the codebase
-		final EnumMap<Language, Map<String, String>> out = new EnumMap<>(Language.class);
+		var out = new EnumMap<Language, Map<String, String>>(Language.class);
 		result.forEach((lang, map) -> out.put(lang, new HashMap<>(map)));
 		return out;
 	}
@@ -107,12 +107,12 @@ public final class LocalService {
 		// Pre-sized to avoid rehashing for typical file sizes
 		var result = new LinkedHashMap<String, String>(1024);
 		
-		final var factory = XML_FACTORY.get();
+		var factory = XML_FACTORY.get();
 		
 		String key = null;
-		byte cellIndex = 0;
-		boolean inRow = false;
-		final var reader = factory.createXMLStreamReader(is);
+		var cellIndex = 0;
+		var inRow = false;
+		var reader = factory.createXMLStreamReader(is);
 		try {
 			while (reader.hasNext()) {
 				int event = reader.next();
@@ -137,7 +137,7 @@ public final class LocalService {
 						// this first checks then increments
 						if (cellIndex++ == 1)
 							break;  // skip the middle cell (case 1)
-						final var text = reader.getElementText().strip();
+						var text = reader.getElementText().strip();
 						if (text.isEmpty())
 							break;
 						// this is true at case 0
@@ -161,9 +161,9 @@ public final class LocalService {
 	 * Each language gets: Localization/<Lang>_xml/text__<modId>.xml
 	 */
 	public static void writeModLocalization(ModData mod, String gameDir) {
-		boolean ok = writeModLocalizationFiles(gameDir, mod.id, mod.getLocalizations());
+		boolean ok = writeModLocalizationFiles(gameDir, mod.getId(), mod.getLocalizations());
 		if (! ok) {
-			log.warn("Localization write had errors for mod: {}", mod.id);
+			log.warn("Localization write had errors for mod: {}", mod.getId());
 		}
 	}
 	
@@ -174,23 +174,23 @@ public final class LocalService {
 	/**
 	 * Write mod-specific localization files into the mod's Localization directory.
 	 */
-	private static boolean writeModLocalizationFiles(String gameDirectory, String modId, Map<Language, Map<String, String>> localizations) {
+	private static boolean writeModLocalizationFiles(String gameDir, String modId, Map<Language, Map<String, String>> localizations) {
 		if (localizations.isEmpty())
 			return true;
 		
 		boolean allOk = true;
-		for (final var entry : localizations.entrySet()) {
-			final Language language = entry.getKey();
-			final Map<String, String> translations = entry.getValue();
+		for (var entry : localizations.entrySet()) {
+			var language = entry.getKey();
+			var translations = entry.getValue();
 			if (translations.isEmpty())
 				continue;
 			
-			final Path locPath = Util.locExport(gameDirectory, language, modId);
+			var locPath = Util.locExport(gameDir, language, modId);
 			
 			try {
 				Util.writeXml(makeLocalizationXml(translations), locPath);
 				log.info("Localization written: {} ({} entries)", locPath, translations.size());
-			} catch (final Exception ex) {
+			} catch (Exception ex) {
 				log.warn("Failed to write localization for {}: {}", language, ex.getMessage());
 				allOk = false;
 			}
@@ -201,7 +201,7 @@ public final class LocalService {
 	public static String makeLocalizationXml(Map<String, String> entries) {
 		var sb = new StringBuilder("<Table>\n");
 		for (var entry : entries.entrySet()) {
-			final var key = entry.getKey();
+			var key = entry.getKey();
 			if (key.isBlank())
 				continue;
 			
@@ -220,10 +220,10 @@ public final class LocalService {
 	 */
 	public void init() {
 		var start = System.currentTimeMillis();
-		var gameDir = userConfig.getGameDirectory();
+		var gameDir = userConfig.getGameDir();
 		if (gameDir.isBlank())
 			return;
-		final var game = Singleton.getGame();
+		var game = Singleton.getGame();
 		try {
 			game.setLocal(loadLocalization(gameDir));
 		} catch (Exception ex) {
@@ -276,17 +276,17 @@ public final class LocalService {
 	public String resolve(String key, final ModData mod, final Language lang) {
 		if (key == null || (key = key.trim()).isEmpty())
 			return null;
-		final var game = Singleton.getGame();
+		var game = Singleton.getGame();
 		// 1. Mod's own strings
 		if (mod != game) {
-			final var modMap = mod.getLang(lang);
-			if (modMap != null && modMap.containsKey(key))
+			var modMap = mod.getLang(lang);
+			if (modMap.containsKey(key))
 				return modMap.get(key);
 		}
 		
 		// 2. Base-game strings
-		final var baseMap = game.getLang(lang);
-		if (baseMap != null && baseMap.containsKey(key))
+		var baseMap = game.getLang(lang);
+		if (baseMap.containsKey(key))
 			return baseMap.get(key);
 		
 		return null;
@@ -314,18 +314,18 @@ public final class LocalService {
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {
 		// Pull the two lang maps once – either may be null if never populated.
-		final var game = Singleton.getGame();
-		final var modMap = (mod != game) ? mod.getLang(userConfig.getLanguage()) : new HashMap<String, String>();
-		final var baseMap = game.getLang(userConfig.getLanguage());
+		var game = Singleton.getGame();
+		var modMap = (mod != game) ? mod.getLang(userConfig.getLanguage()) : new HashMap<String, String>();
+		var baseMap = game.getLang(userConfig.getLanguage());
 		
-		for (String candidate : candidates) {
-			final String clo = candidate.toLowerCase(Locale.ROOT);
+		for (var candidate : candidates) {
+			var clo = candidate.toLowerCase(Locale.ROOT);
 			
-			final var attr = item.getAttributes().stream().filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(clo)).findFirst().orElse(null);
+			var attr = item.getAttributes().stream().filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(clo)).findFirst().orElse(null);
 			if (attr == null)
 				continue;
 			
-			final String key = String.valueOf(attr.getValue());
+			var key = String.valueOf(attr.getValue());
 			
 			// 1. Mod-local strings
 			if (modMap.containsKey(key))
@@ -343,8 +343,8 @@ public final class LocalService {
 	
 	record LangPak(@NonNull Language language, @NonNull String pakPath) {
 		static LangPak c(String l) {
-			final var base = new File(l).getName();
-			final var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
+			var base = new File(l).getName();
+			var lang = Language.fromName(base.replace(Util.LOCALIZATION_EXTRA, ""));
 			return lang != null ? new LangPak(lang, l + Util.COMP_FORMAT) : null;
 		}
 	}

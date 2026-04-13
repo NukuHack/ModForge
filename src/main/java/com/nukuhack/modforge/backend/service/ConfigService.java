@@ -3,8 +3,8 @@ package com.nukuhack.modforge.backend.service;
 import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.backend.ModData;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,27 +13,22 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Service for loading and saving configuration files in key=value format with comments.
  * Supports both game configs (user.cfg, autoexec.cfg) and mod configs (mod.cfg).
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class ConfigService {
 	
 	private static final Pattern CONFIG_LINE = Pattern.compile("^(?!#|;)\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(.*?)\\s*(?:;.*)?$");
 	
 	private final UserConfig userConfig;
 	
-	public ConfigService(UserConfig userConfig) {
+	public ConfigService(@NonNull UserConfig userConfig) {
 		this.userConfig = userConfig;
 	}
-	
-	// ==================================================================
-	// Game Config Loading (user.cfg / autoexec.cfg)
-	// ==================================================================
 	
 	public void init() {
 		Singleton.getGame().setConfig(loadGameConfig());
@@ -47,7 +42,7 @@ public final class ConfigService {
 	 * @return true if successful
 	 */
 	public static boolean saveModConfig(final String dir, final ModData mod) {
-		if (dir == null || dir.isBlank() || mod.id == null || mod.id.isBlank()) {
+		if (dir == null || dir.isBlank() || mod.getId().isBlank()) {
 			log.warn("Cannot save mod config - game directory or mod ID missing.");
 			return false;
 		}
@@ -161,8 +156,8 @@ public final class ConfigService {
 	 * @return Map of config keys to their values
 	 */
 	public @NonNull Map<String, String> loadGameConfig() {
-		var gameDir = userConfig.getGameDirectory();
-		if (gameDir == null || gameDir.isBlank()) {
+		var gameDir = userConfig.getGameDir();
+		if (gameDir.isBlank()) {
 			log.warn("Game directory not configured - cannot load game config.");
 			return new HashMap<>();
 		}
@@ -170,7 +165,7 @@ public final class ConfigService {
 		var userCfg = Path.of(gameDir, "user.cfg");
 		var autoexecCfg = Path.of(gameDir, "autoexec.cfg");
 		
-		Map<String, String> config = new LinkedHashMap<>();
+		var config = new LinkedHashMap<String, String>();
 		
 		// Load autoexec.cfg first (lower precedence)
 		if (Files.exists(autoexecCfg))
@@ -259,7 +254,7 @@ public final class ConfigService {
 		if (! Files.exists(path))
 			return;
 		
-		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+		try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
 			var currentComment = new StringBuilder();
 			String line;
 			
@@ -271,20 +266,21 @@ public final class ConfigService {
 					if (! currentComment.isEmpty())
 						currentComment.append("\n");
 					currentComment.append(line);
-				} else if (! line.isEmpty()) {
-					Matcher m = CONFIG_LINE.matcher(line);
-					if (m.matches()) {
-						String key = m.group(1);
-						if (! currentComment.isEmpty()) {
-							commentsTarget.put(key, currentComment.toString());
-							currentComment = new StringBuilder();
-						}
-					} else {
-						// Non-comment, non-config line - clear comment accumulation
+					continue;
+				}
+				if (line.isEmpty()) {
+					// Empty line - clear comment accumulation (comments only belong to immediate next config)
+					currentComment = new StringBuilder();
+				}
+				var m = CONFIG_LINE.matcher(line);
+				if (m.matches()) {
+					String key = m.group(1);
+					if (! currentComment.isEmpty()) {
+						commentsTarget.put(key, currentComment.toString());
 						currentComment = new StringBuilder();
 					}
 				} else {
-					// Empty line - clear comment accumulation (comments only belong to immediate next config)
+					// Non-comment, non-config line - clear comment accumulation
 					currentComment = new StringBuilder();
 				}
 			}

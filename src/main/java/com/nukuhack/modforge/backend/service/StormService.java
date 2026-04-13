@@ -1,12 +1,13 @@
 package com.nukuhack.modforge.backend.service;
 
 import com.nukuhack.modforge.backend.model.I.Storm;
-import com.nukuhack.modforge.backend.model.*;
-import com.nukuhack.modforge.backend.model.Storm.StormData;
 import com.nukuhack.modforge.backend.model.Storm.*;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.w3c.dom.*;
+import lombok.extern.slf4j.Slf4j;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -97,7 +98,7 @@ import java.util.function.Consumer;
  * elements (entry-point files) or as a flat {@code sources="..."} attribute
  * (older format).  Both are handled.</p>
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StormService {
 	
@@ -132,31 +133,27 @@ public final class StormService {
 	public static StormData parse(InputStream is) {
 		
 		try {
-			final Document doc = docBuilder.parse(is);
-			final Element root = doc.getDocumentElement();
+			var doc = docBuilder.parse(is);
+			var root = doc.getDocumentElement();
 			
 			return parse(root);
 		} catch (Exception ex) {
-			log.warn("StormParser: failed to parse : " + ex.getMessage());
+			log.warn("StormParser: failed to parse : {}", ex.getMessage());
 		}
 		
 		return new StormData();
 	}
 	
 	public static StormData parse(Element element) {
-		final StormData data = new StormData();
+		var data = new StormData();
 		// Optional category stored as a root attribute
-		final String catAttr = element.getAttribute("category");
+		var catAttr = element.getAttribute("category");
 		if (! catAttr.isEmpty())
 			data.setCategory(catAttr);
 		
 		parseAllSections(element, data);
 		return data;
 	}
-	
-	// =========================================================================
-	// Section dispatching
-	// =========================================================================
 	
 	/**
 	 * Dispatch each direct child element of {@code root} to the appropriate
@@ -167,11 +164,11 @@ public final class StormService {
 	 * {@code customoperations}, {@code rules}.</p>
 	 */
 	private static void parseAllSections(Element root, StormData data) {
-		final NodeList children = root.getChildNodes();
+		var children = root.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			if (! (children.item(i) instanceof Element section))
 				continue;
-			final String tag = section.getTagName().toLowerCase(Locale.ROOT);
+			var tag = section.getTagName().toLowerCase(Locale.ROOT);
 			
 			switch (tag) {
 				case "common" -> parseCommon(section, data);
@@ -183,10 +180,6 @@ public final class StormService {
 			}
 		}
 	}
-	
-	// =========================================================================
-	// Common (source list at root level)
-	// =========================================================================
 	
 	/**
 	 * Parse the optional {@code <common>} section which holds global
@@ -204,7 +197,7 @@ public final class StormService {
 	}
 	
 	private static List<String> parseSources(Element section) {
-		final List<String> list = new LinkedList<>();
+		var list = new LinkedList<String>();
 		forEachElement(section, child -> {
 			if (child.getTagName().equalsIgnoreCase("source")) {
 				// Prefer "path" attribute; fall back to text content
@@ -217,10 +210,6 @@ public final class StormService {
 		});
 		return new ArrayList<>(list);
 	}
-	
-	// =========================================================================
-	// Custom selectors
-	// =========================================================================
 	
 	/**
 	 * Parse the optional {@code <customSelectors>} section.
@@ -235,17 +224,13 @@ public final class StormService {
 	 */
 	private static void parseCustomSelectors(Element section, StormData data) {
 		forEachElement(section, child -> {
-			final var cs = new CustomStormSelector();
+			var cs = new CustomStormSelector();
 			cs.setName(child.getAttribute("name"));
 			cs.setComment(child.getAttribute("comment"));
 			forEachElement(child, attrEl -> cs.getAttributeNames().add(attrEl.getAttribute("name")));
 			data.getCustomSelectors().add(cs);
 		});
 	}
-	
-	// =========================================================================
-	// Custom operations
-	// =========================================================================
 	
 	/**
 	 * Parse the optional {@code <customOperations>} section.
@@ -260,11 +245,11 @@ public final class StormService {
 	 */
 	private static void parseCustomOperations(Element section, StormData data) {
 		forEachElement(section, child -> {
-			final var co = new CustomStormOperation();
+			var co = new CustomStormOperation();
 			co.setName(child.getAttribute("name"));
 			co.setMode(child.getAttribute("mode"));
 			forEachElement(child, attrEl -> {
-				final var ma = new CustomStormOperation.ModAttribute();
+				var ma = new CustomStormOperation.ModAttribute();
 				ma.setStat(attrEl.getAttribute("stat"));
 				ma.setMinMod(parseDouble(attrEl.getAttribute("minMod")));
 				ma.setMaxMod(parseDouble(attrEl.getAttribute("maxMod")));
@@ -273,10 +258,6 @@ public final class StormService {
 			data.getCustomOperations().add(co);
 		});
 	}
-	
-	// =========================================================================
-	// Tasks
-	// =========================================================================
 	
 	/**
 	 * Parse the optional {@code <tasks>} section.
@@ -294,14 +275,14 @@ public final class StormService {
 			if (! child.getTagName().equalsIgnoreCase("task"))
 				return;
 			
-			final var task = new StormTask();
+			var task = new StormTask();
 			task.setName(child.getAttribute("name"));
 			task.setComment(child.getAttribute("comment"));
 			// "class" is a Java keyword – read via plain getAttribute
 			task.setTaskClass(child.getAttribute("class"));
 			
 			// Sources: prefer child <source path="..."/> elements, fall back to "sources" attr
-			final List<String> sourcePaths = parseSources(child);
+			var sourcePaths = parseSources(child);
 			
 			if (! sourcePaths.isEmpty()) {
 				task.setSources(String.join(",", sourcePaths));
@@ -313,10 +294,6 @@ public final class StormService {
 			data.getTasks().add(task);
 		});
 	}
-	
-	// =========================================================================
-	// Rules
-	// =========================================================================
 	
 	/**
 	 * Parse the {@code <rules>} section.
@@ -335,13 +312,13 @@ public final class StormService {
 			if (! ruleEl.getTagName().equalsIgnoreCase("rule"))
 				return;
 			
-			final var rule = new StormRule();
+			var rule = new StormRule();
 			rule.setName(ruleEl.getAttribute("name"));
 			rule.setComment(ruleEl.getAttribute("comment"));
 			rule.setMode(ruleEl.getAttribute("mode"));
 			
 			forEachElement(ruleEl, part -> {
-				final String partTag = part.getTagName().toLowerCase(Locale.ROOT);
+				var partTag = part.getTagName().toLowerCase(Locale.ROOT);
 				switch (partTag) {
 					// Actual format uses "selectors" (also accept legacy "conditions")
 					case "selectors", "conditions" ->
@@ -353,10 +330,6 @@ public final class StormService {
 			data.getRules().add(rule);
 		});
 	}
-	
-	// -------------------------------------------------------------------------
-	// Selectors (condition tree)
-	// -------------------------------------------------------------------------
 	
 	/**
 	 * Recursively parse a selector element.
@@ -379,18 +352,14 @@ public final class StormService {
 	 * }</pre>
 	 */
 	private static GenericSelector parseSelector(Element el) {
-		final var sel = new GenericSelector(el.getTagName());
-		copyXmlAttrs(el, sel.getAttributes(), false);
+		var sel = new GenericSelector(el.getTagName());
+		copyXmlAttrs(el, sel.getAttributes());
 		
 		// Recurse into children for both combinators and any exotic nested selectors
 		forEachElement(el, child -> sel.getChildren().add(parseSelector(child)));
 		
 		return sel;
 	}
-	
-	// -------------------------------------------------------------------------
-	// Operations
-	// -------------------------------------------------------------------------
 	
 	/**
 	 * Recursively parse an operation element and its children.
@@ -403,8 +372,8 @@ public final class StormService {
 	 * }</pre>
 	 */
 	private static GenericOperation parseOperation(Element el) {
-		final var op = new GenericOperation(el.getTagName());
-		copyXmlAttrs(el, op.getAttributes(), false);
+		var op = new GenericOperation(el.getTagName());
+		copyXmlAttrs(el, op.getAttributes());
 		
 		// Recursively parse any child operations
 		forEachElement(el, child -> op.getChildren().add(parseOperation(child)));
@@ -418,9 +387,9 @@ public final class StormService {
 		var el = serialize(data, doc);
 		doc.appendChild(el);
 		
-		final var tf = TransformerFactory.newInstance().newTransformer();
+		var tf = TransformerFactory.newInstance().newTransformer();
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
-		final var writer = new StringWriter();
+		var writer = new StringWriter();
 		tf.transform(new DOMSource(doc), new StreamResult(writer));
 		return writer.toString();
 	}
@@ -433,15 +402,15 @@ public final class StormService {
 	 */
 	public static Element serialize(StormData data, Document doc) {
 		// Root element: <storm> (matches actual file format)
-		final Element root = doc.createElement("storm");
+		var root = doc.createElement("storm");
 		if (data.getCategory() != null)
 			root.setAttribute("category", data.getCategory());
 		
 		// <common>
 		if (! data.getCommonSources().isEmpty()) {
-			final Element common = doc.createElement("common");
+			var common = doc.createElement("common");
 			for (var path : data.getCommonSources()) {
-				final Element src = doc.createElement("source");
+				var src = doc.createElement("source");
 				src.setAttribute("path", path);
 				common.appendChild(src);
 			}
@@ -450,9 +419,9 @@ public final class StormService {
 		
 		// <tasks>
 		if (! data.getTasks().isEmpty()) {
-			final Element tasks = doc.createElement("tasks");
+			var tasks = doc.createElement("tasks");
 			for (var t : data.getTasks()) {
-				final Element task = doc.createElement("task");
+				var task = doc.createElement("task");
 				if (! t.getName().isBlank())
 					task.setAttribute("name", t.getName());
 				if (! t.getTaskClass().isBlank())
@@ -461,12 +430,12 @@ public final class StormService {
 					task.setAttribute("comment", t.getComment());
 				
 				// Write sources as child elements if comma-separated, else single element
-				final String sources = t.getSources();
+				var sources = t.getSources();
 				if (sources != null && ! sources.isBlank()) {
 					for (var srcPath : sources.split(",")) {
-						final String trimmed = srcPath.trim();
+						var trimmed = srcPath.trim();
 						if (! trimmed.isBlank()) {
-							final Element src = doc.createElement("source");
+							var src = doc.createElement("source");
 							src.setAttribute("path", trimmed);
 							task.appendChild(src);
 						}
@@ -479,14 +448,14 @@ public final class StormService {
 		
 		// <customSelectors>
 		if (! data.getCustomSelectors().isEmpty()) {
-			final Element cs = doc.createElement("customSelectors");
+			var cs = doc.createElement("customSelectors");
 			for (var cSel : data.getCustomSelectors()) {
-				final Element sel = doc.createElement("selector");
+				var sel = doc.createElement("selector");
 				sel.setAttribute("name", cSel.getName());
 				if (! cSel.getComment().isBlank())
 					sel.setAttribute("comment", cSel.getComment());
 				for (var attrName : cSel.getAttributeNames()) {
-					final Element a = doc.createElement("attribute");
+					var a = doc.createElement("attribute");
 					a.setAttribute("name", attrName);
 					sel.appendChild(a);
 				}
@@ -497,14 +466,14 @@ public final class StormService {
 		
 		// <customOperations>
 		if (! data.getCustomOperations().isEmpty()) {
-			final Element co = doc.createElement("customOperations");
+			var co = doc.createElement("customOperations");
 			for (var cop : data.getCustomOperations()) {
-				final Element op = doc.createElement("operation");
+				var op = doc.createElement("operation");
 				op.setAttribute("name", cop.getName());
 				if (! cop.getMode().isBlank())
 					op.setAttribute("mode", cop.getMode());
 				for (var ma : cop.getModAttributes()) {
-					final Element a = doc.createElement("attribute");
+					var a = doc.createElement("attribute");
 					a.setAttribute("stat", ma.getStat());
 					a.setAttribute("minMod", String.valueOf(ma.getMinMod()));
 					a.setAttribute("maxMod", String.valueOf(ma.getMaxMod()));
@@ -517,7 +486,7 @@ public final class StormService {
 		
 		// <rules>
 		if (! data.getRules().isEmpty()) {
-			final Element rules = doc.createElement("rules");
+			var rules = doc.createElement("rules");
 			for (var r : data.getRules()) {
 				rules.appendChild(serializeRule(doc, r));
 			}
@@ -528,7 +497,7 @@ public final class StormService {
 	}
 	
 	private static Element serializeRule(Document doc, StormRule rule) {
-		final Element el = doc.createElement("rule");
+		var el = doc.createElement("rule");
 		if (! rule.getName().isBlank())
 			el.setAttribute("name", rule.getName());
 		if (! rule.getMode().isBlank())
@@ -538,13 +507,13 @@ public final class StormService {
 		
 		// Always emit <selectors> and <operations> elements (even if empty),
 		// to stay consistent with the source format.
-		final Element selEl = doc.createElement("selectors");
+		var selEl = doc.createElement("selectors");
 		for (var sel : rule.getSelectors()) {
 			selEl.appendChild(serializeSelector(doc, sel));
 		}
 		el.appendChild(selEl);
 		
-		final Element opsEl = doc.createElement("operations");
+		var opsEl = doc.createElement("operations");
 		for (var op : rule.getOperations()) {
 			opsEl.appendChild(serializeOperation(doc, op));
 		}
@@ -555,7 +524,7 @@ public final class StormService {
 	
 	/** Recursively serialize a {@link GenericSelector} (supports arbitrary depth). */
 	private static Element serializeSelector(Document doc, GenericSelector sel) {
-		final Element el = doc.createElement(sel.getName().isBlank() ? "selector" : sel.getName());
+		var el = doc.createElement(sel.getName().isBlank() ? "selector" : sel.getName());
 		sel.getAttributes().forEach(el::setAttribute);
 		for (var child : sel.getChildren()) {
 			el.appendChild(serializeSelector(doc, child));
@@ -565,7 +534,7 @@ public final class StormService {
 	
 	/** Recursively serialize a {@link GenericOperation}. */
 	private static Element serializeOperation(Document doc, GenericOperation op) {
-		final Element el = doc.createElement(op.getName().isBlank() ? "operation" : op.getName());
+		var el = doc.createElement(op.getName().isBlank() ? "operation" : op.getName());
 		op.getAttributes().forEach(el::setAttribute);
 		for (var child : op.getChildren()) {
 			el.appendChild(serializeOperation(doc, child));
@@ -573,20 +542,16 @@ public final class StormService {
 		return el;
 	}
 	
-	// =========================================================================
-	// Private utilities
-	// =========================================================================
-	
 	/**
 	 * Copy all XML element attributes into a String map.
 	 */
-	private static void copyXmlAttrs(Element el, Map<String, String> target, boolean toLower) {
-		final NamedNodeMap xmlAttrs = el.getAttributes();
+	private static void copyXmlAttrs(Element el, Map<String, String> target) {
+		var xmlAttrs = el.getAttributes();
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
-			final var a = (Attr) xmlAttrs.item(i);
+			var a = (Attr) xmlAttrs.item(i);
 			if (a.getName() == null)
 				continue;
-			target.put(toLower ? a.getName().toLowerCase() : a.getName(), a.getValue());
+			target.put(a.getName(), a.getValue());
 		}
 	}
 	
@@ -606,7 +571,7 @@ public final class StormService {
 	 * {@code action} for each one. Non-element nodes (text, comments) are skipped.
 	 */
 	private static void forEachElement(Element parent, Consumer<Element> action) {
-		final NodeList children = parent.getChildNodes();
+		var children = parent.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			if (children.item(i) instanceof Element el) {
 				action.accept(el);

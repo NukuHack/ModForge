@@ -47,7 +47,7 @@ public class ModEditPage extends BasePage {
 		
 		JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
 		bottomBar.setOpaque(false);
-		bottomBar.add(primaryBtn("ui_save_changes", e -> saveManifest(window.getRegistry().userConfig.getGameDirectory())));
+		bottomBar.add(primaryBtn("ui_save_changes", e -> saveManifest(window.getRegistry().userConfig.getGameDir())));
 		bottomBar.add(primaryBtn("ui_mod_export", e -> exportMod()));
 		bottomBar.add(primaryBtn("ui_mod_delete", e -> deleteMod()));
 		bottomBar.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.MODS)));
@@ -198,13 +198,13 @@ public class ModEditPage extends BasePage {
 	public void refreshFieldData(ModData currentMod) {
 		this.currentMod = currentMod;
 		
-		idField.setText(currentMod.id);
-		nameField.setText(currentMod.name);
-		descriptionArea.setText(currentMod.description);
-		authorField.setText(currentMod.author);
-		versionField.setText(currentMod.modVersion);
-		createdOnField.setText(currentMod.createdOn);
-		modifiesLevelCheck.setSelected(currentMod.modifiesLevel);
+		idField.setText(currentMod.getId());
+		nameField.setText(currentMod.getName());
+		descriptionArea.setText(currentMod.getDescription());
+		authorField.setText(currentMod.getAuthor());
+		versionField.setText(currentMod.getModVersion());
+		createdOnField.setText(currentMod.getCreatedOn());
+		modifiesLevelCheck.setSelected(currentMod.isModifiesLevel());
 		
 		refreshVersionFields();
 	}
@@ -265,20 +265,21 @@ public class ModEditPage extends BasePage {
 			if (! version.isBlank())
 				list.add(version);
 		}
-		currentMod.id = idField.getText();
-		currentMod.name = nameField.getText();
-		currentMod.description = descriptionArea.getText();
-		currentMod.author = authorField.getText();
-		currentMod.modVersion = versionField.getText();
-		currentMod.createdOn = createdOnField.getText();
-		currentMod.modifiesLevel = modifiesLevelCheck.isSelected();
+		
+		currentMod.setId(idField.getText());
+		currentMod.setName(nameField.getText());
+		currentMod.setDescription(descriptionArea.getText());
+		currentMod.setAuthor(authorField.getText());
+		currentMod.setModVersion(versionField.getText());
+		currentMod.setCreatedOn(createdOnField.getText());
+		currentMod.setModifiesLevel(modifiesLevelCheck.isSelected());
 		currentMod.setSupportsGameVersions(list);
 		
 		boolean success = ModService.writeModAsXml(gameDir, currentMod);
-		ConfigService.saveModConfig(Util.modFolder(gameDir, currentMod.id), currentMod);
+		ConfigService.saveModConfig(Util.modFolder(gameDir, currentMod.getId()), currentMod);
 		
 		if (success) {
-			window.snackbar.show("ui_manifest_saved", BarManager.Type.SUCCESS, currentMod.name);
+			window.snackbar.show("ui_manifest_saved", BarManager.Type.SUCCESS, currentMod.getName());
 		} else {
 			window.snackbar.show("ui_manifest_save_failed", BarManager.Type.ERROR);
 		}
@@ -286,7 +287,7 @@ public class ModEditPage extends BasePage {
 	
 	private void exportMod() {
 		// Get data needed for background thread (copy to avoid threading issues)
-		final var gameDir = window.getRegistry().userConfig.getGameDirectory();
+		final var gameDir = window.getRegistry().userConfig.getGameDir();
 		final var mod = currentMod;
 		// SwingUtilities.invokeLater(()->exportButton.setEnabled(false));
 		// Run heavy work off EDT
@@ -296,7 +297,7 @@ public class ModEditPage extends BasePage {
 				ModService.exportMod(mod, gameDir);  // Heavy!
 				
 				// UI updates back on EDT
-				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_mod_exported", BarManager.Type.SUCCESS, mod.id + ".pak"));
+				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_mod_exported", BarManager.Type.SUCCESS, mod.getId() + ".pak"));
 			} catch (final Exception ex) {
 				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_export_failed", BarManager.Type.ERROR));
 				log.warn("error while exporting", ex);
@@ -305,15 +306,15 @@ public class ModEditPage extends BasePage {
 	}
 	
 	private void deleteMod() {
-		int confirm = JOptionPane.showConfirmDialog(this, MainWindow.getLocalText("ui_delete_mod_confirm", currentMod.name), MainWindow.getLocalText("ui_confirm_delete"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		int confirm = JOptionPane.showConfirmDialog(this, MainWindow.getLocalText("ui_delete_mod_confirm", currentMod.getName()), MainWindow.getLocalText("ui_confirm_delete"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		if (confirm == JOptionPane.YES_OPTION) {
-			String gameDir = window.getRegistry().userConfig.getGameDirectory();
-			Path modPath = Path.of(gameDir, "Mods", currentMod.id);
+			String gameDir = window.getRegistry().userConfig.getGameDir();
+			Path modPath = Path.of(gameDir, "Mods", currentMod.getId());
 			
 			try {
 				if (Files.exists(modPath)) {
 					IOUtil.deleteRecursively(modPath);
-					window.snackbar.show("ui_mod_deleted", BarManager.Type.SUCCESS, currentMod.name);
+					window.snackbar.show("ui_mod_deleted", BarManager.Type.SUCCESS, currentMod.getName());
 				}
 				
 				ModService.modCollection.remove(currentMod);

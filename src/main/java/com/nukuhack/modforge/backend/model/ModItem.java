@@ -3,6 +3,7 @@ package com.nukuhack.modforge.backend.model;
 import com.nukuhack.modforge.backend.ItemType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,49 +16,41 @@ public interface ModItem {
 	// ── Attribute names that hold localization keys (checked case-insensitively)
 	Set<String> LANG_ATTR_HINTS = Set.of("UIName", "Desc", "UIInfo", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
 	
-	String getId();
+	@NonNull String getId();
 	
-	void setId(final String id);
+	void setId(final @NonNull String id);
 	
 	/**
 	 * @return ID key for Element mapping from XML data
 	 */
-	default String getIdKey() {
+	default @NonNull String getIdKey() {
 		return ItemType.getIdKey(this.getClass());
 	}
 	
-	String getPath();
+	@NonNull String getPath();
 	
-	void setPath(final String path);
+	void setPath(final @NonNull String path);
 	
-	List<Attribute> getAttributes();
+	@NonNull List<Attribute> getAttributes();
 	
-	void setAttribute(final List<Attribute> attributes);
+	void setAttribute(final @NonNull Collection<Attribute> attributes);
 	
-	void removeAttribute(final Attribute attr);
+	void removeAttribute(final @NonNull Attribute attr);
 	
-	void addAttribute(final Attribute attr);
+	void addAttribute(final @NonNull Attribute attr);
 	
-	void addAttribute(final Collection<Attribute> attributes);
+	void addAttribute(final @NonNull Collection<Attribute> attributes);
 	
-	Set<ModItem> getLinkedItems();
+	@NonNull Optional<Attribute> findAttr(final @NonNull String candidate);
 	
-	void setLinkedItem(final Collection<ModItem> linkedItems);
-	
-	void addLinkedItem(final ModItem linkedItem);
-	
-	void addLinkedItem(final Collection<ModItem> linkedItem);
-	
-	Optional<Attribute> findAttr(final String candidate);
-	
-	default List<Attribute.StringAttribute> getLangAttributes() {
+	default @NonNull List<Attribute.StringAttribute> getLangAttributes() {
 		return getAttributes().stream().filter(a -> LANG_ATTR_HINTS.contains(a.getName())).map(a -> (Attribute.StringAttribute) a).toList();
 	}
 	
 	/**
 	 * Get all item details as plain text for copying
 	 */
-	default String details() {
+	default @NonNull String details() {
 		final var sb = new StringBuilder();
 		sb.append("ID: ").append(this.getId()).append("\n");
 		sb.append("Class: ").append(this.getClass().getSimpleName()).append("\n");
@@ -71,83 +64,55 @@ public interface ModItem {
 			}
 		}
 		
-		// Show linked IDs if any
-		if (! this.getLinkedItems().isEmpty()) {
-			sb.append("\nLinked Items:\n");
-			for (var linkedItem : this.getLinkedItems()) {
-				sb.append("  • ").append(linkedItem.details()).append("\n");
-			}
-		}
-		
 		return sb.toString();
 	}
 	
 	
-	@NoArgsConstructor
 	@Slf4j
+	@Setter
+	@NonNull
+	@NoArgsConstructor
 	abstract class BaseModItem implements ModItem {
 		private final List<Attribute> attributes = new ArrayList<>();
-		private Set<ModItem> linkedItems = null;
 		// TODO change the ID from string to a nicer object
 		// - can not do since we have id of 0 and id of -1 ... LOL
 		@Getter
-		@Setter
 		private String id;
 		@Getter
-		@Setter
 		private String path;
 		
 		@Override
-		public List<Attribute> getAttributes() {
+		public @NonNull List<Attribute> getAttributes() {
 			return Collections.unmodifiableList(this.attributes);
 		}
 		
 		@Override
-		public void setAttribute(final List<Attribute> attr) {
+		public void setAttribute(final @NonNull Collection<Attribute> attr) {
 			this.attributes.clear();
 			this.attributes.addAll(attr);
 		}
 		
 		@Override
-		public void removeAttribute(final Attribute attr) {
+		public void removeAttribute(final @NonNull Attribute attr) {
 			this.attributes.remove(attr);
 		}
 		
 		@Override
-		public void addAttribute(final Attribute attr) {
+		public void addAttribute(final @NonNull  Attribute attr) {
 			this.attributes.add(attr);
 		}
 		
 		@Override
-		public void addAttribute(final Collection<Attribute> attr) {
+		public void addAttribute(final @NonNull  Collection<Attribute> attr) {
 			this.attributes.addAll(attr);
 		}
 		
-		@Override
-		public Set<ModItem> getLinkedItems() {
-			if (this.linkedItems == null)
-				this.linkedItems = new HashSet<>();
-			return Collections.unmodifiableSet(this.linkedItems);
-		}
-		
-		@Override
-		public void setLinkedItem(final Collection<ModItem> linkedItems) {
-			this.linkedItems = new HashSet<>(linkedItems);
-		}
-		
-		@Override
-		public void addLinkedItem(final ModItem linkedItem) {
-			if (this.linkedItems == null)
-				this.linkedItems = new HashSet<>();
-			this.linkedItems.add(linkedItem);
-		}
-		
-		@Override
-		public void addLinkedItem(final Collection<ModItem> linkedItem) {
-			if (this.linkedItems == null)
-				this.linkedItems = new HashSet<>(linkedItem);
-			else
-				this.linkedItems.addAll(linkedItem);
+		/**
+		 * Helper: find the first attribute whose name (case-insensitive) contains the candidate.
+		 */
+		public @NonNull Optional<Attribute> findAttr(final @NonNull  String candidate) {
+			final String lo = candidate.toLowerCase(Locale.ROOT);
+			return this.attributes.stream().filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo)).findFirst();
 		}
 		
 		@Override
@@ -163,18 +128,9 @@ public interface ModItem {
 			return Objects.hash(getId(), getPath());
 		}
 		
-		/**
-		 * Helper: find the first attribute whose name (case-insensitive) contains the candidate.
-		 */
-		public Optional<Attribute> findAttr(final String candidate) {
-			final String lo = candidate.toLowerCase(Locale.ROOT);
-			return this.attributes.stream().filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo)).findFirst();
-		}
-		
-		
 		@Override
 		public String toString() {
-			return this.getClass().getName() + "{attributes=" + attributes + ", linkedItems=" + linkedItems + ", id='" + id + '\'' + ", path='" + path + '\'' + '}';
+			return this.getClass().getName() + "{attributes=" + attributes + ", id='" + id + '\'' + ", path='" + path + '\'' + '}';
 		}
 	}
 }

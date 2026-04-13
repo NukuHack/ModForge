@@ -173,11 +173,11 @@ public class ItemsPage extends BasePage {
 		var mod = getSelectedMod();
 		if (mod.isPresent()) {
 			
-			underlyingItems.addAll(mod.get().getItems());
+			underlyingItems.addAll(mod.get().getItemsSet());
 		} else {
 			
 			var game = Singleton.getGame();
-			underlyingItems.addAll(game.getItems());
+			underlyingItems.addAll(game.getItemsSet());
 		}
 		underlyingItems.sort(Comparator.comparing(ModItem::getId, String.CASE_INSENSITIVE_ORDER));
 	}

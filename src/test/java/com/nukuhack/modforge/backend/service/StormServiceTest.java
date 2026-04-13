@@ -1,24 +1,15 @@
 package com.nukuhack.modforge.backend.service;
 
-import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.Storm.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,15 +18,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @ExtendWith(MockitoExtension.class)
 class StormServiceTest {
-	
-	@TempDir
-	Path tempDir;
-	
-	@Mock
-	private UserConfig userConfig;
-	
-	@Mock
-	private ModData modData;
 	
 	@BeforeEach
 	void setUp() {

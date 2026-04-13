@@ -303,7 +303,7 @@ class ItemServiceTests extends BaseServiceTest {
 	@DisplayName("getOutputFile: PAK-format path is resolved to the correct stage directory")
 	void getOutputFilePakFormat() {
 		var mod = new ModData();
-		mod.id = "testMod";
+		mod.setId("testMod");
 		Path result = ItemService.getOutputFile(
 				tempDir.toString(), "Weapons.pak:Libs/Tables/weapon.xml", mod);
 		String normalized = result.toString().replace('\\', '/');
@@ -315,7 +315,7 @@ class ItemServiceTests extends BaseServiceTest {
 	@DisplayName("getOutputFile: plain-path format falls back to modId stem")
 	void getOutputFilePlainPath() {
 		var mod = new ModData();
-		mod.id = "testMod";
+		mod.setId("testMod");
 		Path result = ItemService.getOutputFile(tempDir.toString(), "Scripts/items.xml", mod);
 		String normalized = result.toString().replace('\\', '/');
 		assertTrue(normalized.contains("/testMod/"),
@@ -327,9 +327,9 @@ class ItemServiceTests extends BaseServiceTest {
 	@DisplayName("getOutputFile: blank path falls back to apple.txt sentinel filename")
 	void getOutputFileBlankPath() {
 		var mod = new ModData();
-		mod.id = "testMod";
+		mod.setId("testMod");
 		Path result = ItemService.getOutputFile(tempDir.toString(), "", mod);
-		assertEquals(result.getFileName().toString(), "apple.txt", "Blank path should produce apple.txt sentinel file");
+		assertEquals("apple.txt", result.getFileName().toString(), "Blank path should produce apple.txt sentinel file");
 	}
 	
 	// ── writeModItems ────────────────────────────────────────────────────────
@@ -338,7 +338,7 @@ class ItemServiceTests extends BaseServiceTest {
 	@DisplayName("writeModItems: is a no-op (no throw, no dirs) when item set is empty")
 	void writeModItemsEmptySet() {
 		var mod = new ModData();
-		mod.id = "emptyItems";
+		mod.setId("emptyItems");
 		mod.setItems(Collections.emptySet());
 		assertDoesNotThrow(() -> ItemService.writeModItems(mod, tempDir.toString()));
 	}
@@ -355,7 +355,7 @@ class ItemServiceTests extends BaseServiceTest {
 		assertFalse(items.isEmpty());
 		
 		var mod = new ModData();
-		mod.id = "writeTest";
+		mod.setId("writeTest");
 		mod.setItems(items);
 		
 		Path outBase = tmp.resolve("game_write");
@@ -384,7 +384,7 @@ class ItemServiceTests extends BaseServiceTest {
 		assertFalse(items.isEmpty());
 		
 		var mod = new ModData();
-		mod.id = "perk-test-mod";
+		mod.setId("perk-test-mod");
 		mod.setItems(items);
 		
 		assertDoesNotThrow(() -> ItemService.writeModItems(mod, outBase.resolve("nother").toString()));

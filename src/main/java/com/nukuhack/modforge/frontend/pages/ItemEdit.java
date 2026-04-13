@@ -576,7 +576,7 @@ public class ItemEdit extends BaseEditPage {
 			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 				if (value instanceof BuffParamMap bpm) {
-					setText(String.format("<html><b>%s</b>&nbsp;<font color='#6c6f85'>— %s</font></html>", bpm.getName(), bpm.getDescription() != null ? bpm.getDescription() : bpm.getKey()));
+					setText(String.format("<html><b>%s</b>&nbsp;<font color='#6c6f85'>— %s</font></html>", bpm.getName(), bpm.getDescription()));
 					setToolTipText("[" + bpm.getKey() + "]  " + bpm.getDescription());
 				}
 				if (! isSelected) {
@@ -872,7 +872,7 @@ public class ItemEdit extends BaseEditPage {
 		}
 		var mod = targetMod.get();
 		mod.addItem(ModItemBuilder.deepCopy(currentItem, mod));
-		window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, mod.name);
+		window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, mod.getName());
 	}
 	
 	private void styleTextField(JTextField f) {
@@ -991,7 +991,7 @@ public class ItemEdit extends BaseEditPage {
 		/** Narrow the visible list to entries matching {@code text} (case-insensitive). */
 		void applyFilter(String text) {
 			String lo = text == null ? "" : text.strip().toLowerCase();
-			List<BuffParamMap> next = lo.isEmpty() ? new ArrayList<>(master) : master.stream().filter(b -> b.getName().toLowerCase().contains(lo) || b.getKey().toLowerCase().contains(lo) || (b.getDescription() != null && b.getDescription().toLowerCase().contains(lo))).toList();
+			List<BuffParamMap> next = lo.isEmpty() ? new ArrayList<>(master) : master.stream().filter(b -> b.getName().toLowerCase().contains(lo) || b.getKey().toLowerCase().contains(lo) || b.getDescription().toLowerCase().contains(lo)).toList();
 			int oldSize = view.size();
 			this.view = new ArrayList<>(next);
 			int newSize = view.size();

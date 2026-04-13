@@ -5,10 +5,12 @@ import com.nukuhack.modforge.backend.ItemEntry;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.Attributes;
+import com.nukuhack.modforge.backend.model.I;
 import com.nukuhack.modforge.backend.model.I.Storm;
 import com.nukuhack.modforge.backend.model.ModItem;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -61,7 +63,7 @@ public final class ModItemBuilder {
 		var xmlAttrs = el.getAttributes();
 		var list = new ArrayList<Attribute>(xmlAttrs.getLength());
 		for (int i = 0; i < xmlAttrs.getLength(); i++) {
-			final var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
+			var a = (org.w3c.dom.Attr) xmlAttrs.item(i);
 			list.add(Attributes.create(a.getName(), a.getValue()));
 		}
 		return list;
@@ -75,7 +77,7 @@ public final class ModItemBuilder {
 	}
 	
 	public static Optional<Element> create(final Document document, final ModItem item) {
-		final var maker = MAKER_MAP.getOrDefault(item.getClass(), fallbackBuilder);
+		var maker = MAKER_MAP.getOrDefault(item.getClass(), fallbackBuilder);
 		
 		return Optional.ofNullable(maker.handle(document, item));
 	}
@@ -86,7 +88,7 @@ public final class ModItemBuilder {
 	 */
 	private static ModItem deepCopy(ModItem src, String newPath) {
 		try {
-			final var copy = src.getClass().getDeclaredConstructor().newInstance();
+			var copy = src.getClass().getDeclaredConstructor().newInstance();
 			copy.setId(src.getId());
 			copy.setPath(newPath);
 			copy.setAttribute(src.getAttributes().stream().map(Attribute::deepClone).toList());
@@ -103,8 +105,8 @@ public final class ModItemBuilder {
 	 * since path change is reflected in the data of the item
 	 */
 	public static ModItem deepCopy(ModItem src, ModData mod) {
-		final var path = src.getPath();
-		final int colon = path.indexOf(':') + 1;
+		var path = src.getPath();
+		var colon = path.indexOf(':') + 1;
 		
 		final String prefix;   // e.g. "SomePak.pak:" or ""
 		final String innerPath; // e.g. "inner/dir/entry.xml"
@@ -120,7 +122,7 @@ public final class ModItemBuilder {
 		var fullPath = Path.of(innerPath);
 		var name = fullPath.getFileName().toString();
 		var parent = fullPath.getParent();
-		var xmlFile = Util.modXmlFile(name, mod.id);
+		var xmlFile = Util.modXmlFile(name, mod.getId());
 		var fullFinal = prefix + (parent != null ? Util.join(parent.toString(), xmlFile) : xmlFile);
 		return deepCopy(src, fullFinal);
 	}
@@ -142,11 +144,13 @@ public final class ModItemBuilder {
 	 */
 	@Slf4j
 	protected static class GeneralBuilder<M extends ModItem> implements BuildHandler, CreateHandler {
+		@NonNull
 		protected final Class<M> type;
+		@NonNull
 		protected final String idKey;
 		protected final Constructor<M> cons;
 		
-		protected GeneralBuilder(Class<M> type, String idKey) {
+		protected GeneralBuilder(@NonNull Class<M> type, @NonNull String idKey) {
 			this.type = type;
 			this.idKey = idKey;
 			Constructor<M> cons;
@@ -164,13 +168,13 @@ public final class ModItemBuilder {
 			try {
 				if (cons == null)
 					return fallbackBuilder.handle(element);
-				final M item = cons.newInstance();
+				M item = cons.newInstance();
 				
-				final var idValue = element.getAttribute(idKey);
+				var idValue = element.getAttribute(idKey);
 				item.setId(idValue);
 				
 				return ModItemBuilder.create(element, item);
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				log.warn("Handler failed for {}: {}", type.getSimpleName(), e.getMessage());
 				return null;
 			}
@@ -178,8 +182,8 @@ public final class ModItemBuilder {
 		
 		@Override
 		public Element handle(final Document document, final ModItem item) {
-			final var typeName = group(item).xmlObjName;
-			final var el = document.createElement(typeName);
+			var typeName = group(item).xmlObjName;
+			var el = document.createElement(typeName);
 			for (var attr : item.getAttributes()) {
 				el.setAttribute(attr.getName(), attr.serialize());
 			}
@@ -194,22 +198,22 @@ public final class ModItemBuilder {
 	protected static class FallbackBuilder implements BuildHandler, CreateHandler {
 		@Override
 		public ModItem handle(Element element) {
-			final var elementName = element.getTagName();
+			var elementName = element.getTagName();
 			log.info("No creater matched element <{}>", elementName);
 			
 			// using if- so the compiler sees it as good code
 			if (true)
 				return null;
 			
-			final var attributes = element.getAttributes();
-			final Map<String, String> map = new HashMap<>();
+			var attributes = element.getAttributes();
+			var map = new HashMap<String, String>();
 			for (int i = 0; i < attributes.getLength(); i++) {
-				final var a = (org.w3c.dom.Attr) attributes.item(i);
+				var a = (org.w3c.dom.Attr) attributes.item(i);
 				map.put(a.getName(), a.getValue());
 			}
 			
 			log.trace("No creater matched element data {}", map);
-			final var item = new ModItem.EmptyImpl();
+			var item = new I.EmptyImpl();
 			String id = null;
 			String name = null;
 			for (var key : map.keySet()) {
@@ -218,8 +222,8 @@ public final class ModItemBuilder {
 				if (name == null && key.equalsIgnoreCase("name"))
 					name = key;
 			}
-			final var idKey = id != null ? id : name != null ? name : "";
-			final var idValue = element.getAttribute(idKey);
+			var idKey = id != null ? id : name != null ? name : "";
+			var idValue = element.getAttribute(idKey);
 			item.setIdKey(idKey);
 			item.setId(idValue);
 			log.debug("set unknown item's id to be key={}, val={}", idKey, idValue);
@@ -245,7 +249,7 @@ public final class ModItemBuilder {
 	 */
 	@Slf4j
 	protected static class FileBuilder<M extends ModItem> extends GeneralBuilder<M> {
-		protected FileBuilder(Class<M> type, String idKey) {
+		protected FileBuilder(@NonNull Class<M> type, @NonNull String idKey) {
 			super(type, idKey);
 		}
 		
@@ -277,7 +281,7 @@ public final class ModItemBuilder {
 					return StormService.serialize(storm.getStormData(), document);
 				}
 				return fallbackBuilder.handle(document, item);
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				log.warn("Creating Storm xml failed for {}: {}", item, e.getMessage());
 				return null;
 			}

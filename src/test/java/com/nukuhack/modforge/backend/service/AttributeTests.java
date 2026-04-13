@@ -83,7 +83,7 @@ class AttributeTests {
         }
 
         @Test
-        @DisplayName("create: blank value → empty StringAttribute, not null")
+        @DisplayName("create: blank value → empty StringAttribute")
         void createBlank() {
             var attr = Attributes.create("anything", "   ");
             assertInstanceOf(Attribute.StringAttribute.class, attr);
@@ -91,9 +91,9 @@ class AttributeTests {
         }
 
         @Test
-        @DisplayName("create: null value → empty StringAttribute")
-        void createNull() {
-            var attr = Attributes.create("x", null);
+        @DisplayName("create: empty value → empty StringAttribute")
+        void createEmpty() {
+            var attr = Attributes.create("x", "");
             assertInstanceOf(Attribute.StringAttribute.class, attr);
             assertEquals("", attr.getValue());
         }

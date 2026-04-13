@@ -1,6 +1,7 @@
 package com.nukuhack.modforge.backend.model;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -421,17 +422,19 @@ public enum BuffParamMap {
 			BY_NAME.put(e.name, e);
 		}
 	}
-	public static BuffParamMap fromKey(String key) {
+	public static BuffParamMap fromKey(@NonNull String key) {
 		var val = BY_KEY.get(key);
 		if (val == null)
 			log.warn("could not get BuffParam for {}", key);
 		return val;
 	}
-	public static BuffParamMap fromName(String name) {
+	public static BuffParamMap fromName(@NonNull String name) {
 		return BY_NAME.get(name);
 	}
-	
+	@NonNull
 	private final String key;
+	@NonNull
 	private final String name;
+	@NonNull
 	private final String description;
 }

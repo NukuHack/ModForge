@@ -129,7 +129,7 @@ class LocalServiceTests extends BaseServiceTest {
 		var ls = createLocalService(tmp.toString());
 		
 		var mod = new ModData();
-		mod.id = "test-mod";
+		mod.setId("test-mod");
 		Map<Language, Map<String, String>> modLocal = new EnumMap<>(Language.class);
 		Map<String, String> modStrings = new HashMap<>();
 		modStrings.put("ui_sword", "Mod Sword Name");
@@ -145,7 +145,7 @@ class LocalServiceTests extends BaseServiceTest {
 	void resolveUnknownKey() {
 		var ls = createLocalService(tmp.toString());
 		var mod = new ModData();
-		mod.id = "test-mod";
+		mod.setId("test-mod");
 		mod.setLocal(Collections.emptyMap());
 		assertNull(ls.resolve("definitely_not_a_key_xyz", mod, Language.ENGLISH));
 	}
@@ -157,7 +157,7 @@ class LocalServiceTests extends BaseServiceTest {
 		local.put(Language.ENGLISH, new LinkedHashMap<>(Map.of("ui_item", "My Item")));
 		
 		var mod = new ModData();
-		mod.id = "loc-mod";
+		mod.setId("loc-mod");
 		mod.setLocal(local);
 		
 		assertDoesNotThrow(() -> LocalService.writeModLocalization(mod, tmp.toString()));
@@ -177,7 +177,7 @@ class LocalServiceTests extends BaseServiceTest {
 		Files.createDirectories(outBase);
 		
 		var mod = new ModData();
-		mod.id = "eng-output-mod";
+		mod.setId("eng-output-mod");
 		mod.setLocal(result);
 		
 		assertDoesNotThrow(() -> LocalService.writeModLocalization(mod, String.valueOf(outBase)));

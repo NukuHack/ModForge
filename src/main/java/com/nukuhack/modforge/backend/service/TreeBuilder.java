@@ -4,6 +4,7 @@ import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.Attribute.XmlNode;
 import com.nukuhack.modforge.backend.model.Attribute.XmlNodeAttribute;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -12,7 +13,6 @@ import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.nukuhack.modforge.backend.service.ModItemBuilder.getAttributeFromElement;
 
@@ -35,7 +35,7 @@ import static com.nukuhack.modforge.backend.service.ModItemBuilder.getAttributeF
 @Slf4j
 public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilder<M> {
 	
-	public TreeBuilder(Class<M> type, String idKey) {
+	public TreeBuilder(@NonNull Class<M> type, @NonNull String idKey) {
 		super(type, idKey);
 	}
 	
@@ -47,7 +47,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 *       with index suffixes applied to disambiguate duplicate sibling tags</li>
 	 * </ul>
 	 */
-	public static XmlNode parseNode(final Element element) {
+	public static @NonNull XmlNode parseNode(final @NonNull Element element) {
 		// Flat attributes
 		var attrs = getAttributeFromElement(element);
 		
@@ -64,7 +64,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * @param tagName  the element tag — callers must already have stripped any index suffix
 	 * @param node     the node to convert
 	 */
-	public static Element serializeNode(final Document document, final String tagName, final XmlNode node) {
+	public static @NonNull Element serializeNode(final @NonNull Document document, final @NonNull String tagName, final @NonNull XmlNode node) {
 		var el = document.createElement(tagName);
 		
 		// Write flat attributes first (preserves original attribute-before-children order)
@@ -87,7 +87,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * Used both by {@link #handle(Element)} (attaching to a {@link ModItem})
 	 * and internally.
 	 */
-	private static List<Attribute> parseChildrenAsAttributes(final Element parent) {
+	private static @NonNull List<Attribute> parseChildrenAsAttributes(final @NonNull Element parent) {
 		var tagSeen = new LinkedHashMap<String, Integer>(); // tag → count so far
 		var result = new ArrayList<Attribute>();
 		
@@ -113,8 +113,8 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 			var tag = tmp.substring(7, last);       // strip "__tmp__" prefix
 			var idx = Integer.parseInt(tmp.substring(last + 2));
 			var finalName = (tagSeen.get(tag) == 1) ? tag : tag + "[" + idx + "]";
-			return new XmlNodeAttribute(finalName, ((XmlNodeAttribute) attr).getValue());
-		}).collect(Collectors.toList());
+			return (Attribute) new XmlNodeAttribute(finalName, ((XmlNodeAttribute) attr).getValue());
+		}).toList();
 	}
 	
 	/**
@@ -122,7 +122,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * a list of {@link XmlNode}s with index-suffix disambiguation.
 	 * Used by {@link #parseNode(Element)} to build the children list of a node.
 	 */
-	private static List<XmlNode> parseChildNodes(final Element parent) {
+	private static @NonNull List<XmlNode> parseChildNodes(final @NonNull Element parent) {
 		var tagSeen = new LinkedHashMap<String, Integer>(); // tag → count so far
 		var result = new ArrayList<RawChild>();
 		
@@ -144,7 +144,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 			if (finalTag.equals(rc.node().tag()))
 				return rc.node();
 			return new XmlNode(finalTag, rc.node().attributes(), rc.node().children());
-		}).collect(Collectors.toList());
+		}).toList();
 	}
 	
 	/**
@@ -162,7 +162,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * child elements are recursively parsed into {@link XmlNodeAttribute}s.
 	 */
 	@Override
-	public ModItem handle(final Element element) {
+	public ModItem handle(final @NonNull Element element) {
 		try {
 			if (cons == null)
 				return ModItemBuilder.fallbackBuilder.handle(element);
@@ -191,7 +191,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * all other attributes are written as flat XML attributes.
 	 */
 	@Override
-	public Element handle(final Document document, final ModItem item) {
+	public @NonNull Element handle(final @NonNull Document document, final @NonNull ModItem item) {
 		var entry = ModItemBuilder.group(item);
 		var el = document.createElement(entry.xmlObjName);
 		

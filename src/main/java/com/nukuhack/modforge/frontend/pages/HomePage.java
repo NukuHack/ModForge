@@ -13,7 +13,7 @@ public class HomePage extends BasePage {
 	
 	public HomePage(MainWindow w) {
 		super(w);
-		final String gameDir = w.getRegistry().userConfig.getGameDirectory();
+		final String gameDir = w.getRegistry().userConfig.getGameDir();
 		
 		setLayout(new GridBagLayout());
 		setOpaque(false);

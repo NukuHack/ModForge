@@ -28,7 +28,7 @@ public final class IconService {
 	
 	private final UserConfig userConfig;
 	
-	public IconService(UserConfig userConfig) {
+	public IconService(@NonNull UserConfig userConfig) {
 		this.userConfig = userConfig;
 	}
 	
@@ -42,25 +42,25 @@ public final class IconService {
 	 * add them to {@code target}. Returns the number of entries indexed.
 	 */
 	static Map<String, Icon> indexDdsFromPak(String pakPath) {
-		final var pakFile = Path.of(pakPath);
-		final var pak = pakFile.getFileName().toString();
+		var pakFile = Path.of(pakPath);
+		var pak = pakFile.getFileName().toString();
 		
 		if (! pakFile.toFile().exists()) {
 			log.info("PAK not found – skipping icon scan: {}", pakPath);
 			return new HashMap<>();
 		}
 		
-		final Map<String, Icon> map = new HashMap<>();
+		var map = new HashMap<String, Icon>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
-			for (final var entry : zf.stream().filter(ze -> {
-				final String name = ze.getName();
+			for (var entry : zf.stream().filter(ze -> {
+				var name = ze.getName();
 				if (! name.endsWith(".dds"))
 					return false;
 				return name.startsWith(TEXTURES_ROOT);
 			}).toList()) {
-				final String name = entry.getName().replace('\\', '/');
+				var name = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
-					final String stem = Util.stemOf(name);
+					var stem = Util.stemOf(name);
 					if (stem.isBlank())
 						continue;
 					map.put(stem, new Icon(is.readAllBytes(), pak + ':' + name));
@@ -116,7 +116,7 @@ public final class IconService {
 		
 		try {
 			if (Files.isDirectory(source)) {
-				convertDirectory(source, source, toPng);
+				convertDirectory(source, toPng);
 			} else if (IOUtil.isZipLike(source)) {
 				convertArchive(source, toPng);
 			} else {
@@ -128,7 +128,7 @@ public final class IconService {
 	}
 	
 	/** Recurse into a directory, converting every matching file. */
-	private static void convertDirectory(Path dir, Path outputBase, boolean toPng) throws IOException {
+	private static void convertDirectory(Path dir, boolean toPng) throws IOException {
 		try (var stream = Files.walk(dir)) {
 			final String srcExt = toPng ? ".dds" : ".png";
 			stream.filter(Files::isRegularFile).filter(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(srcExt)).forEach(p -> convertSingleFile(p, p.getParent(), toPng));
@@ -217,10 +217,6 @@ public final class IconService {
 		}
 	}
 	
-	// ------------------------------------------------------------------ //
-	//  Internal helpers                                                    //
-	// ------------------------------------------------------------------ //
-	
 	/**
 	 * If {@code path} already exists, move it to an {@code image_backup/}
 	 * folder next to it, renaming to {@code stem_<8hexchars>.<ext>}.
@@ -231,20 +227,20 @@ public final class IconService {
 		if (! Files.exists(path))
 			return;
 		
-		final Path backupDir = path.getParent().resolve("image_backup");
+		var backupDir = path.getParent().resolve("image_backup");
 		try {
 			Files.createDirectories(backupDir);
 		} catch (Exception e) {
 			log.warn("could not create backup dir");
 		}
 		
-		final String filename = path.getFileName().toString();
-		final int dot = filename.lastIndexOf('.');
-		final String stem = dot > 0 ? filename.substring(0, dot) : filename;
-		final String ext = dot > 0 ? filename.substring(dot) : "";
+		var filename = path.getFileName().toString();
+		var dot = filename.lastIndexOf('.');
+		var stem = dot > 0 ? filename.substring(0, dot) : filename;
+		var ext = dot > 0 ? filename.substring(dot) : "";
 		
-		final String suffix = Util.getRandomString(32);
-		final Path backupPath = backupDir.resolve(stem + "_" + suffix + ext);
+		var suffix = Util.getRandomString(32);
+		var backupPath = backupDir.resolve(stem + "_" + suffix + ext);
 		
 		try {
 			Files.move(path, backupPath);
@@ -267,9 +263,9 @@ public final class IconService {
 			return Map.of();
 		}
 		
-		final Map<String, Icon> map = new HashMap<>();
+		var map = new HashMap<String, Icon>();
 		try (var stream = Files.list(modPath)) {
-			final var pakFiles = stream.filter(excludeNonIconPaks()).collect(Collectors.toSet());
+			var pakFiles = stream.filter(excludeNonIconPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
 				log.info("No PAK files found in: {}", modPath);
@@ -306,18 +302,19 @@ public final class IconService {
 	 * @return the image.
 	 */
 	public static BufferedImage getIcon(ModItem item, ModData mod) {
-		if (item == null || item.getAttributes() == null)
+		if (item == null)
 			return null;
 		
-		final var iconAttr = item.getAttributes().stream().filter(a -> a.getName().equals("icon_id")).findFirst().orElse(null);
+		var iconAttr = item.getAttributes().stream().filter(a -> a.getName().equals("icon_id")).findFirst().orElse(null);
 		
-		if (iconAttr == null || iconAttr.getValue() == null)
+		if (iconAttr == null)
 			return null;
-		final String rawValue = iconAttr.getValue().toString();
 		
-		final boolean useFallback = rawValue.equals("0") || rawValue.equals("replaceme");
+		var rawValue = iconAttr.getValue().toString();
 		
-		final String iconId = useFallback ? FALLBACK_ICON : rawValue;
+		var useFallback = rawValue.equals("0") || rawValue.equals("replaceme");
+		
+		var iconId = useFallback ? FALLBACK_ICON : rawValue;
 		return getBase64Icon(iconId, mod);
 	}
 	
@@ -335,18 +332,18 @@ public final class IconService {
 	 * @return the image.
 	 */
 	private static BufferedImage getBase64Icon(String iconId, ModData mod) {
-		final String key = iconId.toLowerCase(Locale.ROOT);
+		var key = iconId.toLowerCase(Locale.ROOT);
 		
 		// 1. Mod's raw DDS index
-		final var modDds = mod.getIcon(key);
+		var modDds = mod.getIcon(key);
 		if (modDds != null) {
 			return convert(key, modDds.data);
 		}
 		
 		// 2. Base-game raw DDS index
-		final var game = Singleton.getGame();
+		var game = Singleton.getGame();
 		if (mod != game) {
-			final var baseDds = game.getIcon(key);
+			var baseDds = game.getIcon(key);
 			if (baseDds != null) {
 				return convert(key, baseDds.data);
 			}
@@ -362,7 +359,7 @@ public final class IconService {
 	public static boolean hasIcon(String iconId, ModData mod) {
 		if (iconId == null || iconId.isBlank())
 			return false;
-		final String key = iconId.toLowerCase(Locale.ROOT);
+		var key = iconId.toLowerCase(Locale.ROOT);
 		return (mod != Singleton.getGame() && mod.getIconIndex().containsKey(key));
 	}
 	
@@ -380,19 +377,19 @@ public final class IconService {
 	}
 	
 	public static void writeModIcons(ModData mod, String gameDir) {
-		final var icons = mod.getIconIndex();
+		var icons = mod.getIconIndex();
 		if (icons.isEmpty())
 			return;
 		try {
-			Files.createDirectories(Util.modStaging(gameDir, mod.id));
+			Files.createDirectories(Util.modStaging(gameDir, mod.getId()));
 		} catch (Exception e) {
 			log.warn("Could not create directory for for Icons");
 			return;
 		}
-		for (final var icon : icons.values()) {
-			final Path path = ItemService.getOutputFile(gameDir, icon.path, mod);
+		for (var icon : icons.values()) {
+			var path = ItemService.getOutputFile(gameDir, icon.path, mod);
 			try {
-				Path parentDir = path.getParent();
+				var parentDir = path.getParent();
 				if (parentDir != null)
 					Files.createDirectories(parentDir);
 				
@@ -401,7 +398,7 @@ public final class IconService {
 				log.error("writeModIcon failed for {}", path, e);
 			}
 		}
-		log.info("Icons written for mod: {}", mod.id);
+		log.info("Icons written for mod: {}", mod.getId());
 	}
 	
 	/**
@@ -411,10 +408,10 @@ public final class IconService {
 	 */
 	public void init() {
 		var start = System.currentTimeMillis();
-		var gameDir = userConfig.getGameDirectory();
+		var gameDir = userConfig.getGameDir();
 		if (gameDir.isBlank())
 			return;
-		final ModData game = Singleton.getGame();
+		var game = Singleton.getGame();
 		game.setIcon(loadModIcons(Util.icons(gameDir)));
 		log.info("Game Icon Load took: {}", System.currentTimeMillis() - start);
 	}

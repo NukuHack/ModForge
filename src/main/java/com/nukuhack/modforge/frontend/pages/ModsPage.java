@@ -107,14 +107,14 @@ public class ModsPage extends BasePage {
 			return;
 		}
 		if (ModService.modCollection.contains(mod)) {
-			window.snackbar.show("ui_mod_already_exists", BarManager.Type.WARNING, mod.id);
+			window.snackbar.show("ui_mod_already_exists", BarManager.Type.WARNING, mod.getId());
 			return;
 		}
 		
 		ModService.modCollection.add(mod);
 		
 		refreshMods();
-		window.snackbar.show("ui_mod_imported", BarManager.Type.SUCCESS, mod.name);
+		window.snackbar.show("ui_mod_imported", BarManager.Type.SUCCESS, mod.getName());
 	}
 	
 	private static class ModListCellRenderer extends JPanel implements ListCellRenderer<ModData> {
@@ -155,11 +155,14 @@ public class ModsPage extends BasePage {
 		
 		@Override
 		public Component getListCellRendererComponent(JList<? extends ModData> list, ModData mod, int index, boolean isSelected, boolean cellHasFocus) {
-			nameLabel.setText(mod.name != null && ! mod.name.isBlank() ? mod.name : mod.id);
-			versionLabel.setText("v" + (mod.modVersion != null ? mod.modVersion : "?"));
-			authorLabel.setText(mod.author != null ? mod.author : "ui_unknown");
+			var id = mod.getId();
+			var name = mod.getName();
+			var auth = mod.getAuthor();
+			nameLabel.setText(! name.isBlank() ? name : id);
+			versionLabel.setText("v" + mod.getModVersion());
+			authorLabel.setText(! auth.isBlank() ? auth: "ui_unknown");
 			
-			boolean isExternal = mod.author.isBlank() || ! mod.author.equals(Singleton.getRegistry().userConfig.getUserName());
+			boolean isExternal = auth.isBlank() || ! auth.equals(Singleton.getRegistry().userConfig.getUserName());
 			if (isExternal) {
 				statusLabel.setText(MainWindow.getLocalText("ui_external"));
 				statusLabel.setForeground(Color.YELLOW);

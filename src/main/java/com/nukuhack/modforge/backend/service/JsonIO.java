@@ -36,7 +36,7 @@ public final class JsonIO {
 		if (items == null || items.isEmpty())
 			return false;
 		JsonArray arr = new JsonArray();
-		for (final JsonObject item : items) {
+		for (var item : items) {
 			arr.add(item);
 		}
 		try {
@@ -100,9 +100,9 @@ public final class JsonIO {
 		
 		@Override
 		public String toJsonString() {
-			final var sb = new StringBuilder("{");
-			boolean first = true;
-			for (Map.Entry<String, JsonValue> entry : properties.entrySet()) {
+			var sb = new StringBuilder("{");
+			var first = true;
+			for (var entry : properties.entrySet()) {
 				if (! first)
 					sb.append(",");
 				first = false;
@@ -131,9 +131,9 @@ public final class JsonIO {
 		
 		@Override
 		public String toJsonString() {
-			StringBuilder sb = new StringBuilder("[");
-			boolean first = true;
-			for (JsonValue value : elements) {
+			var sb = new StringBuilder("[");
+			var first = true;
+			for (var value : elements) {
 				if (! first)
 					sb.append(",");
 				first = false;
@@ -215,7 +215,7 @@ public final class JsonIO {
 			if (pos >= json.length())
 				return new JsonNull();
 			
-			char c = json.charAt(pos);
+			var c = json.charAt(pos);
 			return switch (c) {
 				case '{' -> parseObject();
 				case '[' -> parseArray();
@@ -228,7 +228,7 @@ public final class JsonIO {
 		}
 		
 		private JsonObject parseObject() {
-			JsonObject obj = new JsonObject();
+			var obj = new JsonObject();
 			pos++; // skip '{'
 			skipWhitespace();
 			
@@ -241,12 +241,12 @@ public final class JsonIO {
 				skipWhitespace();
 				if (json.charAt(pos) != '"')
 					throw new RuntimeException("Expected string key");
-				final String key = parseString().getValue();
+				var key = parseString().getValue();
 				skipWhitespace();
 				if (json.charAt(pos) != ':')
 					throw new RuntimeException("Expected ':'");
 				pos++;
-				final JsonValue value = parseValue();
+				var value = parseValue();
 				obj.put(key, value);
 				skipWhitespace();
 				if (json.charAt(pos) == '}') {
@@ -261,7 +261,7 @@ public final class JsonIO {
 		}
 		
 		private JsonArray parseArray() {
-			JsonArray arr = new JsonArray();
+			var arr = new JsonArray();
 			pos++; // skip '['
 			skipWhitespace();
 			
@@ -286,9 +286,9 @@ public final class JsonIO {
 		
 		private JsonString parseString() {
 			pos++; // skip opening quote
-			final var sb = new StringBuilder();
+			var sb = new StringBuilder();
 			while (pos < json.length()) {
-				char c = json.charAt(pos);
+				var c = json.charAt(pos);
 				if (c == '"') {
 					pos++;
 					return new JsonString(sb.toString());
@@ -317,9 +317,9 @@ public final class JsonIO {
 		}
 		
 		private JsonNumber parseNumber() {
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			while (pos < json.length()) {
-				char c = json.charAt(pos);
+				var c = json.charAt(pos);
 				if ((c >= '0' && c <= '9') || c == '-' || c == '.' || c == 'e' || c == 'E' || c == '+') {
 					sb.append(c);
 					pos++;
@@ -327,7 +327,7 @@ public final class JsonIO {
 					break;
 				}
 			}
-			String numStr = sb.toString();
+			var numStr = sb.toString();
 			if (numStr.contains(".") || numStr.contains("e") || numStr.contains("E")) {
 				return new JsonNumber(Double.parseDouble(numStr));
 			} else {

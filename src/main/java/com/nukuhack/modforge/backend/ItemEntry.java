@@ -3,6 +3,7 @@ package com.nukuhack.modforge.backend;
 import com.nukuhack.modforge.backend.model.I;
 import com.nukuhack.modforge.backend.model.ModItem;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import java.util.function.Predicate;
  * all public methods on {@code ItemType} are unaffected.
  */
 @Slf4j
+@NonNull
 @AllArgsConstructor
 public enum ItemEntry {
 	

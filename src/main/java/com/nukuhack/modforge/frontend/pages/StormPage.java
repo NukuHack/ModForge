@@ -2,7 +2,10 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.I.Storm;
-import com.nukuhack.modforge.backend.model.Storm.*;
+import com.nukuhack.modforge.backend.model.Storm.GenericOperation;
+import com.nukuhack.modforge.backend.model.Storm.GenericSelector;
+import com.nukuhack.modforge.backend.model.Storm.StormData;
+import com.nukuhack.modforge.backend.model.Storm.StormRule;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.backend.service.StormService;
 import com.nukuhack.modforge.frontend.BarManager;
@@ -464,13 +467,13 @@ public class StormPage extends BasePage {
 			return;
 		}
 		
-		String[] modNames = mods.stream().map(m -> m.id + " | " + m.name).toArray(String[]::new);
+		String[] modNames = mods.stream().map(m -> m.getId() + " | " + m.getName()).toArray(String[]::new);
 		String choice = (String) JOptionPane.showInputDialog(this, "Select target mod:", "Save Storm File to Mod", JOptionPane.PLAIN_MESSAGE, null, modNames, modNames[0]);
 		if (choice == null)
 			return;
 		
 		String modId = choice.split(" \\| ")[0];
-		mods.stream().filter(m -> m.id.equals(modId)).findFirst().ifPresent(mod -> {
+		mods.stream().filter(m -> m.getId().equals(modId)).findFirst().ifPresent(mod -> {
 		
 		});
 	}

@@ -67,6 +67,16 @@ public final class IOUtil {
 		}
 	}
 	
+	/**
+	 * Auto generates any directory required for this path
+	 * @throws IOException if failed
+	 */
+	public void ensureDirExists(Path dir) throws IOException {
+		if (Files.exists(dir))
+			return;
+		Files.createDirectories(dir.getParent());
+		log.info("Created directory: {}", dir);
+	}
 	
 	public boolean unpackArchive(final Path sourcePakFile, final Path destFolder, final Predicate<Path> fileFilter, final boolean overwrite) {
 		if (! Files.exists(sourcePakFile) || ! Files.isRegularFile(sourcePakFile)) {

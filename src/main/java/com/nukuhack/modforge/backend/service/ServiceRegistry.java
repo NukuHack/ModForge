@@ -1,17 +1,25 @@
 package com.nukuhack.modforge.backend.service;
 
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Wires all dependencies together in the correct order.
  * Use as the single entry-point for bootstrapping the application.
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public final class ServiceRegistry {
-	
+	@NonNull
 	public final UserConfig userConfig;
+	@NonNull
 	public final ConfigService configService;
+	@NonNull
 	public final LocalService localService;
+	@NonNull
 	public final ItemService itemService;
+	@NonNull
 	public final IconService iconService;
+	@NonNull
 	public final ModService modService;
 	
 	public ServiceRegistry() {

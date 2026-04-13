@@ -1,9 +1,6 @@
 package com.nukuhack.modforge.backend.model;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -21,6 +18,9 @@ public class Storm {
 	 */
 	@Getter
 	@Slf4j
+	@NonNull
+	@Setter
+	@NoArgsConstructor
 	public static final class GenericOperation {
 		
 		/**
@@ -39,44 +39,27 @@ public class Storm {
 		 * UI-only flag: when {@code true} the operation targets a Stat, otherwise a Skill.
 		 * Only meaningful for {@code setAttribute} / {@code modAttribute}.
 		 */
-		@Setter
 		private boolean isStat = false;
 		
 		/**
 		 * UI-only flag: when {@code true} the operation uses a span (min/max range),
 		 * otherwise a fixed value.
 		 */
-		@Setter
 		private boolean isSpan = false;
 		
-		// -------------------------------------------------------------------------
-		// Construction helpers
-		// -------------------------------------------------------------------------
-		
-		public GenericOperation() {
-		}
-		
-		public GenericOperation(String name) {
+		public GenericOperation(@NonNull String name) {
 			this.name = name;
 		}
 		
-		// -------------------------------------------------------------------------
-		// Accessors
-		// -------------------------------------------------------------------------
-		
-		public void setName(String name) {
-			this.name = name == null ? "" : name;
-		}
-		
-		public void putAttribute(String key, String value) {
-			attributes.put(key, value == null ? "" : value);
+		public void putAttribute(@NonNull String key, @NonNull String value) {
+			attributes.put(key, value);
 		}
 		
 		// -------------------------------------------------------------------------
 		// Deep-copy
 		// -------------------------------------------------------------------------
 		
-		public GenericOperation deepCopy() {
+		public @NonNull GenericOperation deepCopy() {
 			var copy = new GenericOperation(this.name);
 			copy.attributes.putAll(this.attributes);
 			copy.isStat = this.isStat;
@@ -98,21 +81,16 @@ public class Storm {
 	 * (i.e. a named selector template, not a usage instance).
 	 */
 	@Getter
+	@Setter
+	@NonNull
 	@Slf4j
+	@NoArgsConstructor
 	public static final class CustomStormSelector {
 		
 		/** Attribute names defined by this custom selector. */
 		private final List<String> attributeNames = new ArrayList<>();
 		private String name = "";
 		private String comment = "";
-		
-		public void setName(String name) {
-			this.name = name == null ? "" : name;
-		}
-		
-		public void setComment(String comment) {
-			this.comment = comment == null ? "" : comment;
-		}
 		
 		@Override
 		public String toString() {
@@ -137,12 +115,14 @@ public class Storm {
 	 * }</pre>
 	 */
 	@Getter
+	@Setter
+	@NonNull
 	@Slf4j
+	@NoArgsConstructor
 	public static final class CustomStormOperation {
 		
 		/** Attribute ranges exposed by this operation. */
 		private final List<ModAttribute> modAttributes = new ArrayList<>();
-		
 		private String name = "";
 		
 		/**
@@ -150,16 +130,6 @@ public class Storm {
 		 * {@code "set"}). Empty string when absent.
 		 */
 		private String mode = "";
-		
-		// -------------------------------------------------------------------------
-		
-		public void setName(String name) {
-			this.name = name == null ? "" : name;
-		}
-		
-		public void setMode(String mode) {
-			this.mode = mode == null ? "" : mode;
-		}
 		
 		@Override
 		public String toString() {
@@ -174,16 +144,12 @@ public class Storm {
 		 * Describes the numeric range of a modifiable attribute within a custom operation.
 		 */
 		@Getter
+		@Setter
+		@NonNull
 		public static final class ModAttribute {
 			private String stat = "";
-			@Setter
 			private double minMod = 0;
-			@Setter
 			private double maxMod = 0;
-			
-			public void setStat(String stat) {
-				this.stat = stat == null ? "" : stat;
-			}
 			
 			@Override
 			public String toString() {
@@ -211,8 +177,11 @@ public class Storm {
 	 * &lt;/and&gt;
 	 * </pre>
 	 */
-	@Getter
 	@Slf4j
+	@Setter
+	@Getter
+	@NonNull
+	@NoArgsConstructor
 	public static final class GenericSelector {
 		
 		/**
@@ -228,34 +197,15 @@ public class Storm {
 		/** Tag name, e.g. {@code "selector"}, {@code "and"}, {@code "or"}, {@code "not"}. */
 		private String name = "";
 		
-		// -------------------------------------------------------------------------
-		// Construction helpers
-		// -------------------------------------------------------------------------
-		
-		public GenericSelector() {
-		}
-		
-		public GenericSelector(String name) {
+		public GenericSelector(@NonNull String name) {
 			this.name = name;
 		}
 		
 		/** Factory for a combinator node with the supplied children pre-added. */
-		public static GenericSelector combinator(String type, GenericSelector... kids) {
+		public static @NonNull GenericSelector combinator(@NonNull String type, @NonNull GenericSelector... kids) {
 			var s = new GenericSelector(type);
 			Collections.addAll(s.children, kids);
 			return s;
-		}
-		
-		// -------------------------------------------------------------------------
-		// Accessors
-		// -------------------------------------------------------------------------
-		
-		public void setName(String name) {
-			this.name = name == null ? "" : name;
-		}
-		
-		public void putAttribute(String key, String value) {
-			attributes.put(key, value == null ? "" : value);
 		}
 		
 		/** Returns {@code true} if this node is a logical combinator ({@code and/or/not}). */
@@ -272,7 +222,7 @@ public class Storm {
 		// Deep-copy
 		// -------------------------------------------------------------------------
 		
-		public GenericSelector deepCopy() {
+		public @NonNull GenericSelector deepCopy() {
 			var copy = new GenericSelector(this.name);
 			copy.attributes.putAll(this.attributes);
 			for (var child : this.children) {
@@ -325,7 +275,10 @@ public class Storm {
 	 * </pre>
 	 */
 	@Getter
+	@Setter
 	@Slf4j
+	@NonNull
+	@NoArgsConstructor
 	public static final class StormData {
 		
 		private final List<String> commonSources = new ArrayList<>();
@@ -335,14 +288,12 @@ public class Storm {
 		private final List<StormRule> rules = new ArrayList<>();
 		
 		/** Stable identifier derived from the file path (used for navigation). */
-		@Setter
 		private String id = "";
 		
 		/**
 		 * Optional category grouping (derived from the file path or a {@code category}
 		 * attribute on the root element). {@code null} means "Miscellaneous".
 		 */
-		@Setter
 		private String category = null;
 		
 		@Override
@@ -370,12 +321,14 @@ public class Storm {
 	 * }</pre>
 	 */
 	@Getter
+	@Setter
 	@Slf4j
+	@NonNull
+	@NoArgsConstructor
 	public static final class StormRule {
 		
 		private final List<GenericSelector> selectors = new ArrayList<>();
 		private final List<GenericOperation> operations = new ArrayList<>();
-		
 		private String name = "";
 		private String comment = "";
 		
@@ -384,22 +337,6 @@ public class Storm {
 		 * Empty string when absent.
 		 */
 		private String mode = "";
-		
-		// -------------------------------------------------------------------------
-		// Accessors
-		// -------------------------------------------------------------------------
-		
-		public void setName(String name) {
-			this.name = name == null ? "" : name;
-		}
-		
-		public void setComment(String comment) {
-			this.comment = comment == null ? "" : comment;
-		}
-		
-		public void setMode(String mode) {
-			this.mode = mode == null ? "" : mode;
-		}
 		
 		@Override
 		public String toString() {
@@ -412,35 +349,16 @@ public class Storm {
 	 */
 	@ToString
 	@Getter
+	@Setter
+	@NonNull
 	@Slf4j
 	@NoArgsConstructor
 	public static final class StormTask {
-		
 		private String name = "";
 		private String comment = "";
 		private String sources = "";
 		/** The scripting class name wired to this task. */
 		private String taskClass = "";
-		
-		// -------------------------------------------------------------------------
-		// Accessors
-		// -------------------------------------------------------------------------
-		
-		public void setName(String name) {
-			this.name = name == null ? "" : name;
-		}
-		
-		public void setComment(String comment) {
-			this.comment = comment == null ? "" : comment;
-		}
-		
-		public void setSources(String sources) {
-			this.sources = sources == null ? "" : sources;
-		}
-		
-		public void setTaskClass(String taskClass) {
-			this.taskClass = taskClass == null ? "" : taskClass;
-		}
 	}
 	
 }

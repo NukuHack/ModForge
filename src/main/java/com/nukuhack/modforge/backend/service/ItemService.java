@@ -135,10 +135,10 @@ public final class ItemService {
 	 * @return the file, according to the Structure
 	 */
 	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod) {
-		var rawPath = item.getPath() == null ? "" : item.getPath();
+		var rawPath = item.getPath();
 		var targetDir = getOutputFile(gameDir, rawPath, mod).getParent();
 		var typeName = ModItemBuilder.group(item).fileName;
-		var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.id));
+		var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.getId()));
 		return outFile.toFile();
 	}
 	
@@ -164,24 +164,24 @@ public final class ItemService {
 		int colonIdx = itemPath.indexOf(':');
 		if (colonIdx > 0) {
 			// Format (a): "SomePak.pak:inner/dir/entry.xml"
-			final String pakFileName = itemPath.substring(0, colonIdx);       // "SomePak.pak"
-			final String innerEntry = itemPath.substring(colonIdx + 1); // "inner/dir/entry.xml"
-			final int dot = pakFileName.lastIndexOf('.');
+			var pakFileName = itemPath.substring(0, colonIdx);       // "SomePak.pak"
+			var innerEntry = itemPath.substring(colonIdx + 1); // "inner/dir/entry.xml"
+			var dot = pakFileName.lastIndexOf('.');
 			pakStem = dot > 0 ? pakFileName.substring(0, dot) : pakFileName;     // "SomePak"
-			int lastSlash = innerEntry.lastIndexOf('/');      // "inner/dir"
+			var lastSlash = innerEntry.lastIndexOf('/');      // "inner/dir"
 			dirSuffix = lastSlash >= 0 ? innerEntry.substring(0, lastSlash) : "";
 			fileName = innerEntry.substring(++ lastSlash);
 		} else {
 			// Format (b/c): plain path or blank
-			pakStem = mod.id;
-			int lastSlash = itemPath.lastIndexOf('/');
+			pakStem = mod.getId();
+			var lastSlash = itemPath.lastIndexOf('/');
 			dirSuffix = lastSlash >= 0 ? itemPath.substring(0, lastSlash) : "";
 			fileName = itemPath.substring(++ lastSlash);
 		}
 		if (fileName.isBlank())
 			fileName = "apple.txt";
 		
-		final var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.id), pakStem);
+		var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.getId()), pakStem);
 		// Capitalize the L in Libs
 		return dirSuffix.isEmpty() ? Util.joinP(stageRoot, fileName) : Util.joinP(stageRoot, Util.capitalStart(dirSuffix), fileName);
 	}
@@ -201,7 +201,7 @@ public final class ItemService {
 			group.setAttribute("version", groupT.getVersion());
 			temp.appendChild(group);
 			
-			final var newEl = ModItemBuilder.create(document, item);
+			var newEl = ModItemBuilder.create(document, item);
 			newEl.ifPresent(group::appendChild);
 			return document;
 		}
@@ -251,7 +251,7 @@ public final class ItemService {
 	 * c) null / blank                        – newly created item
 	 */
 	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
-		final File outFile = getOutputFile(gameDir, item, mod);
+		var outFile = getOutputFile(gameDir, item, mod);
 		Files.createDirectories(outFile.toPath().getParent());
 		
 		var group = ModItemBuilder.group(item);
@@ -272,7 +272,7 @@ public final class ItemService {
 	}
 	
 	private static void writeXml(Document doc, File outFile, String doctype) throws Exception {
-		final var tf = TransformerFactory.newInstance().newTransformer();
+		var tf = TransformerFactory.newInstance().newTransformer();
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
 		tf.setOutputProperty("{http://xml.apache.org/xalan}indent-amount", "2");
 		// We'll write the declaration + DOCTYPE ourselves
@@ -286,13 +286,13 @@ public final class ItemService {
 	}
 	
 	private static Stream<ModItem> extractItemsFromPak(final Path pakFile) {
-		final Set<ModItem> items = new HashSet<>();
+		var items = new HashSet<ModItem>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
-			for (final var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
-				final var entryName = entry.getName().replace('\\', '/');
+			for (var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
+				var entryName = entry.getName().replace('\\', '/');
 				try (var is = zf.getInputStream(entry)) {
 					readItemsFromXml(is, pakFile.getFileName() + ":" + entryName, items);
-				} catch (final Exception ex) {
+				} catch (Exception ex) {
 					log.warn("Parse error in {} from {}", entryName, pakFile.getFileName(), ex);
 				}
 			}
@@ -303,7 +303,7 @@ public final class ItemService {
 	}
 	
 	static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) {
-		final var doc = parseXml(is);
+		var doc = parseXml(is);
 		if (doc == null) {
 			log.debug("Parse failed for : {}", sourcePath);
 			return;
@@ -311,8 +311,8 @@ public final class ItemService {
 		var root = doc.getDocumentElement();
 		var group = root.getTagName();
 		if (ModItemBuilder.HANDLER_MAP.get(group) != null) {
-			final var item = ModItemBuilder.create(root);
-			if (item == null || item.getId() == null)
+			var item = ModItemBuilder.create(root);
+			if (item == null)
 				return;
 			
 			item.setPath(sourcePath);
@@ -337,7 +337,7 @@ public final class ItemService {
 					continue;
 				
 				var item = ModItemBuilder.create(itemElement);
-				if (item == null || item.getId() == null)
+				if (item == null)
 					continue;
 				
 				item.setPath(sourcePath);
@@ -353,10 +353,10 @@ public final class ItemService {
 		return p -> {
 			if (! Files.isRegularFile(p))
 				return false;
-			final var name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+			var name = p.getFileName().toString().toLowerCase(Locale.ROOT);
 			if (! name.endsWith(".pak"))
 				return false;
-			boolean isIgnored = IGNORED_FILES.contains(name);
+			var isIgnored = IGNORED_FILES.contains(name);
 			return ! isIgnored;
 		};
 	}
@@ -372,19 +372,19 @@ public final class ItemService {
 		}
 		
 		try (var stream = Files.list(modPath)) {
-			final var pakFiles = stream.filter(excludeNonDataPaks()).collect(Collectors.toSet());
+			var pakFiles = stream.filter(excludeNonDataPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
 				log.info("No PAK files found in: {}", modPath);
 				return Set.of();
 			}
 			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
-			final var result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
+			var result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
 			
 			log.info("Loaded {} items from {} PAK file(s)", result.size(), pakFiles.size());
 			return result;
 			
-		} catch (final IOException e) {
+		} catch (IOException e) {
 			log.error("Failed to list PAK folder: {} - {}", modPath, e.getMessage());
 			return Set.of();
 		}
@@ -403,17 +403,17 @@ public final class ItemService {
 	 * so the caller knows which staging dirs to pack.
 	 */
 	public static void writeModItems(ModData mod, String gameDir) {
-		final var items = mod.getItems();
+		var items = mod.getItemsSet();
 		if (items.isEmpty())
 			return;
-		for (final ModItem item : items) {
+		for (var item : items) {
 			try {
 				writeModItem(gameDir, mod, item);
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				log.error("writeModItem failed for {}", item.getClass().getSimpleName(), e);
 			}
 		}
-		log.debug("ModItem written to {}", Util.modStaging(gameDir, mod.id));
+		log.debug("ModItem written to {}", Util.modStaging(gameDir, mod.getId()));
 	}
 	
 	/**
@@ -422,10 +422,10 @@ public final class ItemService {
 	 */
 	public void init() {
 		var start = System.currentTimeMillis();
-		var gameDir = userConfig.getGameDirectory();
+		var gameDir = userConfig.getGameDir();
 		if (gameDir.isBlank())
 			return;
-		final var game = Singleton.getGame();
+		var game = Singleton.getGame();
 		try {
 			game.setItems(loadItems(Path.of(gameDir, "Data")));
 			log.info("XML read done items={}", game.getItems().size());

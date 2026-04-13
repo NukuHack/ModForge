@@ -3,15 +3,17 @@ package com.nukuhack.modforge.backend;
 import com.nukuhack.modforge.backend.model.ModItem;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
+@Slf4j
+@NonNull
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@lombok.extern.slf4j.Slf4j
 public final class ItemType {
 	// ── Static indexes built once from ItemEntry.values() ───────────────────
 	
@@ -25,13 +27,13 @@ public final class ItemType {
 	private static final Set<String> ENDPOINT_KEYS;
 	
 	static {
-		Map<Class<? extends ModItem>, String> idMap = new LinkedHashMap<>();
-		List<ITDisplay> displays = new ArrayList<>();
-		Set<String> epKeys = new HashSet<>();
+		var idMap = new LinkedHashMap<Class<? extends ModItem>, String>();
+		var displays = new ArrayList<ITDisplay>();
+		var epKeys = new HashSet<String>();
 		
 		displays.add(new ITDisplay("All Types", i -> true));
 		
-		for (final var e : ItemEntry.values()) {
+		for (var e : ItemEntry.values()) {
 			// id key (first registration wins – ItemEntry order is the priority)
 			idMap.put(e.clazz, e.idKey);
 			
@@ -61,20 +63,20 @@ public final class ItemType {
 	// ── Public API (signatures unchanged) ────────────────────────────────────
 	
 	/** Item selector dropdown filter – used by the Item page (frontend). */
-	public static boolean excludeNonEndpoints(final ZipEntry ze) {
+	public static boolean excludeNonEndpoints(final @NonNull ZipEntry ze) {
 		if (ze.isDirectory())
 			return false;
-		final var name = ze.getName().toLowerCase(Locale.ROOT).replace('\\', '/');
-		final var isData = name.endsWith(".xml") || name.endsWith(".adb");
+		var name = ze.getName().toLowerCase(Locale.ROOT).replace('\\', '/');
+		var isData = name.endsWith(".xml") || name.endsWith(".adb");
 		if (! isData)
 			return false;
 		// AHH STUPID STORM
 		if (name.startsWith("libs/storm/"))
 			return true;
-		final var p = Path.of(name);
-		final var fileName = p.getFileName().toString();
-		final var delimiter = fileName.indexOf("__");
-		final var shortName = (delimiter != - 1) ? fileName.substring(0, delimiter) : fileName.substring(0, fileName.lastIndexOf('.'));
+		var p = Path.of(name);
+		var fileName = p.getFileName().toString();
+		var delimiter = fileName.indexOf("__");
+		var shortName = (delimiter != - 1) ? fileName.substring(0, delimiter) : fileName.substring(0, fileName.lastIndexOf('.'));
 		return ENDPOINT_KEYS.contains(shortName);
 	}
 	
@@ -86,17 +88,18 @@ public final class ItemType {
 	}
 	
 	/** All display names for the frontend type dropdown. */
-	public static Collection<String> getAllTypes() {
-		return DISPLAYS.stream().map(ITDisplay::displayName).collect(Collectors.toCollection(LinkedHashSet::new));
+	public static @NonNull Collection<String> getAllTypes() {
+		return DISPLAYS.stream().map(ITDisplay::displayName).toList();
 	}
 	
 	/** The XML attribute name used as the primary ID for a given item class. */
-	public static String getIdKey(Class<? extends ModItem> clazz) {
+	public static @NonNull String getIdKey(Class<? extends ModItem> clazz) {
 		return ID_KEYS.getOrDefault(clazz, "Id");
 	}
 	
 	
 	/** Display entry for the frontend type dropdown. */
+	@NonNull
 	private record ITDisplay(String displayName, Predicate<ModItem> matcher) {
 	}
 }

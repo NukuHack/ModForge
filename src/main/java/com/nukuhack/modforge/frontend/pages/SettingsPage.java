@@ -6,13 +6,14 @@ import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.modforge.backend.service.UserConfig;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import java.awt.*;
 
 import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class SettingsPage extends BasePage {
 	
 	private final JTextField gameDir = styledField("e.g. C:/SteamLibrary/…/KingdomComeDeliverance2");
@@ -108,9 +109,9 @@ public class SettingsPage extends BasePage {
 		gc.weightx = 0;
 		gc.gridwidth = 1;
 		card.add(primaryBtn("ui_settings_save", e -> {
-			userConfig.setGameDirectory(gameDir.getText());
+			userConfig.setGameDir(gameDir.getText());
 			userConfig.setUserName(userName.getText());
-			final var sel = (String) langBox.getSelectedItem();
+			var sel = (String) langBox.getSelectedItem();
 			if (sel != null)
 				userConfig.setLanguage(Language.fromDisplayName(sel));
 			userConfig.setAutoLoadGameData(loadGameData.isSelected());
@@ -133,7 +134,7 @@ public class SettingsPage extends BasePage {
 	
 	private void loadSettings() {
 		
-		var gameDire = userConfig.getGameDirectory();
+		var gameDire = userConfig.getGameDir();
 		if (! gameDire.isEmpty()) {
 			gameDir.setText(gameDire);
 			gameDir.setForeground(MainWindow.TEXT);
