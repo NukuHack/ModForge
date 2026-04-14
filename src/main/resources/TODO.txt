@@ -6,10 +6,9 @@ parse other files (adb - animation database)
 gfx files ?!?, and mtl too ?, and bk2 video format too ..., lua ? hell nah
 
 TODO : Make the other models - items
-// perk_rpg_param_override, InventoryPreset-InventoryPresetRef, SurfaceTypes ... , BehaviorTrees :O ...
+// perk_rpg_param_override, SurfaceTypes ... , BehaviorTrees :O ...
+make the stuff check other data than just libs/tables
 
-make the ID system work - recipes, perk_buff, perk_script
-
-make a files page - for inner files of the pak-s make them able to overwrite the base game data with a 0-byte .tbl file
+make a files page - for inner files of the pak-s make them able to overwrite the base game data with a 0-byte .tbl file - IOUtil.createEmptyFile();
 
 make only the xml-s change name on save, and storm should keep it ...
