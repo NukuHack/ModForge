@@ -111,6 +111,12 @@ public final class I {
 	public static class PerkExclusivity extends BaseModItem {
 	}
 	
+	/**
+	 * Pov avg programmer naming things : SoulStateEffectContextData
+	 */
+	public static class SoulStateEffectContext extends BaseModItem {
+	}
+	
 	public static class InventoryPreset extends BaseModItem {
 	}
 	

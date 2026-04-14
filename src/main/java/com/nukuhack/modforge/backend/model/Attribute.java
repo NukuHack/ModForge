@@ -185,10 +185,6 @@ public interface Attribute<T> {
 			super(name, value);
 		}
 		
-		public BuffParamListAttribute(@NonNull String name, @NonNull String value) {
-			this(name, parse(value));
-		}
-		
 
 		@Override
 		public @NonNull BuffParamListAttribute deepClone() {

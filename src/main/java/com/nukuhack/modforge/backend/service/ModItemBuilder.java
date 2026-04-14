@@ -175,7 +175,7 @@ public final class ModItemBuilder {
 				
 				return ModItemBuilder.create(element, item);
 			} catch (Exception e) {
-				log.warn("Handler failed for {}: {}", type.getSimpleName(), e.getMessage());
+				log.warn("Handler failed for {}", type.getSimpleName(), e);
 				return null;
 			}
 		}

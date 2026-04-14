@@ -83,6 +83,8 @@ public enum ItemEntry {
 	
 	BUFF(I.Buff.class, "buff_id", "buff", "buff", "buffs", true),
 	
+	SOUL_STATE_EFFECT_CONTEXT(I.SoulStateEffectContext.class, "Id", "SoulStateEffectContext", "SoulStateEffectContextData", "SoulStateEffectContexts", true),
+	
 	RPG_PARAM(I.RpgParam.class, "rpg_param_key", "rpg_param", "rpg_param", "rpg_params", true),
 	
 	PERK_BUFF(I.PerkBuff.class, "perk_id", "perk_buff", "perk_buff", "perk_buffs", true),

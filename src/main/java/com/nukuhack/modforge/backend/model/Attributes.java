@@ -101,31 +101,39 @@ public final class Attributes {
 		var type = TYPE_MAP.computeIfAbsent(name, n -> inferType(n, v));
 		
 		
-		if (type == UUID.class) {
-			return new Attribute.UUIDAttribute(name, UUID.fromString(value));
-		} else if (type == String.class) {
+		try {
+			if (type == UUID.class) {
+				return new Attribute.UUIDAttribute(name, UUID.fromString(value));
+			} else if (type == String.class) {
+				return new Attribute.StringAttribute(name, value);
+			} else if (type == Attribute.BuffParam.class) {
+				var list = Attribute.BuffParamListAttribute.parse(value);
+				if (list.isEmpty())
+					throw new IllegalArgumentException("Can not have empty buff-param");
+				return new Attribute.BuffParamListAttribute(name, list);
+			} else if (type == List.class) {
+				return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
+			} else if (type == Boolean.class) {
+				return new Attribute.BooleanAttribute(name, Boolean.parseBoolean(value));
+			} else if (type == Double.class) {
+				return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
+			} else if (type.isEnum()) {
+				int i = 1;
+				try {
+					i = Integer.parseInt(value);
+				} catch (NumberFormatException e) {
+					log.warn("could not parse enum value '{}', falling back to '1'", value, e);
+				}
+				try {
+					return new Attribute.EnumAttribute(name, Enums.fromValueRaw(type, i));
+				} catch (Exception e) {
+					log.debug("could not parse enum value '{}', for type '{}' - falling back to number", value, type.getSimpleName());
+					return new Attribute.DoubleAttribute(name, (double) i);
+				}
+			}
+		} catch (Exception e) {
+			log.debug("could not parse value '{}', for type '{}' - falling back to string", value, type.getSimpleName());
 			return new Attribute.StringAttribute(name, value);
-		} else if (type == Attribute.BuffParam.class) {
-			return new Attribute.BuffParamListAttribute(name, value);
-		} else if (type == List.class) {
-			return new Attribute.ListAttribute<>(name, List.of(value.split("\\s+")));
-		} else if (type == Boolean.class) {
-			return new Attribute.BooleanAttribute(name, Boolean.parseBoolean(value));
-		} else if (type == Double.class) {
-			return new Attribute.DoubleAttribute(name, Double.parseDouble(value));
-		} else if (type.isEnum()) {
-			int i = 1;
-			try {
-				i = Integer.parseInt(value);
-			} catch (NumberFormatException e) {
-				log.warn("could not parse enum value '{}', falling back to '1'", value, e);
-			}
-			try {
-				return new Attribute.EnumAttribute(name, Enums.fromValueRaw(type, i));
-			} catch (Exception e) {
-				log.debug("could not parse enum value '{}', for type '{}' - falling back to int", value, type.getSimpleName());
-				return new Attribute.DoubleAttribute(name, (double) i);
-			}
 		}
 		
 		log.warn("Cannot parse attribute '{}'='{}' - falling back to string", name, value);
