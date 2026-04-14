@@ -97,8 +97,8 @@ public final class Attributes {
 	public static @NonNull Attribute create(final @NonNull String name, @NonNull String value) {
 		if ((value = value.trim()).isEmpty())
 			return new Attribute.StringAttribute(name, "");
-		final var v = value;
-		final Class<?> type = TYPE_MAP.computeIfAbsent(name, n -> inferType(n, v));
+		var v = value;
+		var type = TYPE_MAP.computeIfAbsent(name, n -> inferType(n, v));
 		
 		
 		if (type == UUID.class) {
@@ -123,8 +123,8 @@ public final class Attributes {
 			try {
 				return new Attribute.EnumAttribute(name, Enums.fromValueRaw(type, i));
 			} catch (Exception e) {
-				log.debug("could not parse enum value '{}', for type '{}' - falling back to string", value, type.getSimpleName());
-				return new Attribute.StringAttribute(name, value);
+				log.debug("could not parse enum value '{}', for type '{}' - falling back to int", value, type.getSimpleName());
+				return new Attribute.DoubleAttribute(name, (double) i);
 			}
 		}
 		
