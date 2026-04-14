@@ -403,7 +403,7 @@ public final class ItemService {
 	 * so the caller knows which staging dirs to pack.
 	 */
 	public static void writeModItems(ModData mod, String gameDir) {
-		var items = mod.getItemsSet();
+		var items = mod.getItems();
 		if (items.isEmpty())
 			return;
 		for (var item : items) {

@@ -65,3 +65,34 @@ ui_kcd_success_message : Conversion completed!
 ui_kcd_failed_message : Conversion failed: {0}
 ui_generated_id : Generated a new ID
 ui_generate_id : Generate a new ID
+
+// this for archive page :
+
+| Key | English text |
+|-----|-------------|
+| `ui_archive_title` | Archive |
+| `ui_archive_description` | Pack a folder into a .pak / .zip archive, or unpack an existing archive into a folder. |
+| `ui_archive_mode_decompress` | Decompress |
+| `ui_archive_mode_compress` | Compress |
+| `ui_archive_input_hint_decompress` | Select an archive file (.pak / .zip) to extract. |
+| `ui_archive_input_hint_compress` | Select a folder to pack into an archive. |
+| `ui_archive_output_hint_decompress` | Select a destination folder for the extracted files. |
+| `ui_archive_output_hint_compress` | Select where to save the output .pak file. |
+| `ui_archive_input` | Input |
+| `ui_archive_output` | Output |
+| `ui_archive_no_input` | No input selected |
+| `ui_archive_no_output` | No output selected |
+| `ui_archive_pick_archive` | Select Archive File |
+| `ui_archive_pick_archive_desc` | Archive files (.pak, .zip) |
+| `ui_archive_pick_folder` | Select Source Folder |
+| `ui_archive_pick_folder_desc` | Folder to compress |
+| `ui_archive_pick_output_folder` | Select Output Folder |
+| `ui_archive_pick_output_folder_desc` | Destination folder |
+| `ui_archive_pick_output_file` | Select Output File |
+| `ui_archive_pick_output_file_desc` | Archive output file |
+| `ui_archive_not_archive` | The selected file is not a valid archive: {0} |
+| `ui_archive_success` | {0} completed successfully. |
+| `ui_archive_failed` | Archive operation failed |
+| `ui_archive_failed_reason` | Check the logs for details. |
+| `ui_archive_error_title` | Operation Failed |
+| `ui_archive_done_title` | Operation Complete |

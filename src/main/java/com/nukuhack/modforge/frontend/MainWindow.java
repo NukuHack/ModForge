@@ -183,7 +183,7 @@ public class MainWindow extends JFrame {
 		
 		side.add(Box.createVerticalStrut(8));
 		
-		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.CONVERT, Page.KCD_CONVERTER }) {
+		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.ARCHIVE, Page.CONVERT, Page.KCD_CONVERTER }) {
 			side.add(navBtn(page.getDisplayName(), e -> navigate(page)));
 		}
 		
@@ -264,6 +264,7 @@ public class MainWindow extends JFrame {
 		LANG_EDIT("ui_localization_edit", LangEdit.class),
 		SETTINGS("ui_settings", SettingsPage.class),
 		LANG("ui_localization", LocalizationPage.class),
+		ARCHIVE("ui_archive_title", ArchivePage.class),
 		CONVERT("ui_image_convert", ConvertPage.class),
 		KCD_CONVERTER("ui_kcd_title", KCDConverterPage.class),
 		;

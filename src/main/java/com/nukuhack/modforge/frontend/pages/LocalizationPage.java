@@ -130,7 +130,7 @@ public class LocalizationPage extends BasePage {
 		for (var e : langMap.entrySet())
 			map.put(e.getKey(), new LangEntry(e.getKey(), e.getValue(), "", null));
 		
-		for (var item : source.getItemsSet()) {
+		for (var item : source.getItems()) {
 			for (var attr : item.getLangAttributes()) {
 				var key = attr.getValue();
 				if (key.isEmpty())

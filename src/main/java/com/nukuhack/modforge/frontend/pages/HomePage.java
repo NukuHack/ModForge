@@ -13,7 +13,6 @@ public class HomePage extends BasePage {
 	
 	public HomePage(MainWindow w) {
 		super(w);
-		final String gameDir = w.getRegistry().userConfig.getGameDir();
 		
 		setLayout(new GridBagLayout());
 		setOpaque(false);
@@ -57,7 +56,7 @@ public class HomePage extends BasePage {
 		but.add(primaryBtn("ui_settings", e -> w.navigate(MainWindow.Page.SETTINGS)));
 		but.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
-		JButton openGameDirBtn = primaryBtn("ui_open_game_dir", e -> Util.openDirectory(this, gameDir));
+		JButton openGameDirBtn = primaryBtn("ui_open_game_dir", e -> Util.openDirectory(this, this.window.getRegistry().userConfig.getGameDir()));
 		openGameDirBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		contentPanel.add(logo);

@@ -27,7 +27,7 @@ public final class IOUtil {
 		if (dirPath == null || dirPath.isBlank())
 			throw new IllegalArgumentException();
 		
-		final File gameDir = new File(dirPath);
+		var gameDir = new File(dirPath);
 		if (! gameDir.exists() || ! gameDir.isDirectory())
 			throw new FileNotFoundException();
 		
@@ -37,7 +37,7 @@ public final class IOUtil {
 			return;
 		}
 		// Fallback for systems without Desktop support
-		final Runtime runtime = Runtime.getRuntime();
+		var runtime = Runtime.getRuntime();
 		
 		if (os.contains("win")) {
 			runtime.exec(new String[] { "explorer", dirPath });
@@ -55,14 +55,27 @@ public final class IOUtil {
 	 * @return true if file has .zip/.pak extension or starts with ZIP magic bytes (PK\x03\x04)
 	 */
 	public boolean isZipLike(Path path) {
-		final String lower = path.getFileName().toString().toLowerCase(Locale.ROOT);
+		var lower = path.getFileName().toString().toLowerCase(Locale.ROOT);
 		if (lower.endsWith(".zip") || lower.endsWith(".pak"))
 			return true;
 		try (var in = Files.newInputStream(path)) {
-			final byte[] magic = in.readNBytes(4);
+			var magic = in.readNBytes(4);
 			// ZIP local-file header signature: 0x50 0x4B 0x03 0x04
 			return magic.length >= 4 && magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04;
 		} catch (IOException ex) {
+			return false;
+		}
+	}
+	
+	public boolean createEmptyFile(Path path) {
+		try {
+			var dir = path.getParent();
+			if (dir != null)
+				Files.createDirectories(dir);
+			Files.createFile(path);
+			return true;
+		} catch (Exception e) {
+			log.warn("Failed to create empty file at path: {}", path, e);
 			return false;
 		}
 	}
@@ -83,16 +96,16 @@ public final class IOUtil {
 			log.warn("Source archive does not exist: {}", sourcePakFile);
 			return false;
 		}
-		if (isZipLike(sourcePakFile)) {
+		if (! isZipLike(sourcePakFile)) {
 			log.warn("Source is not an archive: {}", sourcePakFile);
 			return false;
 		}
-		final var absoluteSource = sourcePakFile.toAbsolutePath().normalize();
-		final var absoluteDest = destFolder.toAbsolutePath().normalize();
+		var absoluteSource = sourcePakFile.toAbsolutePath().normalize();
+		var absoluteDest = destFolder.toAbsolutePath().normalize();
 		
 		try {
 			Files.createDirectories(absoluteDest);
-		} catch (final IOException e) {
+		} catch (IOException e) {
 			log.error("Archive extraction failed – cannot create destination folder", e);
 			return false;
 		}
@@ -104,7 +117,7 @@ public final class IOUtil {
 					continue;
 				}
 				
-				final var entryPath = absoluteDest.resolve(entry.getName()).normalize();
+				var entryPath = absoluteDest.resolve(entry.getName()).normalize();
 				
 				// Security check - prevent zip slip vulnerability
 				if (! entryPath.startsWith(absoluteDest)) {
@@ -132,14 +145,14 @@ public final class IOUtil {
 					}
 					
 					zis.closeEntry();
-				} catch (final IOException e) {
+				} catch (IOException e) {
 					log.warn("Cannot extract entry: {} – {}", entry.getName(), e.getMessage());
 				}
 			}
 			
 			return true;
 			
-		} catch (final IOException e) {
+		} catch (IOException e) {
 			log.error("Archive extraction failed", e);
 			return false;
 		}
@@ -152,8 +165,8 @@ public final class IOUtil {
 			return false;
 		}
 		
-		final var absoluteSource = sourceFolder.toAbsolutePath().normalize();
-		final var absoluteDest = destPakFile.toAbsolutePath().normalize();
+		var absoluteSource = sourceFolder.toAbsolutePath().normalize();
+		var absoluteDest = destPakFile.toAbsolutePath().normalize();
 		
 		try {
 			Files.createDirectories(absoluteDest.getParent());
@@ -187,14 +200,14 @@ public final class IOUtil {
 							Files.copy(file, zos);
 							zos.closeEntry();
 							
-						} catch (final IOException e) {
+						} catch (IOException e) {
 							log.warn("Cannot add to pak: {} – {}", file, e.getMessage());
 						}
 					});
 			
 			return true;
 			
-		} catch (final IOException e) {
+		} catch (IOException e) {
 			log.error("PAK creation failed", e);
 			return false;
 		}

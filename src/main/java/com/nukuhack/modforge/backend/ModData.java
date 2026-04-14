@@ -15,7 +15,7 @@ import java.util.*;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 public final class ModData {
-	private final Map<String, ModItem> items = new HashMap<>();
+	private final Set<ModItem> items = new HashSet<>();
 	private final Map<String, String> config = new HashMap<>();
 	/**
 	 * lang-code -> (string-key -> localized-value)
@@ -44,41 +44,35 @@ public final class ModData {
 	}
 	
 	public void addItem(ModItem item) {
-		items.put(item.getId(), item);
-	}
-	
-	public Collection<ModItem> getItemsSet() {
-		return Collections.unmodifiableCollection(items.values());
+		items.add(item);
 	}
 	
 	public void setItems(Collection<ModItem> input) {
 		this.items.clear();
-		Map<String, List<ModItem>> duplicates = new HashMap<>();
+		var duplicates = new ArrayList<ModItem>();
 		input.forEach(i -> {
-			var itemId = i.getId();
-			if (log.isDebugEnabled() && this.items.containsKey(itemId)) {
-				duplicates.computeIfAbsent(itemId, k -> new ArrayList<>()).add(this.items.get(itemId));
-				duplicates.get(itemId).add(i);
-				log.debug("Duplicated item: {}, original was: {}", i, this.items.get(itemId));
+			if (log.isDebugEnabled() && this.items.contains(i)) {
+				duplicates.add(i);
+				log.debug("Duplicated item: {}", i);
 			}
-			this.items.put(itemId, i);
+			this.items.add(i);
 		});
 		
 		if (! duplicates.isEmpty()) {
-			log.warn("Found {} duplicate IDs, lost {} items", duplicates.size(), duplicates.values().stream().mapToInt(List::size).sum() - duplicates.size());
+			log.warn("Found {} duplicate IDs, lost that much items", duplicates.size());
 		}
 	}
 	
-	public ModItem getItem(String key) {
-		return items.get(key);
+	public Optional<ModItem> getItem(String key) {
+		return items.stream().filter(i -> i.getId().equals(key)).findAny();
 	}
 	
 	public boolean containsItem(String key) {
-		return items.containsKey(key);
+		return getItem(key).isPresent();
 	}
 	
 	public boolean containsItem(ModItem value) {
-		return items.containsValue(value);
+		return items.contains(value);
 	}
 	
 	public void setConfig(Map<String, String> input) {
