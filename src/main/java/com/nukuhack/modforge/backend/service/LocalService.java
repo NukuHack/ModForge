@@ -38,23 +38,20 @@ public final class LocalService {
 		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
 		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
 		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
-		// these for speed
+		
 		f.setProperty(XMLInputFactory.IS_COALESCING, true);
 		if (false /*get class for "jackson-dataformat-xml"*/)
-			f.setProperty("com.ctc.wstx.maxElementDepth", 5); // should be fine on 3 but left it
+			f.setProperty("com.ctc.wstx.maxElementDepth", 5);
+		
 		else {
-			// JAXP00010003 — individual entity size
+			
 			f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
-			// JAXP00010004 — accumulated entity size across the whole document
+			
 			f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
 		}
 		return f;
 	});
 	private final UserConfig userConfig;
-	
-	// ==================================================================
-	// PUBLIC API
-	// ==================================================================
 	
 	public LocalService(UserConfig userConfig) {
 		this.userConfig = userConfig;
@@ -65,20 +62,18 @@ public final class LocalService {
 	 * Returns: Language enum -> (string-key -> localized-value)
 	 */
 	public static Map<Language, Map<String, String>> loadLocalization(String root) {
-		// Collect all valid (language, pakPath) pairs upfront
+		
 		var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.pakPath()))).toList();
 		if (langPaks.isEmpty()) {
 			log.info("No Localization folder found for folder {}", root);
 			return new EnumMap<>(Language.class);
 		}
 		
-		// Process all PAKs in parallel; each returns a (Language -> Map) contribution
 		var result = new ConcurrentHashMap<Language, Map<String, String>>();
 		
 		langPaks.parallelStream().forEach(lp -> {
 			try (var zf = new ZipFile(lp.pakPath())) {
-				// here using parallel is useless
-				//  for now I removed filters, so all text data will be red, but if it's too slow for you just add a filter to the base text data for items
+				
 				zf.stream().forEach(entry -> {
 					try (var is = zf.getInputStream(entry)) {
 						var parsed = parseLocalizationXml(is);
@@ -94,7 +89,7 @@ public final class LocalService {
 		});
 		
 		log.info("Loaded {} languages from {} PAK file(s)", result.size(), langPaks.size());
-		// Wrap back into a plain EnumMap for the rest of the codebase
+		
 		var out = new EnumMap<Language, Map<String, String>>(Language.class);
 		result.forEach((lang, map) -> out.put(lang, new HashMap<>(map)));
 		return out;
@@ -104,7 +99,7 @@ public final class LocalService {
 	 * Parse a single localisation XML stream.
 	 */
 	public static Map<String, String> parseLocalizationXml(InputStream is) throws XMLStreamException {
-		// Pre-sized to avoid rehashing for typical file sizes
+		
 		var result = new LinkedHashMap<String, String>(1024);
 		
 		var factory = XML_FACTORY.get();
@@ -131,19 +126,17 @@ public final class LocalService {
 					case "Cell":
 						if (! inRow)
 							break;
-						// case 0 - false incements it to 1
-						// case 1 - true incements it to 2
-						// case 2 - false increments it to 3
-						// this first checks then increments
+						
 						if (cellIndex++ == 1)
-							break;  // skip the middle cell (case 1)
+							break;
+						
 						var text = reader.getElementText().strip();
 						if (text.isEmpty())
 							break;
-						// this is true at case 0
+						
 						if (cellIndex == 1)
 							key = text;
-							// this is true at case 2
+						
 						else if (cellIndex == 3 && key != null)
 							result.put(key, text);
 						break;
@@ -166,10 +159,6 @@ public final class LocalService {
 			log.warn("Localization write had errors for mod: {}", mod.getId());
 		}
 	}
-	
-	// ------------------------------------------------------------------
-	// Convenience overloads for base-game items (no per-mod map)
-	// ------------------------------------------------------------------
 	
 	/**
 	 * Write mod-specific localization files into the mod's Localization directory.
@@ -277,14 +266,13 @@ public final class LocalService {
 		if (key == null || (key = key.trim()).isEmpty())
 			return null;
 		var game = Singleton.getGame();
-		// 1. Mod's own strings
+		
 		if (mod != game) {
 			var modMap = mod.getLang(lang);
 			if (modMap.containsKey(key))
 				return modMap.get(key);
 		}
 		
-		// 2. Base-game strings
 		var baseMap = game.getLang(lang);
 		if (baseMap.containsKey(key))
 			return baseMap.get(key);
@@ -313,7 +301,7 @@ public final class LocalService {
 	 * Returns {@code null} if no candidate attribute is present on the item.
 	 */
 	private String resolve(ModItem item, ModData mod, String... candidates) {
-		// Pull the two lang maps once – either may be null if never populated.
+		
 		var game = Singleton.getGame();
 		var modMap = (mod != game) ? mod.getLang(userConfig.getLanguage()) : new HashMap<String, String>();
 		var baseMap = game.getLang(userConfig.getLanguage());
@@ -327,15 +315,12 @@ public final class LocalService {
 			
 			var key = String.valueOf(attr.getValue());
 			
-			// 1. Mod-local strings
 			if (modMap.containsKey(key))
 				return modMap.get(key);
 			
-			// 2. Base-game strings
 			if (baseMap.containsKey(key))
 				return baseMap.get(key);
 			
-			// 3. Raw value (the key itself) – better than null for display purposes
 			return key;
 		}
 		return null;
@@ -350,7 +335,7 @@ public final class LocalService {
 	}
 	
 	public static void loadUILocalizations() {
-		var zipPath = "localization.zip";
+		var zipPath = "local.zip";
 		var zipStream = Main.class.getClassLoader().getResourceAsStream(zipPath);
 		
 		if (zipStream == null) {
@@ -358,8 +343,8 @@ public final class LocalService {
 			return;
 		}
 		
-		Map<E.Language, Map<String, String>> langMap = new EnumMap<>(E.Language.class);
-		try (ZipInputStream zis = new ZipInputStream(zipStream)) {
+		var langMap = new EnumMap<E.Language, Map<String, String>>(E.Language.class);
+		try (var zis = new ZipInputStream(zipStream)) {
 			ZipEntry entry;
 			
 			while ((entry = zis.getNextEntry()) != null) {
@@ -368,11 +353,10 @@ public final class LocalService {
 				}
 				
 				var entryName = entry.getName();
-				String langCode = entryName.substring(0, entryName.length() - 4).toUpperCase();
-				
+				var name = entryName.substring(entryName.lastIndexOf("/") + 1);
+				var langCode = name.substring(0, name.length() - 4).toUpperCase();
 				var map = langMap.computeIfAbsent(E.Language.fromName(langCode), l -> new LinkedHashMap<>());
 				
-				// Wrap the ZipInputStream so close() doesn't propagate
 				try (var nonClosingStream = new NonClosingInputStream(zis)) {
 					map.putAll(LocalService.parseLocalizationXml(nonClosingStream));
 				}

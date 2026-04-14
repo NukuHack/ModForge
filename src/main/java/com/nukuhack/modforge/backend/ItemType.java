@@ -15,7 +15,6 @@ import java.util.zip.ZipEntry;
 @NonNull
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ItemType {
-	// ── Static indexes built once from ItemEntry.values() ───────────────────
 	
 	/** class → idKey */
 	private static final Map<Class<? extends ModItem>, String> ID_KEYS;
@@ -34,19 +33,17 @@ public final class ItemType {
 		displays.add(new ITDisplay("All Types", i -> true));
 		
 		for (var e : ItemEntry.values()) {
-			// id key (first registration wins – ItemEntry order is the priority)
+			
 			idMap.put(e.clazz, e.idKey);
 			
-			// endpoint key set
 			epKeys.add(e.fileName.toLowerCase());
 			
-			// display dropdown
 			if (e.showInDisplay)
 				displays.add(new ITDisplay(e.displayName(), e.matcher()));
 		}
 		
 		displays.sort(Comparator.comparing(ITDisplay::displayName));
-		// Ensure "All Types" stays first after sorting
+		
 		displays.sort((a, b) -> {
 			if ("All Types".equals(a.displayName()))
 				return - 1;
@@ -60,8 +57,6 @@ public final class ItemType {
 		ENDPOINT_KEYS = Collections.unmodifiableSet(epKeys);
 	}
 	
-	// ── Public API (signatures unchanged) ────────────────────────────────────
-	
 	/** Item selector dropdown filter – used by the Item page (frontend). */
 	public static boolean excludeNonEndpoints(final @NonNull ZipEntry ze) {
 		if (ze.isDirectory())
@@ -70,7 +65,7 @@ public final class ItemType {
 		var isData = name.endsWith(".xml") || name.endsWith(".adb");
 		if (! isData)
 			return false;
-		// AHH STUPID STORM
+		
 		if (name.startsWith("libs/storm/"))
 			return true;
 		var p = Path.of(name);
@@ -96,7 +91,6 @@ public final class ItemType {
 	public static @NonNull String getIdKey(Class<? extends ModItem> clazz) {
 		return ID_KEYS.getOrDefault(clazz, "Id");
 	}
-	
 	
 	/** Display entry for the frontend type dropdown. */
 	@NonNull

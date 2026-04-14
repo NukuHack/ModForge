@@ -1,6 +1,5 @@
 
-icon view - load some icons into the loader and view them (at least the mod's if the main data takes up too much space)
-making icon view + *edit*
+icon view + *edit* - load some icons into the loader and view them (at least the mod's if the main data takes up too much space)
 
 parse other files (adb - animation database)
 gfx files ?!?, and mtl too ?, and bk2 video format too ..., lua ? hell nah

@@ -48,10 +48,9 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * </ul>
 	 */
 	public static @NonNull XmlNode parseNode(final @NonNull Element element) {
-		// Flat attributes
+		
 		var attrs = getAttributeFromElement(element);
 		
-		// Recurse into child elements
 		var children = parseChildNodes(element);
 		
 		return new XmlNode(element.getTagName(), attrs, children);
@@ -67,12 +66,10 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	public static @NonNull Element serializeNode(final @NonNull Document document, final @NonNull String tagName, final @NonNull XmlNode node) {
 		var el = document.createElement(tagName);
 		
-		// Write flat attributes first (preserves original attribute-before-children order)
 		for (var attr : node.attributes()) {
 			el.setAttribute(attr.getName(), attr.serialize());
 		}
 		
-		// Recurse into children
 		for (var child : node.children()) {
 			var rawTag = stripIndex(child.tag());
 			el.appendChild(serializeNode(document, rawTag, child));
@@ -88,7 +85,8 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * and internally.
 	 */
 	private static @NonNull List<Attribute> parseChildrenAsAttributes(final @NonNull Element parent) {
-		var tagSeen = new LinkedHashMap<String, Integer>(); // tag → count so far
+		var tagSeen = new LinkedHashMap<String, Integer>();
+		
 		var result = new ArrayList<Attribute>();
 		
 		var children = parent.getChildNodes();
@@ -98,19 +96,17 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 				continue;
 			
 			var tag = childEl.getTagName();
-			var count = tagSeen.merge(tag, 1, Integer::sum); // count after this one
+			var count = tagSeen.merge(tag, 1, Integer::sum);
 			
-			// We don't know yet whether this tag will appear more than once,
-			// so we accumulate and fix up after the loop.
 			result.add(new XmlNodeAttribute("__tmp__" + tag + "__" + (count - 1), parseNode(childEl)));
 		}
 		
-		// Fix up names: single-occurrence tags keep plain name; multi-occurrence get [N]
 		return result.stream().map(attr -> {
-			// Decode the temp name: __tmp__TAG__index
+			
 			var tmp = attr.getName();
 			var last = tmp.lastIndexOf("__");
-			var tag = tmp.substring(7, last);       // strip "__tmp__" prefix
+			var tag = tmp.substring(7, last);
+			
 			var idx = Integer.parseInt(tmp.substring(last + 2));
 			var finalName = (tagSeen.get(tag) == 1) ? tag : tag + "[" + idx + "]";
 			return (Attribute) new XmlNodeAttribute(finalName, ((XmlNodeAttribute) attr).getValue());
@@ -123,7 +119,8 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * Used by {@link #parseNode(Element)} to build the children list of a node.
 	 */
 	private static @NonNull List<XmlNode> parseChildNodes(final @NonNull Element parent) {
-		var tagSeen = new LinkedHashMap<String, Integer>(); // tag → count so far
+		var tagSeen = new LinkedHashMap<String, Integer>();
+		
 		var result = new ArrayList<RawChild>();
 		
 		var children = parent.getChildNodes();
@@ -133,14 +130,15 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 				continue;
 			
 			var tag = childEl.getTagName();
-			var idx = tagSeen.merge(tag, 1, Integer::sum) - 1; // 0-based index for this occurrence
+			var idx = tagSeen.merge(tag, 1, Integer::sum) - 1;
+			
 			result.add(new RawChild(tag, idx, parseNode(childEl)));
 		}
 		
 		return result.stream().map(rc -> {
 			var total = tagSeen.get(rc.tag());
 			var finalTag = (total == 1) ? rc.tag() : rc.tag() + "[" + rc.idx() + "]";
-			// XmlNode is a record — rebuild with final tag if it differs
+			
 			if (finalTag.equals(rc.node().tag()))
 				return rc.node();
 			return new XmlNode(finalTag, rc.node().attributes(), rc.node().children());
@@ -170,10 +168,8 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 			final M item = cons.newInstance();
 			item.setId(element.getAttribute(idKey));
 			
-			// 1. Flat XML attributes on the root element (Name="…", Mode="…", …)
 			var attrs = getAttributeFromElement(element);
 			
-			// 2. Child elements → XmlNodeAttributes (with index-suffix disambiguation)
 			var child = parseChildrenAsAttributes(element);
 			attrs.addAll(child);
 			

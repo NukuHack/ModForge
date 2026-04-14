@@ -86,7 +86,6 @@ public final class ModService {
 		try {
 			Files.createDirectories(Util.dataDir(rootPath));
 			
-			// Create the new manifest content first
 			var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			var doc = docBuilder.newDocument();
 			
@@ -110,7 +109,6 @@ public final class ModService {
 				appendText(doc, supports, "kcd_version", v);
 			root.appendChild(supports);
 			
-			// Convert the new document to a string for comparison
 			var tf = TransformerFactory.newInstance().newTransformer();
 			tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			tf.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -119,11 +117,9 @@ public final class ModService {
 			tf.transform(new DOMSource(doc), new StreamResult(newXmlWriter));
 			var newContent = newXmlWriter.toString();
 			
-			// Check if the manifest already exists and has the same content
 			if (Files.exists(manifest)) {
 				var existingContent = Files.readString(manifest, StandardCharsets.UTF_8);
 				
-				// Normalize both strings for comparison (remove whitespace differences)
 				var normalizedNew = newContent.replaceAll(">\\s+<", ">\n<");
 				var normalizedExisting = existingContent.replaceAll(">\\s+<", ">\n<");
 				
@@ -135,7 +131,6 @@ public final class ModService {
 				}
 			}
 			
-			// Write the new manifest content
 			try (var fileWriter = new java.io.FileWriter(manifest.toFile(), StandardCharsets.UTF_8)) {
 				fileWriter.write(newContent);
 			}
@@ -240,7 +235,6 @@ public final class ModService {
 			}
 		}
 		
-		// Clean up the staging tree regardless of individual failures
 		IOUtil.deleteRecursively(stageRoot);
 		
 		if (allOk)
@@ -271,7 +265,7 @@ public final class ModService {
 		
 		langPaks.forEach(file -> {
 			var langFolder = file.toPath();
-			// The PAK should be named like "German_xml.pak" and placed in the game root
+			
 			var destPak = Path.of(langFolder + Util.COMP_FORMAT);
 			var ok = IOUtil.packFolder(langFolder, destPak, null, true);
 			

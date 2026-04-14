@@ -23,8 +23,6 @@ public class MultiMap<K, V> implements Map<K, Set<V>> {
 		this.map = new HashMap<>(initialCapacity, loadFactor);
 	}
 	
-	// Core operations
-	
 	/**
 	 * Adds a value to the set associated with the key.
 	 * Returns true if the value was added (wasn't already present).
@@ -67,13 +65,9 @@ public class MultiMap<K, V> implements Map<K, Set<V>> {
 		return values != null && values.contains(value);
 	}
 	
-	// Standard Map interface implementation
-	
 	public int fullSize() {
 		return map.values().stream().mapToInt(Set::size).sum();
 	}
-	
-	// Utility methods
 	
 	public Set<V> getAllValues() {
 		Set<V> allValues = new HashSet<>();

@@ -25,18 +25,16 @@ public class BitReader implements Closeable {
 	@Getter
 	private long bitPosition;
 	
-	// Track which bit we're on within the current byte (0 = LSB, 7 = MSB)
 	private int currentBitIndex;
 	
-	// Marking support
 	private long markBitPosition = - 1;
 	private int markCurrentByte;
 	private int markBitsRemaining;
 	private int markCurrentBitIndex;
 	private boolean markSet = false;
 	
-	// Read-ahead buffer for mark/reset functionality
-	private static final int MARK_BUFFER_SIZE = 8192; // 8KB buffer
+	private static final int MARK_BUFFER_SIZE = 8192;
+	
 	private byte[] markBuffer;
 	private int markBufferPos;
 	private int markBufferLimit;
@@ -56,7 +54,6 @@ public class BitReader implements Closeable {
 		this.originalInput = Objects.requireNonNull(input, "Input stream cannot be null");
 		this.closeUnderlying = closeUnderlying;
 		
-		// Wrap the input to support marking if it doesn't already
 		if (input.markSupported()) {
 			this.input = input;
 		} else {
@@ -90,7 +87,6 @@ public class BitReader implements Closeable {
 	public boolean read() throws IOException {
 		ensureBitsAvailable();
 		
-		// Read from current bit position (starting from LSB at index 0)
 		boolean result = ((currentByte >> currentBitIndex) & 1) == 1;
 		currentBitIndex++;
 		bitsRemaining--;
@@ -120,7 +116,7 @@ public class BitReader implements Closeable {
 		
 		int result = 0;
 		for (int i = 0; i < n; i++) {
-			// Each bit read is placed at its correct position (LSB first)
+			
 			if (read()) {
 				result |= (1 << i);
 			}
@@ -140,7 +136,7 @@ public class BitReader implements Closeable {
 		
 		long result = 0;
 		for (int i = 0; i < n; i++) {
-			// Each bit read is placed at its correct position (LSB first)
+			
 			if (read())
 				result |= (1L << i);
 		}
@@ -295,7 +291,7 @@ public class BitReader implements Closeable {
 	 */
 	public void seek(long bitPos) throws IOException {
 		if (markSet && bitPos >= markBitPosition) {
-			// We can handle this with our mark buffer
+			
 			reset();
 			skipBits(bitPos - markBitPosition);
 		} else {
@@ -307,7 +303,7 @@ public class BitReader implements Closeable {
 	 * Marks the current position for later reset
 	 */
 	public void mark() {
-		// Mark in the underlying stream (if supported)
+		
 		if (input.markSupported()) {
 			input.mark(MARK_BUFFER_SIZE);
 		}
@@ -386,7 +382,8 @@ public class BitReader implements Closeable {
 		}
 		currentByte = nextByte;
 		bitsRemaining = 8;
-		currentBitIndex = 0;  // Reset to start at LSB
+		currentBitIndex = 0;
+		
 	}
 	
 	@Override

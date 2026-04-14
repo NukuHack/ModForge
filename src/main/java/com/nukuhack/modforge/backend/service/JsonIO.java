@@ -70,7 +70,6 @@ public final class JsonIO {
 		return write(Path.of(target), item);
 	}
 	
-	// Simple JSON value representation
 	public static abstract class JsonValue {
 		public static JsonValue parse(String json) {
 			return new JsonParser(json).parse();
@@ -196,7 +195,6 @@ public final class JsonIO {
 		}
 	}
 	
-	// Simple JSON parser
 	private static class JsonParser {
 		private final String json;
 		private int pos = 0;
@@ -229,7 +227,8 @@ public final class JsonIO {
 		
 		private JsonObject parseObject() {
 			var obj = new JsonObject();
-			pos++; // skip '{'
+			pos++;
+			
 			skipWhitespace();
 			
 			if (pos < json.length() && json.charAt(pos) == '}') {
@@ -262,7 +261,8 @@ public final class JsonIO {
 		
 		private JsonArray parseArray() {
 			var arr = new JsonArray();
-			pos++; // skip '['
+			pos++;
+			
 			skipWhitespace();
 			
 			if (pos < json.length() && json.charAt(pos) == ']') {
@@ -285,7 +285,8 @@ public final class JsonIO {
 		}
 		
 		private JsonString parseString() {
-			pos++; // skip opening quote
+			pos++;
+			
 			var sb = new StringBuilder();
 			while (pos < json.length()) {
 				var c = json.charAt(pos);

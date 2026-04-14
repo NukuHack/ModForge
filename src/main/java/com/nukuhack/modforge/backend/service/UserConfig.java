@@ -40,7 +40,6 @@ public interface UserConfig {
 	
 	void save();
 	
-	
 	@Slf4j
 	@Getter
 	@Setter
@@ -79,7 +78,6 @@ public interface UserConfig {
 			}
 		}
 		
-		// Convert to JsonValue
 		private @NonNull JsonIO.JsonObject toJsonObject() {
 			final var obj = new JsonIO.JsonObject();
 			obj.put("gameDir", new JsonIO.JsonString(gameDir));
@@ -89,7 +87,6 @@ public interface UserConfig {
 			return obj;
 		}
 		
-		// Create from JsonValue
 		private void fromJson(JsonIO.JsonValue value) {
 			if (! (value instanceof JsonIO.JsonObject obj))
 				return;

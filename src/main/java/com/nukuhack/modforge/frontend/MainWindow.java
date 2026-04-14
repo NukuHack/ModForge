@@ -109,10 +109,10 @@ public class MainWindow extends JFrame {
 	 */
 	private void setWindowIcon() {
 		
-		final var f = new String[] { "/images/Icons/modforge.png", "/images/Icons/modforge.ico", "/resources/images/Icons/modforge.png", "/resources/images/Icons/modforge.ico", "resources/images/Icons/modforge.png", "resources/images/Icons/modforge.ico" };
+		var f = new String[] { "/Icons/modforge.png", "/Icons/modforge.ico", "/resources/Icons/modforge.png", "/resources/Icons/modforge.ico", "resources/Icons/modforge.png", "resources/Icons/modforge.ico" };
 		
-		for (final var el : f) {
-			final var out = getClass().getResource(el);
+		for (var el : f) {
+			var out = getClass().getResource(el);
 			
 			if (out != null) {
 				setIconImage(new ImageIcon(out).getImage());

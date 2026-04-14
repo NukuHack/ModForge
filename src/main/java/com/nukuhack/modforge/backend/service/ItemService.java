@@ -40,15 +40,15 @@ public final class ItemService {
 		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
 		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
 		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
-		// these for speed
+		
 		f.setProperty(XMLInputFactory.IS_COALESCING, true);
-		// JAXP00010003 — individual entity size
+		
 		f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
-		// JAXP00010004 — accumulated entity size across the whole document
+		
 		f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
 		return f;
 	});
-	// TODO : make this kind of data load or ... idk
+	
 	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
 	
 	static {
@@ -72,7 +72,7 @@ public final class ItemService {
 	
 	static Document parseXml(InputStream is) {
 		try {
-			// Wrap in BufferedInputStream if not already mark-supported
+			
 			if (! is.markSupported())
 				is = new BufferedInputStream(is);
 			
@@ -80,24 +80,22 @@ public final class ItemService {
 			byte[] bom = new byte[3];
 			int bytesRead = is.read(bom);
 			
-			// Reset to beginning regardless
 			is.reset();
 			
 			final String encoding;
 			
-			// Check for BOM only if we read enough bytes
 			if (bytesRead >= 3 && bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF) {
-				// BOM found, skip it by reading past it
+				
 				if (is.skip(3) != 3)
 					throw new IOException("Could not read the BOM correctly");
 				encoding = "UTF-8";
 			} else if (bytesRead >= 2 && bom[0] == (byte) 0xFE && bom[1] == (byte) 0xFF) {
-				// UTF-16BE BOM
+				
 				if (is.skip(2) != 2)
 					throw new IOException("Could not read the BOM correctly");
 				encoding = "UTF-16BE";
 			} else if (bytesRead >= 2 && bom[0] == (byte) 0xFF && bom[1] == (byte) 0xFE) {
-				// UTF-16LE BOM
+				
 				if (is.skip(2) != 2)
 					throw new IOException("Could not read the BOM correctly");
 				encoding = "UTF-16LE";
@@ -105,7 +103,6 @@ public final class ItemService {
 				encoding = "UTF-8";
 			}
 			
-			// Use the detected encoding
 			try (var reader = new BufferedReader(new InputStreamReader(is, encoding))) {
 				return docBuilder.parse(new InputSource(reader));
 			}
@@ -156,23 +153,29 @@ public final class ItemService {
 	 * @return the file, according to the Structure
 	 */
 	public static Path getOutputFile(final String gameDir, final String itemPath, final ModData mod) {
-		// ---- Resolve PAK stem & inner directory suffix ----
-		final String pakStem;   // e.g. "Weapons"  or  modId
-		final String dirSuffix; // e.g. "Libs/Tables" or ""
-		String fileName; // e.g. "apple.txt"
+		
+		final String pakStem;
+		
+		final String dirSuffix;
+		
+		String fileName;
 		
 		int colonIdx = itemPath.indexOf(':');
 		if (colonIdx > 0) {
-			// Format (a): "SomePak.pak:inner/dir/entry.xml"
-			var pakFileName = itemPath.substring(0, colonIdx);       // "SomePak.pak"
-			var innerEntry = itemPath.substring(colonIdx + 1); // "inner/dir/entry.xml"
+			
+			var pakFileName = itemPath.substring(0, colonIdx);
+			
+			var innerEntry = itemPath.substring(colonIdx + 1);
+			
 			var dot = pakFileName.lastIndexOf('.');
-			pakStem = dot > 0 ? pakFileName.substring(0, dot) : pakFileName;     // "SomePak"
-			var lastSlash = innerEntry.lastIndexOf('/');      // "inner/dir"
+			pakStem = dot > 0 ? pakFileName.substring(0, dot) : pakFileName;
+			
+			var lastSlash = innerEntry.lastIndexOf('/');
+			
 			dirSuffix = lastSlash >= 0 ? innerEntry.substring(0, lastSlash) : "";
 			fileName = innerEntry.substring(++ lastSlash);
 		} else {
-			// Format (b/c): plain path or blank
+			
 			pakStem = mod.getId();
 			var lastSlash = itemPath.lastIndexOf('/');
 			dirSuffix = lastSlash >= 0 ? itemPath.substring(0, lastSlash) : "";
@@ -182,7 +185,7 @@ public final class ItemService {
 			fileName = "apple.txt";
 		
 		var stageRoot = Util.joinP(Util.modStaging(gameDir, mod.getId()), pakStem);
-		// Capitalize the L in Libs
+		
 		return dirSuffix.isEmpty() ? Util.joinP(stageRoot, fileName) : Util.joinP(stageRoot, Util.capitalStart(dirSuffix), fileName);
 	}
 	
@@ -275,7 +278,7 @@ public final class ItemService {
 		var tf = TransformerFactory.newInstance().newTransformer();
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
 		tf.setOutputProperty("{http://xml.apache.org/xalan}indent-amount", "2");
-		// We'll write the declaration + DOCTYPE ourselves
+		
 		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 		
 		var writer = new StringWriter();
@@ -378,7 +381,7 @@ public final class ItemService {
 				log.info("No PAK files found in: {}", modPath);
 				return Set.of();
 			}
-			// using single stream() is fine here, it makes the load slower, but does not eat up all you cpu power - parallelStream() is too much here
+			
 			var result = pakFiles.stream().flatMap(ItemService::extractItemsFromPak).collect(Collectors.toSet());
 			
 			log.info("Loaded {} items from {} PAK file(s)", result.size(), pakFiles.size());

@@ -32,11 +32,6 @@ public final class IconService {
 		this.userConfig = userConfig;
 	}
 	
-	
-	// =====================================================================
-	// Construction & lifecycle
-	// =====================================================================
-	
 	/**
 	 * Scan a single PAK file for DDS textures under {@value #TEXTURES_ROOT} and
 	 * add them to {@code target}. Returns the number of entries indexed.
@@ -135,16 +130,12 @@ public final class IconService {
 		}
 	}
 	
-	// =====================================================================
-	// Bulk conversion utilities
-	// =====================================================================
-	
 	/**
 	 * Extract a ZIP/PAK, convert each matching entry, and write results into
 	 * {@code <archiveName>_converted/} next to the archive.
 	 */
 	private static void convertArchive(Path archive, boolean toPng) throws IOException {
-		// e.g. MyPak.pak  →  MyPak_converted/
+		
 		final String archiveStem = Util.stemOf(archive.getFileName().toString());
 		final Path outRoot = archive.getParent().resolve(archiveStem + "_converted");
 		Files.createDirectories(outRoot);
@@ -154,7 +145,6 @@ public final class IconService {
 		try (var zf = new ZipFile(archive.toFile())) {
 			for (final var entry : zf.stream().filter(ze -> ! ze.isDirectory()).filter(ze -> ze.getName().toLowerCase(Locale.ROOT).endsWith(srcExt)).toList()) {
 				
-				// Preserve internal path structure inside the output folder
 				final String normalised = entry.getName().replace('\\', '/');
 				final Path entryOut = outRoot.resolve(normalised).getParent();
 				Files.createDirectories(entryOut);
@@ -167,13 +157,11 @@ public final class IconService {
 					continue;
 				}
 				
-				// Write the raw bytes to a temp file so convertSingleFile can read it
 				final String entryFilename = normalised.contains("/") ? normalised.substring(normalised.lastIndexOf('/') + 1) : normalised;
 				final Path tmp = entryOut.resolve(entryFilename);
 				Files.write(tmp, raw);
 				convertSingleFile(tmp, entryOut, toPng);
-				// Optionally delete the extracted source file after conversion:
-				// Files.deleteIfExists(tmp);
+				
 			}
 		}
 		log.info("Archive conversion complete → {}", outRoot);
@@ -190,7 +178,7 @@ public final class IconService {
 		final String dstExt = toPng ? ".png" : ".dds";
 		
 		if (! srcLower.endsWith(srcExt))
-			return; // wrong type for this direction
+			return;
 		
 		final String stem = srcName.substring(0, srcName.length() - srcExt.length());
 		final Path dstPath = outputDir.resolve(stem + dstExt);
@@ -198,13 +186,13 @@ public final class IconService {
 		try {
 			backupIfExists(dstPath);
 			if (toPng) {
-				// DDS → PNG
+				
 				final byte[] ddsBytes = Files.readAllBytes(src);
 				final BufferedImage img = convertToImage(ddsBytes);
 				ImageIO.write(img, "png", dstPath.toFile());
 				log.info("DDS→PNG: {} → {}", src, dstPath);
 			} else {
-				// caller gets a clear error rather than silent data loss.
+				
 				final BufferedImage img = ImageIO.read(src.toFile());
 				if (img == null)
 					throw new IOException("ImageIO could not read PNG: " + src);
@@ -334,13 +322,11 @@ public final class IconService {
 	private static BufferedImage getBase64Icon(String iconId, ModData mod) {
 		var key = iconId.toLowerCase(Locale.ROOT);
 		
-		// 1. Mod's raw DDS index
 		var modDds = mod.getIcon(key);
 		if (modDds != null) {
 			return convert(key, modDds.data);
 		}
 		
-		// 2. Base-game raw DDS index
 		var game = Singleton.getGame();
 		if (mod != game) {
 			var baseDds = game.getIcon(key);

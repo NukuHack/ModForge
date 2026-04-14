@@ -35,8 +35,7 @@ public final class ServiceRegistry {
 			configService.init();
 			localService.init();
 			itemService.init();
-			// DISABLING since it uses up over 3gigs of memory, so i will rework it
-			// TODO : rework
+			// todo : rework
 			// iconService.init();
 		}
 		
@@ -52,9 +51,8 @@ public final class ServiceRegistry {
 		configService.init();
 		localService.init();
 		itemService.init();
-		// TODO : rework
-		//iconService.init();
 		
 		modService.init();
 	}
 }
+

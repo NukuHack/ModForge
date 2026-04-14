@@ -29,9 +29,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @UtilityClass
 public final class Util {
-	// ================================================================================
-	// CONSTANTS
-	// ================================================================================
 	
 	/** Application name used for config directories and UI display */
 	public final String APP_NAME = "ModForge";
@@ -69,11 +66,12 @@ public final class Util {
 	/** Root directory for all mod installations */
 	public final String MODS_DIR = "Mods";
 	
-	
 	static {
-		String user = System.getenv("USERNAME"); // Windows
+		String user = System.getenv("USERNAME");
+		
 		if (user == null) {
-			user = System.getenv("USER"); // Linux/Mac
+			user = System.getenv("USER");
+			
 		}
 		if (user == null) {
 			user = System.getProperty("user.name");
@@ -329,7 +327,6 @@ public final class Util {
 		if (! inp.startsWith(XML_HEADER))
 			inp = XML_HEADER + "\n" + inp;
 		
-		// Write the cleaned output
 		try (var fileWriter = new FileWriter(outFile.toFile(), StandardCharsets.UTF_8)) {
 			fileWriter.write(inp);
 		}
@@ -392,7 +389,7 @@ public final class Util {
 	public String escapeXml(String s) {
 		if (s == null)
 			return "";
-		// theoretically escapeHtml could work, but I made this just in case
+		
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
 	}
 	
@@ -506,22 +503,22 @@ public final class Util {
 	public Path getConfigDir() {
 		var home = System.getProperty("user.home");
 		if (os.contains("win")) {
-			// Windows: %APPDATA%\ {APP_NAME}
+			
 			String appData = System.getenv("APPDATA");
 			if (appData == null || appData.isBlank()) {
 				appData = home + "\\AppData\\Roaming";
 			}
 			return Paths.get(appData, APP_NAME);
 		} else if (os.contains("mac")) {
-			// macOS: ~/Library/Application Support/ {APP_NAME}
+			
 			return Paths.get(home, "Library", "Application Support", APP_NAME);
 		} else {
-			// Linux/Unix: ~/.config/ {APP_NAME} (XDG Base Directory Specification)
+			
 			var xdgConfigHome = System.getenv("XDG_CONFIG_HOME");
 			if (xdgConfigHome != null && ! xdgConfigHome.isBlank()) {
 				return Paths.get(xdgConfigHome, APP_NAME.toLowerCase());
 			}
-			// Fallback to ~/.config/ {APP_NAME}
+			
 			return Paths.get(home, ".config", APP_NAME.toLowerCase());
 		}
 	}
@@ -535,9 +532,11 @@ public final class Util {
 			throw new IllegalArgumentException("n must be between 1 and 32");
 		}
 		
-		int chars = n / 4; // each hex char = 4 bits
+		int chars = n / 4;
+		
 		if (n % 4 != 0) {
-			chars++; // round up for non-multiple of 4
+			chars++;
+			
 		}
 		
 		long nanoTime = System.nanoTime();

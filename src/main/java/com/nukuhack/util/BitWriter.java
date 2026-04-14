@@ -25,18 +25,16 @@ public class BitWriter implements Closeable, Flushable {
 	@Getter
 	private long bitPosition;
 	
-	// Track which bit we're on within the current byte (0 = LSB, 7 = MSB)
 	private int currentBitIndex;
 	
-	// Marking support
 	private long markBitPosition = - 1;
 	private int markCurrentByte;
 	private int markBitsFilled;
 	private int markCurrentBitIndex;
 	private boolean markSet = false;
 	
-	// Buffering for mark/reset functionality
-	private static final int MARK_BUFFER_SIZE = 8192; // 8KB buffer
+	private static final int MARK_BUFFER_SIZE = 8192;
+	
 	private ByteArrayOutputStream markBuffer;
 	
 	/**
@@ -292,7 +290,6 @@ public class BitWriter implements Closeable, Flushable {
 		this.markCurrentBitIndex = currentBitIndex;
 		this.markSet = true;
 		
-		// Start buffering future writes
 		this.markBuffer = new ByteArrayOutputStream();
 	}
 	
@@ -336,7 +333,6 @@ public class BitWriter implements Closeable, Flushable {
 		if (bitsFilled > 0) {
 			output.write(currentByte);
 			
-			// Also write to mark buffer if set
 			if (markSet && markBuffer != null) {
 				markBuffer.write(currentByte);
 			}

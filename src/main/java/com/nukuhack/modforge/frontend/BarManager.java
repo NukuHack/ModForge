@@ -51,7 +51,7 @@ public class BarManager {
 		int ownerBottom = owner.getY() + owner.getHeight();
 		int ownerRight = owner.getX() + owner.getWidth();
 		int y = ownerBottom - PAD;
-		// Stack existing toasts upward
+		
 		List<JWindow> all = new ArrayList<>(active);
 		all.add(newest);
 		for (int i = all.size() - 1; i >= 0; i--) {
@@ -73,3 +73,4 @@ public class BarManager {
 		}
 	}
 }
+

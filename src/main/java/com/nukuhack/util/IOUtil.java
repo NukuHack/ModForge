@@ -31,12 +31,11 @@ public final class IOUtil {
 		if (! gameDir.exists() || ! gameDir.isDirectory())
 			throw new FileNotFoundException();
 		
-		// Cross-platform directory opening
 		if (Desktop.isDesktopSupported()) {
 			Desktop.getDesktop().open(gameDir);
 			return;
 		}
-		// Fallback for systems without Desktop support
+		
 		var runtime = Runtime.getRuntime();
 		
 		if (os.contains("win")) {
@@ -60,7 +59,7 @@ public final class IOUtil {
 			return true;
 		try (var in = Files.newInputStream(path)) {
 			var magic = in.readNBytes(4);
-			// ZIP local-file header signature: 0x50 0x4B 0x03 0x04
+			
 			return magic.length >= 4 && magic[0] == 0x50 && magic[1] == 0x4B && magic[2] == 0x03 && magic[3] == 0x04;
 		} catch (IOException ex) {
 			return false;
@@ -119,18 +118,15 @@ public final class IOUtil {
 				
 				var entryPath = absoluteDest.resolve(entry.getName()).normalize();
 				
-				// Security check - prevent zip slip vulnerability
 				if (! entryPath.startsWith(absoluteDest)) {
 					log.warn("Skipping entry outside target directory: {}", entry.getName());
 					continue;
 				}
 				
-				// Apply filter if provided
 				if (fileFilter != null && ! fileFilter.test(entryPath)) {
 					continue;
 				}
 				
-				// Skip if exists and overwrite is false
 				if (! overwrite && Files.exists(entryPath)) {
 					continue;
 				}
@@ -139,7 +135,6 @@ public final class IOUtil {
 					Files.createDirectories(entryPath.getParent());
 					Files.copy(zis, entryPath, StandardCopyOption.REPLACE_EXISTING);
 					
-					// Restore last modified time if available
 					if (entry.getTime() > 0) {
 						Files.setLastModifiedTime(entryPath, FileTime.fromMillis(entry.getTime()));
 					}
@@ -157,7 +152,6 @@ public final class IOUtil {
 			return false;
 		}
 	}
-	
 	
 	public boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
 		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
@@ -182,7 +176,8 @@ public final class IOUtil {
 			if (stripMetadata)
 				zos.setComment("");
 			
-			walk.filter(Files::isRegularFile).filter(p -> ! p.toAbsolutePath().normalize().equals(absoluteDest))   // never include self
+			walk.filter(Files::isRegularFile).filter(p -> ! p.toAbsolutePath().normalize().equals(absoluteDest))
+					
 					.filter(p -> fileFilter == null || fileFilter.test(p)).forEach(file -> {
 						try {
 							var entryName = absoluteSource.relativize(file).toString().replace('\\', '/');
@@ -190,7 +185,7 @@ public final class IOUtil {
 							
 							if (stripMetadata) {
 								entry.setTime(0L);
-								// *** KEY FIX: wipe the extra-field that Java adds automatically ***
+								
 								entry.setExtra(new byte[0]);
 							} else {
 								entry.setTime(Files.getLastModifiedTime(file).toMillis());
@@ -234,3 +229,4 @@ public final class IOUtil {
 		}
 	}
 }
+

@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
 public class Storm {
-
 	
 	/**
 	 * An operation node in a STORM rule. Like {@link GenericSelector}, operations
@@ -55,10 +54,6 @@ public class Storm {
 			attributes.put(key, value);
 		}
 		
-		// -------------------------------------------------------------------------
-		// Deep-copy
-		// -------------------------------------------------------------------------
-		
 		public @NonNull GenericOperation deepCopy() {
 			var copy = new GenericOperation(this.name);
 			copy.attributes.putAll(this.attributes);
@@ -98,7 +93,6 @@ public class Storm {
 		}
 	}
 	
-	
 	/**
 	 * A custom operation declared at the top of a STORM file.
 	 *
@@ -135,10 +129,6 @@ public class Storm {
 		public String toString() {
 			return "CustomStormOperation{name='" + name + "', mode='" + mode + "', modAttrs=" + modAttributes.size() + "}";
 		}
-		
-		// -------------------------------------------------------------------------
-		// Nested type
-		// -------------------------------------------------------------------------
 		
 		/**
 		 * Describes the numeric range of a modifiable attribute within a custom operation.
@@ -218,10 +208,6 @@ public class Storm {
 			return children.isEmpty();
 		}
 		
-		// -------------------------------------------------------------------------
-		// Deep-copy
-		// -------------------------------------------------------------------------
-		
 		public @NonNull GenericSelector deepCopy() {
 			var copy = new GenericSelector(this.name);
 			copy.attributes.putAll(this.attributes);
@@ -236,7 +222,6 @@ public class Storm {
 			return "GenericSelector{name='" + name + "', attrs=" + attributes.size() + ", children=" + children.size() + "}";
 		}
 	}
-	
 	
 	/**
 	 * The fully-parsed content of a single {@code .storm} / Storm XML file.
@@ -362,3 +347,4 @@ public class Storm {
 	}
 	
 }
+

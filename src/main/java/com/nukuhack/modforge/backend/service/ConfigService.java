@@ -61,10 +61,6 @@ public final class ConfigService {
 		return saveConfigFile(modCfg, mod.getConfig());
 	}
 	
-	// ==================================================================
-	// Mod Config Loading/Saving (mod.cfg)
-	// ==================================================================
-	
 	/**
 	 * Save a config map to a file in key=value format with comments preserved from original if possible.
 	 *
@@ -79,7 +75,7 @@ public final class ConfigService {
 		}
 		
 		try {
-			// Check if original file exists to preserve comments
+			
 			Map<String, String> originalComments = new LinkedHashMap<>();
 			if (Files.exists(path)) {
 				parseCommentsFromFile(path, originalComments);
@@ -95,7 +91,6 @@ public final class ConfigService {
 					String key = entry.getKey();
 					String value = entry.getValue();
 					
-					// Preserve comment if it existed
 					String comment = originalComments.get(key);
 					if (comment != null && ! comment.isBlank()) {
 						writer.write(comment);
@@ -145,10 +140,6 @@ public final class ConfigService {
 		return sb.toString();
 	}
 	
-	// ==================================================================
-	// Core File Operations
-	// ==================================================================
-	
 	/**
 	 * Load game configuration by trying user.cfg first, then autoexec.cfg.
 	 * Merges both if both exist (user.cfg takes precedence).
@@ -167,11 +158,9 @@ public final class ConfigService {
 		
 		var config = new LinkedHashMap<String, String>();
 		
-		// Load autoexec.cfg first (lower precedence)
 		if (Files.exists(autoexecCfg))
 			loadConfigFile(autoexecCfg, config);
 		
-		// Load user.cfg second (higher precedence - overwrites autoexec)
 		if (Files.exists(userCfg))
 			loadConfigFile(userCfg, config);
 		
@@ -204,10 +193,6 @@ public final class ConfigService {
 		return config;
 	}
 	
-	// ==================================================================
-	// Utility Methods
-	// ==================================================================
-	
 	/**
 	 * Load a config file in key=value format (with ; or # comments).
 	 *
@@ -226,7 +211,6 @@ public final class ConfigService {
 				lineNumber++;
 				line = line.trim();
 				
-				// Skip empty lines
 				if (line.isEmpty())
 					continue;
 				var fst = line.charAt(0);
@@ -262,14 +246,14 @@ public final class ConfigService {
 				line = line.trim();
 				
 				if (line.startsWith(";") || line.startsWith("#")) {
-					// Accumulate comment
+					
 					if (! currentComment.isEmpty())
 						currentComment.append("\n");
 					currentComment.append(line);
 					continue;
 				}
 				if (line.isEmpty()) {
-					// Empty line - clear comment accumulation (comments only belong to immediate next config)
+					
 					currentComment = new StringBuilder();
 				}
 				var m = CONFIG_LINE.matcher(line);
@@ -280,7 +264,7 @@ public final class ConfigService {
 						currentComment = new StringBuilder();
 					}
 				} else {
-					// Non-comment, non-config line - clear comment accumulation
+					
 					currentComment = new StringBuilder();
 				}
 			}

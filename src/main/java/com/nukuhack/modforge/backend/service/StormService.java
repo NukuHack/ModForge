@@ -119,11 +119,6 @@ public final class StormService {
 		}
 	}
 	
-	
-	// =========================================================================
-	// Public API
-	// =========================================================================
-	
 	/**
 	 * Parse a Storm XML {@link InputStream} into a {@link StormData} object.
 	 *
@@ -146,7 +141,7 @@ public final class StormService {
 	
 	public static StormData parse(Element element) {
 		var data = new StormData();
-		// Optional category stored as a root attribute
+		
 		var catAttr = element.getAttribute("category");
 		if (! catAttr.isEmpty())
 			data.setCategory(catAttr);
@@ -176,7 +171,7 @@ public final class StormService {
 				case "customselectors" -> parseCustomSelectors(section, data);
 				case "customoperations" -> parseCustomOperations(section, data);
 				case "rules" -> parseRules(section, data);
-				// Unknown top-level sections are silently skipped.
+				
 			}
 		}
 	}
@@ -200,7 +195,7 @@ public final class StormService {
 		var list = new LinkedList<String>();
 		forEachElement(section, child -> {
 			if (child.getTagName().equalsIgnoreCase("source")) {
-				// Prefer "path" attribute; fall back to text content
+				
 				String path = child.getAttribute("path");
 				if (path.isBlank())
 					path = child.getTextContent().trim();
@@ -278,16 +273,15 @@ public final class StormService {
 			var task = new StormTask();
 			task.setName(child.getAttribute("name"));
 			task.setComment(child.getAttribute("comment"));
-			// "class" is a Java keyword – read via plain getAttribute
+			
 			task.setTaskClass(child.getAttribute("class"));
 			
-			// Sources: prefer child <source path="..."/> elements, fall back to "sources" attr
 			var sourcePaths = parseSources(child);
 			
 			if (! sourcePaths.isEmpty()) {
 				task.setSources(String.join(",", sourcePaths));
 			} else {
-				// Flat attribute fallback
+				
 				task.setSources(child.getAttribute("sources"));
 			}
 			
@@ -320,7 +314,7 @@ public final class StormService {
 			forEachElement(ruleEl, part -> {
 				var partTag = part.getTagName().toLowerCase(Locale.ROOT);
 				switch (partTag) {
-					// Actual format uses "selectors" (also accept legacy "conditions")
+					
 					case "selectors", "conditions" ->
 							forEachElement(part, child -> rule.getSelectors().add(parseSelector(child)));
 					case "operations" -> forEachElement(part, child -> rule.getOperations().add(parseOperation(child)));
@@ -355,7 +349,6 @@ public final class StormService {
 		var sel = new GenericSelector(el.getTagName());
 		copyXmlAttrs(el, sel.getAttributes());
 		
-		// Recurse into children for both combinators and any exotic nested selectors
 		forEachElement(el, child -> sel.getChildren().add(parseSelector(child)));
 		
 		return sel;
@@ -375,12 +368,10 @@ public final class StormService {
 		var op = new GenericOperation(el.getTagName());
 		copyXmlAttrs(el, op.getAttributes());
 		
-		// Recursively parse any child operations
 		forEachElement(el, child -> op.getChildren().add(parseOperation(child)));
 		
 		return op;
 	}
-	
 	
 	public static String serialize(StormData data) throws Exception {
 		var doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
@@ -401,12 +392,11 @@ public final class StormService {
 	 * @return Pretty-printed XML string.
 	 */
 	public static Element serialize(StormData data, Document doc) {
-		// Root element: <storm> (matches actual file format)
+		
 		var root = doc.createElement("storm");
 		if (data.getCategory() != null)
 			root.setAttribute("category", data.getCategory());
 		
-		// <common>
 		if (! data.getCommonSources().isEmpty()) {
 			var common = doc.createElement("common");
 			for (var path : data.getCommonSources()) {
@@ -417,7 +407,6 @@ public final class StormService {
 			root.appendChild(common);
 		}
 		
-		// <tasks>
 		if (! data.getTasks().isEmpty()) {
 			var tasks = doc.createElement("tasks");
 			for (var t : data.getTasks()) {
@@ -429,7 +418,6 @@ public final class StormService {
 				if (! t.getComment().isBlank())
 					task.setAttribute("comment", t.getComment());
 				
-				// Write sources as child elements if comma-separated, else single element
 				var sources = t.getSources();
 				if (sources != null && ! sources.isBlank()) {
 					for (var srcPath : sources.split(",")) {
@@ -446,7 +434,6 @@ public final class StormService {
 			root.appendChild(tasks);
 		}
 		
-		// <customSelectors>
 		if (! data.getCustomSelectors().isEmpty()) {
 			var cs = doc.createElement("customSelectors");
 			for (var cSel : data.getCustomSelectors()) {
@@ -464,7 +451,6 @@ public final class StormService {
 			root.appendChild(cs);
 		}
 		
-		// <customOperations>
 		if (! data.getCustomOperations().isEmpty()) {
 			var co = doc.createElement("customOperations");
 			for (var cop : data.getCustomOperations()) {
@@ -484,7 +470,6 @@ public final class StormService {
 			root.appendChild(co);
 		}
 		
-		// <rules>
 		if (! data.getRules().isEmpty()) {
 			var rules = doc.createElement("rules");
 			for (var r : data.getRules()) {
@@ -505,8 +490,6 @@ public final class StormService {
 		if (! rule.getComment().isBlank())
 			el.setAttribute("comment", rule.getComment());
 		
-		// Always emit <selectors> and <operations> elements (even if empty),
-		// to stay consistent with the source format.
 		var selEl = doc.createElement("selectors");
 		for (var sel : rule.getSelectors()) {
 			selEl.appendChild(serializeSelector(doc, sel));

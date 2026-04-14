@@ -29,7 +29,6 @@ import java.util.function.Predicate;
 @AllArgsConstructor
 public enum ItemEntry {
 	
-	// ── Weapons ─────────────────────────────────────────────────────────────
 	MELEE_WEAPON(I.MeleeWeapon.class, "Id", "item", "MeleeWeapon", "ItemClasses", true),
 	
 	MISSILE_WEAPON(I.MissileWeapon.class, "Id", "item", "MissileWeapon", "ItemClasses", true),
@@ -40,29 +39,25 @@ public enum ItemEntry {
 	
 	MISSILE_WEAPON_CLASS(I.MissileWeaponClass.class, "id", "weapon_class", "MissileWeaponClass", "MissileWeaponClass", false),
 	
-	// ── Armor ────────────────────────────────────────────────────────────────
 	ARMOR(I.Armor.class, "Id", "item", "Armor", "ItemClasses", true),
 	
 	HELMET(I.Helmet.class, "Id", "item", "Helmet", "ItemClasses", true),
 	
 	HOOD(I.Hood.class, "Id", "item", "Hood", "ItemClasses", true),
 	
-	// ── Consumables ──────────────────────────────────────────────────────────
 	FOOD(I.Food.class, "Id", "item", "Food", "ItemClasses", true),
 	
 	POISON(I.Poison.class, "Id", "item", "Poison", "ItemClasses", true),
 	
-	// ── Crafting ─────────────────────────────────────────────────────────────
 	HERB(I.Herb.class, "Id", "item", "Herb", "ItemClasses", true),
 	
 	CRAFTING_MATERIAL(I.CraftingMaterial.class, "Id", "item", "CraftingMaterial", "ItemClasses", true),
 	
-	// ── Misc ─────────────────────────────────────────────────────────────────
 	NPC_TOOL(I.NPCTool.class, "Id", "item", "NPCTool", "ItemClasses", true),
 	
 	MISC_ITEM(I.MiscItem.class, "Id", "item", "MiscItem", "ItemClasses", true),
 	
-	DOCUMENT(I.Document.class, "Id", "item", "Document", "ItemClasses", true), // eg: ItemClasses version="8" - BlacksmithRecipeId
+	DOCUMENT(I.Document.class, "Id", "item", "Document", "ItemClasses", true),
 	
 	DIE(I.Die.class, "Id", "item", "Die", "ItemClasses", true),
 	
@@ -84,7 +79,6 @@ public enum ItemEntry {
 	
 	ALCHEMY_BASE(I.AlchemyBase.class, "Id", "item", "AlchemyBase", "ItemClasses", true),
 	
-	// ── Perks / Buffs related ───────────────────────────────────────────────
 	PERK(I.Perk.class, "perk_id", "perk", "perk", "perks", true),
 	
 	BUFF(I.Buff.class, "buff_id", "buff", "buff", "buffs", true),
@@ -101,16 +95,11 @@ public enum ItemEntry {
 	
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", "perk2perk_exclusivitys", true),
 	
-	// ── Storm ────────────────────────────────────────────────────────────────
 	STORM(I.Storm.class, "id", "storm", "storm", "storm", true),
-	// ── Tree-structured items ────────────────────────────────────────────
+	
 	INVENTORY_PRESET(I.InventoryPreset.class, "Name", "InventoryPreset", "InventoryPreset", "InventoryPresets", true, true),
 	
 	BEHAVIOR_TREE(I.BehaviorTree.class, "name", "behaviortrees", "BehaviorTree", "BehaviorTrees", true, true);
-	
-	// ────────────────────────────────────────────────────────────────────────
-	// Inner data
-	// ────────────────────────────────────────────────────────────────────────
 	
 	private static final Map<Class<? extends ModItem>, ItemEntry> BY_CLASS = new HashMap<>();
 	
@@ -138,7 +127,7 @@ public enum ItemEntry {
 	 *  {@code "NPCTool"} → {@code "npctool"}),
 	 *  {@code "ScriptParam"} → {@code "ScriptParams"}).
 	 */
-	// todo : eliminate this field, with the use of "parentName" and the version
+	
 	public final String xmlObjName;
 	/**
 	 * The short key used to create the Root/Parent XML Element
@@ -155,7 +144,6 @@ public enum ItemEntry {
 	/** Whether children of the root element should be parsed as a nested XmlNode tree. */
 	public final boolean isTree;
 	
-	// Update the constructor signature:
 	ItemEntry(Class<? extends ModItem> clazz, String idKey, String fileName, String xmlObjName, String parentName, boolean showInDisplay) {
 		this(clazz, idKey, fileName, xmlObjName, parentName, showInDisplay, false);
 	}

@@ -23,30 +23,29 @@ import java.util.*;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ModItemBuilder {
 	
-	// O(1) lookup map - element name to handler
 	static final Map<String, BuildHandler> HANDLER_MAP = new HashMap<>();
 	static final Map<Class<?>, CreateHandler> MAKER_MAP = new HashMap<>();
 	static final FallbackBuilder fallbackBuilder = new FallbackBuilder();
 	
 	static {
-		// Build the handler map once at class initialization
+		
 		for (var spec : ItemEntry.values()) {
 			var name = spec.xmlObjName;
 			
 			if (name.equals(spec.parentName)) {
-				// Whole-file items (Storm, etc.)
+				
 				var fileH = new FileBuilder<>(spec.clazz, spec.idKey);
 				HANDLER_MAP.put(name, fileH);
 				MAKER_MAP.put(spec.clazz, fileH);
 				
 			} else if (spec.isTree) {
-				// Tree-structured items (InventoryPresets, BehaviorTrees, …)
+				
 				var treeH = new TreeBuilder<>(spec.clazz, spec.idKey);
 				HANDLER_MAP.put(name, treeH);
 				MAKER_MAP.put(spec.clazz, treeH);
 				
 			} else {
-				// Normal flat items
+				
 				var handler = new GeneralBuilder<>(spec.clazz, spec.idKey);
 				HANDLER_MAP.put(name, handler);
 				MAKER_MAP.put(spec.clazz, handler);
@@ -82,7 +81,6 @@ public final class ModItemBuilder {
 		return Optional.ofNullable(maker.handle(document, item));
 	}
 	
-	
 	/**
 	 * Deep-copy a mod item, changing its path.
 	 */
@@ -108,11 +106,13 @@ public final class ModItemBuilder {
 		var path = src.getPath();
 		var colon = path.indexOf(':') + 1;
 		
-		final String prefix;   // e.g. "SomePak.pak:" or ""
-		final String innerPath; // e.g. "inner/dir/entry.xml"
-		// check for 0 since we incremented it once for later splitting
+		final String prefix;
+		
+		final String innerPath;
+		
 		if (colon != 0 && colon < path.length()) {
-			prefix = path.substring(0, colon);   // includes ':'
+			prefix = path.substring(0, colon);
+			
 			innerPath = path.substring(colon);
 		} else {
 			prefix = "";
@@ -201,7 +201,6 @@ public final class ModItemBuilder {
 			var elementName = element.getTagName();
 			log.info("No creater matched element <{}>", elementName);
 			
-			// using if- so the compiler sees it as good code
 			if (true)
 				return null;
 			
@@ -237,7 +236,6 @@ public final class ModItemBuilder {
 		@Override
 		public Element handle(Document document, ModItem item) {
 			
-			// Intentional - No serialization if item is not correct, we don't want incorrect data to be serialized
 			log.info("No builder matched item <{}>", item);
 			
 			return null;
@@ -252,7 +250,6 @@ public final class ModItemBuilder {
 		protected FileBuilder(@NonNull Class<M> type, @NonNull String idKey) {
 			super(type, idKey);
 		}
-		
 		
 		@Override
 		public ModItem handle(final Element element) {
