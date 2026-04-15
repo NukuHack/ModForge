@@ -527,7 +527,7 @@ public final class Util {
 	 * Low n bits of nanoTime 32 bit → 8 hex chars, e.g. "a3f9c012"
 	 * @param n number of bits to use (must be multiple of 4, max 32)
 	 */
-	public String getRandomString(int n) {
+	public String randomString(int n) {
 		if (n <= 0 || n > 32) {
 			throw new IllegalArgumentException("n must be between 1 and 32");
 		}

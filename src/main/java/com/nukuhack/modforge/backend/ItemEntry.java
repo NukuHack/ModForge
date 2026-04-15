@@ -98,8 +98,10 @@ public enum ItemEntry {
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "first_perk_id", "perk2perk_exclusivity", "perk2perk_exclusivity", "perk2perk_exclusivitys", true),
 	
 	STORM(I.Storm.class, "id", "storm", "storm", "storm", true),
-	
+
 	INVENTORY_PRESET(I.InventoryPreset.class, "Name", "InventoryPreset", "InventoryPreset", "InventoryPresets", true, true),
+
+	BLACKSMITH_RECIPE(I.BlacksmithRecipe.class, "Id", "BlacksmithRecipes", "BlacksmithRecipe", "BlacksmithRecipes", true, true),
 	
 	BEHAVIOR_TREE(I.BehaviorTree.class, "name", "behaviortrees", "BehaviorTree", "BehaviorTrees", true, true);
 	

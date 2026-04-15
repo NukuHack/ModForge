@@ -279,13 +279,26 @@ public final class ModService {
 		
 		success.get();
 	}
+
+	public static ModData createFromPath(Path modPath) {
+		var dir = modPath.getFileName();
+		var m = new ModData();
+		if (dir == null) {
+			m.setId("mod_"+Util.randomString(32));
+			return m;
+		}
+		var name = dir.toString();
+		m.setId(name);
+		m.setName(name);
+		return m;
+	}
 	
 	public static ModData loadModManifest(Path modPath) {
 		var manifest = modPath.resolve("mod.manifest");
 		
 		if (! Files.exists(manifest)) {
-			log.warn("manifest not found");
-			return null;
+			log.warn("'mod.manifest' not found, fallback to directory name");
+			return createFromPath(modPath);
 		}
 		
 		try {
@@ -298,8 +311,8 @@ public final class ModService {
 			log.info("Successfully loaded mod manifest for: {}", mod.getId());
 			return mod;
 		} catch (IOException | SAXException | ParserConfigurationException e) {
-			log.warn("could not parse manifest");
-			return null;
+			log.warn("could not parse 'mod.manifest', fallback to directory name");
+			return createFromPath(modPath);
 		}
 	}
 	
@@ -332,20 +345,5 @@ public final class ModService {
 			log.warn("Cannot list Mods folder: {}", e.getMessage());
 		}
 		log.info("Mod loading took: {}ms", System.currentTimeMillis() - start);
-	}
-	
-	public ModData createNewMod(String name, String description, String author, String version, String createdOn, String modId, boolean modifiesLevel) {
-		if (name.isBlank() || modId.isBlank()) {
-			log.warn("createNewMod: required fields missing.");
-			return new ModData();
-		}
-		if (modCollection.stream().anyMatch(mod -> mod.getId().equals(modId))) {
-			log.warn("createNewMod: mod ID '{}' already exists.", modId);
-			return new ModData();
-		}
-		var m = new ModData(modId, name, description, author, version, createdOn, modifiesLevel);
-		modCollection.add(m);
-		log.info("Mod '{}' [{}] created.", name, modId);
-		return m;
 	}
 }

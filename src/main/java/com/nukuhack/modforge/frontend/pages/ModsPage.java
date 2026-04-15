@@ -84,12 +84,23 @@ public class ModsPage extends BasePage {
 	}
 	
 	private void createNewMod() {
-		
-		String defaultId = "new_mod_" + Util.getRandomString(32);
-		
-		final var newMod = window.getRegistry().modService.createNewMod("New Mod", "Your mod description", window.getRegistry().userConfig.getUserName(), "1.0", LocalDate.now().toString(), defaultId, false);
-		newMod.setSupportsGameVersions(Set.of("1.0", "1.1", "1.2"));
-		window.navigate(MainWindow.Page.MOD_EDIT, newMod);
+		String modId = "new_mod_" + Util.randomString(32);
+
+		if (ModService.modCollection.stream().anyMatch(mod -> mod.getId().equals(modId))) {
+			log.warn("createNewMod: mod ID '{}' already exists.", modId);
+			window.navigate(MainWindow.Page.MOD_EDIT, new ModData());
+			return;
+		}
+		var m = new ModData(
+				modId, "New Mod", "Your mod description",
+				window.getRegistry().userConfig.getUserName(),
+				"1.0", LocalDate.now().toString(), false
+		);
+		ModService.modCollection.add(m);
+		log.info("Mod {} created.", modId);
+
+		m.setSupportsGameVersions(Set.of("1.0", "1.1", "1.2"));
+		window.navigate(MainWindow.Page.MOD_EDIT, m);
 	}
 	
 	private void importMod() {

@@ -121,10 +121,6 @@ public final class Attributes {
 				int i = 1;
 				try {
 					i = Integer.parseInt(value);
-				} catch (NumberFormatException e) {
-					log.warn("could not parse enum value '{}', falling back to '1'", value, e);
-				}
-				try {
 					return new Attribute.EnumAttribute(name, Enums.fromValueRaw(type, i));
 				} catch (Exception e) {
 					log.debug("could not parse enum value '{}', for type '{}' - falling back to number", value, type.getSimpleName());

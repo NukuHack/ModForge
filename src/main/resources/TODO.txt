@@ -8,6 +8,170 @@ TODO : Make the other models - items
 // SurfaceTypes ... , BehaviorTrees :O ...
 make the stuff check other data than just libs/tables
 
+Tables.pak:Libs/Tables/item/armor_archetype.xml
+Tables.pak:Libs/Tables/item/armor_archetype2body_subpart.xml
+Tables.pak:Libs/Tables/item/armor_surface.xml
+Tables.pak:Libs/Tables/item/armor_type.xml
+Tables.pak:Libs/Tables/item/attachment_slot.xml
+Tables.pak:Libs/Tables/item/body_part.xml
+Tables.pak:Libs/Tables/item/clothing_preset.xml
+Tables.pak:Libs/Tables/item/crafting_material_subtype.xml
+Tables.pak:Libs/Tables/item/crafting_material_type.xml
+Tables.pak:Libs/Tables/item/dice_badge_subtype.xml
+Tables.pak:Libs/Tables/item/dice_badge_type.xml
+Tables.pak:Libs/Tables/item/document_class.xml
+Tables.pak:Libs/Tables/item/equipment_part.xml
+Tables.pak:Libs/Tables/item/equipment_slot.xml
+Tables.pak:Libs/Tables/item/EquipmentPresetFilter.xml
+Tables.pak:Libs/Tables/item/food_subtype.xml
+Tables.pak:Libs/Tables/item/food_type.xml
+Tables.pak:Libs/Tables/item/item_category.xml
+Tables.pak:Libs/Tables/item/item_tag.xml
+Tables.pak:Libs/Tables/item/item_ui_sound.xml
+Tables.pak:Libs/Tables/item/key_subtype.xml
+Tables.pak:Libs/Tables/item/key_type.xml
+Tables.pak:Libs/Tables/item/misc_subtype.xml
+Tables.pak:Libs/Tables/item/misc_type.xml
+Tables.pak:Libs/Tables/item/npc_tool_subtype.xml
+Tables.pak:Libs/Tables/item/npc_tool_type.xml
+Tables.pak:Libs/Tables/item/ointment_item_subtype.xml
+Tables.pak:Libs/Tables/item/ointment_item_type.xml
+Tables.pak:Libs/Tables/item/pickable_area_desc.xml
+Tables.pak:Libs/Tables/item/pickable_area_material.xml
+Tables.pak:Libs/Tables/item/weapon_attachment_slot.xml
+Tables.pak:Libs/Tables/item/weapon_attachment_slot_category.xml
+Tables.pak:Libs/Tables/item/weapon_sub_class.xml
+Tables.pak:Libs/Tables/level.xml
+Tables.pak:Libs/Tables/LevelSwitch.xml
+Tables.pak:Libs/Tables/minigame/AlchemyCrushableSpecialIngredient.xml
+Tables.pak:Libs/Tables/minigame/AlchemyFeedback.xml
+Tables.pak:Libs/Tables/minigame/AlchemyPotionBase.xml
+Tables.pak:Libs/Tables/minigame/AlchemyRecipe.xml
+Tables.pak:Libs/Tables/minigame/AlchemyRecipeStepType.xml
+Tables.pak:Libs/Tables/minigame/BlacksmithTemperatures.xml
+Tables.pak:Libs/Tables/minigame/BlacksmithWorkpieces.xml
+Tables.pak:Libs/Tables/minigame/forge_asset.xml
+Tables.pak:Libs/Tables/minigame/forge_slot.xml
+Tables.pak:Libs/Tables/minigame/forge_slot_prerequisite.xml
+Tables.pak:Libs/Tables/minigame/forge_wardrobe_item_filter.xml
+Tables.pak:Libs/Tables/music/music_world_quantity.xml
+Tables.pak:Libs/Tables/Photomode/ *
+Tables.pak:Libs/Tables/player.xml
+Tables.pak:Libs/Tables/RandomEvent/RandomEventOption.xml
+Tables.pak:Libs/Tables/RandomEvent/RandomEventOptionSet.xml
+Tables.pak:Libs/Tables/RandomEvent/RandomEventTag.xml
+Tables.pak:Libs/Tables/rpg/achievement.xml
+Tables.pak:Libs/Tables/rpg/angriness_enum.xml
+Tables.pak:Libs/Tables/rpg/angriness_flag.xml
+Tables.pak:Libs/Tables/rpg/angriness_type.xml
+Tables.pak:Libs/Tables/rpg/barber_option.xml
+Tables.pak:Libs/Tables/rpg/buff_ai_tag.xml
+Tables.pak:Libs/Tables/rpg/buff_class.xml
+Tables.pak:Libs/Tables/rpg/buff_exclusivity.xml
+Tables.pak:Libs/Tables/rpg/buff_family.xml
+Tables.pak:Libs/Tables/rpg/buff_implementation.xml
+Tables.pak:Libs/Tables/rpg/buff_lifetime.xml
+Tables.pak:Libs/Tables/rpg/buff_ui_type.xml
+Tables.pak:Libs/Tables/rpg/buff_ui_visibility.xml
+Tables.pak:Libs/Tables/rpg/crime.xml
+Tables.pak:Libs/Tables/rpg/game_over.xml
+Tables.pak:Libs/Tables/rpg/game_over_type.xml
+Tables.pak:Libs/Tables/rpg/gender.xml
+Tables.pak:Libs/Tables/rpg/location.xml
+Tables.pak:Libs/Tables/rpg/location2perk.xml
+Tables.pak:Libs/Tables/rpg/location_category.xml
+Tables.pak:Libs/Tables/rpg/money_change.xml
+Tables.pak:Libs/Tables/rpg/morale_change.xml
+Tables.pak:Libs/Tables/rpg/perk_combat_technique.xml
+Tables.pak:Libs/Tables/rpg/perk_recipe.xml
+Tables.pak:Libs/Tables/rpg/perk_rpg_param_override.xml
+Tables.pak:Libs/Tables/rpg/perk_soul_ability.xml
+Tables.pak:Libs/Tables/rpg/perk_visibility.xml
+Tables.pak:Libs/Tables/rpg/poi_type.xml
+Tables.pak:Libs/Tables/rpg/poi_type2perk.xml
+Tables.pak:Libs/Tables/rpg/race.xml
+Tables.pak:Libs/Tables/rpg/reading_spot_type.xml
+Tables.pak:Libs/Tables/rpg/relationship_flag.xml
+Tables.pak:Libs/Tables/rpg/reputation_change_target.xml
+Tables.pak:Libs/Tables/rpg/reputation_condition.xml
+Tables.pak:Libs/Tables/rpg/role.xml
+Tables.pak:Libs/Tables/rpg/rpg_context_tag.xml
+Tables.pak:Libs/Tables/rpg/rpg_context_type.xml
+Tables.pak:Libs/Tables/rpg/rpg_damage_type.xml
+Tables.pak:Libs/Tables/rpg/rpg_movement_type.xml
+Tables.pak:Libs/Tables/rpg/rpg_sound.xml
+Tables.pak:Libs/Tables/rpg/skill.xml
+Tables.pak:Libs/Tables/rpg/skill2item_category.xml
+Tables.pak:Libs/Tables/rpg/skill_category.xml
+Tables.pak:Libs/Tables/rpg/skill_check_difficulty.xml
+Tables.pak:Libs/Tables/rpg/skill_lesson_level.xml
+Tables.pak:Libs/Tables/rpg/skill_teacher.xml
+Tables.pak:Libs/Tables/rpg/skiptime_type.xml
+Tables.pak:Libs/Tables/rpg/sleeping_spot_type.xml
+Tables.pak:Libs/Tables/rpg/social_class.xml
+Tables.pak:Libs/Tables/rpg/soul.xml
+Tables.pak:Libs/Tables/rpg/soul2perk.xml
+Tables.pak:Libs/Tables/rpg/soul2skald_skill.xml
+Tables.pak:Libs/Tables/rpg/soul2skald_soul_stat.xml
+Tables.pak:Libs/Tables/rpg/soul_ability.xml
+Tables.pak:Libs/Tables/rpg/soul_archetype.xml
+Tables.pak:Libs/Tables/rpg/soul_archetype_movement.xml
+Tables.pak:Libs/Tables/rpg/soul_class.xml
+Tables.pak:Libs/Tables/rpg/soul_combat_level.xml
+Tables.pak:Libs/Tables/rpg/soul_crime_role.xml
+Tables.pak:Libs/Tables/rpg/soul_ui_name.xml
+Tables.pak:Libs/Tables/rpg/soul_vip_class.xml
+Tables.pak:Libs/Tables/rpg/SoulPool.xml
+Tables.pak:Libs/Tables/rpg/stat.xml
+Tables.pak:Libs/Tables/rpg/statistic.xml
+Tables.pak:Libs/Tables/rpg/statistic_group.xml
+Tables.pak:Libs/Tables/rpg/statistic_type.xml
+Tables.pak:Libs/Tables/rpg/statistic_unit.xml
+Tables.pak:Libs/Tables/rpg/xp_change.xml
+Tables.pak:Libs/Tables/shop/shop.xml
+Tables.pak:Libs/Tables/skald/branch_type.xml
+Tables.pak:Libs/Tables/skald/skald_character.xml
+Tables.pak:Libs/Tables/text/language.xml
+Tables.pak:Libs/Tables/time_of_day_profile.xml
+Tables.pak:Libs/Tables/ui/achievement_rule_action.xml
+Tables.pak:Libs/Tables/ui/codex_ui_layout.xml
+Tables.pak:Libs/Tables/ui/codex_ui_page.xml
+Tables.pak:Libs/Tables/ui/compass_mark_type.xml
+Tables.pak:Libs/Tables/ui/cutscene.xml
+Tables.pak:Libs/Tables/ui/ExtraRewards.xml
+Tables.pak:Libs/Tables/ui/infotext_category.xml
+Tables.pak:Libs/Tables/ui/menu_buttons.xml
+Tables.pak:Libs/Tables/ui/menu_choices.xml
+Tables.pak:Libs/Tables/ui/menu_confirmations.xml
+Tables.pak:Libs/Tables/ui/menu_pages.xml
+Tables.pak:Libs/Tables/ui/skiptime.xml
+Tables.pak:Libs/Tables/ui/trophy_group.xml
+Tables.pak:Libs/Tables/ui/tutorial.xml
+Tables.pak:Libs/Tables/ui/ui_local_maps.xml
+Tables.pak:Libs/Tables/ui/ui_map_label.xml
+
+
 make a files page - for inner files of the pak-s make them able to overwrite the base game data with a 0-byte .tbl file - IOUtil.createEmptyFile();
 
 make only the xml-s change name on save, and storm should keep it ...
+
+if asset_name.endswith(".mtl"):
+    self._asset_type = ASSET_MATERIAL
+elif re.match(".*\.dds(\.\d+a?)*$", asset_name):
+    self._asset_type = ASSET_TEXTURE
+elif asset_name.endswith(".bspace"):
+    self._asset_type = ASSET_BLEND_SPACE
+elif asset_name.endswith(".cgf"):
+    self._asset_type = ASSET_CGF
+elif asset_name.endswith(".skin"):
+    self._asset_type = ASSET_SKIN
+elif asset_name.endswith(".xml"):
+    self._asset_type = ASSET_XML
+elif asset_name.endswith(".ogg"):
+    self._asset_type = ASSET_AUDIO
+elif asset_name.endswith(".gfx"):
+    self._asset_type = ASSET_FLASH
+elif asset_name.endswith(".caf"):
+    self._asset_type = ASSET_CHAR_ANIM
+elif asset_name.endswith(".dba"):
+    self._asset_type = ASSET_DBA

@@ -71,7 +71,6 @@ public final class ModItemBuilder {
 	public static ModItem create(final Element element) {
 		var name = element.getTagName();
 		var handler = HANDLER_MAP.getOrDefault(name, fallbackBuilder);
-		
 		return handler.handle(element);
 	}
 	
@@ -190,7 +189,6 @@ public final class ModItemBuilder {
 			return el;
 		}
 	}
-	
 	/**
 	 * Fallbakc : pretty obvious
 	 */
@@ -199,7 +197,6 @@ public final class ModItemBuilder {
 		@Override
 		public ModItem handle(Element element) {
 			var elementName = element.getTagName();
-			log.info("No creater matched element <{}>", elementName);
 			
 			if (true)
 				return null;
@@ -257,7 +254,7 @@ public final class ModItemBuilder {
 				if (cons == null)
 					return fallbackBuilder.handle(element);
 				var item = cons.newInstance();
-				item.setId("storm_" + Util.getRandomString(32));
+				item.setId("storm_" + Util.randomString(32));
 				
 				if (item instanceof Storm storm) {
 					var data = StormService.parse(element);

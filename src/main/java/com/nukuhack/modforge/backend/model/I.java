@@ -119,6 +119,9 @@ public final class I {
 	
 	public static class InventoryPreset extends BaseModItem {
 	}
+
+	public static class BlacksmithRecipe extends BaseModItem {
+	}
 	
 	public static class BehaviorTree extends BaseModItem {
 	}

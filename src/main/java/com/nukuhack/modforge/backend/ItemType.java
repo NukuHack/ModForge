@@ -62,7 +62,7 @@ public final class ItemType {
 		if (ze.isDirectory())
 			return false;
 		var name = ze.getName().toLowerCase(Locale.ROOT).replace('\\', '/');
-		var isData = name.endsWith(".xml") || name.endsWith(".adb");
+		var isData = name.endsWith(".xml") ;//|| name.endsWith(".adb")
 		if (! isData)
 			return false;
 		
@@ -72,7 +72,7 @@ public final class ItemType {
 		var fileName = p.getFileName().toString();
 		var delimiter = fileName.indexOf("__");
 		var shortName = (delimiter != - 1) ? fileName.substring(0, delimiter) : fileName.substring(0, fileName.lastIndexOf('.'));
-		return ENDPOINT_KEYS.contains(shortName);
+		return true;//ENDPOINT_KEYS.contains(shortName);
 	}
 	
 	/** Item selector dropdown filter for the Item page (frontend). */

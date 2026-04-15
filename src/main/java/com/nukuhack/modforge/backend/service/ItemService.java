@@ -327,27 +327,34 @@ public final class ItemService {
 			if (! (tableNodes.item(i) instanceof Element tableEl))
 				continue;
 			var ver = tableEl.getAttribute("version");
-			int version = 1;
+			int version;
 			try {
 				version = Integer.parseInt(ver);
 			} catch (NumberFormatException n) {
-				log.warn("could not get version from {}, input was: '{}'", sourcePath, ver);
+				version = -1;
 			}
 			
 			var items = tableEl.getChildNodes();
 			for (int j = 0; j < items.getLength(); j++) {
 				if (! (items.item(j) instanceof Element itemElement))
 					continue;
-				
+
+				var elementName = itemElement.getTagName();
 				var item = ModItemBuilder.create(itemElement);
-				if (item == null)
+				if (item == null) {
+					if (!LOGGED.contains(elementName)) {
+						LOGGED.add(elementName);
+						log.info("No creater matched element <{}> in {}", elementName, sourcePath);
+					}
 					continue;
+				}
 				
 				item.setPath(sourcePath);
 				sink.add(item);
 			}
 		}
 	}
+	public static final Set<String> LOGGED = new HashSet<>();
 	
 	/**
 	 * Exclude PAKs that don't contain item/table data.
