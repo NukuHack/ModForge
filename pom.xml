@@ -6,7 +6,7 @@
 	
 	<groupId>com.nukuhack.modforge</groupId>
 	<artifactId>mod-forge</artifactId>
-	<version>v0.3</version>
+	<version>0.3</version>
 	<packaging>jar</packaging>
 	
 	<name>Mod Forge</name>
@@ -159,6 +159,21 @@
 							</transformers>
 							<createDependencyReducedPom>false</createDependencyReducedPom>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+				<groupId>com.akathist.maven.plugins.launch4j</groupId>
+				<artifactId>launch4j-maven-plugin</artifactId>
+				<version>2.5.3</version>
+				<executions>
+					<execution>
+						<id>l4j-gui</id>
+						<phase>package</phase>
+						<goals>
+							<goal>launch4j</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>

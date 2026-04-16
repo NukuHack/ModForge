@@ -108,6 +108,7 @@ public class LangEdit extends BaseEditPage {
 	protected JPanel buildActionButtons() {
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		buttons.setOpaque(false);
+		buttons.add(primaryBtn("ui_save_changes", e -> saveChanges()));
 		buttons.add(getDangerButton("ui_back", e -> navigateBack()));
 		return buttons;
 	}
@@ -334,6 +335,46 @@ public class LangEdit extends BaseEditPage {
 			window.snackbar.show("ui_copied_key", BarManager.Type.INFO, langKey);
 		});
 		return b;
+	}
+	
+	/**
+	 * Flush all in-editor translations to the selected mod's lang map and mark clean.
+	 *
+	 * <p>The item's {@link com.nukuhack.modforge.backend.model.Attribute.StringAttribute}
+	 * values hold <em>lang keys</em> (e.g. {@code "ui.sword.name"}), not the translated
+	 * text — so there is nothing to write back onto the item itself.  The editable
+	 * content (the resolved translations) lives in {@code workingEntries} and must be
+	 * committed to the mod's localization map via {@code mod.addLocal(...)}.
+	 */
+	private void saveChanges() {
+		if (currentItem == null) {
+			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
+			return;
+		}
+		final var targetMod = getSelectedMod();
+		if (targetMod.isEmpty()) {
+			window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
+			return;
+		}
+		final var lang = getSelectedLang();
+		if (lang.isEmpty()) {
+			window.snackbar.show("ui_unknown_language", BarManager.Type.INFO);
+			return;
+		}
+		
+		// Flush editor widgets → workingEntries
+		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
+		
+		if (workingEntries.isEmpty()) {
+			window.snackbar.show("ui_no_entries_to_add", BarManager.Type.INFO);
+			return;
+		}
+		
+		targetMod.get().addLocal(lang.get(), new HashMap<>(workingEntries));
+		hasChanges = false;
+		updatePreview();
+		updateStatus();
+		window.snackbar.show("ui_item_changes_saved", BarManager.Type.SUCCESS);
 	}
 	
 	private void addEntriesToSelectedMod() {

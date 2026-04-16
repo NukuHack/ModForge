@@ -9,6 +9,7 @@ import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.service.ModItemBuilder;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -36,7 +37,7 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
  * - BuffParamListAttr  → table editor (stat | op | value) with add/remove
  * - XmlNodeAttribute   → collapsible with inline attr-preview in header
  */
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class ItemEdit extends BaseEditPage {
 	
 	private static List<BuffParamMap> BUFF_PARAM_ALL = null;
@@ -193,8 +194,6 @@ public class ItemEdit extends BaseEditPage {
 		copyBtn.setToolTipText(getLocalText("ui_copy_id"));
 		randomBtn.setToolTipText(getLocalText("ui_generate_id"));
 		
-		// BorderLayout only holds one component per zone — group both buttons
-		// in their own panel so neither silently replaces the other.
 		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
 		btnPanel.setOpaque(false);
 		btnPanel.add(randomBtn);
@@ -871,7 +870,27 @@ public class ItemEdit extends BaseEditPage {
 			return;
 		}
 		var mod = targetMod.get();
-		mod.addItem(ModItemBuilder.deepCopy(currentItem, mod));
+		
+		var copy = ModItemBuilder.deepCopy(currentItem, mod);
+		
+		JComponent idComp = attributeComponents.get("__id__");
+		if (idComp instanceof JTextField f)
+			copy.setId(f.getText());
+		
+		var copyAttrs = new ArrayList<>(copy.getAttributes());
+		try {
+			for (Attribute<?> attr : copyAttrs) {
+				Attribute<?> newAttr = handleAttribute(attr, attr.getName());
+				if (newAttr != null) {
+					copy.removeAttribute(attr);
+					copy.addAttribute(newAttr);
+				}
+			}
+		} catch (Exception ex) {
+			log.warn("could not apply unsaved edits to mod copy", ex);
+		}
+		
+		mod.addItem(copy);
 		window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, mod.getName());
 	}
 	
