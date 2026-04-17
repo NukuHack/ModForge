@@ -8,41 +8,12 @@ TODO : Make the other models - items
 // SurfaceTypes ... , BehaviorTrees :O ...
 make the stuff check other data than just libs/tables
 
-Tables.pak:Libs/Tables/item/armor_archetype.xml
+Parse the xsd - That is Great !!
+
 Tables.pak:Libs/Tables/item/armor_archetype2body_subpart.xml
-Tables.pak:Libs/Tables/item/armor_surface.xml
-Tables.pak:Libs/Tables/item/armor_type.xml
 Tables.pak:Libs/Tables/item/attachment_slot.xml
-Tables.pak:Libs/Tables/item/body_part.xml
 Tables.pak:Libs/Tables/item/clothing_preset.xml
-Tables.pak:Libs/Tables/item/crafting_material_subtype.xml
-Tables.pak:Libs/Tables/item/crafting_material_type.xml
-Tables.pak:Libs/Tables/item/dice_badge_subtype.xml
-Tables.pak:Libs/Tables/item/dice_badge_type.xml
-Tables.pak:Libs/Tables/item/document_class.xml
-Tables.pak:Libs/Tables/item/equipment_part.xml
-Tables.pak:Libs/Tables/item/equipment_slot.xml
 Tables.pak:Libs/Tables/item/EquipmentPresetFilter.xml
-Tables.pak:Libs/Tables/item/food_subtype.xml
-Tables.pak:Libs/Tables/item/food_type.xml
-Tables.pak:Libs/Tables/item/item_category.xml
-Tables.pak:Libs/Tables/item/item_tag.xml
-Tables.pak:Libs/Tables/item/item_ui_sound.xml
-Tables.pak:Libs/Tables/item/key_subtype.xml
-Tables.pak:Libs/Tables/item/key_type.xml
-Tables.pak:Libs/Tables/item/misc_subtype.xml
-Tables.pak:Libs/Tables/item/misc_type.xml
-Tables.pak:Libs/Tables/item/npc_tool_subtype.xml
-Tables.pak:Libs/Tables/item/npc_tool_type.xml
-Tables.pak:Libs/Tables/item/ointment_item_subtype.xml
-Tables.pak:Libs/Tables/item/ointment_item_type.xml
-Tables.pak:Libs/Tables/item/pickable_area_desc.xml
-Tables.pak:Libs/Tables/item/pickable_area_material.xml
-Tables.pak:Libs/Tables/item/weapon_attachment_slot.xml
-Tables.pak:Libs/Tables/item/weapon_attachment_slot_category.xml
-Tables.pak:Libs/Tables/item/weapon_sub_class.xml
-Tables.pak:Libs/Tables/level.xml
-Tables.pak:Libs/Tables/LevelSwitch.xml
 Tables.pak:Libs/Tables/minigame/AlchemyCrushableSpecialIngredient.xml
 Tables.pak:Libs/Tables/minigame/AlchemyFeedback.xml
 Tables.pak:Libs/Tables/minigame/AlchemyPotionBase.xml
@@ -55,11 +26,7 @@ Tables.pak:Libs/Tables/minigame/forge_slot.xml
 Tables.pak:Libs/Tables/minigame/forge_slot_prerequisite.xml
 Tables.pak:Libs/Tables/minigame/forge_wardrobe_item_filter.xml
 Tables.pak:Libs/Tables/music/music_world_quantity.xml
-Tables.pak:Libs/Tables/Photomode/ *
 Tables.pak:Libs/Tables/player.xml
-Tables.pak:Libs/Tables/RandomEvent/RandomEventOption.xml
-Tables.pak:Libs/Tables/RandomEvent/RandomEventOptionSet.xml
-Tables.pak:Libs/Tables/RandomEvent/RandomEventTag.xml
 Tables.pak:Libs/Tables/rpg/achievement.xml
 Tables.pak:Libs/Tables/rpg/angriness_enum.xml
 Tables.pak:Libs/Tables/rpg/angriness_flag.xml

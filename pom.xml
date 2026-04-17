@@ -24,6 +24,7 @@
 		<twelvemonkeys.version>3.10.1</twelvemonkeys.version>
 		<mockito.version>5.14.2</mockito.version>
 		<bytebuddy.version>1.15.11</bytebuddy.version>
+		<template.delimiters>%{*}</template.delimiters>
 	</properties>
 	
 	<dependencies>

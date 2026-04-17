@@ -335,7 +335,36 @@ public final class Util {
 	public String removeBlankLines(String inp) {
 		return inp.lines().filter(Predicate.not(String::isBlank)).collect(Collectors.joining("\n"));
 	}
-	
+
+	/**
+	 * Converts uppercase string to snake case
+	 * example {@code "ClearSky"} to {@code "clear_sky"}
+	 */
+	public static String convertCase(String input) {
+		if (input == null || input.isEmpty()) {
+			return input;
+		}
+
+		StringBuilder result = new StringBuilder();
+
+		for (int i = 0; i < input.length(); i++) {
+			char currentChar = input.charAt(i);
+
+			if (Character.isUpperCase(currentChar)) {
+				// Add underscore only if it's not the first character
+				if (i > 0) {
+					result.append('_');
+				}
+				result.append(Character.toLowerCase(currentChar));
+			} else {
+				result.append(currentChar);
+			}
+		}
+
+		return result.toString();
+	}
+
+
 	/**
 	 * Escapes special characters for JSON string compatibility.
 	 * Handles quotes, backslashes, control characters, and Unicode.

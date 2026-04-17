@@ -122,7 +122,109 @@ public final class I {
 
 	public static class BlacksmithRecipe extends BaseModItem {
 	}
-	
+
+	public static class ArmorArchetype extends BaseModItem {
+	}
+
+	public static class ArmorSurface extends BaseModItem {
+	}
+
+	public static class ArmorType extends BaseModItem {
+	}
+
+	public static class BodyPart extends BaseModItem {
+	}
+
+	public static class BodySubPart extends BaseModItem {
+	}
+
+	public static class CraftingMaterialSubtype extends BaseModItem {
+	}
+
+	public static class CraftingMaterialType extends BaseModItem {
+	}
+
+	public static class ItemCategory extends BaseModItem {
+	}
+
+	public static class ItemTag extends BaseModItem {
+	}
+
+	public static class PickableAreaDesc extends BaseModItem {
+	}
+
+	public static class WeaponAttachmentSlotCategory extends BaseModItem {
+	}
+
+	public static class PickableAreaMaterial extends BaseModItem {
+	}
+
+	public static class KeyType extends BaseModItem {
+	}
+
+	public static class KeySubtype extends BaseModItem {
+	}
+
+	public static class ItemUiSound extends BaseModItem {
+	}
+
+	public static class DiceBadgeSubtype extends BaseModItem {
+	}
+
+	public static class MiscType extends BaseModItem {
+	}
+
+	public static class MiscSubtype extends BaseModItem {
+	}
+
+	public static class NpcToolSubtype extends BaseModItem {
+	}
+
+	public static class NpcToolType extends BaseModItem {
+	}
+
+	public static class OintmentItemSubtype extends BaseModItem {
+	}
+
+	public static class OintmentItemType extends BaseModItem {
+	}
+
+	public static class WeaponAttachmentSlot extends BaseModItem {
+	}
+
+	public static class LevelData extends BaseModItem {
+	}
+
+	public static class LevelSwitchData extends BaseModItem {
+	}
+
+	public static class TimeOfDayProfile extends BaseModItem {
+	}
+
+	public static class WeaponSubClass extends BaseModItem {
+	}
+
+	public static class DiceBadgeType extends BaseModItem {
+	}
+
+	public static class DocumentClass extends BaseModItem {
+	}
+
+	public static class DocumentVisualCategory extends BaseModItem {
+	}
+
+	public static class EquipmentPart extends BaseModItem {
+	}
+
+	public static class EquipmentSlot extends BaseModItem {
+	}
+
+	public static class FoodType extends BaseModItem {
+	}
+
+	public static class FoodSubtype extends BaseModItem {
+	}
+
 	public static class BehaviorTree extends BaseModItem {
 	}
 	
