@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 /**
  * E -> Enum
  * Contains all the Enums stored in database, nice
+ * Realised these are actually stored as data, so instead of enum we should switch to the read values
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j

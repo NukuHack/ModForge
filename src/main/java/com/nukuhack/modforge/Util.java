@@ -2,6 +2,7 @@ package com.nukuhack.modforge;
 
 import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.util.IOUtil;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -372,14 +373,15 @@ public final class Util {
 	 * @param s Input string
 	 * @return JSON-escaped string, or empty string if input is null
 	 */
-	public String escapeJson(String s) {
+	public @NonNull String escapeJson(String s) {
 		if (s == null)
 			return "";
-		final var sb = new StringBuilder();
+		var sb = new StringBuilder();
 		for (char c : s.toCharArray()) {
 			switch (c) {
 				case '"' -> sb.append("\\\"");
 				case '\\' -> sb.append("\\\\");
+				case '/' -> sb.append("\\/");
 				case '\b' -> sb.append("\\b");
 				case '\f' -> sb.append("\\f");
 				case '\n' -> sb.append("\\n");
@@ -502,10 +504,9 @@ public final class Util {
 	 * @param dirPath Directory path to open
 	 */
 	public void openDirectory(JPanel w, String dirPath) {
-		boolean isOpen = false;
 		try {
 			IOUtil.openDirectory(dirPath);
-			isOpen = true;
+			return;
 		} catch (IllegalArgumentException e) {
 			JOptionPane.showMessageDialog(w, "Game directory not correct. Please configure it in Settings.", "Directory Incorrect", JOptionPane.WARNING_MESSAGE);
 		} catch (FileNotFoundException e) {
@@ -513,10 +514,8 @@ public final class Util {
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(w, "Failed to open game directory:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			log.warn("IOException while choosing folder", ex);
-		} finally {
-			if (! isOpen)
-				JOptionPane.showMessageDialog(w, "Cannot open directory on this operating system.", "Unsupported OS", JOptionPane.ERROR_MESSAGE);
 		}
+		JOptionPane.showMessageDialog(w, "Cannot open directory on this operating system.", "Unsupported OS", JOptionPane.ERROR_MESSAGE);
 	}
 	
 	/**
