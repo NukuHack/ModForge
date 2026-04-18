@@ -102,7 +102,6 @@ public final class ModItemBuilder {
 		var colon = path.indexOf(':') + 1;
 		
 		final String prefix;
-		
 		final String innerPath;
 		
 		if (colon != 0 && colon < path.length()) {
@@ -117,7 +116,7 @@ public final class ModItemBuilder {
 		var fullPath = Path.of(innerPath);
 		var name = fullPath.getFileName().toString();
 		var parent = fullPath.getParent();
-		var xmlFile = Util.modXmlFile(name, mod.getId());
+		var xmlFile = Util.modXmlFile(name, mod.getId(), true);
 		var fullFinal = prefix + (parent != null ? Util.join(parent.toString(), xmlFile) : xmlFile);
 		return deepCopy(src, fullFinal);
 	}

@@ -131,11 +131,11 @@ public final class ItemService {
 	 * @param mod The mod the item is from
 	 * @return the file, according to the Structure
 	 */
-	private static File getOutputFile(final String gameDir, final ModItem item, final ModData mod) {
+	private static File getOutputFile(String gameDir, ModItem item, ModData mod, boolean base) {
 		var rawPath = item.getPath();
 		var targetDir = getOutputFile(gameDir, rawPath, mod).getParent();
-		var typeName = ModItemBuilder.group(item).fileName;
-		var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.getId()));
+		var typeName = ! base ? ModItemBuilder.group(item).fileName : Path.of(rawPath).getFileName().toString();
+		var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.getId(), base));
 		return outFile.toFile();
 	}
 	
@@ -152,30 +152,24 @@ public final class ItemService {
 	 * @param mod The mod the item is from
 	 * @return the file, according to the Structure
 	 */
-	public static Path getOutputFile(final String gameDir, final String itemPath, final ModData mod) {
+	public static Path getOutputFile(String gameDir, String itemPath, ModData mod) {
 		
-		final String pakStem;
-		
-		final String dirSuffix;
-		
+		String pakStem;
+		String dirSuffix;
 		String fileName;
 		
 		int colonIdx = itemPath.indexOf(':');
 		if (colonIdx > 0) {
-			
 			var pakFileName = itemPath.substring(0, colonIdx);
-			
 			var innerEntry = itemPath.substring(colonIdx + 1);
 			
 			var dot = pakFileName.lastIndexOf('.');
 			pakStem = dot > 0 ? pakFileName.substring(0, dot) : pakFileName;
-			
 			var lastSlash = innerEntry.lastIndexOf('/');
 			
 			dirSuffix = lastSlash >= 0 ? innerEntry.substring(0, lastSlash) : "";
 			fileName = innerEntry.substring(++ lastSlash);
 		} else {
-			
 			pakStem = mod.getId();
 			var lastSlash = itemPath.lastIndexOf('/');
 			dirSuffix = lastSlash >= 0 ? itemPath.substring(0, lastSlash) : "";
@@ -254,19 +248,21 @@ public final class ItemService {
 	 * c) null / blank                        – newly created item
 	 */
 	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
-		var outFile = getOutputFile(gameDir, item, mod);
-		Files.createDirectories(outFile.toPath().getParent());
-		
+		File outFile;
 		var group = ModItemBuilder.group(item);
-		final Document doc;
-		final String doctype;
+		Document doc;
+		String doctype;
 		
 		if (ModItemBuilder.HANDLER_MAP.get(group.parentName) != null) {
+			outFile = getOutputFile(gameDir, item, mod, true);
+			Files.createDirectories(outFile.toPath().getParent());
 			doc = docBuilder.newDocument();
 			var el = ModItemBuilder.create(doc, item);
 			el.ifPresent(doc::appendChild);
 			doctype = Util.STORM_HEADER + "\n";
 		} else {
+			outFile = getOutputFile(gameDir, item, mod, false);
+			Files.createDirectories(outFile.toPath().getParent());
 			doc = makeDocument(outFile, item, group);
 			doctype = null;
 		}
