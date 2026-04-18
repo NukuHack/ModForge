@@ -3,348 +3,240 @@ package com.nukuhack.modforge.backend.model;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public class Storm {
-	
-	/**
-	 * An operation node in a STORM rule. Like {@link GenericSelector}, operations
-	 * can carry child operations, making the tree recursive.
-	 *
-	 * <p>Special-case flags ({@code isStat} / {@code isSpan}) are UI hints from the
-	 * C# {@code RuleOperation} component and control which attribute fields are
-	 * visible for {@code setAttribute} / {@code modAttribute} operations.</p>
-	 */
-	@Getter
-	@Slf4j
-	@NonNull
-	@Setter
-	@NoArgsConstructor
-	public static final class GenericOperation {
-		
-		/**
-		 * Key-value attributes for this operation.
-		 * Ordered map to preserve serialization round-trips.
-		 */
-		private final Map<String, String> attributes = new LinkedHashMap<>();
-		/**
-		 * Nested child operations. Not all operations have children, but the model
-		 * supports arbitrary depth.
-		 */
-		private final List<GenericOperation> children = new ArrayList<>();
-		/** XML tag name of this operation, e.g. {@code "setAttribute"}, {@code "addExp"}. */
-		private String name = "";
-		/**
-		 * UI-only flag: when {@code true} the operation targets a Stat, otherwise a Skill.
-		 * Only meaningful for {@code setAttribute} / {@code modAttribute}.
-		 */
-		private boolean isStat = false;
-		
-		/**
-		 * UI-only flag: when {@code true} the operation uses a span (min/max range),
-		 * otherwise a fixed value.
-		 */
-		private boolean isSpan = false;
-		
-		public GenericOperation(@NonNull String name) {
-			this.name = name;
-		}
-		
-		public void putAttribute(@NonNull String key, @NonNull String value) {
-			attributes.put(key, value);
-		}
-		
-		public @NonNull GenericOperation deepCopy() {
-			var copy = new GenericOperation(this.name);
-			copy.attributes.putAll(this.attributes);
-			copy.isStat = this.isStat;
-			copy.isSpan = this.isSpan;
-			for (var child : this.children) {
-				copy.children.add(child.deepCopy());
-			}
-			return copy;
-		}
-		
-		@Override
-		public String toString() {
-			return "GenericOperation{name='" + name + "', attrs=" + attributes.size() + ", children=" + children.size() + "}";
-		}
-	}
-	
-	/**
-	 * A custom selector declared at the top of a STORM file
-	 * (i.e. a named selector template, not a usage instance).
-	 */
-	@Getter
-	@Setter
-	@NonNull
-	@Slf4j
-	@NoArgsConstructor
-	public static final class CustomStormSelector {
-		
-		/** Attribute names defined by this custom selector. */
-		private final List<String> attributeNames = new ArrayList<>();
-		private String name = "";
-		private String comment = "";
-		
-		@Override
-		public String toString() {
-			return "CustomStormSelector{name='" + name + "'}";
-		}
-	}
-	
-	/**
-	 * A custom operation declared at the top of a STORM file.
-	 *
-	 * <p>Custom operations can expose "mod attributes" that describe how
-	 * a stat can be modified (min/max mod values).</p>
-	 *
-	 * <p>Example XML:</p>
-	 * <pre>{@code
-	 * <customOperations>
-	 *   <operation name="myOp" mode="add">
-	 *     <attribute stat="Strength" minMod="0" maxMod="1"/>
-	 *   </operation>
-	 * </customOperations>
-	 * }</pre>
-	 */
-	@Getter
-	@Setter
-	@NonNull
-	@Slf4j
-	@NoArgsConstructor
-	public static final class CustomStormOperation {
-		
-		/** Attribute ranges exposed by this operation. */
-		private final List<ModAttribute> modAttributes = new ArrayList<>();
-		private String name = "";
-		
-		/**
-		 * Optional mode string from the {@code mode} XML attribute (e.g. {@code "add"},
-		 * {@code "set"}). Empty string when absent.
-		 */
-		private String mode = "";
-		
-		@Override
-		public String toString() {
-			return "CustomStormOperation{name='" + name + "', mode='" + mode + "', modAttrs=" + modAttributes.size() + "}";
-		}
-		
-		/**
-		 * Describes the numeric range of a modifiable attribute within a custom operation.
-		 */
-		@Getter
-		@Setter
-		@NonNull
-		public static final class ModAttribute {
-			private String stat = "";
-			private double minMod = 0;
-			private double maxMod = 0;
-			
-			@Override
-			public String toString() {
-				return "ModAttribute{stat='" + stat + "', range=[" + minMod + "," + maxMod + "]}";
-			}
-		}
-	}
-	
-	/**
-	 * A selector node in a STORM rule. Selectors can be plain selectors
-	 * (with named attributes) or logical combinators: {@code and}, {@code or}, {@code not}.
-	 *
-	 * <p>Combinators are recursive – each child is itself a {@code GenericSelector},
-	 * so the tree can be arbitrarily deep (the "layered at least 3 times" requirement).</p>
-	 *
-	 * <pre>
-	 * &lt;and&gt;
-	 *   &lt;selector name="HasItem" itemId="sword_iron"/&gt;
-	 *   &lt;or&gt;
-	 *     &lt;selector name="IsAlive"/&gt;
-	 *     &lt;not&gt;
-	 *       &lt;selector name="IsDead"/&gt;
-	 *     &lt;/not&gt;
-	 *   &lt;/or&gt;
-	 * &lt;/and&gt;
-	 * </pre>
-	 */
-	@Slf4j
-	@Setter
-	@Getter
-	@NonNull
-	@NoArgsConstructor
-	public static final class GenericSelector {
-		
-		/**
-		 * XML attributes on this selector node (e.g. {@code name="HasItem"}, {@code itemId="sword_iron"}).
-		 * Ordered to preserve round-trip fidelity.
-		 */
-		private final Map<String, String> attributes = new LinkedHashMap<>();
-		/**
-		 * Child selectors – only populated for combinator nodes ({@code and}/{@code or}/{@code not}).
-		 * Never {@code null}; use {@link #isLeaf()} to test.
-		 */
-		private final List<GenericSelector> children = new ArrayList<>();
-		/** Tag name, e.g. {@code "selector"}, {@code "and"}, {@code "or"}, {@code "not"}. */
-		private String name = "";
-		
-		public GenericSelector(@NonNull String name) {
-			this.name = name;
-		}
-		
-		/** Factory for a combinator node with the supplied children pre-added. */
-		public static @NonNull GenericSelector combinator(@NonNull String type, @NonNull GenericSelector... kids) {
-			var s = new GenericSelector(type);
-			Collections.addAll(s.children, kids);
-			return s;
-		}
-		
-		/** Returns {@code true} if this node is a logical combinator ({@code and/or/not}). */
-		public boolean isCombinator() {
-			return "and".equals(name) || "or".equals(name) || "not".equals(name);
-		}
-		
-		/** Returns {@code true} when this node has no children (a leaf selector). */
-		public boolean isLeaf() {
-			return children.isEmpty();
-		}
-		
-		public @NonNull GenericSelector deepCopy() {
-			var copy = new GenericSelector(this.name);
-			copy.attributes.putAll(this.attributes);
-			for (var child : this.children) {
-				copy.children.add(child.deepCopy());
-			}
-			return copy;
-		}
-		
-		@Override
-		public String toString() {
-			return "GenericSelector{name='" + name + "', attrs=" + attributes.size() + ", children=" + children.size() + "}";
-		}
-	}
-	
-	/**
-	 * The fully-parsed content of a single {@code .storm} / Storm XML file.
-	 *
-	 * <p>Mirrors the C# {@code StormDto} class while dropping Blazor-specific
-	 * rendering concerns.</p>
-	 *
-	 * <p>Structure of a Storm file (simplified):</p>
-	 * <pre>
-	 * &lt;storm&gt;
-	 *   &lt;common&gt;
-	 *     &lt;source path="..."/&gt;
-	 *   &lt;/common&gt;
-	 *   &lt;customSelectors&gt; ... &lt;/customSelectors&gt;
-	 *   &lt;customOperations&gt; ... &lt;/customOperations&gt;
-	 *   &lt;tasks&gt; ... &lt;/tasks&gt;
-	 *   &lt;rules&gt;
-	 *     &lt;rule name="..." comment="..."&gt;
-	 *       &lt;selectors&gt;
-	 *         &lt;and&gt;
-	 *           &lt;selector .../&gt;
-	 *           &lt;or&gt;
-	 *             &lt;selector .../&gt;
-	 *             &lt;not&gt;&lt;selector .../&gt;&lt;/not&gt;
-	 *           &lt;/or&gt;
-	 *         &lt;/and&gt;
-	 *       &lt;/selectors&gt;
-	 *       &lt;operations&gt;
-	 *         &lt;setAttribute ...&gt;
-	 *           &lt;subOp .../&gt;
-	 *         &lt;/setAttribute&gt;
-	 *       &lt;/operations&gt;
-	 *     &lt;/rule&gt;
-	 *   &lt;/rules&gt;
-	 * &lt;/storm&gt;
-	 * </pre>
-	 */
-	@Getter
-	@Setter
-	@Slf4j
-	@NonNull
-	@NoArgsConstructor
-	public static final class StormData {
-		
-		private final List<String> commonSources = new ArrayList<>();
-		private final List<CustomStormSelector> customSelectors = new ArrayList<>();
-		private final List<CustomStormOperation> customOperations = new ArrayList<>();
-		private final List<StormTask> tasks = new ArrayList<>();
-		private final List<StormRule> rules = new ArrayList<>();
-		
-		/** Stable identifier derived from the file path (used for navigation). */
-		private String id = "";
-		
-		/**
-		 * Optional category grouping (derived from the file path or a {@code category}
-		 * attribute on the root element). {@code null} means "Miscellaneous".
-		 */
-		private String category = null;
-		
-		@Override
-		public String toString() {
-			return String.format("StormData{id='%s', category=%s, commonSources=%d, rules=%d, tasks=%d}", id, category, commonSources.size(), rules.size(), tasks.size());
-		}
-	}
-	
-	/**
-	 * A single rule inside a STORM file.
-	 *
-	 * <p>A rule bundles a list of {@link GenericSelector selectors} (the "when" side)
-	 * with a list of {@link GenericOperation operations} (the "then" side).</p>
-	 *
-	 * <p>Example XML:</p>
-	 * <pre>{@code
-	 * <rule name="underwear_tarasMura_taras" mode="..." comment="...">
-	 *   <selectors>
-	 *     <hasName name="ksta_taras"/>
-	 *   </selectors>
-	 *   <operations>
-	 *     <setUnderwear name="tarasMura_underwear"/>
-	 *   </operations>
-	 * </rule>
-	 * }</pre>
-	 */
-	@Getter
-	@Setter
-	@Slf4j
-	@NonNull
-	@NoArgsConstructor
-	public static final class StormRule {
-		
-		private final List<GenericSelector> selectors = new ArrayList<>();
-		private final List<GenericOperation> operations = new ArrayList<>();
-		private String name = "";
-		private String comment = "";
-		
-		/**
-		 * Optional mode string from the {@code mode} XML attribute.
-		 * Empty string when absent.
-		 */
-		private String mode = "";
-		
-		@Override
-		public String toString() {
-			return "StormRule{name='" + name + "', mode='" + mode + "', selectors=" + selectors.size() + ", operations=" + operations.size() + "}";
-		}
-	}
-	
-	/**
-	 * A task declaration inside a STORM file.
-	 */
-	@ToString
-	@Getter
-	@Setter
-	@NonNull
-	@Slf4j
-	@NoArgsConstructor
-	public static final class StormTask {
-		private String name = "";
-		private String comment = "";
-		private String sources = "";
-		/** The scripting class name wired to this task. */
-		private String taskClass = "";
-	}
-	
+/**
+ * All Storm-specific model types now live here as lightweight value types.
+ *
+ * <h2>What was removed and why</h2>
+ * <ul>
+ *   <li>{@code GenericSelector} and {@code GenericOperation} were structurally
+ *       identical to each other and to {@link Attribute.XmlNode}: a tag name,
+ *       a string attribute map, and a recursive child list.  They are gone.</li>
+ *   <li>{@code CustomStormSelector}, {@code CustomStormOperation}, and
+ *       {@code StormTask} were flat named objects with a handful of string
+ *       fields — perfectly modelled as {@link Attribute.XmlNode} instances.</li>
+ *   <li>{@code StormData} was a redundant container whose {@code id} /
+ *       {@code category} fields already exist on {@link I.Storm} ({@code id}
+ *       via {@link ModItem}, {@code category} added directly).  Its five lists
+ *       now live on {@link I.Storm} itself.</li>
+ * </ul>
+ *
+ * <h2>What remains</h2>
+ * <ul>
+ *   <li>{@link StormRule} – a thin record kept because it genuinely groups
+ *       two separate {@link Attribute.XmlNode} lists (selectors vs operations)
+ *       under a rule's own attributes.  Collapsing it into a single
+ *       {@link Attribute.XmlNode} would force every caller to dig through
+ *       wrapper child nodes by convention instead of by type.</li>
+ * </ul>
+ *
+ * <h2>UI-only flags</h2>
+ * <p>The old {@code isStat} / {@code isSpan} flags that lived on
+ * {@code GenericOperation} are stored as synthetic attributes with
+ * underscore-prefixed keys ({@code "_isStat"}, {@code "_isSpan"}) on the
+ * operation {@link Attribute.XmlNode}.  The serializer in
+ * {@link com.nukuhack.modforge.backend.service.StormService} skips any
+ * attribute whose name starts with {@code "_"}, so they never reach the
+ * output XML.</p>
+ */
+
+/**
+ * {@code ModItem} representation of a Storm script entry.
+ *
+ * <p>The five parsed Storm sections live directly on this item rather than
+ * inside a separate {@code StormData} wrapper object.  The wrapper added no
+ * value: its {@code id} / {@code category} fields already belong to the item
+ * layer ({@code id} via {@link ModItem}, {@code category} as a plain field
+ * here), and its lists are just lists.</p>
+ *
+ * <h2>Section fields</h2>
+ * <ul>
+ *   <li>{@link #commonSources} — raw path strings from
+ *       {@code <common><source path="…"/></common>}.  A plain
+ *       {@code List<String>} because there is genuinely nothing node-like
+ *       about a bare path.</li>
+ *   <li>{@link #customSelectors}, {@link #customOperations}, {@link #tasks}
+ *       — each entry is an {@link Attribute.XmlNode} whose tag is the XML
+ *       element name and whose {@link Attribute.StringAttribute} children
+ *       carry the XML attribute key-value pairs.  Nested child elements
+ *       become child nodes.</li>
+ *   <li>{@link #rules} — each entry is a {@link Storm.StormRule} record that
+ *       keeps the rule's own attributes, its selector tree, and its operation
+ *       tree in three clearly typed fields rather than burying them in wrapper
+ *       child nodes.</li>
+ * </ul>
+ *
+ * <h2>Relation to the base-class attribute list</h2>
+ * <p>The inherited {@link ModItem#getAttributes()} list is still populated by
+ * {@code ModItemBuilder} for the normal item-list display pipeline (search,
+ * filter, etc.).  The Storm-specific fields above are populated separately by
+ * {@link com.nukuhack.modforge.backend.service.StormService} after the PAK
+ * scan and are orthogonal to the flat attribute list.</p>
+ */
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@Slf4j
+public class Storm extends ModItem.BaseModItem {
+
+    /**
+     * Global source paths from {@code <common><source path="…"/></common>}.
+     */
+    private final List<String> commonSources = new ArrayList<>();
+    /**
+     * Custom selectors declared in {@code <customSelectors>}.
+     * Each node's tag is {@code "selector"}; its attributes hold
+     * {@code name} / {@code comment}; child nodes represent
+     * {@code <attribute name="…"/>} entries.
+     */
+    private final List<Attribute.XmlNode> customSelectors = new ArrayList<>();
+    /**
+     * Custom operations declared in {@code <customOperations>}.
+     * Each node's tag is {@code "operation"}; its attributes hold
+     * {@code name} / {@code mode}; child nodes represent
+     * {@code <attribute stat="…" minMod="…" maxMod="…"/>} entries.
+     */
+    private final List<Attribute.XmlNode> customOperations = new ArrayList<>();
+    /**
+     * Tasks declared in {@code <tasks>}.
+     * Each node's tag is {@code "task"}; its attributes hold
+     * {@code name}, {@code class}, {@code comment}, and {@code sources}
+     * (a comma-joined path list, normalized from child {@code <source>}
+     * elements by the parser).
+     */
+    private final List<Attribute.XmlNode> tasks = new ArrayList<>();
+    /**
+     * Rules declared in {@code <rules>}.
+     * Each {@link Storm.StormRule} record holds the rule's own XML
+     * attributes plus its selector and operation trees as separate
+     * {@link Attribute.XmlNode} lists.
+     */
+    private final List<com.nukuhack.modforge.backend.model.Storm.StormRule> rules = new ArrayList<>();
+    /**
+     * Optional category grouping derived from the {@code category} attribute
+     * on the root {@code <storm>} element.  {@code null} means "Miscellaneous".
+     */
+    private String category = null;
+
+    /**
+     * Build an {@link Attribute.XmlNode} from a tag name and an ordered map of
+     * XML attributes.  The returned node has a mutable children list so the
+     * parser can append to it.
+     */
+    public static Attribute.XmlNode node(String tag, Map<String, String> attrs) {
+        var attrList = new ArrayList<Attribute>();
+        attrs.forEach((k, v) -> attrList.add(new Attribute.StringAttribute(k, v)));
+        return new Attribute.XmlNode(tag, attrList, new ArrayList<>());
+    }
+
+    /**
+     * Build a leaf {@link Attribute.XmlNode} with no attributes and no children.
+     */
+    public static Attribute.XmlNode node(String tag) {
+        return new Attribute.XmlNode(tag, new ArrayList<>(), new ArrayList<>());
+    }
+
+    /**
+     * Read the {@code _isStat} synthetic flag stored on an operation node.
+     * Defaults to {@code false} when absent.
+     */
+    public static boolean isStatOp(Attribute.XmlNode opNode) {
+        return opNode.attributes().stream()
+                .filter(a -> "_isStat".equals(a.getName()))
+                .map(a -> Boolean.parseBoolean(a.getValue().toString()))
+                .findFirst().orElse(false);
+    }
+
+    /**
+     * Read the {@code _isSpan} synthetic flag stored on an operation node.
+     * Defaults to {@code false} when absent.
+     */
+    public static boolean isSpanOp(Attribute.XmlNode opNode) {
+        return opNode.attributes().stream()
+                .filter(a -> "_isSpan".equals(a.getName()))
+                .map(a -> Boolean.parseBoolean(a.getValue().toString()))
+                .findFirst().orElse(false);
+    }
+
+    /**
+     * Returns {@code true} when no Storm sections have been populated yet.
+     */
+    public boolean isStormLoaded() {
+        return !rules.isEmpty() || !tasks.isEmpty() || !customSelectors.isEmpty() || !customOperations.isEmpty() || !commonSources.isEmpty();
+    }
+
+    /**
+     * A single rule inside a STORM file.
+     *
+     * <p>Kept as a dedicated type (rather than a plain {@link Attribute.XmlNode})
+     * because it carries two structurally distinct child lists — selectors and
+     * operations — along with its own named attributes.  Merging them into one
+     * node would require callers to locate wrapper children by tag-name
+     * convention rather than by field access.</p>
+     *
+     * <p>The rule's own XML attributes ({@code name}, {@code mode},
+     * {@code comment}, …) are stored in {@link #attrs} as an
+     * {@link Attribute.XmlNode} with tag {@code "rule"} and an empty children
+     * list — the children lists are {@link #selectors} and {@link #operations}
+     * instead.</p>
+     *
+     * <p>Example XML:</p>
+     * <pre>{@code
+     * <rule name="underwear_tarasMura_taras" mode="..." comment="...">
+     *   <selectors>
+     *     <hasName name="ksta_taras"/>
+     *   </selectors>
+     *   <operations>
+     *     <setUnderwear name="tarasMura_underwear"/>
+     *   </operations>
+     * </rule>
+     * }</pre>
+     *
+     * @param attrs      The rule's own XML attributes (name, mode, comment, …),
+     *                   stored in an {@link Attribute.XmlNode} with tag
+     *                   {@code "rule"}.  Never {@code null}.
+     * @param selectors  Parsed selector trees (recursively nested
+     *                   {@link Attribute.XmlNode}s).  Never {@code null}.
+     * @param operations Parsed operation trees (recursively nested
+     *                   {@link Attribute.XmlNode}s).  Never {@code null}.
+     */
+    public record StormRule(
+            @NonNull Attribute.XmlNode attrs,
+            @NonNull List<Attribute.XmlNode> selectors,
+            @NonNull List<Attribute.XmlNode> operations
+    ) {
+
+        /**
+         * Convenience accessor — equivalent to {@code attrs().tag()}.
+         */
+        public String name() {
+            return attrValue("name");
+        }
+
+        public String mode() {
+            return attrValue("mode");
+        }
+
+        public String comment() {
+            return attrValue("comment");
+        }
+
+        private String attrValue(String key) {
+            return attrs.attributes().stream()
+                    .filter(a -> key.equals(a.getName()))
+                    .map(a -> a.getValue().toString())
+                    .findFirst().orElse("");
+        }
+
+        @Override
+        public String toString() {
+            return "StormRule{name='" + name() + "', mode='" + mode()
+                    + "', selectors=" + selectors.size()
+                    + ", operations=" + operations.size() + "}";
+        }
+    }
 }
-

@@ -3,11 +3,7 @@ package com.nukuhack.modforge.backend.service;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ItemEntry;
 import com.nukuhack.modforge.backend.ModData;
-import com.nukuhack.modforge.backend.model.Attribute;
-import com.nukuhack.modforge.backend.model.Attributes;
-import com.nukuhack.modforge.backend.model.I;
-import com.nukuhack.modforge.backend.model.I.Storm;
-import com.nukuhack.modforge.backend.model.ModItem;
+import com.nukuhack.modforge.backend.model.*;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -254,12 +250,11 @@ public final class ModItemBuilder {
 				if (cons == null)
 					return fallbackBuilder.handle(element);
 				var item = cons.newInstance();
-				item.setId("storm_" + Util.randomString(32));
-				
-				if (item instanceof Storm storm) {
-					var data = StormService.parse(element);
-					storm.setStormData(data);
+				if (item instanceof Storm) {
+					item = (M) StormService.parse(element);
 				}
+				item.setId("storm_" + Util.randomString(32));
+
 				
 				return item;
 			} catch (Exception e) {
@@ -272,7 +267,7 @@ public final class ModItemBuilder {
 		public Element handle(final Document document, final ModItem item) {
 			try {
 				if (item instanceof Storm storm) {
-					return StormService.serialize(storm.getStormData(), document);
+					return StormService.serialize(storm, document);
 				}
 				return fallbackBuilder.handle(document, item);
 			} catch (Exception e) {

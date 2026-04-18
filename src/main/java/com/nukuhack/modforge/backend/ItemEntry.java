@@ -3,6 +3,7 @@ package com.nukuhack.modforge.backend;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.model.I;
 import com.nukuhack.modforge.backend.model.ModItem;
+import com.nukuhack.modforge.backend.model.Storm;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +71,7 @@ public enum ItemEntry {
 	OINTMENT(I.Ointment.class, "Id", "item", "Ointment", "ItemClasses", true),
 	ALCHEMY_BASE(I.AlchemyBase.class, "Id", "item", "AlchemyBase", "ItemClasses", true),
 
-	STORM(I.Storm.class, "id", "storm", "storm", "storm", true),
+	STORM(Storm.class, "id", "storm", "storm", "storm", true),
 
 	INVENTORY_PRESET(I.InventoryPreset.class, "Name", "InventoryPreset", "InventoryPreset", "InventoryPresets", true, true),
 	BLACKSMITH_RECIPE(I.BlacksmithRecipe.class, "Id", "BlacksmithRecipes", "BlacksmithRecipe", "BlacksmithRecipes", true, true),

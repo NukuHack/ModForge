@@ -1,15 +1,23 @@
 package com.nukuhack.modforge.backend.service;
 
-import com.nukuhack.modforge.backend.model.Storm.*;
+import com.nukuhack.modforge.backend.model.Attribute;
+import com.nukuhack.modforge.backend.model.Storm;
+import com.nukuhack.modforge.backend.model.Storm.StormRule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.w3c.dom.Document;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,113 +25,26 @@ import static org.junit.jupiter.api.Assertions.*;
  * Extensive test suite for {@link StormService}.
  */
 @ExtendWith(MockitoExtension.class)
-class StormServiceTest {
-	
+class StormServiceTest extends BaseServiceTest {
+
 	@BeforeEach
 	void setUp() {
 	}
-	
-	// -------------------------------------------------------------------------
-	// Helper methods for creating test PAK files and XML content
-	// -------------------------------------------------------------------------
-	
+
 	/**
 	 * Creates a minimal valid Storm XML document.
 	 */
 	private String minimalStormXml() {
 		return "<?xml version=\"1.0\"?>\n<storm/>";
 	}
-	
+
 	/**
 	 * A real Storm XML snippet from the game - truncated for testing.
 	 */
-	private String realStormXml() {
-		return """
-                <?xml version="1.0"?>
-                <!DOCTYPE storm SYSTEM "storm.dtd">
-                <storm>
-                    <rules>
-                        <rule name="underwear_man">
-                            <selectors>
-                                <isMan/>
-                            </selectors>
-                            <operations/>
-                        </rule>
-                        <rule name="underwear_woman">
-                            <selectors>
-                                <isWoman/>
-                            </selectors>
-                            <operations/>
-                        </rule>
-                        <rule name="underwear_papezskyLegat_rozaNaked">
-                            <selectors>
-                                <hasName Name="papezskyLegat_cin_rozaNaked"/>
-                            </selectors>
-                            <operations/>
-                        </rule>
-                        <rule name="underwear_tarasMura_taras">
-                            <selectors>
-                                <hasName name="ksta_taras"/>
-                            </selectors>
-                            <operations>
-                                <setUnderwear name="tarasMura_underwear"/>
-                            </operations>
-                        </rule>
-                        <rule name="underwear_utopenci">
-                            <selectors>
-                                <or>
-                                    <hasName name="tvez_utopenec_1"/>
-                                    <hasName name="tvez_utopenec_2"/>
-                                    <hasName name="tvez_utopenec_3"/>
-                                </or>
-                            </selectors>
-                            <operations>
-                                <setUnderwear name="prepadeni*"/>
-                            </operations>
-                        </rule>
-                        <rule name="underwear_kmis_man_14">
-                            <selectors>
-                                <hasName name="kmis_man_14"/>
-                            </selectors>
-                            <operations>
-                                <setUnderwear name="m_underwear01_m05"/>
-                            </operations>
-                        </rule>
-                        <rule name="underwear_kkut_man_124">
-                            <selectors>
-                                <hasName name="kkut_man_124"/>
-                            </selectors>
-                            <operations>
-                                <setUnderwear name="m_underwear01_m05"/>
-                            </operations>
-                        </rule>
-                        <rule name="underwear_kkut_man_125">
-                            <selectors>
-                                <hasName name="kkut_man_125"/>
-                            </selectors>
-                            <operations>
-                                <setUnderwear name="m_underwear02_m03"/>
-                            </operations>
-                        </rule>
-                    </rules>
-                </storm>
-                """;
+	private String realStormXml() throws IOException {
+		return readResourceString("item_xml/underwear.xml");
 	}
-	
-	@Test
-	public void testRoundtrip() throws Exception {
-		try (InputStream is = new ByteArrayInputStream(realStormXml().getBytes(StandardCharsets.UTF_8))) {
-			StormData data = StormService.parse(is);
-			String serialized = StormService.serialize(data);
-			
-			String raw = realStormXml().replaceAll(">\\s+<", ">\n<").replaceAll("(?m)^(?:<\\?|<!)[^\\n]*\\n?", "");
-			String out = serialized.replaceAll(">\\s+<", ">\n<").replaceAll("(?m)^(?:<\\?|<!)[^\\n]*\\n?", "");
-			
-			assertEquals(raw, out);
-			
-		}
-	}
-	
+
 	/**
 	 * Creates a Storm XML document with various sections for testing.
 	 */
@@ -172,12 +93,11 @@ class StormServiceTest {
                 </storm>
                 """;
 	}
-	
+
 	/**
 	 * Creates a Storm XML document with mixed-case tags to test case insensitivity.
 	 */
 	private String mixedCaseStormXml() {
-		// class no uppercase, name neither, Operation.mode neither, attr.stat same MinMod, MaxMod
 		return """
                 <?xml version="1.0"?>
                 <STORM category="MixedCat">
@@ -212,18 +132,27 @@ class StormServiceTest {
                 </STORM>
                 """;
 	}
-	
-	// -------------------------------------------------------------------------
-	// Nested test class for StormParser (parsing and serialization)
-	// -------------------------------------------------------------------------
-	
+
+	private String attrValue(Attribute.XmlNode node, String attrName) {
+		return node.attributes().stream()
+				.filter(a -> attrName.equals(a.getName()))
+				.map(a -> a.getValue().toString())
+				.findFirst().orElse("");
+	}
+
+	private Attribute.XmlNode findChildByTag(Attribute.XmlNode node, String tag) {
+		return node.children().stream()
+				.filter(c -> c.tag().equalsIgnoreCase(tag))
+				.findFirst().orElse(null);
+	}
+
 	@Nested
 	class StormParserTest {
-		
+
 		@Test
 		void parseMinimalXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(minimalStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is);
+				Storm data = StormService.parse(is);
 				assertNotNull(data);
 				assertNull(data.getCategory());
 				assertTrue(data.getCommonSources().isEmpty());
@@ -233,185 +162,184 @@ class StormServiceTest {
 				assertTrue(data.getRules().isEmpty());
 			}
 		}
-		
+
+		@Test
+		void fullXmlRoundTrip() throws Exception {
+			var xml = realStormXml();
+			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+				Storm data = StormService.parse(is);
+				String reSerialized = StormService.serialize(data);
+
+				assertEquals(xml.replaceAll(">\\s+<", ">\n<"), reSerialized.replaceAll(">\\s+<", ">\n<"));
+			}
+		}
+
 		@Test
 		void parseRealXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(realStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is);
+				Storm data = StormService.parse(is);
 				assertNotNull(data);
 				assertNull(data.getCategory());
-				assertEquals(8, data.getRules().size());
-				
-				// Check first rule
+				assertEquals(45, data.getRules().size());
+
 				StormRule rule1 = data.getRules().get(0);
-				assertEquals("underwear_man", rule1.getName());
-				assertEquals(1, rule1.getSelectors().size());
-				GenericSelector sel = rule1.getSelectors().get(0);
-				assertEquals("isMan", sel.getName());
-				
-				// Check rule with operation
+				assertEquals("underwear_man", rule1.name());
+				assertEquals(1, rule1.selectors().size());
+				Attribute.XmlNode sel = rule1.selectors().get(0);
+				assertEquals("isMan", sel.tag());
+
 				StormRule tarasRule = data.getRules().stream()
-											  .filter(r -> "underwear_tarasMura_taras".equals(r.getName()))
-											  .findFirst().orElse(null);
+						.filter(r -> "underwear_tarasMura_taras".equals(r.name()))
+						.findFirst().orElse(null);
 				assertNotNull(tarasRule);
-				assertEquals(1, tarasRule.getOperations().size());
-				GenericOperation op = tarasRule.getOperations().get(0);
-				assertEquals("setUnderwear", op.getName());
-				assertEquals("tarasMura_underwear", op.getAttributes().get("name"));
-				
-				// Check rule with OR combinator
+				assertEquals(1, tarasRule.operations().size());
+				Attribute.XmlNode op = tarasRule.operations().get(0);
+				assertEquals("setUnderwear", op.tag());
+				assertEquals("tarasMura_underwear", attrValue(op, "name"));
+
 				StormRule utopenciRule = data.getRules().stream()
-												 .filter(r -> "underwear_utopenci".equals(r.getName()))
-												 .findFirst().orElse(null);
+						.filter(r -> "underwear_utopenci".equals(r.name()))
+						.findFirst().orElse(null);
 				assertNotNull(utopenciRule);
-				assertEquals(1, utopenciRule.getSelectors().size());
-				GenericSelector orSel = utopenciRule.getSelectors().get(0);
-				assertEquals("or", orSel.getName());
-				assertEquals(3, orSel.getChildren().size());
+				assertEquals(1, utopenciRule.selectors().size());
+				Attribute.XmlNode orSel = utopenciRule.selectors().get(0);
+				assertEquals("or", orSel.tag());
+				assertEquals(3, orSel.children().size());
 			}
 		}
-		
+
 		@Test
 		void parseFullXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(fullStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is);
+				Storm data = StormService.parse(is);
 				assertNotNull(data);
 				assertEquals("TestCat", data.getCategory());
-				
-				// Common sources
+
 				assertEquals(1, data.getCommonSources().size());
 				assertEquals("common/base.xml", data.getCommonSources().get(0));
-				
-				// Tasks
+
 				assertEquals(2, data.getTasks().size());
-				StormTask task1 = data.getTasks().get(0);
-				assertEquals("CombatTask", task1.getName());
-				assertEquals("CombatClass", task1.getTaskClass());
-				assertEquals("Main combat", task1.getComment());
-				assertEquals("combat/main.xml", task1.getSources());
-				StormTask task2 = data.getTasks().get(1);
-				assertEquals("SimpleTask", task2.getName());
-				assertEquals("simple.xml", task2.getSources());
-				
-				// Custom selectors
+				Attribute.XmlNode task1 = data.getTasks().get(0);
+				assertEquals("task", task1.tag());
+				assertEquals("CombatTask", attrValue(task1, "name"));
+				assertEquals("CombatClass", attrValue(task1, "class"));
+				assertEquals("Main combat", attrValue(task1, "comment"));
+				assertEquals("combat/main.xml", attrValue(task1, "sources"));
+
+				Attribute.XmlNode task2 = data.getTasks().get(1);
+				assertEquals("SimpleTask", attrValue(task2, "name"));
+				assertEquals("simple.xml", attrValue(task2, "sources"));
+
 				assertEquals(1, data.getCustomSelectors().size());
-				CustomStormSelector selector = data.getCustomSelectors().get(0);
-				assertEquals("mySelector", selector.getName());
-				assertEquals("test", selector.getComment());
-				assertEquals(1, selector.getAttributeNames().size());
-				assertTrue(selector.getAttributeNames().contains("attr1"));
-				
-				// Custom operations
+				Attribute.XmlNode selector = data.getCustomSelectors().get(0);
+				assertEquals("selector", selector.tag());
+				assertEquals("mySelector", attrValue(selector, "name"));
+				assertEquals("test", attrValue(selector, "comment"));
+				assertEquals(1, selector.children().size());
+				Attribute.XmlNode attrNode = selector.children().get(0);
+				assertEquals("attribute", attrNode.tag());
+				assertEquals("attr1", attrValue(attrNode, "name"));
+
 				assertEquals(1, data.getCustomOperations().size());
-				CustomStormOperation op = data.getCustomOperations().get(0);
-				assertEquals("myOp", op.getName());
-				assertEquals("add", op.getMode());
-				assertEquals(1, op.getModAttributes().size());
-				CustomStormOperation.ModAttribute attr = op.getModAttributes().get(0);
-				assertEquals("Strength", attr.getStat());
-				assertEquals(0.0, attr.getMinMod());
-				assertEquals(1.0, attr.getMaxMod());
-				
-				// Rules
+				Attribute.XmlNode op = data.getCustomOperations().get(0);
+				assertEquals("operation", op.tag());
+				assertEquals("myOp", attrValue(op, "name"));
+				assertEquals("add", attrValue(op, "mode"));
+				assertEquals(1, op.children().size());
+				Attribute.XmlNode modAttr = op.children().get(0);
+				assertEquals("attribute", modAttr.tag());
+				assertEquals("Strength", attrValue(modAttr, "stat"));
+				assertEquals("0", attrValue(modAttr, "minMod"));
+				assertEquals("1", attrValue(modAttr, "maxMod"));
+
 				assertEquals(1, data.getRules().size());
 				StormRule rule = data.getRules().get(0);
-				assertEquals("testRule", rule.getName());
-				assertEquals("test comment", rule.getComment());
-				assertEquals("override", rule.getMode());
-				
-				// Selectors tree - tags are preserved with original casing
-				assertEquals(1, rule.getSelectors().size());
-				GenericSelector andSelector = rule.getSelectors().get(0);
-				assertEquals("and", andSelector.getName());
-				assertEquals(2, andSelector.getChildren().size());
-				
-				GenericSelector hasName = andSelector.getChildren().get(0);
-				assertEquals("hasName", hasName.getName());
-				assertEquals("foo", hasName.getAttributes().get("name"));
-				
-				GenericSelector orSelector = andSelector.getChildren().get(1);
-				assertEquals("or", orSelector.getName());
-				assertEquals(2, orSelector.getChildren().size());
-				GenericSelector isMan = orSelector.getChildren().get(0);
-				assertEquals("isMan", isMan.getName());
-				GenericSelector notSelector = orSelector.getChildren().get(1);
-				assertEquals("not", notSelector.getName());
-				assertEquals(1, notSelector.getChildren().size());
-				GenericSelector isWoman = notSelector.getChildren().get(0);
-				assertEquals("isWoman", isWoman.getName());
-				
-				// Operations
-				assertEquals(2, rule.getOperations().size());
-				GenericOperation setUnderwear = rule.getOperations().get(0);
-				assertEquals("setUnderwear", setUnderwear.getName());
-				assertEquals("bar", setUnderwear.getAttributes().get("name"));
-				GenericOperation nestedOp = rule.getOperations().get(1);
-				assertEquals("nestedOp", nestedOp.getName());
-				assertEquals(1, nestedOp.getChildren().size());
-				GenericOperation childOp = nestedOp.getChildren().get(0);
-				assertEquals("childOp", childOp.getName());
-				assertEquals("x", childOp.getAttributes().get("value"));
+				assertEquals("testRule", rule.name());
+				assertEquals("test comment", rule.comment());
+				assertEquals("override", rule.mode());
+
+				assertEquals(1, rule.selectors().size());
+				Attribute.XmlNode andSelector = rule.selectors().get(0);
+				assertEquals("and", andSelector.tag());
+				assertEquals(2, andSelector.children().size());
+
+				Attribute.XmlNode hasName = andSelector.children().get(0);
+				assertEquals("hasName", hasName.tag());
+				assertEquals("foo", attrValue(hasName, "name"));
+
+				Attribute.XmlNode orSelector = andSelector.children().get(1);
+				assertEquals("or", orSelector.tag());
+				assertEquals(2, orSelector.children().size());
+				Attribute.XmlNode isMan = orSelector.children().get(0);
+				assertEquals("isMan", isMan.tag());
+				Attribute.XmlNode notSelector = orSelector.children().get(1);
+				assertEquals("not", notSelector.tag());
+				assertEquals(1, notSelector.children().size());
+				Attribute.XmlNode isWoman = notSelector.children().get(0);
+				assertEquals("isWoman", isWoman.tag());
+
+				assertEquals(2, rule.operations().size());
+				Attribute.XmlNode setUnderwear = rule.operations().get(0);
+				assertEquals("setUnderwear", setUnderwear.tag());
+				assertEquals("bar", attrValue(setUnderwear, "name"));
+				Attribute.XmlNode nestedOp = rule.operations().get(1);
+				assertEquals("nestedOp", nestedOp.tag());
+				assertEquals(1, nestedOp.children().size());
+				Attribute.XmlNode childOp = nestedOp.children().get(0);
+				assertEquals("childOp", childOp.tag());
+				assertEquals("x", attrValue(childOp, "value"));
 			}
 		}
-		
+
 		@Test
 		void parseMixedCaseXml() throws Exception {
 			try (InputStream is = new ByteArrayInputStream(mixedCaseStormXml().getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is);
+				Storm data = StormService.parse(is);
 				assertNotNull(data);
 				assertEquals("MixedCat", data.getCategory());
-				
-				// Common sources
+
 				assertEquals(1, data.getCommonSources().size());
 				assertEquals("common/base.xml", data.getCommonSources().get(0));
-				
-				// Tasks
+
 				assertEquals(1, data.getTasks().size());
-				StormTask task = data.getTasks().get(0);
-				assertEquals("MixedTask", task.getName());
-				assertEquals("MixedClass", task.getTaskClass());
-				assertEquals("mixed.xml", task.getSources());
-				
-				// Custom selectors - attribute names preserved
+				Attribute.XmlNode task = data.getTasks().get(0);
+				assertEquals("Task", task.tag());
+				assertEquals("MixedTask", attrValue(task, "name"));
+				assertEquals("MixedClass", attrValue(task, "class"));
+				assertEquals("mixed.xml", attrValue(task, "sources"));
+
 				assertEquals(1, data.getCustomSelectors().size());
-				CustomStormSelector selector = data.getCustomSelectors().get(0);
-				assertEquals("mixedSelector", selector.getName());
-				assertEquals(1, selector.getAttributeNames().size());
-				assertTrue(selector.getAttributeNames().contains("attr1"));
-				
-				// Custom operations
+				Attribute.XmlNode selector = data.getCustomSelectors().get(0);
+				assertEquals("Selector", selector.tag());
+				assertEquals("mixedSelector", attrValue(selector, "name"));
+				assertEquals(1, selector.children().size());
+				assertEquals("attr1", attrValue(selector.children().get(0), "name"));
+
 				assertEquals(1, data.getCustomOperations().size());
-				CustomStormOperation op = data.getCustomOperations().get(0);
-				assertEquals("mixedOp", op.getName());
-				assertEquals("multiply", op.getMode());
-				assertEquals(1, op.getModAttributes().size());
-				CustomStormOperation.ModAttribute attr = op.getModAttributes().get(0);
-				assertEquals("Health", attr.getStat());
-				assertEquals(-1.0, attr.getMinMod());
-				assertEquals(2.0, attr.getMaxMod());
-				
-				// Rules - tags preserved with original casing, attributes as-is
+				Attribute.XmlNode op = data.getCustomOperations().get(0);
+				assertEquals("Operation", op.tag());
+				assertEquals("mixedOp", attrValue(op, "name"));
+				assertEquals("multiply", attrValue(op, "mode"));
+
 				assertEquals(1, data.getRules().size());
 				StormRule rule = data.getRules().get(0);
-				assertEquals("mixedRule", rule.getName());
-				assertEquals(1, rule.getSelectors().size());
-				GenericSelector hasName = rule.getSelectors().get(0);
-				// Tag is lowercased during parse (parseSelector uses toLowerCase)
-				assertEquals("HasName", hasName.getName());
-				// Attribute "Name" is preserved exactly as in XML
-				assertEquals("target", hasName.getAttributes().get("Name"));
-				assertEquals(1, rule.getOperations().size());
-				GenericOperation setUnderwear = rule.getOperations().get(0);
-				assertEquals("SetUnderwear", setUnderwear.getName());
-				assertEquals("mixedUnderwear", setUnderwear.getAttributes().get("Name"));
+				assertEquals("mixedRule", rule.name());
+				assertEquals(1, rule.selectors().size());
+				Attribute.XmlNode hasName = rule.selectors().get(0);
+				assertEquals("HasName", hasName.tag());
+				assertEquals("target", attrValue(hasName, "Name"));
+				assertEquals(1, rule.operations().size());
+				Attribute.XmlNode setUnderwear = rule.operations().get(0);
+				assertEquals("SetUnderwear", setUnderwear.tag());
+				assertEquals("mixedUnderwear", attrValue(setUnderwear, "Name"));
 			}
 		}
-		
+
 		@Test
 		void parseMalformedXmlReturnsEmptyData() throws Exception {
 			String malformed = "<?xml version=\"1.0\"?><storm><unclosed>";
 			try (InputStream is = new ByteArrayInputStream(malformed.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is);
+				Storm data = StormService.parse(is);
 				assertNotNull(data);
 				assertTrue(data.getCommonSources().isEmpty());
 				assertTrue(data.getTasks().isEmpty());
@@ -420,7 +348,7 @@ class StormServiceTest {
 				assertTrue(data.getRules().isEmpty());
 			}
 		}
-		
+
 		@Test
 		void parseTaskWithFlatSourcesAttribute() throws Exception {
 			String xml = """
@@ -432,13 +360,13 @@ class StormServiceTest {
                     </storm>
                     """;
 			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is);
+				Storm data = StormService.parse(is);
 				assertEquals(1, data.getTasks().size());
-				StormTask task = data.getTasks().get(0);
-				assertEquals("file1.xml,file2.xml", task.getSources());
+				Attribute.XmlNode task = data.getTasks().get(0);
+				assertEquals("file1.xml,file2.xml", attrValue(task, "sources"));
 			}
 		}
-		
+
 		@Test
 		void parseTaskWithChildSourceElements() throws Exception {
 			String xml = """
@@ -453,131 +381,220 @@ class StormServiceTest {
                     </storm>
                     """;
 			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-				StormData data = StormService.parse(is);
+				Storm data = StormService.parse(is);
 				assertEquals(1, data.getTasks().size());
-				StormTask task = data.getTasks().get(0);
-				assertEquals("first.xml,second.xml", task.getSources());
+				Attribute.XmlNode task = data.getTasks().get(0);
+				assertEquals("first.xml,second.xml", attrValue(task, "sources"));
 			}
 		}
-		
+
 		@Test
 		void serializeAndRoundTrip() throws Exception {
-			// Build a StormData object programmatically
-			StormData original = new StormData();
+
+			Storm original = new Storm();
 			original.setCategory("RoundTripCat");
-			
+
 			original.getCommonSources().add("common/test.xml");
-			
-			StormTask task = new StormTask();
-			task.setName("testTask");
-			task.setTaskClass("TestClass");
-			task.setComment("test comment");
-			task.setSources("src1.xml,src2.xml");
-			original.getTasks().add(task);
-			
-			CustomStormSelector cs = new CustomStormSelector();
-			cs.setName("customSel");
-			cs.setComment("selComment");
-			cs.getAttributeNames().add("attrA");
-			original.getCustomSelectors().add(cs);
-			
-			CustomStormOperation co = new CustomStormOperation();
-			co.setName("customOp");
-			co.setMode("set");
-			CustomStormOperation.ModAttribute ma = new CustomStormOperation.ModAttribute();
-			ma.setStat("StatX");
-			ma.setMinMod(1.5);
-			ma.setMaxMod(2.5);
-			co.getModAttributes().add(ma);
-			original.getCustomOperations().add(co);
-			
-			StormRule rule = new StormRule();
-			rule.setName("testRule");
-			rule.setComment("ruleComment");
-			rule.setMode("add");
-			
-			GenericSelector andSel = new GenericSelector("and");
-			GenericSelector hasName = new GenericSelector("hasName");
-			hasName.getAttributes().put("name", "target");
-			andSel.getChildren().add(hasName);
-			rule.getSelectors().add(andSel);
-			
-			GenericOperation setOp = new GenericOperation("setUnderwear");
-			setOp.getAttributes().put("name", "underwearItem");
-			rule.getOperations().add(setOp);
-			
+
+			Map<String, String> taskAttrs = new LinkedHashMap<>();
+			taskAttrs.put("name", "testTask");
+			taskAttrs.put("class", "TestClass");
+			taskAttrs.put("comment", "test comment");
+			taskAttrs.put("sources", "src1.xml,src2.xml");
+			original.getTasks().add(Storm.node("task", taskAttrs));
+
+			Map<String, String> selAttrs = new LinkedHashMap<>();
+			selAttrs.put("name", "customSel");
+			selAttrs.put("comment", "selComment");
+			Attribute.XmlNode selNode = Storm.node("selector", selAttrs);
+			Map<String, String> attrAttrs = new LinkedHashMap<>();
+			attrAttrs.put("name", "attrA");
+			selNode.children().add(Storm.node("attribute", attrAttrs));
+			original.getCustomSelectors().add(selNode);
+
+			Map<String, String> opAttrs = new LinkedHashMap<>();
+			opAttrs.put("name", "customOp");
+			opAttrs.put("mode", "set");
+			Attribute.XmlNode opNode = Storm.node("operation", opAttrs);
+			Map<String, String> modAttrs = new LinkedHashMap<>();
+			modAttrs.put("stat", "StatX");
+			modAttrs.put("minMod", "1.5");
+			modAttrs.put("maxMod", "2.5");
+			opNode.children().add(Storm.node("attribute", modAttrs));
+			original.getCustomOperations().add(opNode);
+
+			Map<String, String> ruleAttrs = new LinkedHashMap<>();
+			ruleAttrs.put("name", "testRule");
+			ruleAttrs.put("comment", "ruleComment");
+			ruleAttrs.put("mode", "add");
+			Attribute.XmlNode ruleAttrsNode = Storm.node("rule", ruleAttrs);
+
+			Attribute.XmlNode andSel = Storm.node("and");
+			Map<String, String> hasNameAttrs = new LinkedHashMap<>();
+			hasNameAttrs.put("name", "target");
+			andSel.children().add(Storm.node("hasName", hasNameAttrs));
+
+			Map<String, String> setOpAttrs = new LinkedHashMap<>();
+			setOpAttrs.put("name", "underwearItem");
+			Attribute.XmlNode setOp = Storm.node("setUnderwear", setOpAttrs);
+
+			StormRule rule = new StormRule(ruleAttrsNode,
+					List.of(andSel),
+					List.of(setOp));
 			original.getRules().add(rule);
-			
-			// Serialize
+
 			String serialized = StormService.serialize(original);
 			assertNotNull(serialized);
-			serialized = serialized.replaceAll(">\\s+<", "><");
-			
-			// Check for expected elements
-			assertTrue(serialized.contains("<storm"), "missing <storm root");
-			assertTrue(serialized.contains("category=\"RoundTripCat\""), "missing category attribute");
-			assertTrue(serialized.contains("<common>"), "missing <common>");
-			assertTrue(serialized.contains("<source path=\"common/test.xml\"/>"), "missing common source");
-			assertTrue(serialized.contains("name=\"testTask\""), "missing task name");
-			assertTrue(serialized.contains("class=\"TestClass\""), "missing task class");
-			assertTrue(serialized.contains("comment=\"test comment\""), "missing task comment");
-			assertTrue(serialized.contains("<source path=\"src1.xml\"/>"), "missing src1");
-			assertTrue(serialized.contains("<source path=\"src2.xml\"/>"), "missing src2");
-			assertTrue(serialized.contains("<customSelectors>"), "missing customSelectors");
-			assertTrue(serialized.contains("name=\"customSel\""), "missing customSel name");
-			assertTrue(serialized.contains("comment=\"selComment\""), "missing selComment");
-			assertTrue(serialized.contains("<attribute name=\"attrA\"/>"), "missing attrA");
-			assertTrue(serialized.contains("<customOperations>"), "missing customOperations");
-			assertTrue(serialized.contains("name=\"customOp\""), "missing customOp");
-			assertTrue(serialized.contains("mode=\"set\""), "missing mode=set");
-			assertTrue(serialized.contains("stat=\"StatX\""), "missing StatX");
-			assertTrue(serialized.contains("minMod=\"1.5\""), "missing minMod");
-			assertTrue(serialized.contains("maxMod=\"2.5\""), "missing maxMod");
-			assertTrue(serialized.contains("name=\"testRule\""), "missing testRule");
-			assertTrue(serialized.contains("mode=\"add\""), "missing mode=add");
-			assertTrue(serialized.contains("comment=\"ruleComment\""), "missing ruleComment");
-			assertTrue(serialized.contains("<selectors><and><hasName name=\"target\"/></and></selectors>"), "missing selector tree");
-			assertTrue(serialized.contains("<operations><setUnderwear name=\"underwearItem\"/></operations>"), "missing operations");
-			
-			// Parse back
+
+			String normalized = serialized.replaceAll(">\\s+<", "><");
+
+			assertTrue(normalized.contains("<storm"), "missing <storm root");
+			assertTrue(normalized.contains("category=\"RoundTripCat\""), "missing category attribute");
+			assertTrue(normalized.contains("<common>"), "missing <common>");
+			assertTrue(normalized.contains("<source path=\"common/test.xml\"/>"), "missing common source");
+			assertTrue(normalized.contains("name=\"testTask\""), "missing task name");
+			assertTrue(normalized.contains("class=\"TestClass\""), "missing task class");
+			assertTrue(normalized.contains("comment=\"test comment\""), "missing task comment");
+			assertTrue(normalized.contains("<source path=\"src1.xml\"/>"), "missing src1");
+			assertTrue(normalized.contains("<source path=\"src2.xml\"/>"), "missing src2");
+			assertTrue(normalized.contains("<customSelectors>"), "missing customSelectors");
+			assertTrue(normalized.contains("name=\"customSel\""), "missing customSel name");
+			assertTrue(normalized.contains("comment=\"selComment\""), "missing selComment");
+			assertTrue(normalized.contains("<attribute name=\"attrA\"/>"), "missing attrA");
+			assertTrue(normalized.contains("<customOperations>"), "missing customOperations");
+			assertTrue(normalized.contains("name=\"customOp\""), "missing customOp");
+			assertTrue(normalized.contains("mode=\"set\""), "missing mode=set");
+			assertTrue(normalized.contains("stat=\"StatX\""), "missing StatX");
+			assertTrue(normalized.contains("minMod=\"1.5\""), "missing minMod");
+			assertTrue(normalized.contains("maxMod=\"2.5\""), "missing maxMod");
+			assertTrue(normalized.contains("name=\"testRule\""), "missing testRule");
+			assertTrue(normalized.contains("mode=\"add\""), "missing mode=add");
+			assertTrue(normalized.contains("comment=\"ruleComment\""), "missing ruleComment");
+			assertTrue(normalized.contains("<and>"), "missing and selector");
+			assertTrue(normalized.contains("<hasName name=\"target\"/>"), "missing hasName");
+			assertTrue(normalized.contains("<setUnderwear name=\"underwearItem\"/>"), "missing setUnderwear");
+
 			try (InputStream is = new ByteArrayInputStream(serialized.getBytes(StandardCharsets.UTF_8))) {
-				StormData parsed = StormService.parse(is);
+				Storm parsed = StormService.parse(is);
 				assertEquals(original.getCategory(), parsed.getCategory());
 				assertEquals(original.getCommonSources(), parsed.getCommonSources());
+
 				assertEquals(original.getTasks().size(), parsed.getTasks().size());
-				StormTask parsedTask = parsed.getTasks().get(0);
-				assertEquals(task.getName(), parsedTask.getName());
-				assertEquals(task.getTaskClass(), parsedTask.getTaskClass());
-				assertEquals(task.getComment(), parsedTask.getComment());
-				assertEquals(task.getSources(), parsedTask.getSources());
+				Attribute.XmlNode parsedTask = parsed.getTasks().get(0);
+				assertEquals("testTask", attrValue(parsedTask, "name"));
+				assertEquals("TestClass", attrValue(parsedTask, "class"));
+				assertEquals("test comment", attrValue(parsedTask, "comment"));
+				assertEquals("src1.xml,src2.xml", attrValue(parsedTask, "sources"));
+
 				assertEquals(original.getCustomSelectors().size(), parsed.getCustomSelectors().size());
-				assertEquals(original.getCustomSelectors().get(0).getName(),
-						parsed.getCustomSelectors().get(0).getName());
 				assertEquals(original.getCustomOperations().size(), parsed.getCustomOperations().size());
-				assertEquals(original.getCustomOperations().get(0).getName(),
-						parsed.getCustomOperations().get(0).getName());
 				assertEquals(original.getRules().size(), parsed.getRules().size());
+
 				StormRule parsedRule = parsed.getRules().get(0);
-				assertEquals(rule.getName(), parsedRule.getName());
-				assertEquals(rule.getComment(), parsedRule.getComment());
-				assertEquals(rule.getMode(), parsedRule.getMode());
-				assertEquals(rule.getSelectors().size(), parsedRule.getSelectors().size());
-				assertEquals(rule.getOperations().size(), parsedRule.getOperations().size());
+				assertEquals(rule.name(), parsedRule.name());
+				assertEquals(rule.comment(), parsedRule.comment());
+				assertEquals(rule.mode(), parsedRule.mode());
+				assertEquals(rule.selectors().size(), parsedRule.selectors().size());
+				assertEquals(rule.operations().size(), parsedRule.operations().size());
+			}
+		}
+
+		@Test
+		void serializeSkipsUnderscorePrefixedAttributes() throws Exception {
+			Storm original = new Storm();
+
+			Map<String, String> opAttrs = new LinkedHashMap<>();
+			opAttrs.put("name", "testOp");
+			opAttrs.put("_isStat", "true");
+			opAttrs.put("_isSpan", "false");
+			Attribute.XmlNode opNode = Storm.node("setUnderwear", opAttrs);
+
+			Map<String, String> ruleAttrs = new LinkedHashMap<>();
+			ruleAttrs.put("name", "testRule");
+			Attribute.XmlNode ruleAttrsNode = Storm.node("rule", ruleAttrs);
+
+			StormRule rule = new StormRule(ruleAttrsNode, List.of(), List.of(opNode));
+			original.getRules().add(rule);
+
+			String serialized = StormService.serialize(original);
+
+			assertFalse(serialized.contains("_isStat"), "UI-only flag leaked to XML");
+			assertFalse(serialized.contains("_isSpan"), "UI-only flag leaked to XML");
+			assertTrue(serialized.contains("name=\"testOp\""), "valid attribute missing");
+		}
+
+		@Test
+		void testRoundtrip() throws Exception {
+			try (InputStream is = new ByteArrayInputStream(realStormXml().getBytes(StandardCharsets.UTF_8))) {
+				Storm data = StormService.parse(is);
+				String serialized = StormService.serialize(data);
+
+				try (InputStream is2 = new ByteArrayInputStream(serialized.getBytes(StandardCharsets.UTF_8))) {
+					Storm reparsed = StormService.parse(is2);
+
+					assertEquals(data.getRules().size(), reparsed.getRules().size());
+					for (int i = 0; i < data.getRules().size(); i++) {
+						StormRule origRule = data.getRules().get(i);
+						StormRule newRule = reparsed.getRules().get(i);
+						assertEquals(origRule.name(), newRule.name());
+						assertEquals(origRule.selectors().size(), newRule.selectors().size());
+						assertEquals(origRule.operations().size(), newRule.operations().size());
+					}
+				}
+			}
+		}
+
+		@Test
+		void parseRulesWithConditionsAlias() throws Exception {
+			String xml = """
+                    <?xml version="1.0"?>
+                    <storm>
+                        <rules>
+                            <rule name="testRule">
+                                <conditions>
+                                    <isMan/>
+                                </conditions>
+                                <operations>
+                                    <setUnderwear name="test"/>
+                                </operations>
+                            </rule>
+                        </rules>
+                    </storm>
+                    """;
+			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+				Storm data = StormService.parse(is);
+				assertEquals(1, data.getRules().size());
+				StormRule rule = data.getRules().get(0);
+				assertEquals(1, rule.selectors().size());
+				assertEquals("isMan", rule.selectors().get(0).tag());
+			}
+		}
+
+		@Test
+		void parseSourceWithTextContent() throws Exception {
+			String xml = """
+                    <?xml version="1.0"?>
+                    <storm>
+                        <common>
+                            <source>path/from/text.xml</source>
+                        </common>
+                    </storm>
+                    """;
+			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+				Storm data = StormService.parse(is);
+				assertEquals(1, data.getCommonSources().size());
+				assertEquals("path/from/text.xml", data.getCommonSources().get(0));
 			}
 		}
 	}
-	
-	// -------------------------------------------------------------------------
-	// Helper methods for the indexing tests (these would be in the actual service)
-	// -------------------------------------------------------------------------
-	
+
 	static String entryToId(String entryName) {
 		if (entryName.endsWith(".xml")) {
 			return entryName.substring(0, entryName.length() - 4);
 		}
 		return entryName;
 	}
-	
+
 	static String categoryFromPath(String path) {
 		String prefix = "Libs/Storm/";
 		int idx = path.toLowerCase().indexOf(prefix.toLowerCase());
@@ -589,7 +606,7 @@ class StormServiceTest {
 		}
 		return null;
 	}
-	
+
 	static String idToFileName(String id) {
 		if (id.endsWith(".xml")) {
 			int lastSlash = id.lastIndexOf('/');
@@ -599,16 +616,16 @@ class StormServiceTest {
 		String base = lastSlash >= 0 ? id.substring(lastSlash + 1) : id;
 		return base + ".xml";
 	}
-	
+
 	@Nested
 	class StormServiceHelpersTest {
-		
+
 		@Test
 		void entryToIdRemovesExtension() {
 			assertEquals("Libs/Storm/Combat/melee", entryToId("Libs/Storm/Combat/melee.xml"));
 			assertEquals("path/without/dot", entryToId("path/without/dot"));
 		}
-		
+
 		@Test
 		void categoryFromPathExtractsCorrectly() {
 			assertEquals("Combat", categoryFromPath("Libs/Storm/Combat/melee.xml"));
@@ -617,12 +634,122 @@ class StormServiceTest {
 			assertNull(categoryFromPath("some/other/path.xml"));
 			assertEquals("combat", categoryFromPath("libs/storm/combat/melee.xml"));
 		}
-		
+
 		@Test
 		void idToFileNameConvertsCorrectly() {
 			assertEquals("melee.xml", idToFileName("Libs/Storm/Combat/melee"));
 			assertEquals("melee.xml", idToFileName("Libs/Storm/Combat/melee.xml"));
 			assertEquals("simple.xml", idToFileName("simple"));
+		}
+	}
+
+	@Nested
+	class StormModelTest {
+
+		@Test
+		void stormRuleAccessorsWork() {
+			Map<String, String> attrs = new LinkedHashMap<>();
+			attrs.put("name", "testRule");
+			attrs.put("mode", "override");
+			attrs.put("comment", "test comment");
+			Attribute.XmlNode attrsNode = Storm.node("rule", attrs);
+
+			StormRule rule = new StormRule(attrsNode, List.of(), List.of());
+
+			assertEquals("testRule", rule.name());
+			assertEquals("override", rule.mode());
+			assertEquals("test comment", rule.comment());
+		}
+
+		@Test
+		void stormRuleAccessorsReturnEmptyForMissingAttrs() {
+			Attribute.XmlNode attrsNode = Storm.node("rule");
+			StormRule rule = new StormRule(attrsNode, List.of(), List.of());
+
+			assertEquals("", rule.name());
+			assertEquals("", rule.mode());
+			assertEquals("", rule.comment());
+		}
+
+		@Test
+		void isStormLoadedReturnsCorrectly() {
+			Storm empty = new Storm();
+			assertFalse(empty.isStormLoaded());
+
+			Storm withRule = new Storm();
+			withRule.getRules().add(new StormRule(Storm.node("rule"), List.of(), List.of()));
+			assertTrue(withRule.isStormLoaded());
+
+			Storm withTask = new Storm();
+			withTask.getTasks().add(Storm.node("task"));
+			assertTrue(withTask.isStormLoaded());
+
+			Storm withCommon = new Storm();
+			withCommon.getCommonSources().add("test.xml");
+			assertTrue(withCommon.isStormLoaded());
+		}
+
+		@Test
+		void isStatOpAndIsSpanOpWork() {
+			Map<String, String> attrsWithFlags = new LinkedHashMap<>();
+			attrsWithFlags.put("_isStat", "true");
+			attrsWithFlags.put("_isSpan", "false");
+			Attribute.XmlNode opNode = Storm.node("operation", attrsWithFlags);
+
+			assertTrue(Storm.isStatOp(opNode));
+			assertFalse(Storm.isSpanOp(opNode));
+
+			Attribute.XmlNode noFlagsNode = Storm.node("operation");
+			assertFalse(Storm.isStatOp(noFlagsNode));
+			assertFalse(Storm.isSpanOp(noFlagsNode));
+		}
+
+		@Test
+		void nodeFactoryMethodsWork() {
+			Map<String, String> attrs = new LinkedHashMap<>();
+			attrs.put("key", "value");
+
+			Attribute.XmlNode withAttrs = Storm.node("test", attrs);
+			assertEquals("test", withAttrs.tag());
+			assertEquals(1, withAttrs.attributes().size());
+			assertEquals("value", attrValue(withAttrs, "key"));
+			assertTrue(withAttrs.children().isEmpty());
+
+			Attribute.XmlNode withoutAttrs = Storm.node("leaf");
+			assertEquals("leaf", withoutAttrs.tag());
+			assertTrue(withoutAttrs.attributes().isEmpty());
+			assertTrue(withoutAttrs.children().isEmpty());
+		}
+	}
+
+	@Nested
+	class DomSerializationTest {
+
+		@Test
+		void serializeToDocument() throws Exception {
+			Storm storm = new Storm();
+			storm.setCategory("DomTest");
+
+			Document doc = DocumentBuilderFactory.newInstance()
+					.newDocumentBuilder().newDocument();
+
+			org.w3c.dom.Element element = StormService.serialize(storm, doc);
+
+			assertEquals("storm", element.getTagName());
+			assertEquals("DomTest", element.getAttribute("category"));
+		}
+
+		@Test
+		void serializeEmptyStormToDocument() throws Exception {
+			Storm storm = new Storm();
+			Document doc = DocumentBuilderFactory.newInstance()
+					.newDocumentBuilder().newDocument();
+
+			org.w3c.dom.Element element = StormService.serialize(storm, doc);
+
+			assertEquals("storm", element.getTagName());
+			assertFalse(element.hasAttribute("category"));
+			assertEquals(0, element.getChildNodes().getLength());
 		}
 	}
 }
