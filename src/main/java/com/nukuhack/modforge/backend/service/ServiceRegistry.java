@@ -8,20 +8,15 @@ import lombok.extern.slf4j.Slf4j;
  * Use as the single entry-point for bootstrapping the application.
  */
 @Slf4j
+@NonNull
 public final class ServiceRegistry {
-	@NonNull
 	public final UserConfig userConfig;
-	@NonNull
 	public final ConfigService configService;
-	@NonNull
 	public final LocalService localService;
-	@NonNull
 	public final ItemService itemService;
-	@NonNull
 	public final IconService iconService;
-	@NonNull
 	public final ModService modService;
-	
+
 	public ServiceRegistry() {
 		userConfig = new UserConfig.UserConfigImpl();
 		configService = new ConfigService(userConfig);
@@ -53,6 +48,11 @@ public final class ServiceRegistry {
 		itemService.init();
 		
 		modService.init();
+	}
+
+	public void shutdown() {
+		userConfig.save();
+
 	}
 }
 

@@ -42,9 +42,14 @@ public interface ModItem {
 	void addAttribute(final @NonNull Collection<Attribute> attributes);
 	
 	@NonNull Optional<Attribute> findAttr(final @NonNull String candidate);
-	
+
 	default @NonNull List<Attribute.StringAttribute> getLangAttributes() {
-		return getAttributes().stream().filter(a -> LANG_ATTR_HINTS.contains(a.getName())).map(a -> (Attribute.StringAttribute) a).toList();
+		var result = new ArrayList<Attribute.StringAttribute>();
+		for (var attr : getAttributes()) {
+			if (attr instanceof Attribute.StringAttribute sa && LANG_ATTR_HINTS.contains(attr.getName()))
+				result.add(sa);
+		}
+		return result;
 	}
 	
 	/**

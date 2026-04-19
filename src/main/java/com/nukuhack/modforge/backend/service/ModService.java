@@ -16,7 +16,9 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,22 +30,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @NonNull
-public final class ModService {
+public record ModService(UserConfig userConfig, ConfigService configService, LocalService localService, ItemService itemService, IconService iconService) {
 	public static final List<ModData> modCollection = new ArrayList<>();
-	public final UserConfig userConfig;
-	public final ConfigService configService;
-	public final LocalService localService;
-	public final ItemService itemService;
-	public final IconService iconService;
-	
-	public ModService(@NonNull ServiceRegistry registry) {
-		this.itemService = registry.itemService;
-		this.iconService = registry.iconService;
-		this.userConfig = registry.userConfig;
-		this.localService = registry.localService;
-		this.configService = registry.configService;
+
+	public ModService(@NonNull ServiceRegistry r) {
+		this(r.userConfig, r.configService, r.localService, r.itemService, r.iconService);
 	}
-	
+
 	public static ModData parseModDescription(Document doc) {
 		final var m = new ModData(
 				textOf(doc, "modid"),
@@ -54,30 +47,30 @@ public final class ModService {
 				textOf(doc, "created_on"),
 				"true".equalsIgnoreCase(textOf(doc, "modifies_level"))
 		);
-		
+
 		var list = new LinkedList<String>();
 		var versions = doc.getElementsByTagName("kcd_version");
 		for (int i = 0; i < versions.getLength(); i++)
 			list.add(versions.item(i).getTextContent().trim());
 		m.setSupportsGameVersions(list);
-		
+
 		return m;
 	}
-	
+
 	public static String textOf(Document doc, String tag) {
 		var nl = doc.getElementsByTagName(tag);
 		return nl.getLength() > 0 ? nl.item(0).getTextContent().trim() : "";
 	}
-	
+
 	private static void appendText(Document doc, Element parent, String tag, String text) {
 		var el = doc.createElement(tag);
 		el.setTextContent(text == null ? "" : text);
 		parent.appendChild(el);
 	}
-	
+
 	/**
 	 * @param gameDir The game directory path
-	 * @param mod           The mod description
+	 * @param mod     The mod description
 	 * @return boolean - succeed
 	 */
 	public static boolean writeModAsXml(String gameDir, ModData mod) {
@@ -85,15 +78,15 @@ public final class ModService {
 		var manifest = Path.of(rootPath, "mod.manifest");
 		try {
 			Files.createDirectories(Util.dataDir(rootPath));
-			
+
 			var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			var doc = docBuilder.newDocument();
-			
+
 			var root = doc.createElement("kcd_mod");
 			root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
 			root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			doc.appendChild(root);
-			
+
 			var info = doc.createElement("info");
 			appendText(doc, info, "name", mod.getName());
 			appendText(doc, info, "description", mod.getDescription());
@@ -103,26 +96,26 @@ public final class ModService {
 			appendText(doc, info, "modid", mod.getId());
 			appendText(doc, info, "modifies_level", String.valueOf(mod.isModifiesLevel()).toLowerCase(Locale.ROOT));
 			root.appendChild(info);
-			
+
 			var supports = doc.createElement("supports");
 			for (var v : mod.getSupportsGameVersions())
 				appendText(doc, supports, "kcd_version", v);
 			root.appendChild(supports);
-			
+
 			var tf = TransformerFactory.newInstance().newTransformer();
 			tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			tf.setOutputProperty(OutputKeys.INDENT, "yes");
-			
-			var newXmlWriter = new java.io.StringWriter();
+
+			var newXmlWriter = new StringWriter();
 			tf.transform(new DOMSource(doc), new StreamResult(newXmlWriter));
 			var newContent = newXmlWriter.toString();
-			
+
 			if (Files.exists(manifest)) {
 				var existingContent = Files.readString(manifest, StandardCharsets.UTF_8);
-				
+
 				var normalizedNew = newContent.replaceAll(">\\s+<", ">\n<");
 				var normalizedExisting = existingContent.replaceAll(">\\s+<", ">\n<");
-				
+
 				if (normalizedNew.equals(normalizedExisting)) {
 					log.info("Manifest already exists with identical content: {}", manifest);
 					return true;
@@ -130,11 +123,11 @@ public final class ModService {
 					log.info("Manifest exists but content differs, overwriting: {}", manifest);
 				}
 			}
-			
-			try (var fileWriter = new java.io.FileWriter(manifest.toFile(), StandardCharsets.UTF_8)) {
+
+			try (var fileWriter = new FileWriter(manifest.toFile(), StandardCharsets.UTF_8)) {
 				fileWriter.write(newContent);
 			}
-			
+
 			log.info("Manifest written: {}", manifest);
 			return true;
 		} catch (Exception e) {
@@ -142,28 +135,28 @@ public final class ModService {
 			return false;
 		}
 	}
-	
+
 	public static ModData loadMod(Path modPath) {
 		var mod = loadModManifest(modPath);
-		
+
 		if (mod == null)
 			return null;
 		mod.setConfig(ConfigService.loadModConfig(mod.getId(), modPath));
-		
+
 		var dataPath = Util.dataDir(modPath);
 		mod.setLocal(LocalService.loadLocalization(String.valueOf(modPath)));
 		mod.setItems(ItemService.loadItems(dataPath));
 		mod.setIcon(IconService.loadModIcons(dataPath));
-		
+
 		return mod;
 	}
-	
+
 	/**
 	 * Enhanced export method that packs both Data and Localization.
 	 * This matches the extraction logic (one language folder -> one PAK).
 	 */
 	public static void exportMod(ModData mod, String gameDir) {
-		
+
 		/**
 		 * Write items to XML files; returns the set of PAK stems that were written
 		 */
@@ -185,18 +178,18 @@ public final class ModService {
 		 * Create Localization PAKs (one per language)
 		 */
 		packLocalization(gameDir, mod);
-		
+
 		log.info("Mod export completed: {}", mod.getId());
 	}
-	
+
 	/**
 	 * Pack each staging folder into its own PAK file and then delete the staging dir.
 	 * <p/>
 	 * Layout written by ItemService.writeModItems:
-	 *   Mods/<modId>/Data/_stage/<pakStem>/<inner-dir-structure>/
+	 * Mods/<modId>/Data/_stage/<pakStem>/<inner-dir-structure>/
 	 * <p/>
 	 * Each <pakStem> becomes:
-	 *   Mods/<modId>/Data/<pakStem>.pak
+	 * Mods/<modId>/Data/<pakStem>.pak
 	 * <p/>
 	 * The _stage folder is removed on success.
 	 */
@@ -206,9 +199,9 @@ public final class ModService {
 			log.info("No items for mod {} – skipping PAK creation.", id);
 			return;
 		}
-		
+
 		var stageRoot = Util.modStaging(gameDir, id);
-		if (! Files.exists(stageRoot)) {
+		if (!Files.exists(stageRoot)) {
 			log.warn("Staging folder not found for mod {} – skipping PAK creation.", id);
 			return;
 		}
@@ -217,10 +210,10 @@ public final class ModService {
 			log.warn("No data has been written {} – skipping PAK creation.", id);
 			return;
 		}
-		
+
 		var allOk = true;
 		for (var stageDir : pakList) {
-			if (! Files.exists(stageDir.toPath())) {
+			if (!Files.exists(stageDir.toPath())) {
 				log.info("Staging dir missing for PAK '{}' – skipping.", stageDir);
 				continue;
 			}
@@ -234,13 +227,13 @@ public final class ModService {
 				allOk = false;
 			}
 		}
-		
+
 		IOUtil.deleteRecursively(stageRoot);
-		
+
 		if (allOk)
 			log.trace("All PAKs created for mod {} ({} PAK(s)).", id, pakList.length);
 	}
-	
+
 	/**
 	 * Pack localization folders into PAK files.
 	 * Each language folder inside Mods/<modId>/Localization/ becomes its own PAK file
@@ -254,7 +247,7 @@ public final class ModService {
 			log.info("No localizations to pack for mod {}", mod.getId());
 			return;
 		}
-		
+
 		var success = new AtomicBoolean(true);
 		var modRoot = Util.modFolder(gameDir, mod.getId());
 		var langPaks = Util.allLocPaths(modRoot).stream().map(File::new).filter(File::exists).filter(File::isDirectory).toList();
@@ -262,13 +255,13 @@ public final class ModService {
 			log.info("No Localization folder found for folder {}", modRoot);
 			return;
 		}
-		
+
 		langPaks.forEach(file -> {
 			var langFolder = file.toPath();
-			
+
 			var destPak = Path.of(langFolder + Util.COMP_FORMAT);
 			var ok = IOUtil.packFolder(langFolder, destPak, null, true);
-			
+
 			if (ok) {
 				IOUtil.deleteRecursively(langFolder);
 			} else {
@@ -276,7 +269,7 @@ public final class ModService {
 				success.set(false);
 			}
 		});
-		
+
 		success.get();
 	}
 
@@ -284,7 +277,7 @@ public final class ModService {
 		var dir = modPath.getFileName();
 		var m = new ModData();
 		if (dir == null) {
-			m.setId("mod_"+Util.randomString(32));
+			m.setId("mod_" + Util.randomString(32));
 			return m;
 		}
 		var name = dir.toString();
@@ -292,19 +285,19 @@ public final class ModService {
 		m.setName(name);
 		return m;
 	}
-	
+
 	public static ModData loadModManifest(Path modPath) {
 		var manifest = modPath.resolve("mod.manifest");
-		
-		if (! Files.exists(manifest)) {
+
+		if (!Files.exists(manifest)) {
 			log.warn("'mod.manifest' not found, fallback to directory name");
 			return createFromPath(modPath);
 		}
-		
+
 		try {
 			var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			var xmlDoc = docBuilder.parse(manifest.toFile());
-			
+
 			var mod = parseModDescription(xmlDoc);
 			if (mod.getId().isBlank())
 				return null;
@@ -315,14 +308,14 @@ public final class ModService {
 			return createFromPath(modPath);
 		}
 	}
-	
+
 	public void init() {
 		var gameDir = userConfig.getGameDir();
 		if (gameDir.isBlank()) {
 			log.warn("Game directory not configured - skipping mod collection scan.");
 			return;
 		}
-		
+
 		var modsFolder = Util.modFolder(gameDir);
 		try {
 			Files.createDirectories(modsFolder);
@@ -337,8 +330,8 @@ public final class ModService {
 				var mod = loadMod(modPath);
 				if (mod == null)
 					log.warn("Cannot read mod at {}", modPath);
-				
-				if (! modCollection.contains(mod))
+
+				if (!modCollection.contains(mod))
 					modCollection.add(mod);
 			});
 		} catch (IOException e) {

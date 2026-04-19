@@ -58,9 +58,22 @@ public class Main {
 				}
 				var registry = Singleton.getRegistry();
 				var window = new MainWindow(registry);
-				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				Singleton.setMainWindow(window);
 				window.setVisible(true);
+
+				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				window.addWindowListener(new java.awt.event.WindowAdapter() {
+					@Override
+					public void windowClosing(java.awt.event.WindowEvent e) {
+						log.info("Shutting down...");
+						try {
+							registry.shutdown();
+						} catch (Exception ex) {
+							log.warn("Error during shutdown", ex);
+						}
+						System.exit(0);
+					}
+				});
 			}));
 		});
 	}

@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
 import java.text.MessageFormat;
 import java.util.Arrays;
 
@@ -156,7 +157,9 @@ public class MainWindow extends JFrame {
 			else
 				setExtendedState(MAXIMIZED_BOTH);
 		}));
-		controls.add(winCtrlBtn("✕", DANGER, e -> dispose()));
+		controls.add(winCtrlBtn("✕", DANGER, e ->
+				dispatchEvent(new WindowEvent(MainWindow.this, WindowEvent.WINDOW_CLOSING))
+		));
 		
 		bar.add(title, BorderLayout.WEST);
 		bar.add(controls, BorderLayout.EAST);
@@ -263,7 +266,7 @@ public class MainWindow extends JFrame {
 		ITEM_EDIT("ui_item_edit", ItemEdit.class),
 		LANG_EDIT("ui_localization_edit", LangEdit.class),
 		SETTINGS("ui_settings", SettingsPage.class),
-		LANG("ui_localization", LocalizationPage.class),
+		LANG("ui_localization", LangPage.class),
 		ARCHIVE("ui_archive_title", ArchivePage.class),
 		CONVERT("ui_image_convert", ConvertPage.class),
 		KCD_CONVERTER("ui_kcd_title", KCDConverterPage.class),
