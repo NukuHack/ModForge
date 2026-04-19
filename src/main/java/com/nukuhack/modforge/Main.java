@@ -46,7 +46,7 @@ public class Main {
 		LocalService.loadUILocalizations();
 		SwingUtilities.invokeLater(() -> {
 			// Show loading splash while services boot
-			final var splash = new LoadingScreen();
+			var splash = new LoadingScreen();
 			splash.setVisible(true);
 			
 			// Boot services off the EDT
@@ -56,9 +56,9 @@ public class Main {
 					JOptionPane.showMessageDialog(null, "Startup error:\n" + ex.getMessage(), "ModForge – Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				//  should be made a bit nicer, for now most of the stuff is stored inside a String - should make data storage for more specific attributes
-				final var registry = Singleton.getRegistry();
-				final MainWindow window = new MainWindow(registry);
+				var registry = Singleton.getRegistry();
+				var window = new MainWindow(registry);
+				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				Singleton.setMainWindow(window);
 				window.setVisible(true);
 			}));
