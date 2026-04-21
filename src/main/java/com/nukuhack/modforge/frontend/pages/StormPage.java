@@ -833,10 +833,8 @@ public class StormPage extends BasePage {
         }
 
         private static XmlNode deepCopy(XmlNode n) {
-            List<Attribute> attrs = n.attributes().stream()
-                    .map(Attribute::deepClone).collect(Collectors.toCollection(ArrayList::new));
-            List<XmlNode> children = n.children().stream()
-                    .map(RuleWizardDialog::deepCopy).collect(Collectors.toCollection(ArrayList::new));
+            var attrs = n.attributes().stream().map(Attribute::deepClone).collect(Collectors.toCollection(ArrayList::new));
+            var children = n.children().stream().map(RuleWizardDialog::deepCopy).collect(Collectors.toCollection(ArrayList::new));
             return new XmlNode(n.tag(), attrs, children);
         }
 
@@ -1203,19 +1201,13 @@ public class StormPage extends BasePage {
                 tagF.setText(sel.tag());
                 tagF.setToolTipText("Selector tag name");
 
-                tagF.getDocument().addDocumentListener(simpleListener(() -> {
-
-                    replaceNodeTag(sel, tagF.getText().trim(), parentList);
-                }));
+                tagF.getDocument().addDocumentListener(simpleListener(() -> replaceNodeTag(sel, tagF.getText().trim(), parentList)));
                 row.add(tagF);
 
                 int attrCount = (int) sel.attributes().stream()
                         .filter(a -> !a.getName().startsWith("_")).count();
-                JButton attrBtn = miniBtn("attrs [" + attrCount + "]", C_ATTR_KEY, e -> {
-                    openAttributeEditor(sel, "Selector Attributes — <" + sel.tag() + ">", () -> {
-
-                    });
-                });
+                JButton attrBtn = miniBtn("attrs [" + attrCount + "]", C_ATTR_KEY, e ->
+                        openAttributeEditor(sel, "Selector Attributes — <" + sel.tag() + ">", () -> {}));
                 row.add(attrBtn);
             }
 
@@ -1345,7 +1337,7 @@ public class StormPage extends BasePage {
                 attrList.removeAll();
                 keyFields.clear();
                 valFields.clear();
-                for (Attribute attr : node.attributes()) {
+                for (var attr : node.attributes()) {
                     if (attr.getName().startsWith("_")) continue;
 
                     addAttrEditorRow(attrList, keyFields, valFields,

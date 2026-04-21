@@ -22,7 +22,7 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 /**
  * Localization edit page.
- *
+ * <p>
  * Layout per entry (vertical, generous space):
  *   ┌──────────────────────────────────────┐
  *   │ ATTRIBUTE NAME (muted label)         │

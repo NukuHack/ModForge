@@ -5,16 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * KCD2 texture format profiles.
- *
+ * <p>
  * Each enum value represents a logical texture "slot" in Kingdom Come: Deliverance 2
  * and carries:
  *  - the DDS target format the game expects,
  *  - whether alpha is meaningful in that slot,
  *  - a human-readable description used in UI/log output.
- *
+ * <p>
  * Detection rules (applied by {@link TextureImporter}) are based on the
  * filename suffix conventions used by Warhorse Studios:
- *
+ * <p>
  *  _dif / _d      → DIFFUSE        (color map, sRGB, BC1 no-alpha or BC3 with alpha)
  *  _nrm / _n      → NORMAL         (tangent-space normal, BC5)
  *  _spec / _s     → SPECULAR       (specular / roughness, BC5 or BC1)

@@ -33,15 +33,15 @@ public class Dds {
 	// struct size is always 124
 	private static final int STRUCT_SIZE = 124;
 	
-	public int size = STRUCT_SIZE;
+	public final int size = STRUCT_SIZE;
 	public int flags;
 	public int height;
 	public int width;
 	public int pitchOrLinearSize;
 	public int depth;
 	public int mipMapCount;
-	public int[] reserved1 = new int[11];
-	public Pixel pixel = new Pixel();
+	public final int[] reserved1 = new int[11];
+	public final Pixel pixel = new Pixel();
 	public int caps;
 	public int caps2;
 	public int caps3;
@@ -152,7 +152,7 @@ public class Dds {
 	 *
 	 * <p>KCD splits textures into a base .dds file (highest mip) plus numbered
 	 * companion files (.dds.1, .dds.2, …) for lower MIPS, and an optional
-	 * .dds.a alpha file with matching .dds.a.1, .dds.a.2, … companions.
+	 * `.dds.a` alpha file with matching .dds.a.1, .dds.a.2, … companions.
 	 * This class handles only the per-file binary layout; the companion-merging
 	 * logic lives in {@link ImageConverter}.
 	 */
@@ -165,7 +165,7 @@ public class Dds {
 		/** When true the file starts without the 4-byte magic (KCD alpha sidecar). */
 		public final boolean trimmedMagic;
 		
-		public Dds header = new Dds();
+		public final Dds header = new Dds();
 		public byte[] data;
 		
 		public DdsFile(Path path, boolean trimmedMagic) throws IOException {
@@ -244,7 +244,7 @@ public class Dds {
 		/** Internal marker: DX10 format that is raw RGBA (no block decode needed). */
 		public static final int CODE_RAW_RGBA = 0xDEAD0001;
 		private static final int STRUCT_SIZE = 32;
-		public int size = 32;
+		public final int size = 32;
 		public int flags;
 		public int fourCC;
 		public int rgbBitCount;

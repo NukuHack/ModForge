@@ -79,8 +79,7 @@ public interface ModItem {
 	@NoArgsConstructor
 	abstract class BaseModItem implements ModItem {
 		private final List<Attribute> attributes = new ArrayList<>();
-		// TODO change the ID from string to a nicer object
-		// - can not do since we have id of 0 and id of -1 ... LOL
+		// TODO change the ID from string to a nicer object - can not do since we have id of 0 and id of -1 and even string-data like names ...
 		@Getter
 		private String id;
 		@Getter

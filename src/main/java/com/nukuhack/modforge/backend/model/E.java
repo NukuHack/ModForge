@@ -587,9 +587,9 @@ public class E {
 		public static Language fromName(String name) {
 			try {
 				return Language.valueOf(name);
-			} catch (IllegalArgumentException ex) {
+			} catch (IllegalArgumentException ignored) {
+				return Arrays.stream(values()).filter(lang -> lang.name.equals(name)).findFirst().orElse(null);
 			}
-			return Arrays.stream(values()).filter(lang -> lang.name.equals(name)).findFirst().orElse(null);
 		}
 		
 		/**
@@ -809,15 +809,8 @@ public class E {
 		 * Type-safe version — use this when you have the concrete enum class available at compile time.
 		 * e.g. Enums.fromValue(WeaponSubClass.class, 4)
 		 */
-		public <E extends Enum<E> & ValueEnum> E fromValue(Class<E> enumClass, int value) {
-			Map<Integer, Enum<?>> lookup = CACHE.computeIfAbsent(enumClass, Enums::buildLookup);
-			Enum<?> result = lookup.get(value);
-			if (result == null) {
-				throw new IllegalArgumentException(
-						"No enum constant with value " + value + " in " + enumClass.getSimpleName()
-				);
-			}
-			return enumClass.cast(result);
+		public <E extends Enum<E> & ValueEnum> E fromValueV(Class<E> enumClass, int value) {
+			return fromValue(enumClass, value);
 		}
 		
 		/**
@@ -831,9 +824,9 @@ public class E {
 			if (!ValueEnum.class.isAssignableFrom(enumClass)) {
 				throw new IllegalArgumentException(enumClass + " does not implement ValueEnum");
 			}
-			return fromValueI(enumClass.asSubclass(Enum.class), value);
+			return fromValue(enumClass.asSubclass(Enum.class), value);
 		}
-		private <E extends Enum<E>> E fromValueI(Class<E> enumClass, int value) {
+		private <E extends Enum<E>> E fromValue(Class<E> enumClass, int value) {
 			Map<Integer, Enum<?>> lookup = CACHE.computeIfAbsent(enumClass, Enums::buildLookup);
 			Enum<?> result = lookup.get(value);
 			if (result == null) {

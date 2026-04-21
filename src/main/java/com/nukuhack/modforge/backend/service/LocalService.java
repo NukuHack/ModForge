@@ -40,16 +40,9 @@ public final class LocalService {
 		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
 		
 		f.setProperty(XMLInputFactory.IS_COALESCING, true);
-		if (false /*get class for "jackson-dataformat-xml"*/)
-			f.setProperty("com.ctc.wstx.maxElementDepth", 5);
-		
-		else {
-			
-			f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
-			
-			f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
-		}
-		return f;
+        f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
+        f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
+        return f;
 	});
 	private final UserConfig userConfig;
 	

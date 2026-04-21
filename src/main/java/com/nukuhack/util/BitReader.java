@@ -38,9 +38,8 @@ public class BitReader implements Closeable {
 	private byte[] markBuffer;
 	private int markBufferPos;
 	private int markBufferLimit;
-	private final InputStream originalInput;
-	
-	/**
+
+    /**
 	 * Creates a BitReaderLSB from an InputStream
 	 */
 	public BitReader(InputStream input) {
@@ -51,13 +50,13 @@ public class BitReader implements Closeable {
 	 * Creates a BitReaderLSB from an InputStream with option to close underlying stream
 	 */
 	public BitReader(InputStream input, boolean closeUnderlying) {
-		this.originalInput = Objects.requireNonNull(input, "Input stream cannot be null");
+        var originalInput = Objects.requireNonNull(input, "Input stream cannot be null");
 		this.closeUnderlying = closeUnderlying;
 		
-		if (input.markSupported()) {
-			this.input = input;
+		if (originalInput.markSupported()) {
+			this.input = originalInput;
 		} else {
-			this.input = new BufferedInputStream(input, MARK_BUFFER_SIZE);
+			this.input = new BufferedInputStream(originalInput, MARK_BUFFER_SIZE);
 		}
 		
 		this.bitsRemaining = 0;

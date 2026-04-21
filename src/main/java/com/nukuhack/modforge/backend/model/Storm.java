@@ -17,7 +17,7 @@ import java.util.Map;
  *       a string attribute map, and a recursive child list.  They are gone.</li>
  *   <li>{@code CustomStormSelector}, {@code CustomStormOperation}, and
  *       {@code StormTask} were flat named objects with a handful of string
- *       fields — perfectly modelled as {@link Attribute.XmlNode} instances.</li>
+ *       fields — perfectly modeled as {@link Attribute.XmlNode} instances.</li>
  *   <li>{@code StormData} was a redundant container whose {@code id} /
  *       {@code category} fields already exist on {@link I.Storm} ({@code id}
  *       via {@link ModItem}, {@code category} added directly).  Its five lists

@@ -38,7 +38,7 @@ import java.util.Arrays;
  *
  * <p>References:
  * <ul>
- *   <li>https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-block-compression</li>
+ *   <li><a href="https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-block-compression">d3d10-graphics-programming</a></li>
  * </ul>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -877,8 +877,8 @@ public class BCUtil {
 	 * - rotation bits (2), index mode bit (1) similar to decoder
 	 * - weights: 2 bits for color, 2 bits for alpha (or 3 for one if index mode)
 	 * This is more complex; refer to BC7 specification.
-	 *
-	 * for now just stub it ..
+	 * <p>
+	 * for now just stub it ...
 	 */
 	private static void encodeBC7Mode5(int[] block, byte[] out, int off) {
 		throw new UnsupportedOperationException("BC7-mode5 compression is not supported yet");
@@ -886,7 +886,7 @@ public class BCUtil {
 	
 	@SneakyThrows
 	private static void encodeBC7Mode6(int[] block, byte[] out, int off) {
-		// Find the two most-distant colours as endpoints
+		// Find the two most-distant colors as endpoints
 		int minC = block[0], maxC = block[0], maxDist = - 1;
 		for (int i = 0; i < 16; i++) {
 			for (int j = i + 1; j < 16; j++) {

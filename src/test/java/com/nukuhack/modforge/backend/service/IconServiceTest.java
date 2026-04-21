@@ -413,8 +413,7 @@ class IconServiceTest extends BaseServiceTest {
 					// Step 3a: Convert DDS → BufferedImage
 					BufferedImage image = IconService.convertToImage(ddsBytes);
 					assertNotNull(image, "Failed to decode DDS: " + archivePath);
-					
-					// TODO : make sure the image stores it's path not like this (external file name modification)
+
 					// Step 3b: Convert BufferedImage → PNG (temporary in-memory or temp file)
 					Path tempPng = tempDir.resolve(archivePath.replace('/', '_') + ".png");
 					Files.createDirectories(tempPng.getParent());

@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
 import javax.imageio.stream.FileImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -15,12 +13,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -28,7 +23,7 @@ import java.util.concurrent.Future;
  * Core DDS → TIFF conversion logic.
  *
  * <p>Mirrors {@code ImageConverter} and the relevant parts of {@code MainWindow}
- * from the C# source.  Uses pure-Java BCn decoding ({@link BcnDecoder}) so there
+ * from the C# source.  Uses pure-Java decoding ({@link DDSUtil}) so there
  * is no native dependency (DirectXTexNet).  The output image is encoded as a
  * 16-bit-per-channel or 8-bit-per-channel TIFF depending on the source format,
  * using TwelveMonkeys ImageIO.
@@ -44,23 +39,21 @@ public class ImageConverter {
 	 * @param opts     conversion options
 	 */
 	public static void convertImage(Path filePath, ConversionOptions opts) throws IOException {
-		log.info("Converting: {}", filePath);
-		
-		String stem = stem(filePath);
-		boolean isIdMap = stem.toLowerCase().endsWith("_id");
+		var stem = stem(filePath);
+		var isIdMap = stem.toLowerCase().endsWith("_id");
 		
 		// ── 1. Load + reassemble the split KCD DDS ───────────────────────────
 		var loaded = loadGameDds(filePath, opts);
 		
-		Dds.DdsFile dds = loaded.dds;
-		Dds.DdsFile alphaDds = loaded.alphaDds;
+		var dds = loaded.dds;
+		var alphaDds = loaded.alphaDds;
 		
-		DxgiFormat fmt = dds.header.getPixel();
-		boolean isNormal = fmt.isNormalMap();
-		boolean isSRGB = fmt.isSRGB();
+		var fmt = dds.header.getPixel();
+		var isNormal = fmt.isNormalMap();
+		var isSRGB = fmt.isSRGB();
 		
 		// ── 2. Decompress colour image to float RGBA ──────────────────────────
-		float[] rgba = toFloatRgba(dds, fmt);
+		var rgba = toFloatRgba(dds, fmt);
 		
 		// ── 3. Normal-map Z reconstruction ───────────────────────────────────
 		if (isNormal) {
@@ -69,15 +62,15 @@ public class ImageConverter {
 		
 		// ── 4. Alpha / gloss handling ─────────────────────────────────────────
 		if (alphaDds != null) {
-			DxgiFormat aFmt = alphaDds.header.getPixel();
-			float[] alphaChannel = toFloatSingleChannel(alphaDds, aFmt);
+			var aFmt = alphaDds.header.getPixel();
+			var alphaChannel = toFloatSingleChannel(alphaDds, aFmt);
 			
 			if (opts.separateGlossMap) {
 				// Write alpha as separate _alpha.tif
 				if (! opts.isOutputFolder)
 					throw new IOException("Output must be a folder to separate gloss.");
-				Path dir = resolveOutputDir(filePath, opts);
-				Path aTif = dir.resolve(stem + "_alpha.tif");
+				var dir = resolveOutputDir(filePath, opts);
+				var aTif = dir.resolve(stem + "_alpha.tif");
 				saveGrayscaleTiff(alphaChannel, alphaDds.header.width, alphaDds.header.height, aTif);
 				log.info("  → gloss map: {}", aTif);
 			} else {
@@ -113,7 +106,6 @@ public class ImageConverter {
 			Files.createDirectories(outTif.getParent());
 		}
 		saveTiff(outImage, outTif);
-		log.info("  → {}", outTif);
 		
 		// ── 7. Cleanup source files ───────────────────────────────────────────
 		if (opts.deleteSourceFiles) {
@@ -131,9 +123,8 @@ public class ImageConverter {
 	 * @return list of futures so callers can await or collect exceptions
 	 */
 	public static List<Future<?>> batchProcess(Path inputFolder, Path outputFolder, ConversionOptions opts, boolean recursive) throws IOException {
-		
-		PathMatcher matcher = inputFolder.getFileSystem().getPathMatcher("glob:**.dds");
-		List<Path> ddsFiles = new ArrayList<>();
+		var matcher = inputFolder.getFileSystem().getPathMatcher("glob:**.dds");
+		var ddsFiles = new ArrayList<Path>();
 		try (var walk = recursive ? Files.walk(inputFolder) : Files.walk(inputFolder, 1)) {
 			walk.filter(p -> ! Files.isDirectory(p)).filter(matcher::matches).forEach(ddsFiles::add);
 		}
@@ -141,9 +132,9 @@ public class ImageConverter {
 		if (ddsFiles.isEmpty())
 			return List.of();
 		
-		ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
+		var pool = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
 		
-		List<Future<?>> futures = new ArrayList<>();
+		var futures = new ArrayList<Future<?>>();
 		for (Path file : ddsFiles) {
 			Path destDir;
 			if (recursive) {
@@ -153,20 +144,23 @@ public class ImageConverter {
 				destDir = outputFolder;
 			}
 			
-			ConversionOptions fileOpts = new ConversionOptions().saveRawDDS(opts.saveRawDDS).separateGlossMap(opts.separateGlossMap).deleteSourceFiles(opts.deleteSourceFiles).outputPath(destDir.toString()).isOutputFolder(true);
+			var fileOpts = new ConversionOptions()
+					.saveRawDDS(opts.saveRawDDS).separateGlossMap(opts.separateGlossMap)
+					.deleteSourceFiles(opts.deleteSourceFiles).outputPath(destDir.toString())
+					.isOutputFolder(true);
 			
 			futures.add(pool.submit(() -> {
 				try {
 					convertImage(file, fileOpts);
 				} catch (Exception e) {
 					log.error("Failed to convert {}", file, e);
-					throw new RuntimeException(e);
 				}
 				return null;
 			}));
 		}
-		
-		pool.shutdown();
+		try (pool) {
+			pool.shutdown();
+		}
 		return futures;
 	}
 	
@@ -175,21 +169,21 @@ public class ImageConverter {
 	 * Re-throws the first exception encountered.
 	 */
 	public static void awaitAll(List<Future<?>> futures) throws Exception {
-		for (Future<?> f : futures) {
+		for (var f : futures) {
 			f.get(); // propagates ExecutionException
 		}
 	}
 	
 	private static LoadedDds loadGameDds(Path base, ConversionOptions opts) throws IOException {
 		
-		List<byte[]> mipData = new ArrayList<>();
-		List<byte[]> alphaMipData = new ArrayList<>();
-		List<Path> mipFiles = new ArrayList<>();
-		List<Path> alphaMipFiles = new ArrayList<>();
+		var mipData = new ArrayList<byte[]>();
+		var alphaMipData = new ArrayList<byte[]>();
+		var mipFiles = new ArrayList<Path>();
+		var alphaMipFiles = new ArrayList<Path>();
 		
 		// Collect color mip companions (.dds.1 … .dds.63), highest first
 		for (int i = 1; i < 64; i++) {
-			Path p = Path.of(base + "." + i);
+			var p = Path.of(base + "." + i);
 			if (! Files.exists(p))
 				break;
 			mipData.add(0, Files.readAllBytes(p)); // insert at front → lowest mip first
@@ -198,7 +192,7 @@ public class ImageConverter {
 		
 		// Collect alpha mip companions (.dds.1a … .dds.63a)
 		for (int i = 1; i < 64; i++) {
-			Path p = Path.of(base + "." + i + "a");
+			var p = Path.of(base + "." + i + "a");
 			if (! Files.exists(p))
 				break;
 			alphaMipData.add(0, Files.readAllBytes(p));
@@ -206,7 +200,7 @@ public class ImageConverter {
 		}
 		
 		// Read base color DDS
-		Dds.DdsFile dds = new Dds.DdsFile(base, false);
+		var dds = new Dds.DdsFile(base, false);
 		
 		// Prepend mip data then the base DDS pixel data
 		dds.data = concat(mipData, dds.data);
@@ -228,7 +222,7 @@ public class ImageConverter {
 		
 		// Read alpha sidecar if present
 		Dds.DdsFile alphaDds = null;
-		Path alphaBase = Path.of(base + ".a");
+		var alphaBase = Path.of(base + ".a");
 		if (Files.exists(alphaBase)) {
 			alphaDds = new Dds.DdsFile(alphaBase, true);
 			alphaDds.data = concat(alphaMipData, alphaDds.data);
@@ -249,10 +243,10 @@ public class ImageConverter {
 	private static float[] toFloatRgba(Dds.DdsFile dds, DxgiFormat fmt) {
 		int w = dds.header.width, h = dds.header.height;
 		
-		byte[] rgba8 = BCUtil.decompress(mip0Data(dds), w, h, fmt);
+		var rgba8 = BCUtil.decompress(mip0Data(dds), w, h, fmt);
 		
 		// Convert RGBA8 → float RGBA [0..1]
-		float[] out = new float[w * h * 4];
+		var out = new float[w * h * 4];
 		for (int i = 0; i < out.length; i++) {
 			out[i] = (rgba8[i] & 0xFF) / 255.0f;
 		}
@@ -264,8 +258,8 @@ public class ImageConverter {
 	 */
 	private static float[] toFloatSingleChannel(Dds.DdsFile dds, DxgiFormat fmt) {
 		int w = dds.header.width, h = dds.header.height;
-		byte[] rgba8 = BCUtil.decompress(mip0Data(dds), w, h, fmt);
-		float[] out = new float[w * h];
+		var rgba8 = BCUtil.decompress(mip0Data(dds), w, h, fmt);
+		var out = new float[w * h];
 		for (int i = 0; i < out.length; i++) {
 			out[i] = (rgba8[i * 4] & 0xFF) / 255.0f; // R channel
 		}
@@ -288,7 +282,7 @@ public class ImageConverter {
 	 * Mirrors C# ReconstructZ(pixelData, pack=true).
 	 */
 	static float[] reconstructZ(float[] rgba, boolean pack) {
-		float[] out = new float[rgba.length];
+		var out = new float[rgba.length];
 		int n = rgba.length / 4;
 		for (int i = 0; i < n; i++) {
 			float x = rgba[i * 4];
@@ -316,7 +310,7 @@ public class ImageConverter {
 	 * Mirrors C# MergeAlpha().
 	 */
 	static float[] mergeAlpha(float[] rgba, float[] alphaChannel) {
-		float[] out = rgba.clone();
+		var out = rgba.clone();
 		for (int i = 0; i < alphaChannel.length; i++) {
 			out[i * 4 + 3] = alphaChannel[i];
 		}
@@ -328,7 +322,7 @@ public class ImageConverter {
 	 */
 	static byte[] quantizeIdPixels(float[] rgba, boolean isSRGB) {
 		int n = rgba.length / 4;
-		byte[] out = new byte[n * 4];
+		var out = new byte[n * 4];
 		for (int i = 0; i < n; i++) {
 			float r = rgba[i * 4], g = rgba[i * 4 + 1], b = rgba[i * 4 + 2], a = rgba[i * 4 + 3];
 			if (isSRGB) {
@@ -349,8 +343,8 @@ public class ImageConverter {
 	}
 	
 	private static BufferedImage floatRgbaToBufferedImage(float[] rgba, int w, int h, boolean isSRGB) {
-		BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_4BYTE_ABGR);
-		byte[] data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+		var img = new BufferedImage(w, h, BufferedImage.TYPE_4BYTE_ABGR);
+		var data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
 		// TYPE_4BYTE_ABGR stores bytes as A, B, G, R
 		for (int i = 0; i < w * h; i++) {
 			float r = rgba[i * 4], g = rgba[i * 4 + 1], b = rgba[i * 4 + 2], a = rgba[i * 4 + 3];
@@ -370,8 +364,8 @@ public class ImageConverter {
 	
 	private static BufferedImage bytesToBufferedImageRgba(byte[] bytes, int w, int h) {
 		// bytes are already RGBA order — convert to ABGR for TYPE_4BYTE_ABGR
-		BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_4BYTE_ABGR);
-		byte[] data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+		var img = new BufferedImage(w, h, BufferedImage.TYPE_4BYTE_ABGR);
+		var data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
 		for (int i = 0; i < w * h; i++) {
 			data[i * 4] = bytes[i * 4 + 3]; // A
 			data[i * 4 + 1] = bytes[i * 4 + 2]; // B
@@ -382,12 +376,12 @@ public class ImageConverter {
 	}
 	
 	private static void saveTiff(BufferedImage img, Path out) throws IOException {
-		Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("TIFF");
+		var writers = ImageIO.getImageWritersByFormatName("TIFF");
 		if (! writers.hasNext())
 			throw new IOException("No TIFF ImageWriter found (check classpath)");
-		ImageWriter writer = writers.next();
-		ImageWriteParam param = writer.getDefaultWriteParam();
-		try (FileImageOutputStream fos = new FileImageOutputStream(out.toFile())) {
+		var writer = writers.next();
+		var param = writer.getDefaultWriteParam();
+		try (var fos = new FileImageOutputStream(out.toFile())) {
 			writer.setOutput(fos);
 			writer.write(null, new IIOImage(img, null, null), param);
 		} finally {
@@ -396,8 +390,8 @@ public class ImageConverter {
 	}
 	
 	private static void saveGrayscaleTiff(float[] channel, int w, int h, Path out) throws IOException {
-		BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
-		byte[] data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+		var img = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
+		var data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
 		for (int i = 0; i < channel.length; i++) {
 			data[i] = (byte) Math.round(Math.max(0, Math.min(1, channel[i])) * 255);
 		}
@@ -432,8 +426,8 @@ public class ImageConverter {
 	
 	/** Concatenate a list of byte arrays followed by a final array. */
 	private static byte[] concat(List<byte[]> parts, byte[] tail) throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		for (byte[] p : parts)
+		var bos = new ByteArrayOutputStream();
+		for (var p : parts)
 			bos.write(p);
 		bos.write(tail);
 		return bos.toByteArray();
@@ -455,10 +449,9 @@ public class ImageConverter {
 	}
 	
 	private static void deleteSourceFiles(Path base, List<Path> mipFiles, List<Path> alphaMipFiles, boolean keepBase) {
-		
-		for (Path f : mipFiles)
+		for (var f : mipFiles)
 			tryDelete(f);
-		for (Path f : alphaMipFiles)
+		for (var f : alphaMipFiles)
 			tryDelete(f);
 		if (! keepBase) {
 			tryDelete(base);

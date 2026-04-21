@@ -43,8 +43,8 @@ public abstract class BaseEditPage extends BasePage {
     protected ModItem currentItem = null;
     protected boolean hasChanges = false;
 
-    protected JEditorPane previewPane = new JEditorPane();
-    protected JLabel statusLabel = new JLabel(" ");
+    protected final JEditorPane previewPane = new JEditorPane();
+    protected final JLabel statusLabel = new JLabel(" ");
 
     protected BaseEditPage(MainWindow w) {
         super(w);

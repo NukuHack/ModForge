@@ -181,7 +181,7 @@ public final class ModItemBuilder {
 		}
 	}
 	/**
-	 * Fallbakc : pretty obvious
+	 * Fallback : pretty obvious
 	 */
 	@Slf4j
 	protected static class FallbackBuilder implements BuildHandler, CreateHandler {
@@ -198,26 +198,29 @@ public final class ModItemBuilder {
 				var a = (org.w3c.dom.Attr) attributes.item(i);
 				map.put(a.getName(), a.getValue());
 			}
-			
-			log.trace("No creater matched element data {}", map);
+
+            log.trace("No creater matched element data {}", map);
 			var item = new I.EmptyImpl();
-			String id = null;
-			String name = null;
-			for (var key : map.keySet()) {
-				if (id == null && key.toLowerCase().endsWith("id"))
-					id = key;
-				if (name == null && key.equalsIgnoreCase("name"))
-					name = key;
+
+			var idKey = "";
+			String nameFallback = null;
+
+			for (var ent : map.entrySet()) {
+				var key = ent.getKey();
+
+				if (key.toLowerCase().endsWith("id"))
+					idKey = key;
+				else if (nameFallback == null && key.equalsIgnoreCase("name"))
+					nameFallback = key;
+
+				item.addAttribute(Attributes.create(key, ent.getValue()));
 			}
-			var idKey = id != null ? id : name != null ? name : "";
-			var idValue = element.getAttribute(idKey);
+			var idValue = map.get(idKey.isEmpty() && nameFallback != null ? nameFallback : idKey);
+
 			item.setIdKey(idKey);
 			item.setId(idValue);
 			log.debug("set unknown item's id to be key={}, val={}", idKey, idValue);
-			
-			for (var ent : map.entrySet())
-				item.addAttribute(Attributes.create(ent.getKey(), ent.getValue()));
-			
+
 			return item;
 		}
 		

@@ -24,14 +24,14 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 /**
  * Item attribute editor.
- *
+ * <p>
  * Supports recursive {@link Attribute.XmlNodeAttribute} trees:
  * each XML node is rendered as a collapsible sub-panel with the same
  * label+editor layout as the parent, indented to show hierarchy.
- *
+ * <p>
  * Flat attributes:  label | editor  (GridBagLayout, 2-column)
  * XML attributes:   ▶ Tag name  [collapsible section with child attrs]
- *
+ * <p>
  * Enhanced editors:
  * - EnumAttribute      → styled combo with ordinal badge + full name
  * - BuffParamListAttr  → table editor (stat | op | value) with add/remove
@@ -147,7 +147,7 @@ public class ItemEdit extends BaseEditPage {
 		row = addIdRow(attributesPanel, row);
 		attributesPanel.add(makeSeparator(), separatorGbc(row++));
 		
-		List<Attribute> flat = new ArrayList<>();
+		var flat = new ArrayList<Attribute>();
 		List<Attribute.XmlNodeAttribute> xmlAttrs = new ArrayList<>();
 		
 		for (var attr : currentItem.getAttributes()) {
@@ -227,7 +227,8 @@ public class ItemEdit extends BaseEditPage {
 		final Attribute.XmlNode node = xmlAttr.getValue();
 		
 		String accent = depth == 0 ? "#89dceb" : "#6c6f85";
-		JPanel header = buildXmlSectionHeader(nodeTag, node, accent);
+		Color foreground = new Color(Integer.parseInt(accent.substring(1), 16));
+		JPanel header = buildXmlSectionHeader(nodeTag, node, foreground);
 		
 		GridBagConstraints headerGbc = new GridBagConstraints();
 		headerGbc.gridx = 0;
@@ -241,11 +242,12 @@ public class ItemEdit extends BaseEditPage {
 		
 		JPanel inner = new JPanel(new GridBagLayout());
 		inner.setBackground(new Color(0x1e1e2e));
-		inner.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 2, 0, 0, new Color(Integer.parseInt(accent.substring(1), 16))), BorderFactory.createEmptyBorder(4, 8, 4, 4)));
+		inner.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 2, 0, 0, foreground),
+				BorderFactory.createEmptyBorder(4, 8, 4, 4)));
 		
 		int innerRow = 0;
 		
-		List<Attribute> flatChildren = new ArrayList<>();
+		var flatChildren = new ArrayList<Attribute>();
 		List<Attribute.XmlNodeAttribute> xmlChildren = new ArrayList<>();
 		for (var attr : node.attributes()) {
 			if (attr instanceof Attribute.XmlNodeAttribute x)
@@ -309,13 +311,13 @@ public class ItemEdit extends BaseEditPage {
 	
 	/**
 	 * Header bar for an XML node section.
-	 *
+	 * <p>
 	 * Layout:  [▼] <tag>  (#children attrs)   |   attr1=val1  attr2=val2 …
-	 *
+	 * <p>
 	 * The right side shows a short inline preview of the node's flat attributes
 	 * so users can tell sections apart at a glance without expanding them.
 	 */
-	private JPanel buildXmlSectionHeader(String tag, Attribute.XmlNode node, String accent) {
+	private JPanel buildXmlSectionHeader(String tag, Attribute.XmlNode node, Color foreground) {
 		JPanel header = new JPanel(new BorderLayout(6, 0));
 		header.setBackground(new Color(0x181825));
 		header.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0x313244)), BorderFactory.createEmptyBorder(4, 6, 4, 6)));
@@ -323,7 +325,7 @@ public class ItemEdit extends BaseEditPage {
 		JToggleButton toggle = new JToggleButton("▼");
 		toggle.setSelected(false);
 		toggle.setBackground(new Color(0x181825));
-		toggle.setForeground(new Color(Integer.parseInt(accent.substring(1), 16)));
+		toggle.setForeground(foreground);
 		toggle.setFocusPainted(false);
 		toggle.setBorderPainted(false);
 		toggle.setFont(new Font("Roboto", Font.PLAIN, 10));
@@ -331,7 +333,7 @@ public class ItemEdit extends BaseEditPage {
 		toggle.addActionListener(e -> toggle.setText(toggle.isSelected() ? "▶" : "▼"));
 		
 		JLabel tagLabel = new JLabel("<" + tag + ">");
-		tagLabel.setForeground(new Color(Integer.parseInt(accent.substring(1), 16)));
+		tagLabel.setForeground(foreground);
 		tagLabel.setFont(new Font("Roboto Mono", Font.BOLD, 11));
 		
 		int childCount = node.attributes().size() + node.children().size();
@@ -348,7 +350,7 @@ public class ItemEdit extends BaseEditPage {
 		left.add(tagLabel);
 		left.add(badge);
 		
-		List<Attribute> flatAttrs = node.attributes().stream().filter(a -> ! (a instanceof Attribute.XmlNodeAttribute)).toList();
+		var flatAttrs = node.attributes().stream().filter(a -> ! (a instanceof Attribute.XmlNodeAttribute)).toList();
 		
 		if (! flatAttrs.isEmpty()) {
 			JPanel previewPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
@@ -356,15 +358,7 @@ public class ItemEdit extends BaseEditPage {
 			
 			int shown = Math.min(flatAttrs.size(), 3);
 			for (int i = 0; i < shown; i++) {
-				var a = flatAttrs.get(i);
-				String valText = a.serialize();
-				if (valText.length() > 16)
-					valText = valText.substring(0, 14) + "…";
-				JLabel chip = new JLabel(a.getName() + "=" + valText);
-				chip.setForeground(new Color(0x6c6f85));
-				chip.setFont(new Font("Roboto Mono", Font.PLAIN, 9));
-				chip.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x313244)), BorderFactory.createEmptyBorder(1, 4, 1, 4)));
-				chip.setToolTipText(a.getName() + " = " + a.serialize());
+				JLabel chip = getJLabel(flatAttrs, i);
 				previewPanel.add(chip);
 			}
 			if (flatAttrs.size() > 3) {
@@ -380,7 +374,20 @@ public class ItemEdit extends BaseEditPage {
 		header.putClientProperty("toggle", toggle);
 		return header;
 	}
-	
+
+	private static JLabel getJLabel(List<Attribute> flatAttrs, int i) {
+		var a = flatAttrs.get(i);
+		String valText = a.serialize();
+		if (valText.length() > 16)
+			valText = valText.substring(0, 14) + "…";
+		JLabel chip = new JLabel(a.getName() + "=" + valText);
+		chip.setForeground(new Color(0x6c6f85));
+		chip.setFont(new Font("Roboto Mono", Font.PLAIN, 9));
+		chip.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x313244)), BorderFactory.createEmptyBorder(1, 4, 1, 4)));
+		chip.setToolTipText(a.getName() + " = " + a.serialize());
+		return chip;
+	}
+
 	private JComponent createEditorForAttribute(Attribute attr, String keyPath) {
 		JComponent comp;
 		
@@ -448,7 +455,7 @@ public class ItemEdit extends BaseEditPage {
 	
 	/**
 	 * Renders an enum attribute as a styled combo box.
-	 *
+	 * <p>
 	 * Each entry shows: [ordinal]  CONSTANT_NAME
 	 * Tooltip on each item shows the constant's ordinal and full name.
 	 * The current value is pre-selected.
@@ -487,15 +494,15 @@ public class ItemEdit extends BaseEditPage {
 	
 	/**
 	 * Dedicated table editor for {@link Attribute.BuffParamListAttribute}.
-	 *
+	 * <p>
 	 * Layout (inside a titled panel):
 	 * ┌──────────────────────────────────────────────────────┐
-	 * │  Stat (searchable combo)  │  Op  │  Value  │  [–]   │  ← each row
+	 * │  Stat (searchable combo)  │  Op  │  Value  │  [–]    │  ← each row
 	 * │  …                                                   │
 	 * ├──────────────────────────────────────────────────────┤
 	 * │  [+ Add param]                                       │
 	 * └──────────────────────────────────────────────────────┘
-	 *
+	 * <p>
 	 * The combo shows "Name  —  description" and is searchable via editable text.
 	 * The component stored under keyPath is the wrapping JPanel itself;
 	 * {@link #extractBuffParams(JPanel)} harvests it on save.
@@ -549,13 +556,13 @@ public class ItemEdit extends BaseEditPage {
 	/**
 	 * Builds one editable row for a single {@link BuffParam}.
 	 * Pass {@code null} to create a blank row (for the "Add" button).
-	 *
+	 * <p>
 	 * Row layout:  [stat combo ──────────] [op ▾] [value ±] [–]
-	 *
+	 * <p>
 	 * The stat combo uses {@link FilterableBuffParamModel} — the full master list
 	 * is built once and reused across all rows. Filtering narrows the view in
 	 * O(n) without any removeAllItems / addItem overhead, so there is no freeze.
-	 *
+	 * <p>
 	 * The editor text field always shows only {@code bpm.getName()} (short);
 	 * the dropdown popup renderer shows the full "Name — description" form.
 	 */
@@ -567,48 +574,8 @@ public class ItemEdit extends BaseEditPage {
 		
 		BuffParamMap initial = (param != null) ? param.name() : null;
 		var model = new FilterableBuffParamModel(getBuffParamAll(), initial);
-		JComboBox<BuffParamMap> statCombo = new JComboBox<>(model);
-		statCombo.setEditable(true);
-		
-		statCombo.setRenderer(new DefaultListCellRenderer() {
-			@Override
-			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				if (value instanceof BuffParamMap bpm) {
-					setText(String.format("<html><b>%s</b>&nbsp;<font color='#6c6f85'>— %s</font></html>", bpm.getName(), bpm.getDescription()));
-					setToolTipText("[" + bpm.getKey() + "]  " + bpm.getDescription());
-				}
-				if (! isSelected) {
-					setBackground(new Color(0x313244));
-					setForeground(MainWindow.TEXT);
-				}
-				return this;
-			}
-		});
-		
-		statCombo.setEditor(new BasicComboBoxEditor() {
-			@Override
-			public Object getItem() {
-				
-				String text = editor.getText().strip();
-				
-				BuffParamMap found = BuffParamMap.BY_NAME.get(text);
-				if (found == null)
-					found = BuffParamMap.BY_KEY.get(text);
-				return found != null ? found : text;
-			}
-			
-			@Override
-			public void setItem(Object o) {
-				if (o instanceof BuffParamMap bpm)
-					editor.setText(bpm.getName());
-				else if (o instanceof String s)
-					editor.setText(s);
-				else
-					editor.setText("");
-			}
-		});
-		
+		var statCombo = getBuffParamMapJComboBox(model);
+
 		JTextField statEditor = (JTextField) statCombo.getEditor().getEditorComponent();
 		statEditor.setBackground(new Color(0x313244));
 		statEditor.setForeground(MainWindow.TEXT);
@@ -738,7 +705,52 @@ public class ItemEdit extends BaseEditPage {
 		
 		return row;
 	}
-	
+
+	private JComboBox<BuffParamMap> getBuffParamMapJComboBox(FilterableBuffParamModel model) {
+		JComboBox<BuffParamMap> statCombo = new JComboBox<>(model);
+		statCombo.setEditable(true);
+
+		statCombo.setRenderer(new DefaultListCellRenderer() {
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				if (value instanceof BuffParamMap bpm) {
+					setText(String.format("<html><b>%s</b>&nbsp;<font color='#6c6f85'>— %s</font></html>", bpm.getName(), bpm.getDescription()));
+					setToolTipText("[" + bpm.getKey() + "]  " + bpm.getDescription());
+				}
+				if (! isSelected) {
+					setBackground(new Color(0x313244));
+					setForeground(MainWindow.TEXT);
+				}
+				return this;
+			}
+		});
+
+		statCombo.setEditor(new BasicComboBoxEditor() {
+			@Override
+			public Object getItem() {
+
+				String text = editor.getText().strip();
+
+				BuffParamMap found = BuffParamMap.BY_NAME.get(text);
+				if (found == null)
+					found = BuffParamMap.BY_KEY.get(text);
+				return found != null ? found : text;
+			}
+
+			@Override
+			public void setItem(Object o) {
+				if (o instanceof BuffParamMap bpm)
+					editor.setText(bpm.getName());
+				else if (o instanceof String s)
+					editor.setText(s);
+				else
+					editor.setText("");
+			}
+		});
+		return statCombo;
+	}
+
 	private void saveChanges() {
 		if (currentItem == null)
 			return;

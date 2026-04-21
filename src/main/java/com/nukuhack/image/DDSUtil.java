@@ -753,18 +753,8 @@ public class DDSUtil {
 	private static long u64le(byte[] b, int i) {
 		return u48le(b, i) | ((b[i + 6] & 0xFFL) << 48) | ((b[i + 7] & 0xFFL) << 56);
 	}
-	
-	static class ImgData {
-		final int h, w, code, length;
-		byte[] data;
-		
-		ImgData(int h, int w, int code, int length, byte[] data) {
-			this.h = h;
-			this.w = w;
-			this.code = code;
-			this.length = length;
-			this.data = data;
-		}
+
+	record ImgData(int h, int w, int code, int length, byte[] data) {
 	}
 	
 	/**
