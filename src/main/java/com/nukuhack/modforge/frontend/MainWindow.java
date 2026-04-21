@@ -1,6 +1,7 @@
 package com.nukuhack.modforge.frontend;
 
 import com.nukuhack.modforge.Singleton;
+import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
 import com.nukuhack.modforge.frontend.pages.*;
@@ -187,7 +188,7 @@ public class MainWindow extends JFrame {
 		side.add(Box.createVerticalStrut(8));
 		
 		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.ARCHIVE, Page.CONVERT, Page.KCD_CONVERTER }) {
-			side.add(navBtn(page.getDisplayName(), e -> navigate(page)));
+			side.add(navBtn(page.getDisplayName(), e -> navigate(page, new ModData())));
 		}
 		
 		side.add(Box.createVerticalGlue());

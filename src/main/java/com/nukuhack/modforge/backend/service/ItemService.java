@@ -134,7 +134,7 @@ public final class ItemService {
 	private static File getOutputFile(String gameDir, ModItem item, ModData mod, boolean base) {
 		var rawPath = item.getPath();
 		var targetDir = getOutputFile(gameDir, rawPath, mod).getParent();
-		var typeName = ! base ? ModItemBuilder.group(item).fileName : Path.of(rawPath).getFileName().toString();
+		var typeName = ! base ? ItemEntry.to(item).fileName : Path.of(rawPath).getFileName().toString();
 		var outFile = Util.joinP(targetDir, Util.modXmlFile(typeName, mod.getId(), base));
 		return outFile.toFile();
 	}
@@ -249,7 +249,7 @@ public final class ItemService {
 	 */
 	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
 		File outFile;
-		var group = ModItemBuilder.group(item);
+		var group = ItemEntry.to(item);
 		Document doc;
 		String doctype;
 		
@@ -323,11 +323,10 @@ public final class ItemService {
 			if (! (tableNodes.item(i) instanceof Element tableEl))
 				continue;
 			var ver = tableEl.getAttribute("version");
-			int version;
+			int version = 1;
 			try {
 				version = Integer.parseInt(ver);
-			} catch (NumberFormatException n) {
-				version = -1;
+			} catch (NumberFormatException ignored) {
 			}
 			
 			var items = tableEl.getChildNodes();

@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -580,27 +581,43 @@ public final class Util {
     }
 
     /**
-     * Low n bits of nanoTime 32 bit → 8 hex chars, e.g. "a3f9c012"
-     *
-     * @param n number of bits to use (must be multiple of 4, max 32)
+     * Returns a random integer between min (inclusive) and max (inclusive)
      */
-    public String randomString(int n) {
-        if (n <= 0 || n > 32) {
-            throw new IllegalArgumentException("n must be between 1 and 32");
+    public static int getRandomNumber(int min, int max) {
+        return ThreadLocalRandom.current().nextInt(min, max + 1);
+    }
+
+    /**
+     * Returns a random Color with random RGB values
+     */
+    public static Color getRandomColor() {
+        int red = getRandomNumber(0, 255);
+        int green = getRandomNumber(0, 255);
+        int blue = getRandomNumber(0, 255);
+        return new Color(red, green, blue);
+    }/**
+     * Returns a random Color from a random hex string
+     */
+    public static Color getRandomColorFromHex() {
+        String hex = randomString(6); // 6 hex chars = 24 bits = RGB
+        return Color.decode("#" + hex);
+    }
+
+    /**
+     * Returns a random hex string of specified length using getRandomNumber()
+     * @param chars number of hex characters to generate
+     * @return random hex string
+     */
+    public String randomString(int chars) {
+        if (chars <= 0 || chars > 999_999) {
+            throw new IllegalArgumentException("chars must be between 1 and 999_999");
         }
-
-        int chars = n / 4;
-
-        if (n % 4 != 0) {
-            chars++;
-
+        var sb = new StringBuilder(chars);
+        for (int i = 0; i < chars; i++) {
+            int hexDigit = getRandomNumber(0, 15); // 0-15 for hex digits
+            sb.append(Integer.toHexString(hexDigit));
         }
-
-        long nanoTime = System.nanoTime();
-        long mask = (1L << n) - 1;
-        long value = nanoTime & mask;
-
-        return String.format("%0" + chars + "x", value);
+        return sb.toString();
     }
 
     public UUID randomUUID() {

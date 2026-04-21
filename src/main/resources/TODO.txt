@@ -1,5 +1,6 @@
 
 icon view + *edit* - load some icons into the loader and view them (at least the mod's if the main data takes up too much space)
+using image-decode.txt - KCDTextureExporter C#
 
 parse other files (adb - animation database)
 gfx files ?!?, and mtl too ?, and bk2 video format too ..., lua ? hell nah

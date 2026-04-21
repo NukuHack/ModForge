@@ -31,7 +31,7 @@ public class ModsPage extends BasePage {
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		actions.setOpaque(false);
 		actions.add(primaryBtn("ui_mod_new", e -> createNewMod()));
-		actions.add(primaryBtn("ui_refresh", e -> refreshMods()));
+		actions.add(primaryBtn("ui_refresh", e -> refresh((Object) null)));
 		actions.add(primaryBtn("ui_mod_import", e -> importMod()));
 		top.add(actions, BorderLayout.EAST);
 		
@@ -49,7 +49,7 @@ public class ModsPage extends BasePage {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2) {
-					final ModData selected = modList.getSelectedValue();
+					var selected = modList.getSelectedValue();
 					if (selected != null) {
 						window.navigate(MainWindow.Page.MOD_EDIT, selected);
 					}
@@ -70,10 +70,6 @@ public class ModsPage extends BasePage {
 	
 	@Override
 	public void refresh(Object... input) {
-		this.refreshMods();
-	}
-	
-	public void refreshMods() {
 		listModel.clear();
 		
 		for (var mod : ModService.modCollection) {
@@ -84,7 +80,7 @@ public class ModsPage extends BasePage {
 	}
 	
 	private void createNewMod() {
-		String modId = "new_mod_" + Util.randomString(32);
+		String modId = "new_mod_" + Util.randomString(8);
 
 		if (ModService.modCollection.stream().anyMatch(mod -> mod.getId().equals(modId))) {
 			log.warn("createNewMod: mod ID '{}' already exists.", modId);
@@ -110,7 +106,7 @@ public class ModsPage extends BasePage {
 		
 		if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
 			return;
-		final var modPath = chooser.getSelectedFile().toPath();
+		var modPath = chooser.getSelectedFile().toPath();
 		
 		var mod = ModService.loadMod(modPath);
 		if (mod == null) {
@@ -124,7 +120,7 @@ public class ModsPage extends BasePage {
 		
 		ModService.modCollection.add(mod);
 		
-		refreshMods();
+		refresh((Object) null);
 		window.snackbar.show("ui_mod_imported", BarManager.Type.SUCCESS, mod.getName());
 	}
 	

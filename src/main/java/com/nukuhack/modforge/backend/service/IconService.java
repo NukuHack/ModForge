@@ -227,7 +227,7 @@ public final class IconService {
 		var stem = dot > 0 ? filename.substring(0, dot) : filename;
 		var ext = dot > 0 ? filename.substring(dot) : "";
 		
-		var suffix = Util.randomString(32);
+		var suffix = Util.randomString(8);
 		var backupPath = backupDir.resolve(stem + "_" + suffix + ext);
 		
 		try {

@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
@@ -22,21 +21,15 @@ public final class ItemType {
 	/** Display entries for the frontend dropdown */
 	private static final List<ITDisplay> DISPLAYS;
 	
-	/** Flat set of endpoint keys, used by excludeNonEndpoints */
-	private static final Set<String> ENDPOINT_KEYS;
-	
 	static {
 		var idMap = new LinkedHashMap<Class<? extends ModItem>, String>();
 		var displays = new ArrayList<ITDisplay>();
-		var epKeys = new HashSet<String>();
 		
 		displays.add(new ITDisplay("All Types", i -> true));
 		
 		for (var e : ItemEntry.values()) {
 			
 			idMap.put(e.clazz, e.idKey);
-			
-			epKeys.add(e.fileName.toLowerCase());
 			
 			if (e.showInDisplay)
 				displays.add(new ITDisplay(e.displayName(), e.matcher()));
@@ -54,25 +47,26 @@ public final class ItemType {
 		
 		ID_KEYS = Collections.unmodifiableMap(idMap);
 		DISPLAYS = Collections.unmodifiableList(displays);
-		ENDPOINT_KEYS = Collections.unmodifiableSet(epKeys);
 	}
 	
 	/** Item selector dropdown filter – used by the Item page (frontend). */
 	public static boolean excludeNonEndpoints(final @NonNull ZipEntry ze) {
 		if (ze.isDirectory())
 			return false;
-		var name = ze.getName().toLowerCase(Locale.ROOT).replace('\\', '/');
-		var isData = name.endsWith(".xml") ;//|| name.endsWith(".adb")
-		if (! isData)
+		var name = ze.getName().toLowerCase().replace('\\', '/');
+        return name.endsWith(".xml");//|| name.endsWith(".adb")
+		/*
+		if (!name.endsWith(".xml"))
 			return false;
-		
+
 		if (name.startsWith("libs/storm/"))
 			return true;
 		var p = Path.of(name);
 		var fileName = p.getFileName().toString();
 		var delimiter = fileName.indexOf("__");
 		var shortName = (delimiter != - 1) ? fileName.substring(0, delimiter) : fileName.substring(0, fileName.lastIndexOf('.'));
-		return true;//ENDPOINT_KEYS.contains(shortName);
+		return ENDPOINTS.contains(shortName);
+		 */
 	}
 	
 	/** Item selector dropdown filter for the Item page (frontend). */

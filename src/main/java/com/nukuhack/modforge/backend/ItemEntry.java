@@ -209,4 +209,9 @@ public enum ItemEntry {
 			return "8";
 		return "1";
 	}
+
+
+	public static ItemEntry to(@NonNull ModItem item) {
+		return ItemEntry.forClass(item.getClass());
+	}
 }

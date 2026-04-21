@@ -1,5 +1,6 @@
 package com.nukuhack.modforge.backend.service;
 
+import com.nukuhack.modforge.backend.ItemEntry;
 import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.Attribute.XmlNode;
 import com.nukuhack.modforge.backend.model.Attribute.XmlNodeAttribute;
@@ -188,7 +189,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 */
 	@Override
 	public @NonNull Element handle(final @NonNull Document document, final @NonNull ModItem item) {
-		var entry = ModItemBuilder.group(item);
+		var entry = ItemEntry.to(item);
 		var el = document.createElement(entry.xmlObjName);
 		
 		for (var attr : item.getAttributes()) {

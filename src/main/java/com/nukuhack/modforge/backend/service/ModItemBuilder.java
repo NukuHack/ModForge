@@ -121,10 +121,6 @@ public final class ModItemBuilder {
 		return deepCopy(src, fullFinal);
 	}
 	
-	public static ItemEntry group(ModItem item) {
-		return ItemEntry.forClass(item.getClass());
-	}
-	
 	protected interface BuildHandler {
 		ModItem handle(final Element element);
 	}
@@ -176,7 +172,7 @@ public final class ModItemBuilder {
 		
 		@Override
 		public Element handle(final Document document, final ModItem item) {
-			var typeName = group(item).xmlObjName;
+			var typeName = ItemEntry.to(item).xmlObjName;
 			var el = document.createElement(typeName);
 			for (var attr : item.getAttributes()) {
 				el.setAttribute(attr.getName(), attr.serialize());
@@ -252,7 +248,7 @@ public final class ModItemBuilder {
 				if (item instanceof Storm) {
 					item = (M) StormService.parse(element);
 				}
-				item.setId("storm_" + Util.randomString(32));
+				item.setId("storm_" + Util.randomString(8));
 
 				
 				return item;

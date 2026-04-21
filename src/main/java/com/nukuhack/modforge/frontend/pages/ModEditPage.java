@@ -50,6 +50,7 @@ public class ModEditPage extends BasePage {
 		bottomBar.add(primaryBtn("ui_save_changes", e -> saveManifest(window.getRegistry().userConfig.getGameDir())));
 		bottomBar.add(primaryBtn("ui_mod_export", e -> exportMod()));
 		bottomBar.add(primaryBtn("ui_mod_delete", e -> deleteMod()));
+		bottomBar.add(primaryBtn("ui_open_folder", e -> openFolder()));
 		bottomBar.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.MODS)));
 		add(bottomBar, BorderLayout.SOUTH);
 	}
@@ -304,12 +305,18 @@ public class ModEditPage extends BasePage {
 			}
 		});
 	}
+
+	private void openFolder() {
+		var gameDir = window.getRegistry().userConfig.getGameDir();
+		var modPath = Util.modFolder(gameDir, currentMod.getId());
+		Util.openDirectory(this, modPath);
+	}
 	
 	private void deleteMod() {
 		int confirm = JOptionPane.showConfirmDialog(this, MainWindow.getLocalText("ui_delete_mod_confirm", currentMod.getName()), MainWindow.getLocalText("ui_confirm_delete"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 		if (confirm == JOptionPane.YES_OPTION) {
-			String gameDir = window.getRegistry().userConfig.getGameDir();
-			Path modPath = Path.of(gameDir, "Mods", currentMod.getId());
+			var gameDir = window.getRegistry().userConfig.getGameDir();
+			var modPath = Path.of(Util.modFolder(gameDir, currentMod.getId()));
 			
 			try {
 				if (Files.exists(modPath)) {

@@ -277,7 +277,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		var dir = modPath.getFileName();
 		var m = new ModData();
 		if (dir == null) {
-			m.setId("mod_" + Util.randomString(32));
+			m.setId("mod_" + Util.randomString(8));
 			return m;
 		}
 		var name = dir.toString();
