@@ -485,7 +485,7 @@ public final class Util {
         var slash = entryName.lastIndexOf('/');
         var filename = slash >= 0 ? entryName.substring(slash + 1) : entryName;
         var dot = filename.lastIndexOf('.');
-        return (dot > 0 ? filename.substring(0, dot) : filename).toLowerCase(Locale.ROOT);
+        return dot > 0 ? filename.substring(0, dot) : filename;
     }
 
     public CompletableFuture<String> pickFileAsync() {

@@ -1,5 +1,6 @@
 package com.nukuhack.modforge.backend;
 
+import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.model.E.Language;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.service.IconService;
@@ -25,7 +26,7 @@ public final class ModData {
 	 * Per-mod icon store: icon stem (lowercase, no extension) -> raw DDS bytes.
 	 * Populated by IconService.loadModIconsForMod() from the mod's own PAK files.
 	 */
-	private final Map<String, IconService.Icon> iconIndex = new HashMap<>();
+	private final Set<IconService.Icon> icons = new HashSet<>();
 	/**
 	 * Set of supported versions of the KDC2 game
 	 */
@@ -40,7 +41,7 @@ public final class ModData {
 	
 	@Override
 	public String toString() {
-		return "ModData{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", description='" + description + '\'' + ", author='" + author + '\'' + ", modVersion='" + modVersion + '\'' + ", createdOn='" + createdOn + '\'' + ", modifiesLevel=" + modifiesLevel + ", supportsGameVersions=" + supportsGameVersions + ", item_size=" + items.size() + ", lang_size=" + localizations.size() + ", icon_size=" + iconIndex.size() + '}';
+		return "ModData{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", description='" + description + '\'' + ", author='" + author + '\'' + ", modVersion='" + modVersion + '\'' + ", createdOn='" + createdOn + '\'' + ", modifiesLevel=" + modifiesLevel + ", supportsGameVersions=" + supportsGameVersions + ", item_size=" + items.size() + ", lang_size=" + localizations.size() + ", icon_size=" + icons.size() + '}';
 	}
 	
 	public void addItem(ModItem item) {
@@ -86,7 +87,7 @@ public final class ModData {
 	}
 	
 	public Map<String, String> getLang(Language language) {
-		return Collections.unmodifiableMap(localizations.getOrDefault(language, Map.of()));
+		return localizations.getOrDefault(language, Map.of());
 	}
 	
 	public void addLocal(Language language, Map<String, String> input) {
@@ -100,13 +101,25 @@ public final class ModData {
 		localizations.put(language, map);
 	}
 	
-	public void setIcon(Map<String, IconService.Icon> input) {
-		iconIndex.clear();
-		iconIndex.putAll(input);
+	public void setIcon(Set<IconService.Icon> input) {
+		icons.clear();
+		icons.addAll(input);
 	}
-	
-	public IconService.Icon getIcon(String key) {
-		return iconIndex.get(key);
+
+	public Optional<IconService.Icon> getIcon(String key) {
+		var equalRandomCase = icons.stream().filter(i -> i.path().equals(key)).findAny();
+		if (equalRandomCase.isPresent())
+			return equalRandomCase;
+		var stemRandomCase = icons.stream().filter(i -> Util.stemOf(i.path()).equals(key)).findAny();
+		if (stemRandomCase.isPresent())
+			return stemRandomCase;
+
+		var keyLower = key.toLowerCase(Locale.ROOT);
+		var equalLowerCase = icons.stream().filter(i -> i.path().toLowerCase(Locale.ROOT).equals(keyLower)).findAny();
+		if (equalLowerCase.isPresent())
+			return equalLowerCase;
+		var stemLowerCase = icons.stream().filter(i -> Util.stemOf(i.path()).toLowerCase(Locale.ROOT).equals(keyLower)).findAny();
+		return stemLowerCase;
 	}
 	
 	public void setSupportsGameVersions(Collection<String> input) {

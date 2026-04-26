@@ -13,9 +13,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
@@ -36,16 +34,16 @@ public final class IconService {
 	 * Scan a single PAK file for DDS textures under {@value #TEXTURES_ROOT} and
 	 * add them to {@code target}. Returns the number of entries indexed.
 	 */
-	static Map<String, Icon> indexDdsFromPak(String pakPath) {
+	static Set<Icon> indexDdsFromPak(String pakPath) {
 		var pakFile = Path.of(pakPath);
 		var pak = pakFile.getFileName().toString();
 		
 		if (! pakFile.toFile().exists()) {
 			log.info("PAK not found – skipping icon scan: {}", pakPath);
-			return new HashMap<>();
+			return Set.of();
 		}
 		
-		var map = new HashMap<String, Icon>();
+		var map = new HashSet<Icon>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
 			for (var entry : zf.stream().filter(ze -> {
 				var name = ze.getName();
@@ -58,7 +56,7 @@ public final class IconService {
 					var stem = Util.stemOf(name);
 					if (stem.isBlank())
 						continue;
-					map.put(stem, new Icon(is.readAllBytes(), pak + ':' + name));
+					map.add(new Icon(is.readAllBytes(), pak + ':' + name));
 				} catch (Exception ex) {
 					log.info("Could not read icon entry {}: {}", name, ex.getMessage());
 				}
@@ -245,22 +243,22 @@ public final class IconService {
 	 * <p/>
 	 * Call this from ModService.fillCollection() after the mod's items are loaded.
 	 */
-	public static Map<String, Icon> loadModIcons(Path modPath) {
+	public static Set<Icon> loadModIcons(Path modPath) {
 		if (! Files.exists(modPath)) {
 			log.warn("PAK directory does not exist: {}", modPath);
-			return Map.of();
+			return Set.of();
 		}
 		
-		var map = new HashMap<String, Icon>();
+		var map = new HashSet<Icon>();
 		try (var stream = Files.list(modPath)) {
 			var pakFiles = stream.filter(excludeNonIconPaks()).collect(Collectors.toSet());
 			
 			if (pakFiles.isEmpty()) {
 				log.info("No PAK files found in: {}", modPath);
-				return Map.of();
+				return Set.of();
 			}
-			for (Path pakPath : pakFiles)
-				map.putAll(indexDdsFromPak(pakPath.toString()));
+			for (var pakPath : pakFiles)
+				map.addAll(indexDdsFromPak(pakPath.toString()));
 			
 			log.info("Loaded {} icons from {} PAK file(s)", map.size(), pakFiles.size());
 		} catch (IOException e) {
@@ -323,15 +321,15 @@ public final class IconService {
 		var key = iconId.toLowerCase(Locale.ROOT);
 		
 		var modDds = mod.getIcon(key);
-		if (modDds != null) {
-			return convert(key, modDds.data);
+		if (modDds.isPresent()) {
+			return convert(key, modDds.get().data);
 		}
 		
 		var game = Singleton.getGame();
 		if (mod != game) {
 			var baseDds = game.getIcon(key);
-			if (baseDds != null) {
-				return convert(key, baseDds.data);
+			if (baseDds.isPresent()) {
+				return convert(key, baseDds.get().data);
 			}
 		}
 		
@@ -346,7 +344,7 @@ public final class IconService {
 		if (iconId == null || iconId.isBlank())
 			return false;
 		var key = iconId.toLowerCase(Locale.ROOT);
-		return (mod != Singleton.getGame() && mod.getIconIndex().containsKey(key));
+		return mod != Singleton.getGame() && mod.getIcon(key).isPresent();
 	}
 	
 	/**
@@ -363,7 +361,7 @@ public final class IconService {
 	}
 	
 	public static void writeModIcons(ModData mod, String gameDir) {
-		var icons = mod.getIconIndex();
+		var icons = mod.getIcons();
 		if (icons.isEmpty())
 			return;
 		try {
@@ -372,7 +370,7 @@ public final class IconService {
 			log.warn("Could not create directory for for Icons");
 			return;
 		}
-		for (var icon : icons.values()) {
+		for (var icon : icons) {
 			var path = ItemService.getOutputFile(gameDir, icon.path, mod);
 			try {
 				var parentDir = path.getParent();
