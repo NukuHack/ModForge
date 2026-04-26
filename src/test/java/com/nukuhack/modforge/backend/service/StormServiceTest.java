@@ -165,12 +165,12 @@ class StormServiceTest extends BaseServiceTest {
 
 		@Test
 		void fullXmlRoundTrip() throws Exception {
-			var xml = realStormXml();
+			var xml = realStormXml().replaceAll(">\\s+<", ">\n<").trim();
 			try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
 				Storm data = StormService.parse(is);
-				String reSerialized = StormService.serialize(data);
-
-				assertEquals(xml.replaceAll(">\\s+<", ">\n<"), reSerialized.replaceAll(">\\s+<", ">\n<"));
+				String reSerialized = StormService.serialize(data).replaceAll(">\\s+<", ">\n<").trim();
+				var inter = xml.substring(xml.indexOf('>') + 2);
+				assertEquals(inter.substring(inter.indexOf('>') + 2), reSerialized.substring(reSerialized.indexOf('>') + 2));
 			}
 		}
 

@@ -64,12 +64,12 @@ public class Main {
 				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				window.addWindowListener(new java.awt.event.WindowAdapter() {
 					@Override
-					public void windowClosing(java.awt.event.WindowEvent e) {
+					public void windowClosing(java.awt.event.WindowEvent event) {
 						log.info("Shutting down...");
 						try {
 							registry.shutdown();
-						} catch (Exception ex) {
-							log.warn("Error during shutdown", ex);
+						} catch (Exception e) {
+							log.warn("Error during shutdown", Util.limitStackTrace(e, 10));
 						}
 						System.exit(0);
 					}
@@ -83,13 +83,14 @@ public class Main {
 		try {
 			try {
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			} catch (final Exception e) {
-				log.warn("Failed to set system look and feel", e);
+			} catch (Exception e) {
+				log.warn("Failed to set system look and feel", Util.limitStackTrace(e, 10));
 			}
 			// Requires FlatLaf on classpath
 			var flat = Class.forName("com.formdev.flatlaf.FlatDarkLaf");
 			flat.getMethod("setup").invoke(null);
-		} catch (final Exception e) {
+		} catch (Exception e) {
+			log.warn("Could not load 'flatlaf.FlatDarkLaf'", Util.limitStackTrace(e, 10));
 			// Fallback: force metal dark-ish defaults
 			UIManager.put("Panel.background", new Color(0x1e1e2e));
 			UIManager.put("control", new Color(0x1e1e2e));

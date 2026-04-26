@@ -62,7 +62,7 @@ public interface UserConfig {
 			try {
 				IOUtil.ensureDirExists(Path.of(gameDir));
 			} catch (IOException e) {
-				log.warn("failed to create directory for game path", e);
+				log.warn("failed to create directory for game path", Util.limitStackTrace(e, 10));
 				return;
 			}
 			this.gameDir = gameDir;

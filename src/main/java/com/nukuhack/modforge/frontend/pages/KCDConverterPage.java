@@ -209,10 +209,10 @@ public class KCDConverterPage extends BasePage {
 				appendLog(getLocalText("ui_kcd_log_done"));
 				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_kcd_success_message", BarManager.Type.SUCCESS));
 				
-			} catch (Exception ex) {
-				log.error("Conversion failed", ex);
-				appendLog(getLocalText("ui_kcd_log_error", ex.getMessage()));
-				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_kcd_failed_message", BarManager.Type.ERROR, ex.getMessage()));
+			} catch (Exception e) {
+				log.warn("Conversion failed", Util.limitStackTrace(e, 10));
+				appendLog(getLocalText("ui_kcd_log_error", e.getMessage()));
+				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_kcd_failed_message", BarManager.Type.ERROR, e.getMessage()));
 			} finally {
 				SwingUtilities.invokeLater(() -> convertBtn.setEnabled(true));
 			}

@@ -107,13 +107,13 @@ public final class ItemService {
 				return docBuilder.parse(new InputSource(reader));
 			}
 		} catch (SAXException e) {
-			log.warn("Could not parse the file", e);
+			log.warn("Could not parse the file", Util.limitStackTrace(e, 10));
 			return null;
 		} catch (IOException e) {
-			log.warn("Could not access the file", e);
+			log.warn("Could not access the file", Util.limitStackTrace(e, 10));
 			return null;
 		} catch (Exception e) {
-			log.warn("Unknown exception at xml parsing", e);
+			log.warn("Unknown exception at xml parsing", Util.limitStackTrace(e, 10));
 			return null;
 		}
 	}

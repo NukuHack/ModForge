@@ -189,7 +189,7 @@ public final class LocalService {
 			
 			sb.append(INDENT).append("<Row>\n");
 			sb.append(INDENT).append(INDENT).append("<Cell>").append(Util.escapeXml(key)).append("</Cell>\n");
-			sb.append(INDENT).append(INDENT).append("<Cell/>\n");
+			sb.append(INDENT).append(INDENT).append("<Cell>").append(Util.escapeXml(key)).append("</Cell>\n");
 			sb.append(INDENT).append(INDENT).append("<Cell>").append(Util.escapeXml(entry.getValue())).append("</Cell>\n");
 			sb.append(INDENT).append("</Row>\n");
 		}
@@ -357,7 +357,7 @@ public final class LocalService {
 				zis.closeEntry();
 			}
 		} catch (IOException e) {
-			log.error("Failed to read ZIP from resources", e);
+			log.error("Failed to read ZIP from resources", Util.limitStackTrace(e, 10));
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
 		}

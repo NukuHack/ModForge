@@ -5,6 +5,7 @@ import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.model.ModItem.BaseModItem;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,6 +51,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <p>DDS codec correctness (BC1/BC3/BC7 etc.) is covered by {@code DDSUtilTest}
  * and is therefore <em>not</em> re-tested here.
  */
+@Slf4j
 @DisplayName("IconService")
 class IconServiceTest extends BaseServiceTest {
 	
@@ -163,7 +165,7 @@ class IconServiceTest extends BaseServiceTest {
 			assertNotNull(icons, "result must not be null");
 			assertFalse(icons.isEmpty(), "PAK must contain at least one DDS file");
 			
-			icons.forEach((name, data) -> System.out.printf("  indexed: %-40s  (%,d bytes)%n", name, data.data().length));
+			icons.forEach((name, data) -> log.info("  indexed: {}  ({} bytes)", name, data.data().length));
 		}
 		
 		@Test
@@ -196,7 +198,7 @@ class IconServiceTest extends BaseServiceTest {
 	@Nested
 	@DisplayName("DDS → PNG (convertToImage)")
 	class DdsToPngConversion {
-		
+
 		@Test
 		@DisplayName("converts every DDS in the test PAK to a non-empty BufferedImage")
 		void convertsAllDdsEntriesToImages() throws Exception {
@@ -210,7 +212,7 @@ class IconServiceTest extends BaseServiceTest {
 				assertNotNull(img, "conversion must succeed for: " + entry.getKey());
 				assertTrue(img.getWidth() > 0, "image width must be positive: " + entry.getKey());
 				assertTrue(img.getHeight() > 0, "image height must be positive: " + entry.getKey());
-				System.out.printf("  converted: %-40s  (%dx%d)%n", entry.getKey(), img.getWidth(), img.getHeight());
+				log.info("  converted: {} {}x{}", entry.getKey(), img.getWidth(), img.getHeight());
 			}
 		}
 		
@@ -432,14 +434,12 @@ class IconServiceTest extends BaseServiceTest {
 					Files.write(outputPath, recompressedDds);
 					
 					successCount++;
-					System.out.printf("  ✓ %-40s → %s (original: %d bytes, recompressed: %d bytes)%n", archivePath, outputPath.getFileName(), ddsBytes.length, recompressedDds.length);
-					
 					// Clean up temporary PNG
 					Files.deleteIfExists(tempPng);
 					
 				} catch (Exception e) {
 					failureCount++;
-					System.err.printf("  ✗ Failed to process %s: %s%n", archivePath, e.getMessage());
+					log.warn("  ✗ Failed to process {}: {}", archivePath, e.getMessage());
 					// Continue processing other entries
 				}
 			}

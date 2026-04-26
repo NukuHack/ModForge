@@ -131,7 +131,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 			log.info("Manifest written: {}", manifest);
 			return true;
 		} catch (Exception e) {
-			log.error("writeModManifest failed", e);
+			log.error("writeModManifest failed", Util.limitStackTrace(e, 10));
 			return false;
 		}
 	}

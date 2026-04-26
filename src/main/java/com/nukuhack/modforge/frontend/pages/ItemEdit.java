@@ -768,8 +768,8 @@ public class ItemEdit extends BaseEditPage {
 					currentItem.addAttribute(newAttr);
 				}
 			}
-		} catch (Exception ex) {
-			log.warn("could not extract new value from Ui", ex);
+		} catch (Exception e) {
+			log.warn("could not extract new value from Ui", Util.limitStackTrace(e, 10));
 		}
 		
 		hasChanges = false;
@@ -898,8 +898,8 @@ public class ItemEdit extends BaseEditPage {
 					copy.addAttribute(newAttr);
 				}
 			}
-		} catch (Exception ex) {
-			log.warn("could not apply unsaved edits to mod copy", ex);
+		} catch (Exception e) {
+			log.warn("could not apply unsaved edits to mod copy", Util.limitStackTrace(e, 10));
 		}
 		
 		mod.addItem(copy);

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE storm SYSTEM "storm.dtd">
 <storm>
 	<rules>
@@ -6,22 +6,19 @@
 			<selectors>
 				<isMan/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_woman">
 			<selectors>
 				<isWoman/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_bathmaid">
 			<selectors>
 				<hasSocialClass name="bathhouseMaid"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_ttro_tomas">
 			<selectors>
@@ -35,8 +32,7 @@
 			<selectors>
 				<hasName Name="papezskyLegat_cin_rozaNaked"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_tarasMura_taras">
 			<selectors>
@@ -102,43 +98,37 @@
 			<selectors>
 				<hasName name="kgru_bathmaid_1"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kgru_bathmaid_2">
 			<selectors>
 				<hasName name="kgru_bathmaid_2"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kgru_bathmaid_3">
 			<selectors>
 				<hasName name="kgru_bathmaid_3"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kgru_bathmaid_4">
 			<selectors>
 				<hasName name="kgru_bathmaid_4"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kkut_betasBathmaid_1">
 			<selectors>
 				<hasName name="kkut_betasBathmaid_1"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kkut_vsivaMari">
 			<selectors>
 				<hasName Name="kkut_vsivaMari"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kkut_sedmStatecnych2_deadBody">
 			<selectors>
@@ -232,8 +222,7 @@
 			<selectors>
 				<hasName name="taboryUCesty_dice_actors_woman_1"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_taboryUCesty_shop_andreas">
 			<selectors>
@@ -271,22 +260,19 @@
 			<selectors>
 				<hasName name="kkut_rozaRuthard"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kvrc_millersWife">
 			<selectors>
 				<hasName name="kvrc_millersWife"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kvrc_millersDaugther">
 			<selectors>
 				<hasName name="kvrc_millersDaugther"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 		<rule name="underwear_kvrc_millersSon">
 			<selectors>
@@ -348,8 +334,7 @@
 			<selectors>
 				<hasName name="prepadeni_woman_2"/>
 			</selectors>
-			<operations>
-			</operations>
+			<operations/>
 		</rule>
 	</rules>
 </storm>

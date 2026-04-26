@@ -349,8 +349,8 @@ public class ArchivePage extends BasePage {
                 } else {
                     success = IOUtil.packFolder(inPath, outPath, null,false);
                 }
-            } catch (Exception ex) {
-                log.error("Archive operation failed", ex);
+            } catch (Exception e) {
+                log.error("Archive operation failed", Util.limitStackTrace(e, 10));
                 success = false;
             }
 

@@ -1,5 +1,6 @@
 package com.nukuhack.util;
 
+import com.nukuhack.modforge.Util;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -105,7 +106,7 @@ public final class IOUtil {
 		try {
 			Files.createDirectories(absoluteDest);
 		} catch (IOException e) {
-			log.error("Archive extraction failed – cannot create destination folder", e);
+			log.error("Archive extraction failed – cannot create destination folder", Util.limitStackTrace(e, 10));
 			return false;
 		}
 		
@@ -148,12 +149,12 @@ public final class IOUtil {
 			return true;
 			
 		} catch (IOException e) {
-			log.error("Archive extraction failed", e);
+			log.error("Archive extraction failed", Util.limitStackTrace(e, 10));
 			return false;
 		}
 	}
 	
-	public boolean packFolder(final Path sourceFolder, final Path destPakFile, final Predicate<Path> fileFilter, final boolean stripMetadata) {
+	public boolean packFolder(Path sourceFolder, Path destPakFile, Predicate<Path> fileFilter, boolean strip) {
 		if (! Files.exists(sourceFolder) || ! Files.isDirectory(sourceFolder)) {
 			log.warn("Source folder does not exist: {}", sourceFolder);
 			return false;
@@ -165,46 +166,44 @@ public final class IOUtil {
 		try {
 			Files.createDirectories(absoluteDest.getParent());
 			Files.deleteIfExists(absoluteDest);
-		} catch (final IOException e) {
-			log.error("PAK creation failed – cannot prepare output", e);
+		} catch (IOException e) {
+			log.error("PAK creation failed – cannot prepare output", Util.limitStackTrace(e, 10));
 			return false;
 		}
 		
 		try (var fos = new FileOutputStream(absoluteDest.toFile()); var zos = new ZipOutputStream(fos); var walk = Files.walk(absoluteSource)) {
 			
 			zos.setLevel(9);
-			if (stripMetadata)
+			if (strip)
 				zos.setComment("");
 			
 			walk.filter(Files::isRegularFile).filter(p -> ! p.toAbsolutePath().normalize().equals(absoluteDest))
-					
-					.filter(p -> fileFilter == null || fileFilter.test(p)).forEach(file -> {
-						try {
-							var entryName = absoluteSource.relativize(file).toString().replace('\\', '/');
-							var entry = new ZipEntry(entryName);
-							
-							if (stripMetadata) {
-								entry.setTime(0L);
-								
-								entry.setExtra(new byte[0]);
-							} else {
-								entry.setTime(Files.getLastModifiedTime(file).toMillis());
-							}
-							
-							zos.putNextEntry(entry);
-							Files.copy(file, zos);
-							zos.closeEntry();
-							
-						} catch (IOException e) {
-							log.warn("Cannot add to pak: {} – {}", file, e.getMessage());
-						}
-					});
+				.filter(p -> fileFilter == null || fileFilter.test(p)).forEach(file -> writeEntry(file, absoluteSource, zos, strip));
 			
 			return true;
-			
 		} catch (IOException e) {
-			log.error("PAK creation failed", e);
+			log.error("PAK creation failed", Util.limitStackTrace(e, 10));
 			return false;
+		}
+	}
+
+	private void writeEntry(Path file, Path absoluteSource, ZipOutputStream zos, boolean strip) {
+		try {
+			var entryName = absoluteSource.relativize(file).toString().replace('\\', '/');
+			var entry = new ZipEntry(entryName);
+
+			if (strip) {
+				entry.setTime(0L);
+				entry.setExtra(new byte[0]);
+			} else {
+				entry.setTime(Files.getLastModifiedTime(file).toMillis());
+			}
+
+			zos.putNextEntry(entry);
+			Files.copy(file, zos);
+			zos.closeEntry();
+		} catch (IOException e) {
+			log.warn("Cannot add to pak: {} – {}", file, e.getMessage());
 		}
 	}
 	

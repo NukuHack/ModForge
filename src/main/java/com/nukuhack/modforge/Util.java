@@ -541,9 +541,9 @@ public final class Util {
             JOptionPane.showMessageDialog(w, "Game directory not correct. Please configure it in Settings.", "Directory Incorrect", JOptionPane.WARNING_MESSAGE);
         } catch (FileNotFoundException e) {
             JOptionPane.showMessageDialog(w, "Game directory does not exist or is invalid:\n" + dirPath, "Invalid Directory", JOptionPane.ERROR_MESSAGE);
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(w, "Failed to open game directory:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            log.warn("IOException while choosing folder", ex);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(w, "Failed to open game directory:\n" + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            log.warn("IOException while choosing folder", Util.limitStackTrace(e, 10));
         }
         JOptionPane.showMessageDialog(w, "Cannot open directory on this operating system.", "Unsupported OS", JOptionPane.ERROR_MESSAGE);
     }
@@ -577,6 +577,47 @@ public final class Util {
             }
 
             return Paths.get(home, ".config", APP_NAME.toLowerCase());
+        }
+    }
+
+    /**
+     * Creates a new exception with limited stack trace depth.
+     * Preserves the message, cause chain, and suppressed exceptions.
+     */
+    public static <T extends Throwable> T limitStackTrace(T exception, int maxLayers) {
+        // Create a new Exception of the same type with the same message
+        @SuppressWarnings("unchecked")
+        T limited = (T) createNewInstance(exception, exception.getMessage());
+
+        // Limit the main stack trace
+        var fullTrace = exception.getStackTrace();
+        var limitedTrace = new StackTraceElement[Math.min(maxLayers, fullTrace.length)];
+        System.arraycopy(fullTrace, 0, limitedTrace, 0, limitedTrace.length);
+        limited.setStackTrace(limitedTrace);
+
+        // Preserve the cause chain
+        if (exception.getCause() != null) {
+            limited.initCause(limitStackTrace(exception.getCause(), maxLayers));
+        }
+
+        // Preserve suppressed exceptions
+        for (var suppressed : exception.getSuppressed()) {
+            limited.addSuppressed(limitStackTrace(suppressed, maxLayers));
+        }
+
+        return limited;
+    }
+
+    private static Throwable createNewInstance(Throwable original, String message) {
+        try {
+            return original.getClass()
+                    .getConstructor(String.class)
+                    .newInstance(message);
+        } catch (Exception e) {
+            // Fallback: wrap in RuntimeException if constructor not available
+            var fallback = new RuntimeException(message);
+            fallback.setStackTrace(original.getStackTrace());
+            return fallback;
         }
     }
 
