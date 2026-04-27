@@ -11,17 +11,9 @@ import org.mockito.Mockito;
 @Slf4j
 class MainTest {
 	@Test
-	void classTest4() {
-		ModItem item = Mockito.mock(ModItem.class, Mockito.withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		Mockito.doReturn(ModItem.BaseModItem.class).when(item).getClass();
-		// this returns "com.nukuhack.modforge.backend.model.ModItem$MockitoMock$"+(7 random char)
-		log.debug("class: {}", item.getClass());
-	}
-	
-	@Test
-	void classTest6() throws Exception {
+	void classTest() throws Exception {
 		Class<? extends ModItem> dynamicType = new ByteBuddy()
-			   .subclass(ModItem.BaseModItem.class)
+			   .subclass(ModItem.class)
 			   .method(ElementMatchers.any())
 			   .intercept(StubMethod.INSTANCE)  // Returns null, 0, false, etc. based on return type
 			   .make()

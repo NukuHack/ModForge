@@ -64,7 +64,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * @param tagName  the element tag — callers must already have stripped any index suffix
 	 * @param node     the node to convert
 	 */
-	public static @NonNull Element serializeNode(final @NonNull Document document, final @NonNull String tagName, final @NonNull XmlNode node) {
+	public static @NonNull Element serializeNode(@NonNull Document document, @NonNull String tagName, @NonNull XmlNode node) {
 		var el = document.createElement(tagName);
 		
 		for (var attr : node.attributes()) {
@@ -188,7 +188,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * all other attributes are written as flat XML attributes.
 	 */
 	@Override
-	public @NonNull Element handle(final @NonNull Document document, final @NonNull ModItem item) {
+	public @NonNull Element handle(@NonNull Document document, @NonNull ModItem item) {
 		var entry = ItemEntry.to(item);
 		var el = document.createElement(entry.xmlObjName);
 		

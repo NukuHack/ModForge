@@ -116,7 +116,7 @@ public interface UserConfig {
 		
 		/**
 		 * Write mod-load order file (mirrors C# WriteLoadout).
-		 * idk what this is and how to use it so left it alone ...
+		 * IDK what this is and how to use it so left it alone ...
 		 */
 		public void writeLoadout(List<ModData> orderedMods) {
 			if (gameDir.isBlank())

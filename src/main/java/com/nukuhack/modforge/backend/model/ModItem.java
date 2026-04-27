@@ -8,133 +8,213 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * Interface - generic item...
+ * Base class representing a generic mod item.
+ *
+ * <p>Holds a typed attribute list, a path (optionally prefixed with a namespace
+ * separated by {@code :}), and an identifier. Attribute look-ups are
+ * case-insensitive name-contains matches unless stated otherwise.
  */
-public interface ModItem {
-	// ── Attribute names that hold localization keys (checked case-insensitively)
-	Set<String> LANG_ATTR_HINTS = Set.of("UIName", "Desc", "UIInfo", "perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name", "slot_buff_ui_name", "buff_ui_name", "buff_ui_desc");
-	
-	@NonNull String getId();
-	
-	void setId(final @NonNull String id);
-	
+@Slf4j
+@Setter
+@NoArgsConstructor
+public abstract class ModItem {
+
 	/**
-	 * @return ID key for Element mapping from XML data
+	 * Attribute names (checked case-insensitively) whose values are
+	 * localization keys rather than raw display strings.
 	 */
-	default @NonNull String getIdKey() {
+	public static final Set<String> LANG_ATTR_HINTS = Set.of(
+			"UIName", "Desc", "UIInfo",
+			"perk_ui_lore_desc", "perk_ui_desc", "perk_ui_name",
+			"slot_buff_ui_name", "buff_ui_name", "buff_ui_desc"
+	);
+
+	// ── Fields ────────────────────────────────────────────────────────────────
+
+	private final List<Attribute> attributes = new ArrayList<>();
+
+	// TODO: migrate from String to a richer ID type once the data model allows it —
+	//       current data contains numeric IDs (0, -1) as well as plain string names.
+	@Getter
+	private String id;
+
+	@Getter
+	private String path;
+
+	// ── ID key ────────────────────────────────────────────────────────────────
+
+	/**
+	 * Returns the XML element mapping key for this item's concrete type.
+	 */
+	public @NonNull String getIdKey() {
 		return ItemType.getIdKey(this.getClass());
 	}
-	
-	@NonNull String getPath();
-	
-	void setPath(final @NonNull String path);
-	
-	@NonNull List<Attribute> getAttributes();
-	
-	void setAttribute(final @NonNull Collection<Attribute> attributes);
-	
-	void removeAttribute(final @NonNull Attribute attr);
-	
-	void addAttribute(final @NonNull Attribute attr);
-	
-	void addAttribute(final @NonNull Collection<Attribute> attributes);
-	
-	@NonNull Optional<Attribute> findAttr(final @NonNull String candidate);
 
-	default @NonNull List<Attribute.StringAttribute> getLangAttributes() {
-		var result = new ArrayList<Attribute.StringAttribute>();
-		for (var attr : getAttributes()) {
-			if (attr instanceof Attribute.StringAttribute sa && LANG_ATTR_HINTS.contains(attr.getName()))
+	// ── Path helpers ──────────────────────────────────────────────────────────
+
+	/**
+	 * Returns the prefix portion of the path (everything before the first
+	 * {@code :}), or an empty string when no prefix is present.
+	 */
+	public @NonNull String getPathPrefix() {
+		var colon = path.indexOf(':');
+		return colon >= 0 ? path.substring(0, colon) : "";
+	}
+
+	/**
+	 * Returns the path without its prefix (everything after the first
+	 * {@code :}), or the full path when no prefix is present.
+	 */
+	public @NonNull String getPathWithoutPrefix() {
+		var colon = path.indexOf(':');
+		return colon >= 0 ? path.substring(colon + 1) : path;
+	}
+
+	/** Returns {@code true} when the path contains a {@code :} separator. */
+	public boolean hasPathPrefix() {
+		return path.contains(":");
+	}
+
+	/**
+	 * Replaces an existing prefix in the path, or prepends one if none is
+	 * present yet.
+	 *
+	 * @param prefix the new prefix, without a trailing colon
+	 */
+	public void setPathPrefix(@NonNull String prefix) {
+		var colon = path.indexOf(':');
+		path = colon >= 0
+				? prefix + path.substring(colon)   // replace
+				: prefix + ":" + path;              // prepend
+	}
+
+	/** Removes the prefix from the path if one is present. */
+	public void removePathPrefix() {
+		path = getPathWithoutPrefix();
+	}
+
+	// ── Attribute accessors ───────────────────────────────────────────────────
+
+	/** Returns an unmodifiable view of all attributes. */
+	public @NonNull List<Attribute> getAttributes() {
+		return Collections.unmodifiableList(attributes);
+	}
+
+	/** Replaces all attributes with the given collection. */
+	public void setAttribute(@NonNull Collection<Attribute> attrs) {
+		attributes.clear();
+		attributes.addAll(attrs);
+	}
+
+	/** Appends a single attribute. */
+	public void addAttribute(@NonNull Attribute attr) {
+		attributes.add(attr);
+	}
+
+	/** Appends all attributes in the given collection. */
+	public void addAttribute(@NonNull Collection<Attribute> attrs) {
+		attributes.addAll(attrs);
+	}
+
+	/** Removes a specific attribute instance. */
+	public void removeAttribute(@NonNull Attribute attr) {
+		attributes.remove(attr);
+	}
+
+	/**
+	 * Removes all attributes whose name matches {@code name}
+	 * (case-insensitive, exact match).
+	 */
+	public void removeAttributeByName(@NonNull String name) {
+		var lo = name.toLowerCase(Locale.ROOT);
+		attributes.removeIf(a -> a.getName().toLowerCase(Locale.ROOT).equals(lo));
+	}
+
+	// ── Attribute queries ─────────────────────────────────────────────────────
+
+	/**
+	 * Returns the first attribute whose name (case-insensitive) <em>contains</em>
+	 * {@code candidate}, or {@link Optional#empty()} when none matches.
+	 */
+	public @NonNull Optional<Attribute> findAttr(@NonNull String candidate) {
+		var lo = candidate.toLowerCase(Locale.ROOT);
+		return attributes.stream()
+				.filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo))
+				.findFirst();
+	}
+
+	/**
+	 * Returns all attributes whose name (case-insensitive) <em>contains</em>
+	 * {@code candidate}.
+	 */
+	public @NonNull List<Attribute> findAttrs(@NonNull String candidate) {
+		var lo = candidate.toLowerCase(Locale.ROOT);
+		return attributes.stream()
+				.filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo))
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Returns all attributes whose names appear in {@link #LANG_ATTR_HINTS}
+	 * and whose values are {@link Attribute.StringAttribute} instances.
+	 */
+	public @NonNull List<Attribute.StringAttribute> getLangAttributes() {
+		final var result = new ArrayList<Attribute.StringAttribute>();
+		for (final var attr : attributes) {
+			if (attr instanceof Attribute.StringAttribute sa
+					&& LANG_ATTR_HINTS.contains(attr.getName())) {
 				result.add(sa);
+			}
 		}
 		return result;
 	}
-	
+
+	// ── Human-readable details ────────────────────────────────────────────────
+
 	/**
-	 * Get all item details as plain text for copying
+	 * Returns a plain-text summary of this item (id, type, path, attributes)
+	 * suitable for display or copying.
 	 */
-	default @NonNull String details() {
+	public @NonNull String details() {
 		final var sb = new StringBuilder();
-		sb.append("ID: ").append(this.getId()).append("\n");
-		sb.append("Class: ").append(this.getClass().getSimpleName()).append("\n");
-		sb.append("Path: ").append(this.getPath()).append("\n");
-		
-		// Show attributes if any
-		if (! this.getAttributes().isEmpty()) {
+		sb.append("ID:    ").append(id).append('\n');
+		sb.append("Class: ").append(getClass().getSimpleName()).append('\n');
+		sb.append("Path:  ").append(path).append('\n');
+
+		if (!attributes.isEmpty()) {
 			sb.append("\nAttributes:\n");
-			for (var attr : this.getAttributes()) {
-				sb.append("  • ").append(attr.getName()).append(": ").append(attr.getValue()).append("\n");
+			for (final var attr : attributes) {
+				sb.append("  • ").append(attr.getName())
+						.append(": ").append(attr.getValue()).append('\n');
 			}
 		}
-		
+
 		return sb.toString();
 	}
-	
-	
-	@Slf4j
-	@Setter
-	@NonNull
-	@NoArgsConstructor
-	abstract class BaseModItem implements ModItem {
-		private final List<Attribute> attributes = new ArrayList<>();
-		// TODO change the ID from string to a nicer object - can not do since we have id of 0 and id of -1 and even string-data like names ...
-		@Getter
-		private String id;
-		@Getter
-		private String path;
-		
-		@Override
-		public @NonNull List<Attribute> getAttributes() {
-			return Collections.unmodifiableList(this.attributes);
-		}
-		
-		@Override
-		public void setAttribute(final @NonNull Collection<Attribute> attr) {
-			this.attributes.clear();
-			this.attributes.addAll(attr);
-		}
-		
-		@Override
-		public void removeAttribute(final @NonNull Attribute attr) {
-			this.attributes.remove(attr);
-		}
-		
-		@Override
-		public void addAttribute(final @NonNull  Attribute attr) {
-			this.attributes.add(attr);
-		}
-		
-		@Override
-		public void addAttribute(final @NonNull  Collection<Attribute> attr) {
-			this.attributes.addAll(attr);
-		}
-		
-		/**
-		 * Helper: find the first attribute whose name (case-insensitive) contains the candidate.
-		 */
-		public @NonNull Optional<Attribute> findAttr(final @NonNull  String candidate) {
-			final String lo = candidate.toLowerCase(Locale.ROOT);
-			return this.attributes.stream().filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(lo)).findFirst();
-		}
-		
-		@Override
-		public boolean equals(Object o) {
-			if (o == null || getClass() != o.getClass())
-				return false;
-			final BaseModItem that = (BaseModItem) o;
-			return Objects.equals(getId(), that.getId()) && Objects.equals(getPath(), that.getPath());
-		}
-		
-		@Override
-		public int hashCode() {
-			return Objects.hash(getId(), getPath());
-		}
-		
-		@Override
-		public String toString() {
-			return this.getClass().getName() + "{attributes=" + attributes + ", id='" + id + '\'' + ", path='" + path + '\'' + '}';
-		}
+
+	// ── Object overrides ──────────────────────────────────────────────────────
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null || getClass() != o.getClass()) return false;
+		final ModItem that = (ModItem) o;
+		return Objects.equals(id, that.id) && Objects.equals(path, that.path);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, path);
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getName()
+				+ "{id='" + id + '\''
+				+ ", path='" + path + '\''
+				+ ", attributes=" + attributes
+				+ '}';
 	}
 }

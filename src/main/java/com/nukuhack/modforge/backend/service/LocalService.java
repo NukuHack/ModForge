@@ -6,11 +6,9 @@ import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.model.E.Language;
-import com.nukuhack.modforge.backend.model.ModItem;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
@@ -28,27 +26,8 @@ import java.util.zip.ZipInputStream;
 import static com.nukuhack.modforge.backend.model.Attribute.INDENT;
 
 @Slf4j
-public final class LocalService {
-	/**
-	 * Thread-local XMLInputFactory — one pre-configured instance per thread,
-	 * avoids repeated factory construction and carries the entity-size fix.
-	 */
-	private static final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
-		XMLInputFactory f = XMLInputFactory.newInstance();
-		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
-		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
-		
-		f.setProperty(XMLInputFactory.IS_COALESCING, true);
-        f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
-        f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
-        return f;
-	});
-	private final UserConfig userConfig;
-	
-	public LocalService(UserConfig userConfig) {
-		this.userConfig = userConfig;
-	}
+@NonNull
+public record LocalService(UserConfig userConfig) {
 	
 	/**
 	 * Read all localisation paks from the game directory.
@@ -95,7 +74,7 @@ public final class LocalService {
 		
 		var result = new LinkedHashMap<String, String>(1024);
 		
-		var factory = XML_FACTORY.get();
+		var factory = Singleton.XML_FACTORY.get();
 		
 		String key = null;
 		var cellIndex = 0;
@@ -213,49 +192,18 @@ public final class LocalService {
 		}
 		log.info("Game Localization Load took: {}", System.currentTimeMillis() - start);
 	}
-	
+
 	/**
-	 * Resolve the display name of {@code item}, checking {@code mod}'s own
-	 * localizations before falling back to the base-game strings.
+	 * Bulk version of {@link LocalService#resolve(ModData, Language, String)}
 	 */
-	public String getName(ModItem item, ModData mod) {
-		return resolve(item, mod, "ui_name", "UIName", "name");
+	private List<String> resolve(ModData mod, Language lang, List<String> candidates) {
+		return candidates.stream().map(c -> resolve(mod, lang, c)).toList();
 	}
-	
-	/**
-	 * Resolve the description of {@code item} with mod-then-base fallback.
-	 */
-	public String getDescription(ModItem item, ModData mod) {
-		return resolve(item, mod, "ui_desc", "UIInfo");
-	}
-	
-	/**
-	 * Resolve the lore description of {@code item} with mod-then-base fallback.
-	 */
-	public String getLoreDescription(ModItem item, ModData mod) {
-		return resolve(item, mod, "ui_lore_desc");
-	}
-	
-	/** Resolve the display name of a base-game item. */
-	public String getName(ModItem item) {
-		return getName(item, Singleton.getGame());
-	}
-	
-	/** Resolve the description of a base-game item. */
-	public String getDescription(ModItem item) {
-		return getDescription(item, Singleton.getGame());
-	}
-	
-	/** Resolve the lore description of a base-game item. */
-	public String getLoreDescription(ModItem item) {
-		return getLoreDescription(item, Singleton.getGame());
-	}
-	
 	/**
 	 * Look up a raw localization key in the mod's strings, then the base game.
 	 * Returns {@code null} if not found in either.
 	 */
-	public String resolve(String key, final ModData mod, final Language lang) {
+	public String resolve(ModData mod, Language lang, String key) {
 		if (key == null || (key = key.trim()).isEmpty())
 			return null;
 		var game = Singleton.getGame();
@@ -273,50 +221,15 @@ public final class LocalService {
 		return null;
 	}
 	
-	public String resolve(String key, ModData mod) {
-		return resolve(key, mod, userConfig.getLanguage());
+	public String resolve(ModData mod, String key) {
+		return resolve(mod, userConfig.getLanguage(), key);
 	}
 	
 	/**
 	 * Look up a raw localization key in the base-game strings only.
 	 */
 	public String resolve(String key) {
-		return resolve(key, Singleton.getGame());
-	}
-	
-	/**
-	 * Resolve one of several candidate attribute names on {@code item} to a
-	 * localized string. Resolution order for each candidate key found:
-	 *   1. mod's own localizations for the current language
-	 *   2. base-game localizations for the current language
-	 *   3. the raw attribute value (key itself) as a last resort
-	 * <p/>
-	 * Returns {@code null} if no candidate attribute is present on the item.
-	 */
-	private String resolve(ModItem item, ModData mod, String... candidates) {
-		
-		var game = Singleton.getGame();
-		var modMap = (mod != game) ? mod.getLang(userConfig.getLanguage()) : new HashMap<String, String>();
-		var baseMap = game.getLang(userConfig.getLanguage());
-		
-		for (var candidate : candidates) {
-			var clo = candidate.toLowerCase(Locale.ROOT);
-			
-			var attr = item.getAttributes().stream().filter(a -> a.getName().toLowerCase(Locale.ROOT).contains(clo)).findFirst().orElse(null);
-			if (attr == null)
-				continue;
-			
-			var key = String.valueOf(attr.getValue());
-			
-			if (modMap.containsKey(key))
-				return modMap.get(key);
-			
-			if (baseMap.containsKey(key))
-				return baseMap.get(key);
-			
-			return key;
-		}
-		return null;
+		return resolve(Singleton.getGame(), key);
 	}
 	
 	record LangPak(@NonNull Language language, @NonNull String pakPath) {

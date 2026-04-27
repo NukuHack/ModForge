@@ -585,7 +585,7 @@ public final class Util {
      * Preserves the message, cause chain, and suppressed exceptions.
      */
     public static <T extends Throwable> T limitStackTrace(T exception, int maxLayers) {
-        // Create a new Exception of the same type with the same message
+        // Create a new Exception Object of the same type with the same message
         @SuppressWarnings("unchecked")
         T limited = (T) createNewInstance(exception, exception.getMessage());
 

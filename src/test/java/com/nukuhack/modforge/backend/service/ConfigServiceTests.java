@@ -32,14 +32,14 @@ class ConfigServiceTests extends BaseServiceTest {
 	@Test
 	@DisplayName("parse mod.cfg resource – at least one key present")
 	void parseModCfg() throws Exception {
-		Map<String, String> cfg = parseConfigBytes(modCfgBytes);
+		var cfg = parseConfigBytes(modCfgBytes);
 		assertFalse(cfg.isEmpty(), "mod.cfg should contain at least one key=value entry");
 	}
 	
 	@Test
 	@DisplayName("parse autoexec.cfg resource – at least one key present")
 	void parseAutoexecCfg() throws Exception {
-		Map<String, String> cfg = parseConfigBytes(autoexecCfgBytes);
+		var cfg = parseConfigBytes(autoexecCfgBytes);
 		assertFalse(cfg.isEmpty(), "autoexec.cfg should contain at least one key=value entry");
 	}
 	
@@ -54,7 +54,7 @@ class ConfigServiceTests extends BaseServiceTest {
 				; inline comment line
 				key2 = value2 ; trailing comment
 				""";
-		Map<String, String> cfg = parseConfigString(content);
+		var cfg = parseConfigString(content);
 		assertEquals(2, cfg.size());
 		assertEquals("value1", cfg.get("key1"));
 		assertEquals("value2", cfg.get("key2"));
@@ -66,7 +66,7 @@ class ConfigServiceTests extends BaseServiceTest {
 		Map<String, String> base = new LinkedHashMap<>();
 		base.put("a", "1");
 		base.put("b", "2");
-		Map<String, String> merge = Map.of("b", "99", "c", "3");
+		var merge = Map.of("b", "99", "c", "3");
 		ConfigService.mergeConfigs(base, merge);
 		assertEquals("1", base.get("a"));
 		assertEquals("99", base.get("b"));

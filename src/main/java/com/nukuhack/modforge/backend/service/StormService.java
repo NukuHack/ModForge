@@ -1,5 +1,6 @@
 package com.nukuhack.modforge.backend.service;
 
+import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.Storm;
 import com.nukuhack.modforge.backend.model.Storm.StormRule;
@@ -10,9 +11,6 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -99,21 +97,6 @@ import java.util.function.Consumer;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StormService {
 
-    static final DocumentBuilder docBuilder;
-
-    static {
-        try {
-            var f = DocumentBuilderFactory.newInstance();
-            f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            f.setFeature("http://xml.org/sax/features/validation", false);
-            f.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            docBuilder = f.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /**
      * Parse a Storm XML {@link InputStream} into an {@link Storm} item.
      * The caller is responsible for setting {@code id} and {@code path} on the
@@ -124,7 +107,7 @@ public final class StormService {
      */
     public static Storm parse(InputStream is) {
         try {
-            var doc = docBuilder.parse(is);
+            var doc = Singleton.DOC_BUILDER.get().parse(is);
             return parse(doc.getDocumentElement());
         } catch (Exception ex) {
             log.warn("StormParser: failed to parse: {}", ex.getMessage());
@@ -328,7 +311,7 @@ public final class StormService {
      * to a pretty-printed XML string that matches the on-disk format.
      */
     public static String serialize(Storm item) throws Exception {
-        var doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+        var doc = Singleton.DOC_BUILDER.get().newDocument();
         doc.appendChild(serialize(item, doc));
         var tf = TransformerFactory.newInstance().newTransformer();
         tf.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -471,18 +454,6 @@ public final class StormService {
                 map.put(a.getName(), a.getValue());
         }
         return map;
-    }
-
-    /**
-     * Parse a double from a string, returning {@code 0} on failure.
-     */
-    private static double parseDouble(String s) {
-        if (s == null || s.isBlank()) return 0;
-        try {
-            return Double.parseDouble(s);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 
     /**

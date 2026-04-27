@@ -7,28 +7,26 @@ import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.util.IOUtil;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
-@lombok.extern.slf4j.Slf4j
-public final class IconService {
+@Slf4j
+@NonNull
+public record IconService(UserConfig userConfig) {
 	
 	private static final String TEXTURES_ROOT = "Libs/UI/Textures";
 	private static final String FALLBACK_ICON = "crime_investigation_icon";
-	
-	private final UserConfig userConfig;
-	
-	public IconService(@NonNull UserConfig userConfig) {
-		this.userConfig = userConfig;
-	}
 	
 	/**
 	 * Scan a single PAK file for DDS textures under {@value #TEXTURES_ROOT} and
@@ -101,7 +99,7 @@ public final class IconService {
 			return;
 		}
 		
-		final Path source = Path.of(inputPath);
+		var source = Path.of(inputPath);
 		if (! Files.exists(source)) {
 			log.warn("convertImages: path does not exist – {}", inputPath);
 			return;

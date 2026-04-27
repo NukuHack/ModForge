@@ -394,11 +394,11 @@ public enum BuffParamMap {
 	SRC("src", "Combat Stamina Regen Reduction", "Reduces the default stamina regeneration rate during combat."),
 	
 	// Perks
-	FBA("fba", "Seasoned Drinker Safety", "Ensures that when the character loses consciousness due to alcohol, they will always wake up in their own bedroom. This parameter is a boolean-style flag; a value of +1 enables the effect."),
-	SKV("skv", "Dialogue Skill Check Modifier", "Scales the effectiveness of dialogue skill checks. The value represents a maximum multiplier (e.g., skv*1.16 = up to +16%). When used with AdjustableFadingWorldTimeTimed, the bonus scales dynamically—typically based on sleep duration—up to the defined maximum."),
-	FVH("fvh", "Food Health Regeneration Bonus", "Increases health regeneration for a limited duration after consuming fruit or vegetables. The value defines the flat amount of additional health restored over the buff's lifetime (e.g., fvh+10 restores 10 extra health)."),
-	LIP("lip", "Bone Fracture Prevention", "Prevents bone fractures by consuming charges of this buff. Each +1 negates one incoming fracture while the buff is active, though it is unclear whether multiple charges can stack to block multiple fractures."),
-	SXM("sxm", "Trainer Experience Multiplier", "Multiplies experience gained from trainers. The value acts as a multiplier (e.g., sxm*1.2 grants +20% experience) and applies only to training-based skill progression during the buff's duration."),
+	FBA("fba", "Seasoned Drinker Safety", "Ensures that when the character loses consciousness due to alcohol, they will always wake up in their own bedroom. 0 - disable, 1 - enable"),
+	SKV("skv", "Dialogue Skill Check Modifier", "Scales the effectiveness of dialogue skill checks. The value represents a maximum multiplier (e.g., skv*1.16 = +16%)."),
+	FVH("fvh", "Food Health Regeneration Bonus", "Increases health regeneration for a limited duration after consuming fruit or vegetables. (like : fvh+10 = 10 extra)."),
+	LIP("lip", "Bone Fracture Prevention", "Prevents bone fractures by consuming charges of this buff. Each +1 negates one incoming fracture while the buff is active, it might stack."),
+	SXM("sxm", "Trainer Experience Multiplier", "Multiplies experience gained from trainers. The value acts as a multiplier (e.g., sxm*1.2 = +20%)."),
 	
 	// found while testing
 	Value("Value", "Value - idk ", "I guess some fallback value"),
@@ -407,11 +407,6 @@ public enum BuffParamMap {
 	JRS("jrs", "Jrs - idk ", "I don't know"),
 	PLG("plg", "Plg - idk ", "I don't know"),
 	OPD("opd", "Opd - idk ", "I don't know");
-	// fba - Seasoned Drinker - If you overdo it with alcohol and pass out, you will always wake up in the bed in your bedroom - fba+1 => skill activated
-	// skv - Smooth Talker - For each hour of sleep in your bedroom (up to 8 hours), the difficulty of skill checks in dialogues is reduced by 2% for the next 24 hours - skv*1.16 => 16% maximum improvement. Hourly upgrade is presumably calculated in the background using Cpp:AdjustableFadingWorldTimeTimed
-	// fvh - Carnival - Eating fruits and vegetables restores 10 more health over the next 24 hours => fvh+10
-	// lip - Bone shield - Prevents the first bone fracture you would suffer in the next 24 hours => lip+1 (can multiple fractures be negated here?)
-	// sxm - Apprentice - You receive a 20% experience bonus from trainers over the next 24 hours => sxm*1.2
 	
 	public static final Map<String, BuffParamMap> BY_KEY = new HashMap<>();
 	public static final Map<String, BuffParamMap> BY_NAME = new HashMap<>();

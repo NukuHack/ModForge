@@ -49,7 +49,7 @@ public final class ModItemBuilder {
 		}
 	}
 	
-	public static <I extends ModItem> I create(final Element el, final I item) {
+	public static <I extends ModItem> I create(Element el, I item) {
 		item.setAttribute(getAttributeFromElement(el));
 		return item;
 	}
@@ -64,13 +64,13 @@ public final class ModItemBuilder {
 		return list;
 	}
 	
-	public static ModItem create(final Element element) {
+	public static ModItem create(Element element) {
 		var name = element.getTagName();
 		var handler = HANDLER_MAP.getOrDefault(name, fallbackBuilder);
 		return handler.handle(element);
 	}
 	
-	public static Optional<Element> create(final Document document, final ModItem item) {
+	public static Optional<Element> create(Document document, ModItem item) {
 		var maker = MAKER_MAP.getOrDefault(item.getClass(), fallbackBuilder);
 		
 		return Optional.ofNullable(maker.handle(document, item));
@@ -122,11 +122,11 @@ public final class ModItemBuilder {
 	}
 	
 	protected interface BuildHandler {
-		ModItem handle(final Element element);
+		ModItem handle(Element element);
 	}
 	
 	protected interface CreateHandler {
-		Element handle(final Document document, final ModItem item);
+		Element handle(Document document, ModItem item);
 	}
 	
 	/**
@@ -154,7 +154,7 @@ public final class ModItemBuilder {
 		}
 		
 		@Override
-		public ModItem handle(final Element element) {
+		public ModItem handle(Element element) {
 			try {
 				if (cons == null)
 					return fallbackBuilder.handle(element);
@@ -171,7 +171,7 @@ public final class ModItemBuilder {
 		}
 		
 		@Override
-		public Element handle(final Document document, final ModItem item) {
+		public Element handle(Document document, ModItem item) {
 			var typeName = ItemEntry.to(item).xmlObjName;
 			var el = document.createElement(typeName);
 			for (var attr : item.getAttributes()) {
@@ -262,7 +262,7 @@ public final class ModItemBuilder {
 		}
 		
 		@Override
-		public Element handle(final Document document, final ModItem item) {
+		public Element handle(Document document, ModItem item) {
 			try {
 				if (item instanceof Storm storm) {
 					return StormService.serialize(storm, document);

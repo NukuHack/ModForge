@@ -5,6 +5,9 @@ using image-decode.txt - KCDTextureExporter C#
 parse other files (adb - animation database)
 gfx files ?!?, and mtl too ?, and bk2 video format too ..., lua ? hell nah
 
+more lang keys :
+ ui_path_prefix, ui_path_prefix_tip, ui_clear_prefix, ui_copy_prefix
+
 TODO : Make the other models - items
 // SurfaceTypes ... , BehaviorTrees :O ...
 make the stuff check other data than just libs/tables

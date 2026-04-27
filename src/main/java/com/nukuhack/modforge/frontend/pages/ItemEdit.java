@@ -39,7 +39,7 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
  */
 @Slf4j
 public class ItemEdit extends BaseEditPage {
-	
+
 	private static List<BuffParamMap> BUFF_PARAM_ALL = null;
 	/**
 	 * Flat map of "path → component" where path is either
@@ -49,7 +49,7 @@ public class ItemEdit extends BaseEditPage {
 	 */
 	private final Map<String, JComponent> attributeComponents = new LinkedHashMap<>();
 	private final JPanel attributesPanel;
-	
+
 	public ItemEdit(MainWindow w) {
 		super(w);
 		attributesPanel = new JPanel(new GridBagLayout());
@@ -57,33 +57,33 @@ public class ItemEdit extends BaseEditPage {
 		attributesPanel.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 		initUI();
 	}
-	
+
 	private static List<BuffParamMap> getBuffParamAll() {
 		if (BUFF_PARAM_ALL == null)
 			BUFF_PARAM_ALL = BuffParamMap.BY_KEY.values().stream().sorted(java.util.Comparator.comparing(BuffParamMap::getName)).toList();
 		return BUFF_PARAM_ALL;
 	}
-	
+
 	@Override
 	protected String getPageTitle() {
 		return "ui_item_edit";
 	}
-	
+
 	@Override
 	protected String getFormPanelTitle() {
 		return getLocalText("ui_attributes");
 	}
-	
+
 	@Override
 	protected String getPreviewTitle() {
 		return getLocalText("ui_live_preview");
 	}
-	
+
 	@Override
 	protected JPanel buildFormPanel() {
 		return attributesPanel;
 	}
-	
+
 	@Override
 	protected JPanel buildRightActions() {
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -96,7 +96,7 @@ public class ItemEdit extends BaseEditPage {
 		panel.add(primaryBtn("ui_add_to_mod", e -> addCurrentItemToSelectedMod()));
 		return panel;
 	}
-	
+
 	@Override
 	protected JPanel buildActionButtons() {
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -105,35 +105,35 @@ public class ItemEdit extends BaseEditPage {
 		buttons.add(getDangerButton("ui_back", e -> navigateBack()));
 		return buttons;
 	}
-	
+
 	@Override
 	protected void onItemSet(ModItem item) {
 		refreshModSelector();
 		buildAttributeEditor();
-		
+
 		if (previewPane.getClientProperty("itemEditListenerInstalled") == null) {
 			previewPane.addMouseListener(mouseClicked(currentItem));
 			previewPane.putClientProperty("itemEditListenerInstalled", Boolean.TRUE);
 		}
 		previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, false, true));
 	}
-	
+
 	@Override
 	protected void updatePreview() {
 		previewPane.setText(htmlForItem(currentItem));
 		previewPane.setCaretPosition(0);
 	}
-	
+
 	@Override
 	protected void navigateBack() {
 		if (confirmDiscard())
 			window.navigate(MainWindow.Page.ITEMS);
 	}
-	
+
 	private void buildAttributeEditor() {
 		attributesPanel.removeAll();
 		attributeComponents.clear();
-		
+
 		if (currentItem == null) {
 			JLabel empty = new JLabel(getLocalText("ui_no_item_selected_hint"));
 			empty.setForeground(MainWindow.MUTED);
@@ -142,47 +142,102 @@ public class ItemEdit extends BaseEditPage {
 			attributesPanel.repaint();
 			return;
 		}
-		
+
 		int row = 0;
+		row = addPrefixRow(attributesPanel, row);
 		row = addIdRow(attributesPanel, row);
 		attributesPanel.add(makeSeparator(), separatorGbc(row++));
-		
+
 		var flat = new ArrayList<Attribute>();
 		List<Attribute.XmlNodeAttribute> xmlAttrs = new ArrayList<>();
-		
+
 		for (var attr : currentItem.getAttributes()) {
 			if (attr instanceof Attribute.XmlNodeAttribute x)
 				xmlAttrs.add(x);
 			else
 				flat.add(attr);
 		}
-		
+
 		for (var attr : flat)
 			row = addAttributeRow(attributesPanel, attr, attr.getName(), row, 0);
-		
+
 		for (var xmlAttr : xmlAttrs) {
 			row = addXmlNodeSection(attributesPanel, xmlAttr, row, 0);
 			attributesPanel.add(makeSeparator(), separatorGbc(row++));
 		}
-		
+
 		GridBagConstraints filler = new GridBagConstraints();
 		filler.gridy = row;
 		filler.weighty = 1.0;
 		filler.fill = GridBagConstraints.VERTICAL;
 		attributesPanel.add(Box.createVerticalGlue(), filler);
-		
+
 		attributesPanel.revalidate();
 		attributesPanel.repaint();
 	}
-	
+
+	private int addPrefixRow(JPanel panel, int row) {
+		JLabel l = new JLabel(getLocalText("ui_path_prefix") + ":");
+		l.setForeground(MainWindow.MUTED);
+		l.setFont(new Font("Roboto", Font.PLAIN, 12));
+
+		String existingPrefix = currentItem.getPathPrefix(); // "" when absent
+		JTextField field = new JTextField(existingPrefix);
+		styleTextField(field);
+		field.setToolTipText(getLocalText("ui_path_prefix_tip"));
+
+		// ✕  clears the prefix field
+		JButton clearBtn = smallBtn("✕", e -> {
+			field.setText("");
+			markChanged();
+		});
+		// ⎘  copies the current prefix value
+		JButton copyBtn = smallBtn("⎘", e -> {
+			String val = field.getText().strip();
+			if (!val.isEmpty()) {
+				Util.copyText(val);
+				window.snackbar.show("ui_copied_id", BarManager.Type.INFO, val);
+			}
+		});
+		clearBtn.setToolTipText(getLocalText("ui_clear_prefix"));
+		copyBtn.setToolTipText(getLocalText("ui_copy_prefix"));
+
+		// dim the field when empty to act as a visual hint
+		Runnable syncStyle = () -> {
+			boolean empty = field.getText().isBlank();
+			field.setForeground(empty ? MainWindow.MUTED : MainWindow.TEXT);
+		};
+		syncStyle.run();
+		field.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+			public void insertUpdate(javax.swing.event.DocumentEvent e) { syncStyle.run(); markChanged(); }
+			public void removeUpdate(javax.swing.event.DocumentEvent e) { syncStyle.run(); markChanged(); }
+			public void changedUpdate(javax.swing.event.DocumentEvent e) {}
+		});
+
+		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+		btnPanel.setOpaque(false);
+		btnPanel.add(clearBtn);
+		btnPanel.add(copyBtn);
+
+		JPanel fieldRow = new JPanel(new BorderLayout(4, 0));
+		fieldRow.setOpaque(false);
+		fieldRow.add(field, BorderLayout.CENTER);
+		fieldRow.add(btnPanel, BorderLayout.EAST);
+
+		panel.add(l, labelGbc(row, 0));
+		panel.add(fieldRow, editorGbc(row, 0));
+		attributeComponents.put("__prefix__", field);
+		return row + 1;
+	}
+
 	private int addIdRow(JPanel panel, int row) {
 		JLabel l = new JLabel(getLocalText("ui_id") + ":");
 		l.setForeground(MainWindow.ACCENT);
 		l.setFont(new Font("Roboto", Font.BOLD, 12));
-		
+
 		JTextField field = new JTextField(currentItem.getId());
 		styleTextField(field);
-		
+
 		JButton copyBtn = smallBtn("⎘", e -> {
 			Util.copyText(field.getText());
 			window.snackbar.show("ui_copied_id", BarManager.Type.INFO, field.getText());
@@ -193,43 +248,43 @@ public class ItemEdit extends BaseEditPage {
 		});
 		copyBtn.setToolTipText(getLocalText("ui_copy_id"));
 		randomBtn.setToolTipText(getLocalText("ui_generate_id"));
-		
+
 		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
 		btnPanel.setOpaque(false);
 		btnPanel.add(randomBtn);
 		btnPanel.add(copyBtn);
-		
+
 		JPanel fieldRow = new JPanel(new BorderLayout(4, 0));
 		fieldRow.setOpaque(false);
 		fieldRow.add(field, BorderLayout.CENTER);
 		fieldRow.add(btnPanel, BorderLayout.EAST);
-		
+
 		panel.add(l, labelGbc(row, 0));
 		panel.add(fieldRow, editorGbc(row, 0));
 		attributeComponents.put("__id__", field);
 		addChangeListeners(field.getDocument());
 		return row + 1;
 	}
-	
+
 	private int addAttributeRow(JPanel panel, Attribute attr, String keyPath, int row, int indentLevel) {
 		JLabel lbl = new JLabel(attr.getName() + ":");
 		lbl.setForeground(indentLevel == 0 ? MainWindow.TEXT : MainWindow.MUTED);
 		lbl.setFont(new Font("Roboto", Font.PLAIN, 12));
-		
+
 		var editor = createEditorForAttribute(attr, keyPath);
 		panel.add(lbl, labelGbc(row, indentLevel));
 		panel.add(editor, editorGbc(row, indentLevel));
 		return row + 1;
 	}
-	
+
 	private int addXmlNodeSection(JPanel panel, Attribute.XmlNodeAttribute xmlAttr, int row, int depth) {
 		final String nodeTag = xmlAttr.getName();
 		final Attribute.XmlNode node = xmlAttr.getValue();
-		
+
 		String accent = depth == 0 ? "#89dceb" : "#6c6f85";
 		Color foreground = new Color(Integer.parseInt(accent.substring(1), 16));
 		JPanel header = buildXmlSectionHeader(nodeTag, node, foreground);
-		
+
 		GridBagConstraints headerGbc = new GridBagConstraints();
 		headerGbc.gridx = 0;
 		headerGbc.gridy = row;
@@ -239,14 +294,14 @@ public class ItemEdit extends BaseEditPage {
 		headerGbc.insets = new Insets(depth == 0 ? 10 : 4, depth * 16, 2, 4);
 		panel.add(header, headerGbc);
 		row++;
-		
+
 		JPanel inner = new JPanel(new GridBagLayout());
 		inner.setBackground(new Color(0x1e1e2e));
 		inner.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 2, 0, 0, foreground),
 				BorderFactory.createEmptyBorder(4, 8, 4, 4)));
-		
+
 		int innerRow = 0;
-		
+
 		var flatChildren = new ArrayList<Attribute>();
 		List<Attribute.XmlNodeAttribute> xmlChildren = new ArrayList<>();
 		for (var attr : node.attributes()) {
@@ -258,7 +313,7 @@ public class ItemEdit extends BaseEditPage {
 		for (var child : node.children()) {
 			xmlChildren.add(new Attribute.XmlNodeAttribute(child.tag(), child));
 		}
-		
+
 		for (var attr : flatChildren) {
 			String keyPath = nodeTag + "/" + attr.getName();
 			innerRow = addAttributeRow(inner, attr, keyPath, innerRow, 0);
@@ -266,9 +321,9 @@ public class ItemEdit extends BaseEditPage {
 		for (var child : xmlChildren) {
 			innerRow = addXmlNodeSection(inner, child, innerRow, depth + 1);
 		}
-		
+
 		if (innerRow == 0) {
-			
+
 			String leafText = xmlAttr.serialize();
 			JLabel leaf = new JLabel(leafText.isEmpty() ? "<empty />" : leafText);
 			leaf.setForeground(new Color(0x6c6f85));
@@ -281,21 +336,21 @@ public class ItemEdit extends BaseEditPage {
 			leafGbc.insets = new Insets(2, 0, 2, 0);
 			inner.add(leaf, leafGbc);
 		}
-		
+
 		GridBagConstraints spacer = new GridBagConstraints();
 		spacer.gridx = 0;
 		spacer.gridy = innerRow;
 		spacer.weighty = 1.0;
 		spacer.fill = GridBagConstraints.VERTICAL;
 		inner.add(Box.createVerticalGlue(), spacer);
-		
+
 		JToggleButton toggle = (JToggleButton) header.getClientProperty("toggle");
 		toggle.addActionListener(e -> {
 			inner.setVisible(! toggle.isSelected());
 			panel.revalidate();
 			panel.repaint();
 		});
-		
+
 		GridBagConstraints innerGbc = new GridBagConstraints();
 		innerGbc.gridx = 0;
 		innerGbc.gridy = row;
@@ -305,10 +360,10 @@ public class ItemEdit extends BaseEditPage {
 		innerGbc.insets = new Insets(0, depth * 16 + 8, 4, 4);
 		panel.add(inner, innerGbc);
 		row++;
-		
+
 		return row;
 	}
-	
+
 	/**
 	 * Header bar for an XML node section.
 	 * <p>
@@ -321,7 +376,7 @@ public class ItemEdit extends BaseEditPage {
 		JPanel header = new JPanel(new BorderLayout(6, 0));
 		header.setBackground(new Color(0x181825));
 		header.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0x313244)), BorderFactory.createEmptyBorder(4, 6, 4, 6)));
-		
+
 		JToggleButton toggle = new JToggleButton("▼");
 		toggle.setSelected(false);
 		toggle.setBackground(new Color(0x181825));
@@ -331,11 +386,11 @@ public class ItemEdit extends BaseEditPage {
 		toggle.setFont(new Font("Roboto", Font.PLAIN, 10));
 		toggle.setPreferredSize(new Dimension(22, 22));
 		toggle.addActionListener(e -> toggle.setText(toggle.isSelected() ? "▶" : "▼"));
-		
+
 		JLabel tagLabel = new JLabel("<" + tag + ">");
 		tagLabel.setForeground(foreground);
 		tagLabel.setFont(new Font("Roboto Mono", Font.BOLD, 11));
-		
+
 		int childCount = node.attributes().size() + node.children().size();
 		boolean isLeaf = node.isLeaf() && node.attributes().isEmpty();
 		String badgeText = isLeaf ? "leaf" : (childCount + " " + (childCount == 1 ? "attr" : "attrs"));
@@ -343,19 +398,19 @@ public class ItemEdit extends BaseEditPage {
 		badge.setForeground(new Color(isLeaf ? 0x89b4fa : 0x6c6f85));
 		badge.setFont(new Font("Roboto", Font.PLAIN, 9));
 		badge.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(isLeaf ? 0x89b4fa : 0x45475a)), BorderFactory.createEmptyBorder(1, 4, 1, 4)));
-		
+
 		JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		left.setOpaque(false);
 		left.add(toggle);
 		left.add(tagLabel);
 		left.add(badge);
-		
+
 		var flatAttrs = node.attributes().stream().filter(a -> ! (a instanceof Attribute.XmlNodeAttribute)).toList();
-		
+
 		if (! flatAttrs.isEmpty()) {
 			JPanel previewPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 			previewPanel.setOpaque(false);
-			
+
 			int shown = Math.min(flatAttrs.size(), 3);
 			for (int i = 0; i < shown; i++) {
 				JLabel chip = getJLabel(flatAttrs, i);
@@ -369,7 +424,7 @@ public class ItemEdit extends BaseEditPage {
 			}
 			header.add(previewPanel, BorderLayout.EAST);
 		}
-		
+
 		header.add(left, BorderLayout.WEST);
 		header.putClientProperty("toggle", toggle);
 		return header;
@@ -390,34 +445,34 @@ public class ItemEdit extends BaseEditPage {
 
 	private JComponent createEditorForAttribute(Attribute attr, String keyPath) {
 		JComponent comp;
-		
+
 		if (attr instanceof Attribute.BooleanAttribute boolAttr) {
 			comp = buildBooleanEditor(boolAttr);
-			
+
 		} else if (attr instanceof Attribute.DoubleAttribute doubleAttr) {
 			comp = buildDoubleEditor(doubleAttr);
-			
+
 		} else if (attr instanceof Attribute.BuffParamListAttribute buffAttr) {
-			
+
 			comp = buildBuffParamEditor(buffAttr, keyPath);
-			
+
 		} else if (attr instanceof Attribute.ListAttribute<?> listAttr) {
 			comp = buildListEditor(listAttr);
-			
+
 		} else if (attr instanceof Attribute.EnumAttribute enumAttr) {
 			comp = buildEnumEditor(enumAttr);
-			
+
 		} else {
 			JTextField tf = new JTextField(attr.serialize());
 			styleTextField(tf);
 			addChangeListeners(tf.getDocument());
 			comp = tf;
 		}
-		
+
 		attributeComponents.put(keyPath, comp);
 		return comp;
 	}
-	
+
 	private JComponent buildBooleanEditor(Attribute.BooleanAttribute attr) {
 		JCheckBox cb = new JCheckBox();
 		cb.setSelected(attr.getValue());
@@ -426,7 +481,7 @@ public class ItemEdit extends BaseEditPage {
 		cb.addActionListener(e -> markChanged());
 		return cb;
 	}
-	
+
 	private JComponent buildDoubleEditor(Attribute.DoubleAttribute attr) {
 		double billion = 1_000_000_000;
 		JSpinner sp = new JSpinner(new SpinnerNumberModel((Number) attr.getValue(), - billion, billion, 1));
@@ -435,7 +490,7 @@ public class ItemEdit extends BaseEditPage {
 		sp.addChangeListener(e -> markChanged());
 		return sp;
 	}
-	
+
 	private JComponent buildListEditor(Attribute.ListAttribute<?> attr) {
 		JTextArea ta = new JTextArea(attr.serialize());
 		ta.setRows(3);
@@ -452,7 +507,7 @@ public class ItemEdit extends BaseEditPage {
 		sp.setBorder(BorderFactory.createEmptyBorder());
 		return sp;
 	}
-	
+
 	/**
 	 * Renders an enum attribute as a styled combo box.
 	 * <p>
@@ -463,20 +518,20 @@ public class ItemEdit extends BaseEditPage {
 	private JComponent buildEnumEditor(Attribute.EnumAttribute attr) {
 		var enumType = attr.getEnumType();
 		var constants = enumType.getEnumConstants();
-		
+
 		JComboBox<Enum<?>> cb = new JComboBox<>();
 		for (var c : constants)
 			cb.addItem(c);
-		
+
 		cb.setSelectedItem(attr.getValue());
 		styleCombo(cb);
-		
+
 		cb.setRenderer(new DefaultListCellRenderer() {
 			@Override
 			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 				if (value instanceof Enum<?> e) {
-					
+
 					setText(String.format("<html><font color='#6c6f85'>[%d]</font>&nbsp;&nbsp;%s</html>", e.ordinal(), e.name()));
 					setToolTipText(enumType.getSimpleName() + "." + e.name() + "  (ordinal " + e.ordinal() + ")");
 				}
@@ -487,11 +542,11 @@ public class ItemEdit extends BaseEditPage {
 				return this;
 			}
 		});
-		
+
 		cb.addActionListener(e -> markChanged());
 		return cb;
 	}
-	
+
 	/**
 	 * Dedicated table editor for {@link Attribute.BuffParamListAttribute}.
 	 * <p>
@@ -510,20 +565,20 @@ public class ItemEdit extends BaseEditPage {
 	private JComponent buildBuffParamEditor(Attribute.BuffParamListAttribute attr, String keyPath) {
 		JPanel wrapper = new JPanel(new BorderLayout(0, 4));
 		wrapper.setOpaque(false);
-		
+
 		JPanel rows = new JPanel();
 		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
 		rows.setBackground(new Color(0x1e1e2e));
-		
+
 		for (var param : attr.getValue())
 			rows.add(buildBuffParamRow(rows, param));
-		
+
 		JScrollPane scroll = new JScrollPane(rows);
 		scroll.setBackground(new Color(0x1e1e2e));
 		scroll.getViewport().setBackground(new Color(0x1e1e2e));
 		scroll.setBorder(BorderFactory.createLineBorder(new Color(0x313244)));
 		scroll.setPreferredSize(new Dimension(0, Math.min(36 + attr.getValue().size() * 34, 200)));
-		
+
 		JButton addBtn = new JButton("＋  Add param");
 		addBtn.setBackground(new Color(0x313244));
 		addBtn.setForeground(new Color(0xa6e3a1));
@@ -535,24 +590,24 @@ public class ItemEdit extends BaseEditPage {
 			rows.add(buildBuffParamRow(rows, null));
 			rows.revalidate();
 			rows.repaint();
-			
+
 			Dimension d = scroll.getPreferredSize();
 			scroll.setPreferredSize(new Dimension(d.width, Math.min(d.height + 34, 300)));
 			scroll.getParent().revalidate();
 			markChanged();
 		});
-		
+
 		JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		bottom.setOpaque(false);
 		bottom.add(addBtn);
-		
+
 		wrapper.add(scroll, BorderLayout.CENTER);
 		wrapper.add(bottom, BorderLayout.SOUTH);
-		
+
 		attributeComponents.put(keyPath, wrapper);
 		return wrapper;
 	}
-	
+
 	/**
 	 * Builds one editable row for a single {@link BuffParam}.
 	 * Pass {@code null} to create a blank row (for the "Add" button).
@@ -571,7 +626,7 @@ public class ItemEdit extends BaseEditPage {
 		row.setBackground(new Color(0x1e1e2e));
 		row.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0x313244)));
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-		
+
 		BuffParamMap initial = (param != null) ? param.name() : null;
 		var model = new FilterableBuffParamModel(getBuffParamAll(), initial);
 		var statCombo = getBuffParamMapJComboBox(model);
@@ -581,18 +636,18 @@ public class ItemEdit extends BaseEditPage {
 		statEditor.setForeground(MainWindow.TEXT);
 		statEditor.setCaretColor(MainWindow.TEXT);
 		statEditor.setFont(new Font("Roboto", Font.PLAIN, 12));
-		
+
 		if (initial != null)
 			statEditor.setText(initial.getName());
-		
+
 		statEditor.getDocument().addDocumentListener(new DocumentListener() {
 			private boolean filtering = false;
-			
+
 			private void filter() {
 				if (filtering)
 					return;
 				filtering = true;
-				
+
 				SwingUtilities.invokeLater(() -> {
 					try {
 						model.applyFilter(statEditor.getText());
@@ -603,27 +658,27 @@ public class ItemEdit extends BaseEditPage {
 					}
 				});
 			}
-			
+
 			public void insertUpdate(DocumentEvent e) {
 				filter();
 				markChanged();
 			}
-			
+
 			public void removeUpdate(DocumentEvent e) {
 				filter();
 				markChanged();
 			}
-			
+
 			public void changedUpdate(DocumentEvent e) {
 			}
 		});
-		
+
 		statCombo.addActionListener(e -> {
 			Object sel = statCombo.getSelectedItem();
 			if (sel instanceof BuffParamMap bpm) {
-				
+
 				model.applyFilter("");
-				
+
 				String cur = statEditor.getText();
 				if (! cur.equals(bpm.getName())) {
 					statEditor.getDocument().removeDocumentListener((DocumentListener) statEditor.getDocument().getProperty("buffRowDocListener"));
@@ -632,7 +687,7 @@ public class ItemEdit extends BaseEditPage {
 			}
 			markChanged();
 		});
-		
+
 		JComboBox<MathOperation> opCombo = new JComboBox<>();
 		for (var op : MathOperation.values())
 			opCombo.addItem(op);
@@ -653,14 +708,14 @@ public class ItemEdit extends BaseEditPage {
 		if (param != null)
 			opCombo.setSelectedItem(param.operation());
 		opCombo.addActionListener(e -> markChanged());
-		
+
 		double initVal = (param != null) ? param.value() : 0.0;
 		JSpinner valueSpinner = new JSpinner(new SpinnerNumberModel(initVal, - 1_000_000.0, 1_000_000.0, 1.0));
 		valueSpinner.setEditor(new JSpinner.NumberEditor(valueSpinner, "#.####"));
 		styleSpinner(valueSpinner);
 		valueSpinner.setPreferredSize(new Dimension(90, 28));
 		valueSpinner.addChangeListener(e -> markChanged());
-		
+
 		JButton removeBtn = new JButton("✕");
 		removeBtn.setBackground(new Color(0x313244));
 		removeBtn.setForeground(new Color(0xf38ba8));
@@ -675,34 +730,34 @@ public class ItemEdit extends BaseEditPage {
 			parent.repaint();
 			markChanged();
 		});
-		
+
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.insets = new Insets(2, 2, 2, 2);
 		gc.fill = GridBagConstraints.HORIZONTAL;
 		gc.gridy = 0;
-		
+
 		gc.gridx = 0;
 		gc.weightx = 1.0;
 		row.add(statCombo, gc);
-		
+
 		gc.gridx = 1;
 		gc.weightx = 0.0;
 		row.add(opCombo, gc);
-		
+
 		gc.gridx = 2;
 		gc.weightx = 0.0;
 		row.add(valueSpinner, gc);
-		
+
 		gc.gridx = 3;
 		gc.weightx = 0.0;
 		gc.fill = GridBagConstraints.NONE;
 		row.add(removeBtn, gc);
-		
+
 		row.putClientProperty("statCombo", statCombo);
 		row.putClientProperty("statEditor", statEditor);
 		row.putClientProperty("opCombo", opCombo);
 		row.putClientProperty("valueSpinner", valueSpinner);
-		
+
 		return row;
 	}
 
@@ -754,11 +809,20 @@ public class ItemEdit extends BaseEditPage {
 	private void saveChanges() {
 		if (currentItem == null)
 			return;
-		
+
 		JComponent idComp = attributeComponents.get("__id__");
 		if (idComp instanceof JTextField f)
 			currentItem.setId(f.getText());
-		
+
+		JComponent prefixComp = attributeComponents.get("__prefix__");
+		if (prefixComp instanceof JTextField pf) {
+			String prefix = pf.getText().strip();
+			if (prefix.isEmpty())
+				currentItem.removePathPrefix();
+			else
+				currentItem.setPathPrefix(prefix);
+		}
+
 		var copy = new ArrayList<>(currentItem.getAttributes());
 		try {
 			for (Attribute<?> attr : copy) {
@@ -771,14 +835,14 @@ public class ItemEdit extends BaseEditPage {
 		} catch (Exception e) {
 			log.warn("could not extract new value from Ui", Util.limitStackTrace(e, 10));
 		}
-		
+
 		hasChanges = false;
 		updatePreview();
 		updateStatus();
 		setCurrentItem(currentItem);
 		window.snackbar.show("ui_item_changes_saved", BarManager.Type.SUCCESS);
 	}
-	
+
 	private <T> Attribute<T> handleAttribute(Attribute<T> attr, String keyPath) {
 		var comp = attributeComponents.get(keyPath);
 		if (comp == null)
@@ -788,20 +852,20 @@ public class ItemEdit extends BaseEditPage {
 			return attr.withValue(val);
 		return null;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private <T> T extractValue(JComponent comp, Attribute<T> attr) {
 		if (attr instanceof Attribute.BooleanAttribute && comp instanceof JCheckBox cb)
 			return (T) Boolean.valueOf(cb.isSelected());
-		
+
 		if (attr instanceof Attribute.DoubleAttribute && comp instanceof JSpinner sp)
 			return (T) sp.getValue();
-		
+
 		if (attr instanceof Attribute.EnumAttribute ea && comp instanceof JComboBox<?> cb) {
 			Object sel = cb.getSelectedItem();
 			if (sel instanceof Enum<?> e)
 				return (T) e;
-			
+
 			if (sel instanceof String name) {
 				for (var c : ea.getEnumType().getEnumConstants())
 					if (c.name().equals(name))
@@ -809,22 +873,22 @@ public class ItemEdit extends BaseEditPage {
 			}
 			return null;
 		}
-		
+
 		if (attr instanceof Attribute.BuffParamListAttribute && comp instanceof JPanel wrapper)
 			return (T) extractBuffParams(wrapper);
-		
+
 		if (attr instanceof Attribute.ListAttribute<?> && comp instanceof JScrollPane sp && sp.getViewport().getView() instanceof JTextArea ta)
 			return (T) List.of(ta.getText().split("\\s+"));
-		
+
 		if (attr instanceof Attribute.UUIDAttribute && comp instanceof JTextField tf)
 			return (T) UUID.fromString(tf.getText());
-		
+
 		if (attr instanceof Attribute.StringAttribute && comp instanceof JTextField tf)
 			return (T) tf.getText();
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Harvest all {@link BuffParam} rows from the buff-param editor wrapper panel.
 	 * The wrapper contains a JScrollPane whose viewport holds the rows JPanel.
@@ -846,7 +910,7 @@ public class ItemEdit extends BaseEditPage {
 				var statEditor = (JTextField) row.getClientProperty("statEditor");
 				if (statCombo == null || opCombo == null || valueSpinner == null)
 					continue;
-				
+
 				BuffParamMap bpm = null;
 				Object sel = statCombo.getSelectedItem();
 				if (sel instanceof BuffParamMap b) {
@@ -859,18 +923,18 @@ public class ItemEdit extends BaseEditPage {
 				}
 				if (bpm == null)
 					continue;
-				
+
 				MathOperation op = (MathOperation) opCombo.getSelectedItem();
 				if (op == null)
 					continue;
-				
+
 				double val = ((Number) valueSpinner.getValue()).doubleValue();
 				result.add(new BuffParam(bpm, op, val));
 			}
 		}
 		return result;
 	}
-	
+
 	private void addCurrentItemToSelectedMod() {
 		if (currentItem == null) {
 			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
@@ -882,13 +946,22 @@ public class ItemEdit extends BaseEditPage {
 			return;
 		}
 		var mod = targetMod.get();
-		
+
 		var copy = ModItemBuilder.deepCopy(currentItem, mod);
-		
+
 		JComponent idComp = attributeComponents.get("__id__");
 		if (idComp instanceof JTextField f)
 			copy.setId(f.getText());
-		
+
+		JComponent prefixComp = attributeComponents.get("__prefix__");
+		if (prefixComp instanceof JTextField pf) {
+			String prefix = pf.getText().strip();
+			if (prefix.isEmpty())
+				copy.removePathPrefix();
+			else
+				copy.setPathPrefix(prefix);
+		}
+
 		var copyAttrs = new ArrayList<>(copy.getAttributes());
 		try {
 			for (Attribute<?> attr : copyAttrs) {
@@ -901,11 +974,11 @@ public class ItemEdit extends BaseEditPage {
 		} catch (Exception e) {
 			log.warn("could not apply unsaved edits to mod copy", Util.limitStackTrace(e, 10));
 		}
-		
+
 		mod.addItem(copy);
 		window.snackbar.show("ui_item_added_to_mod", BarManager.Type.SUCCESS, mod.getName());
 	}
-	
+
 	private void styleTextField(JTextField f) {
 		f.setBackground(new Color(0x313244));
 		f.setForeground(MainWindow.TEXT);
@@ -913,7 +986,7 @@ public class ItemEdit extends BaseEditPage {
 		f.setFont(new Font("Roboto", Font.PLAIN, 12));
 		f.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 	}
-	
+
 	private void styleSpinner(JSpinner sp) {
 		sp.setBackground(new Color(0x313244));
 		sp.setForeground(MainWindow.TEXT);
@@ -922,7 +995,7 @@ public class ItemEdit extends BaseEditPage {
 		tf.setForeground(MainWindow.TEXT);
 		tf.setCaretColor(MainWindow.TEXT);
 	}
-	
+
 	private JButton smallBtn(String text, java.awt.event.ActionListener action) {
 		JButton b = new JButton(text);
 		b.setBackground(new Color(0x45475a));
@@ -935,29 +1008,29 @@ public class ItemEdit extends BaseEditPage {
 		b.addActionListener(action);
 		return b;
 	}
-	
+
 	private JSeparator makeSeparator() {
 		JSeparator sep = new JSeparator();
 		sep.setForeground(new Color(0x313244));
 		sep.setBackground(new Color(0x313244));
 		return sep;
 	}
-	
+
 	private void addChangeListeners(Document doc) {
 		doc.addDocumentListener(new DocumentListener() {
 			public void insertUpdate(DocumentEvent e) {
 				markChanged();
 			}
-			
+
 			public void removeUpdate(DocumentEvent e) {
 				markChanged();
 			}
-			
+
 			public void changedUpdate(DocumentEvent e) {
 			}
 		});
 	}
-	
+
 	private GridBagConstraints labelGbc(int row, int indentLevel) {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.gridx = 0;
@@ -968,7 +1041,7 @@ public class ItemEdit extends BaseEditPage {
 		gc.insets = new Insets(5, 4 + indentLevel * 16, 5, 8);
 		return gc;
 	}
-	
+
 	private GridBagConstraints editorGbc(int row, int indentLevel) {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.gridx = 1;
@@ -979,7 +1052,7 @@ public class ItemEdit extends BaseEditPage {
 		gc.insets = new Insets(5, 0, 5, 4 + indentLevel * 16);
 		return gc;
 	}
-	
+
 	private GridBagConstraints separatorGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.gridx = 0;
@@ -990,7 +1063,7 @@ public class ItemEdit extends BaseEditPage {
 		gc.insets = new Insets(6, 0, 6, 0);
 		return gc;
 	}
-	
+
 	private GridBagConstraints defaultGbc(int row) {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.gridx = 0;
@@ -1000,7 +1073,7 @@ public class ItemEdit extends BaseEditPage {
 		gc.insets = new Insets(24, 0, 0, 0);
 		return gc;
 	}
-	
+
 	/**
 	 * A {@link ComboBoxModel} backed by the master list that keeps a filtered
 	 * sub-view. Filtering replaces only the internal index list — no
@@ -1008,17 +1081,17 @@ public class ItemEdit extends BaseEditPage {
 	 * during the filter pass.
 	 */
 	private static class FilterableBuffParamModel extends AbstractListModel<BuffParamMap> implements MutableComboBoxModel<BuffParamMap> {
-		
+
 		private final List<BuffParamMap> master;
 		private List<BuffParamMap> view;
 		private BuffParamMap selected;
-		
+
 		FilterableBuffParamModel(List<BuffParamMap> master, BuffParamMap initial) {
 			this.master = master;
 			this.view = new ArrayList<>(master);
 			this.selected = initial;
 		}
-		
+
 		/** Narrow the visible list to entries matching {@code text} (case-insensitive). */
 		void applyFilter(String text) {
 			String lo = text == null ? "" : text.strip().toLowerCase();
@@ -1026,40 +1099,40 @@ public class ItemEdit extends BaseEditPage {
 			int oldSize = view.size();
 			this.view = new ArrayList<>(next);
 			int newSize = view.size();
-			
+
 			fireContentsChanged(this, 0, Math.max(oldSize, newSize) - 1);
 		}
-		
+
 		@Override
 		public int getSize() {
 			return view.size();
 		}
-		
+
 		@Override
 		public BuffParamMap getElementAt(int i) {
 			return view.get(i);
 		}
-		
+
 		@Override
 		public Object getSelectedItem() {
 			return selected;
 		}
-		
+
 		@Override
 		public void setSelectedItem(Object o) {
 			selected = (o instanceof BuffParamMap b) ? b : null;
 			fireContentsChanged(this, - 1, - 1);
 		}
-		
+
 		@Override
 		public void addElement(BuffParamMap o) { /* unused */ }
-		
+
 		@Override
 		public void removeElement(Object o) { /* unused */ }
-		
+
 		@Override
 		public void insertElementAt(BuffParamMap o, int i) { /* unused */ }
-		
+
 		@Override
 		public void removeElementAt(int i) { /* unused */ }
 	}

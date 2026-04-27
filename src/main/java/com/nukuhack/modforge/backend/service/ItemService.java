@@ -12,10 +12,6 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -32,43 +28,10 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 @Slf4j
-public final class ItemService {
-	
-	final static DocumentBuilder docBuilder;
-	private static final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
-		XMLInputFactory f = XMLInputFactory.newInstance();
-		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
-		f.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
-		
-		f.setProperty(XMLInputFactory.IS_COALESCING, true);
-		
-		f.setProperty("jdk.xml.maxGeneralEntitySizeLimit", 0);
-		
-		f.setProperty("jdk.xml.totalEntitySizeLimit", 0);
-		return f;
-	});
-	
-	private static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
-	
-	static {
-		try {
-			var f = DocumentBuilderFactory.newInstance();
-			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			f.setFeature("http://xml.org/sax/features/validation", false);
-			f.setFeature("http://xml.org/sax/features/external-general-entities", false);
-			f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-			docBuilder = f.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	private final UserConfig userConfig;
-	
-	public ItemService(UserConfig userConfig) {
-		this.userConfig = userConfig;
-	}
+public record ItemService(UserConfig userConfig) {
+
+	public static final Set<String> IGNORED_FILES = Set.of("scripts.pak", "animations.pak", "heads.pak", "sounds.pak", "shaders.pak");
+	public static final Set<String> LOGGED = new HashSet<>();
 	
 	static Document parseXml(InputStream is) {
 		try {
@@ -104,7 +67,7 @@ public final class ItemService {
 			}
 			
 			try (var reader = new BufferedReader(new InputStreamReader(is, encoding))) {
-				return docBuilder.parse(new InputSource(reader));
+				return Singleton.DOC_BUILDER.get().parse(new InputSource(reader));
 			}
 		} catch (SAXException e) {
 			log.warn("Could not parse the file", Util.limitStackTrace(e, 10));
@@ -153,7 +116,7 @@ public final class ItemService {
 	 * @return the file, according to the Structure
 	 */
 	public static Path getOutputFile(String gameDir, String itemPath, ModData mod) {
-		
+
 		String pakStem;
 		String dirSuffix;
 		String fileName;
@@ -183,12 +146,12 @@ public final class ItemService {
 		return dirSuffix.isEmpty() ? Util.joinP(stageRoot, fileName) : Util.joinP(stageRoot, Util.capitalStart(dirSuffix), fileName);
 	}
 	
-	private static Document makeDocument(final File outFile, final ModItem item, final ItemEntry groupT) throws Exception {
+	private static Document makeDocument(File outFile, ModItem item, ItemEntry groupT) throws Exception {
 		final Document document;
 		
 		var groupName = groupT.parentName;
 		if (! outFile.exists()) {
-			document = docBuilder.newDocument();
+			document = Singleton.DOC_BUILDER.get().newDocument();
 			var temp = document.createElement("database");
 			temp.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			temp.setAttribute("name", "barbora");
@@ -202,7 +165,7 @@ public final class ItemService {
 			newEl.ifPresent(group::appendChild);
 			return document;
 		}
-		document = docBuilder.parse(outFile);
+		document = Singleton.DOC_BUILDER.get().parse(outFile);
 		var group = (Element) document.getElementsByTagName(groupName).item(0);
 		if (group == null) {
 			group = document.createElement(groupName);
@@ -247,16 +210,16 @@ public final class ItemService {
 	 * b) plain filesystem path               – came from loose XML scan
 	 * c) null / blank                        – newly created item
 	 */
-	private static void writeModItem(final String gameDir, final ModData mod, final ModItem item) throws Exception {
+	private static void writeModItem(String gameDir, ModData mod, ModItem item) throws Exception {
 		File outFile;
 		var group = ItemEntry.to(item);
-		Document doc;
+		final Document doc;
 		String doctype;
 		
 		if (ModItemBuilder.HANDLER_MAP.get(group.parentName) != null) {
 			outFile = getOutputFile(gameDir, item, mod, true);
 			Files.createDirectories(outFile.toPath().getParent());
-			doc = docBuilder.newDocument();
+			doc = Singleton.DOC_BUILDER.get().newDocument();
 			var el = ModItemBuilder.create(doc, item);
 			el.ifPresent(doc::appendChild);
 			doctype = Util.STORM_HEADER + "\n";
@@ -284,7 +247,7 @@ public final class ItemService {
 		Util.writeXml(xml, outFile.toPath());
 	}
 	
-	private static Stream<ModItem> extractItemsFromPak(final Path pakFile) {
+	private static Stream<ModItem> extractItemsFromPak(Path pakFile) {
 		var items = new HashSet<ModItem>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
 			for (var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
@@ -301,7 +264,7 @@ public final class ItemService {
 		return items.stream();
 	}
 	
-	static void readItemsFromXml(final InputStream is, final String sourcePath, final Set<ModItem> sink) {
+	static void readItemsFromXml(InputStream is, String sourcePath, Set<ModItem> sink) {
 		var doc = parseXml(is);
 		if (doc == null) {
 			log.debug("Parse failed for : {}", sourcePath);
@@ -349,7 +312,6 @@ public final class ItemService {
 			}
 		}
 	}
-	public static final Set<String> LOGGED = new HashSet<>();
 	
 	/**
 	 * Exclude PAKs that don't contain item/table data.

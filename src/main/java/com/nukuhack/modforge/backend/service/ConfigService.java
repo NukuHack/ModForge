@@ -20,15 +20,10 @@ import java.util.regex.Pattern;
  * Supports both game configs (user.cfg, autoexec.cfg) and mod configs (mod.cfg).
  */
 @Slf4j
-public final class ConfigService {
+@NonNull
+public record ConfigService(UserConfig userConfig) {
 	
 	private static final Pattern CONFIG_LINE = Pattern.compile("^(?!#|;)\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(.*?)\\s*(?:;.*)?$");
-	
-	private final UserConfig userConfig;
-	
-	public ConfigService(@NonNull UserConfig userConfig) {
-		this.userConfig = userConfig;
-	}
 	
 	public void init() {
 		Singleton.getGame().setConfig(loadGameConfig());

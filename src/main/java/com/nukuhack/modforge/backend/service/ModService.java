@@ -1,5 +1,6 @@
 package com.nukuhack.modforge.backend.service;
 
+import com.nukuhack.modforge.Singleton;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.util.IOUtil;
@@ -9,8 +10,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -79,8 +78,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		try {
 			Files.createDirectories(Util.dataDir(rootPath));
 
-			var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			var doc = docBuilder.newDocument();
+			var doc = Singleton.DOC_BUILDER.get().newDocument();
 
 			var root = doc.createElement("kcd_mod");
 			root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
@@ -295,15 +293,14 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		}
 
 		try {
-			var docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			var xmlDoc = docBuilder.parse(manifest.toFile());
+			var xmlDoc = Singleton.DOC_BUILDER.get().parse(manifest.toFile());
 
 			var mod = parseModDescription(xmlDoc);
 			if (mod.getId().isBlank())
 				return null;
 			log.info("Successfully loaded mod manifest for: {}", mod.getId());
 			return mod;
-		} catch (IOException | SAXException | ParserConfigurationException e) {
+		} catch (IOException | SAXException | RuntimeException e) {
 			log.warn("could not parse 'mod.manifest', fallback to directory name");
 			return createFromPath(modPath);
 		}

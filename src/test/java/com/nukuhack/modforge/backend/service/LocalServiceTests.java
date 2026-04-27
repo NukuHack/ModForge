@@ -136,7 +136,7 @@ class LocalServiceTests extends BaseServiceTest {
 		modLocal.put(Language.ENGLISH, modStrings);
 		mod.setLocal(modLocal);
 		
-		String resolved = ls.resolve("ui_sword", mod, Language.ENGLISH);
+		String resolved = ls.resolve(mod, Language.ENGLISH, "ui_sword");
 		assertEquals("Mod Sword Name", resolved);
 	}
 	
@@ -147,7 +147,7 @@ class LocalServiceTests extends BaseServiceTest {
 		var mod = new ModData();
 		mod.setId("test-mod");
 		mod.setLocal(Collections.emptyMap());
-		assertNull(ls.resolve("definitely_not_a_key_xyz", mod, Language.ENGLISH));
+		assertNull(ls.resolve(mod, Language.ENGLISH, "definitely_not_a_key_xyz"));
 	}
 	
 	@Test

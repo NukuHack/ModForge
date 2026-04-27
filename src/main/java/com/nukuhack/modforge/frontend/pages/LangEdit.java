@@ -190,11 +190,11 @@ public class LangEdit extends BaseEditPage {
 		var baseGame = Singleton.getGame();
 		
 		for (var attr : currentItem.getLangAttributes()) {
-			final String langKey = attr.getValue().trim();
+			var langKey = attr.getValue().trim();
 			if (langKey.isBlank())
 				continue;
 			
-			String translated = local.resolve(langKey, baseGame, lang);
+			var translated = local.resolve(baseGame, lang, langKey);
 			if (translated == null)
 				translated = getLocalText("ui_translation_not_found");
 			

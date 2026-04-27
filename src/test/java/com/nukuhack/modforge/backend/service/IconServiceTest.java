@@ -5,7 +5,6 @@ import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.Attribute;
 import com.nukuhack.modforge.backend.model.I;
 import com.nukuhack.modforge.backend.model.ModItem;
-import com.nukuhack.modforge.backend.model.ModItem.BaseModItem;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -561,8 +560,7 @@ class IconServiceTest extends BaseServiceTest {
 		@Test
 		@DisplayName("returns null for an item without an icon_id attribute")
 		void returnsNullWhenNoIconIdAttribute() {
-			ModItem item = new BaseModItem() {
-			};
+			ModItem item = new I.EmptyImpl();
 			// No attributes set
 			assertNull(IconService.getIcon(item, testMod), "item with no icon_id must return null");
 		}

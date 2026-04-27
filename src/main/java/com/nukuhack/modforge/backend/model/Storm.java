@@ -10,29 +10,6 @@ import java.util.Map;
 /**
  * All Storm-specific model types now live here as lightweight value types.
  *
- * <h2>What was removed and why</h2>
- * <ul>
- *   <li>{@code GenericSelector} and {@code GenericOperation} were structurally
- *       identical to each other and to {@link Attribute.XmlNode}: a tag name,
- *       a string attribute map, and a recursive child list.  They are gone.</li>
- *   <li>{@code CustomStormSelector}, {@code CustomStormOperation}, and
- *       {@code StormTask} were flat named objects with a handful of string
- *       fields — perfectly modeled as {@link Attribute.XmlNode} instances.</li>
- *   <li>{@code StormData} was a redundant container whose {@code id} /
- *       {@code category} fields already exist on {@link I.Storm} ({@code id}
- *       via {@link ModItem}, {@code category} added directly).  Its five lists
- *       now live on {@link I.Storm} itself.</li>
- * </ul>
- *
- * <h2>What remains</h2>
- * <ul>
- *   <li>{@link StormRule} – a thin record kept because it genuinely groups
- *       two separate {@link Attribute.XmlNode} lists (selectors vs operations)
- *       under a rule's own attributes.  Collapsing it into a single
- *       {@link Attribute.XmlNode} would force every caller to dig through
- *       wrapper child nodes by convention instead of by type.</li>
- * </ul>
- *
  * <h2>UI-only flags</h2>
  * <p>The old {@code isStat} / {@code isSpan} flags that lived on
  * {@code GenericOperation} are stored as synthetic attributes with
@@ -41,9 +18,7 @@ import java.util.Map;
  * {@link com.nukuhack.modforge.backend.service.StormService} skips any
  * attribute whose name starts with {@code "_"}, so they never reach the
  * output XML.</p>
- */
-
-/**
+ *
  * {@code ModItem} representation of a Storm script entry.
  *
  * <p>The five parsed Storm sections live directly on this item rather than
@@ -81,7 +56,7 @@ import java.util.Map;
 @ToString
 @NoArgsConstructor
 @Slf4j
-public class Storm extends ModItem.BaseModItem {
+public class Storm extends ModItem {
 
     /**
      * Global source paths from {@code <common><source path="…"/></common>}.
