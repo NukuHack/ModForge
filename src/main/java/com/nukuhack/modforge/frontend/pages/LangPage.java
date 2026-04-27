@@ -40,9 +40,7 @@ public class LangPage extends BasePage {
         ATTR_TYPE_OPTIONS = Collections.unmodifiableList(sorted);
     }
 
-    /**
-     * Full unfiltered list — written only on EDT after background load.
-     */
+    /** Full unfiltered list — written only on EDT after background load. */
     private final List<LangEntry> allEntries = new ArrayList<>();
 
     private final ScheduledExecutorService debouncer = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -51,9 +49,7 @@ public class LangPage extends BasePage {
         return t;
     });
 
-    /**
-     * Version counter — incremented on every new filter run so stale results are dropped.
-     */
+    /** Version counter — incremented on every new filter run so stale results are dropped. */
     private final AtomicLong filterVersion = new AtomicLong(0);
     private final AtomicLong loadVersion = new AtomicLong(0);
 
@@ -61,14 +57,10 @@ public class LangPage extends BasePage {
     private final ArrayListModel arrayListModel = new ArrayListModel();
     private final JList<String> entryList = new JList<>(arrayListModel);
     private final JEditorPane detailPane = new JEditorPane();
-    /**
-     * Status / progress bar shown while filtering.
-     */
+    /** Status / progress bar shown while filtering. */
     private final JLabel statusLabel = new JLabel(" ");
     private final JProgressBar progressBar = new JProgressBar();
-    /**
-     * Indices into allEntries that pass the current filter.
-     */
+    /** Indices into allEntries that pass the current filter. */
     private int[] filteredIndices = new int[0];
     private LangEntry selectedEntry = null;
     private ScheduledFuture<?> pendingFilter;
@@ -83,9 +75,7 @@ public class LangPage extends BasePage {
         add(buildStatusBar(), BorderLayout.SOUTH);
     }
 
-    /**
-     * Builds the key→LangEntry map off the EDT.
-     */
+    /** Builds the key→LangEntry map off the EDT. */
     private static Map<String, LangEntry> buildLangEntryMap(Map<String, String> langMap, Set<ModItem> items) {
         var map = new LinkedHashMap<String, LangEntry>(langMap.size());
         for (var e : langMap.entrySet())
@@ -237,19 +227,6 @@ public class LangPage extends BasePage {
         pendingFilter = debouncer.schedule(this::runFilter, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * Runs the filter computation on a background thread.
-     * <p>
-     * FIX (thread-safety): search text is captured HERE on the debouncer thread,
-     * which is fine because DocumentListener always fires on the EDT and the
-     * debouncer picks it up shortly after — no mid-keystroke race.
-     * Previously the code called search.getText() inside executor.submit(), which
-     * ran on a non-EDT thread and violated Swing's single-thread rule.
-     * <p>
-     * FIX (perf): rows are now pre-formatted off the EDT in the same background
-     * pass, then pushed to the model via a single addAll() call instead of
-     * element-by-element additions through a chunked loop.
-     */
     private void runFilter() {
         final long version = filterVersion.incrementAndGet();
 
@@ -269,7 +246,7 @@ public class LangPage extends BasePage {
         var noSearch = rawSearch.isEmpty() || rawSearch.equals(placeholder);
         var attrFilter = attrHolder[0];
         var allAttrs = attrFilter == null || attrFilter.equals(ALL_ATTR_TYPES);
-        var onlyItems = ! allAttrs && ONLY_ITEM_TYPES.equals(attrFilter);
+        var onlyItems = !allAttrs && ONLY_ITEM_TYPES.equals(attrFilter);
 
         final List<LangEntry> snapshot;
         try {
@@ -289,7 +266,8 @@ public class LangPage extends BasePage {
         for (int i = 0; i < snapshot.size(); i++) {
             if (filterVersion.get() != version) return;
             var entry = snapshot.get(i);
-            if ((allAttrs || (onlyItems && entry.item != null) || entry.attrName.startsWith(attrFilter)) && (noSearch || entry.has(rawSearch))) {
+            if ((allAttrs || (onlyItems && entry.item != null) || entry.attrName.startsWith(attrFilter))
+                    && (noSearch || entry.has(rawSearch))) {
                 indices[count] = i;
                 formattedRows[count] = formatRow(entry);
                 count++;
@@ -306,7 +284,6 @@ public class LangPage extends BasePage {
             if (filterVersion.get() != version) return;
             filteredIndices = result;
             arrayListModel.swap(displayRows);
-
             setStatus(totalCount + " " + getLocalText("ui_entries"), false);
         });
     }
@@ -338,17 +315,9 @@ public class LangPage extends BasePage {
 
         search.setPreferredSize(new Dimension(240, 28));
         search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {
-                scheduleFilter();
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                scheduleFilter();
-            }
-
-            public void changedUpdate(DocumentEvent e) {
-                scheduleFilter();
-            }
+            public void insertUpdate(DocumentEvent e) { scheduleFilter(); }
+            public void removeUpdate(DocumentEvent e) { scheduleFilter(); }
+            public void changedUpdate(DocumentEvent e) { scheduleFilter(); }
         });
 
         controls.add(muted("ui_mod"));
@@ -462,8 +431,25 @@ public class LangPage extends BasePage {
         progressBar.setVisible(busy);
     }
 
+    /**
+     * Navigate to LangEdit for the currently selected entry.
+     * Works for both item-linked entries AND standalone lang-only entries.
+     */
+    private void navigateToLangEdit(LangEntry entry) {
+        if (entry == null) return;
+        if (entry.item != null) {
+            // Item-linked: open the full item-based editor (existing behaviour).
+            window.navigate(MainWindow.Page.LANG_EDIT, entry.item);
+        } else {
+            // Standalone entry: open LangEdit in standalone mode.
+            window.navigate(MainWindow.Page.LANG_EDIT,
+                    LangEdit.StandaloneEntry.of(entry.langKey, entry.value));
+        }
+    }
+
     private JPopupMenu buildEntryPopupMenu() {
         var popup = new JPopupMenu();
+
         var copyKey = new JMenuItem(getLocalText("ui_copy_key"));
         copyKey.addActionListener(e -> {
             if (selectedEntry != null) {
@@ -471,6 +457,7 @@ public class LangPage extends BasePage {
                 window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
             }
         });
+
         var copyVal = new JMenuItem(getLocalText("ui_copy_value"));
         copyVal.addActionListener(e -> {
             if (selectedEntry != null) {
@@ -478,13 +465,21 @@ public class LangPage extends BasePage {
                 window.snackbar.show("ui_copied_value", BarManager.Type.INFO);
             }
         });
+
+        // "Edit Lang" is always available — no item required.
+        var editLang = new JMenuItem(getLocalText("ui_edit_lang"));
+        editLang.addActionListener(e -> navigateToLangEdit(selectedEntry));
+
         popup.add(copyKey);
         popup.add(copyVal);
+        popup.addSeparator();
+        popup.add(editLang);
         return popup;
     }
 
     private JPopupMenu buildDetailPopupMenu() {
         var popup = new JPopupMenu();
+
         var copyKey = new JMenuItem(getLocalText("ui_copy_key"));
         copyKey.addActionListener(e -> {
             if (selectedEntry != null) {
@@ -492,6 +487,7 @@ public class LangPage extends BasePage {
                 window.snackbar.show("ui_copied_key", BarManager.Type.INFO, selectedEntry.langKey);
             }
         });
+
         var copyVal = new JMenuItem(getLocalText("ui_copy_value"));
         copyVal.addActionListener(e -> {
             if (selectedEntry != null) {
@@ -499,31 +495,28 @@ public class LangPage extends BasePage {
                 window.snackbar.show("ui_copied_value", BarManager.Type.INFO);
             }
         });
+
         popup.add(copyKey);
         popup.add(copyVal);
         popup.addSeparator();
 
+        // "Edit Item" only makes sense when there is a linked item.
         var editItem = new JMenuItem(getLocalText("ui_edit_item"));
         editItem.addActionListener(e -> {
             if (selectedEntry != null && selectedEntry.item != null)
                 window.navigate(MainWindow.Page.ITEM_EDIT, selectedEntry.item);
         });
+
+        // "Edit Lang" is always enabled — works for standalone entries too.
         var editLang = new JMenuItem(getLocalText("ui_edit_lang"));
-        editLang.addActionListener(e -> {
-            if (selectedEntry != null && selectedEntry.item != null)
-                window.navigate(MainWindow.Page.LANG_EDIT, selectedEntry.item);
-        });
+        editLang.addActionListener(e -> navigateToLangEdit(selectedEntry));
+
         popup.add(editItem);
         popup.add(editLang);
         return popup;
     }
 
-    /**
-     * Fast array-backed list model.
-     * Swapping the entire dataset is O(1) — one reference assignment +
-     * one fireContentsChanged() — instead of the O(n) per-element events
-     * that DefaultListModel.addAll() triggers internally with JList.
-     */
+    /** Fast array-backed list model. */
     private static final class ArrayListModel extends AbstractListModel<String> {
         private String[] data = new String[0];
 
@@ -536,20 +529,14 @@ public class LangPage extends BasePage {
                 fireContentsChanged(this, 0, maxIdx);
         }
 
-        @Override
-        public int getSize() {
-            return data.length;
-        }
-
-        @Override
-        public String getElementAt(int i) {
-            return data[i];
-        }
+        @Override public int getSize() { return data.length; }
+        @Override public String getElementAt(int i) { return data[i]; }
     }
 
     record LangEntry(String langKey, String value, String attrName, ModItem item) {
         public boolean has(String inp) {
-            return langKey.toLowerCase(Locale.ROOT).contains(inp) || value.toLowerCase(Locale.ROOT).contains(inp);
+            return langKey.toLowerCase(Locale.ROOT).contains(inp)
+                    || value.toLowerCase(Locale.ROOT).contains(inp);
         }
     }
 }

@@ -628,8 +628,13 @@ public class ItemEdit extends BaseEditPage {
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
 
 		BuffParamMap initial = (param != null) ? param.name() : null;
-		var model = new FilterableBuffParamModel(getBuffParamAll(), initial);
-		var statCombo = getBuffParamMapJComboBox(model);
+
+		final FilterableBuffParamModel[] modelHolder = { null };
+
+		// Minimal stub model used until the popup is first opened.
+		var stubModel = new FilterableBuffParamModel(initial);
+
+		var statCombo = getBuffParamMapJComboBox(stubModel);
 
 		JTextField statEditor = (JTextField) statCombo.getEditor().getEditorComponent();
 		statEditor.setBackground(new Color(0x313244));
@@ -639,6 +644,25 @@ public class ItemEdit extends BaseEditPage {
 
 		if (initial != null)
 			statEditor.setText(initial.getName());
+
+		// Upgrade to the real model on first popup open (lazy init).
+		statCombo.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+			@Override
+			public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
+				if (modelHolder[0] == null) {
+					modelHolder[0] = new FilterableBuffParamModel(getBuffParamAll(), initial);
+					statCombo.setModel(modelHolder[0]);
+					// Restore text the user may have typed before the popup.
+					statEditor.setText(statEditor.getText());
+				}
+			}
+			@Override public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {}
+			@Override public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {}
+		});
+
+		// Helper: get the live model if already initialised, else the stub.
+		// This keeps filter/action lambdas below tidy.
+		java.util.function.Supplier<FilterableBuffParamModel> liveModel = () -> modelHolder[0];
 
 		statEditor.getDocument().addDocumentListener(new DocumentListener() {
 			private boolean filtering = false;
@@ -650,7 +674,12 @@ public class ItemEdit extends BaseEditPage {
 
 				SwingUtilities.invokeLater(() -> {
 					try {
-						model.applyFilter(statEditor.getText());
+						// Typing always forces the real model to load.
+						if (modelHolder[0] == null) {
+							modelHolder[0] = new FilterableBuffParamModel(getBuffParamAll(), initial);
+							statCombo.setModel(modelHolder[0]);
+						}
+						modelHolder[0].applyFilter(statEditor.getText());
 						if (! statCombo.isPopupVisible())
 							statCombo.showPopup();
 					} finally {
@@ -676,8 +705,9 @@ public class ItemEdit extends BaseEditPage {
 		statCombo.addActionListener(e -> {
 			Object sel = statCombo.getSelectedItem();
 			if (sel instanceof BuffParamMap bpm) {
-
-				model.applyFilter("");
+				FilterableBuffParamModel m = liveModel.get();
+				if (m != null)
+					m.applyFilter("");
 
 				String cur = statEditor.getText();
 				if (! cur.equals(bpm.getName())) {
@@ -1090,6 +1120,10 @@ public class ItemEdit extends BaseEditPage {
 			this.master = master;
 			this.view = new ArrayList<>(master);
 			this.selected = initial;
+		}
+
+		FilterableBuffParamModel(BuffParamMap initial) {
+			this(List.of(initial), initial);
 		}
 
 		/** Narrow the visible list to entries matching {@code text} (case-insensitive). */

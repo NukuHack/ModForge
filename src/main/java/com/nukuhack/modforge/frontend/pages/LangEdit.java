@@ -22,8 +22,21 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
 /**
  * Localization edit page.
- * <p>
- * Layout per entry (vertical, generous space):
+ *
+ * <h3>Two operating modes</h3>
+ * <ol>
+ *   <li><b>Item mode</b> — launched via {@code setCurrentItem(ModItem)}.
+ *       Loads every lang attribute that belongs to the item.
+ *       This is the existing behaviour.</li>
+ *   <li><b>Standalone mode</b> — launched via {@code setStandaloneEntry(StandaloneEntry)}.
+ *       Edits a single lang key that has no connected ModItem
+ *       (e.g. a bare entry found on the LangPage list).</li>
+ * </ol>
+ *
+ * The two modes are mutually exclusive; switching to one clears the other.
+ *
+ * <h3>Layout per entry (vertical, generous space)</h3>
+ * <pre>
  *   ┌──────────────────────────────────────┐
  *   │ ATTRIBUTE NAME (muted label)         │
  *   │ lang.key.monospace  [copy]           │
@@ -32,22 +45,40 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
  *   │ └────────────────────────────────┘   │
  *   │ ──────────────────────────────────── │
  *   └──────────────────────────────────────┘
+ * </pre>
  */
 @Slf4j
-@ExtensionMethod({ Util.class })
+@ExtensionMethod({Util.class})
 public class LangEdit extends BaseEditPage {
-	
+
+	// ── Mode tracking ─────────────────────────────────────────────────────────
+
+	/**
+	 * Carries a single lang key + its current translation for standalone mode.
+	 * Use the factory {@link #of(String, String)} to create instances.
+	 */
+	public record StandaloneEntry(String langKey, String value) {
+		public static StandaloneEntry of(String langKey, String value) {
+			return new StandaloneEntry(langKey, value);
+		}
+	}
+
+	/** Non-null while in standalone mode; null in item mode. */
+	private StandaloneEntry standaloneEntry = null;
+
+	// ── Shared state ──────────────────────────────────────────────────────────
+
 	/** Working copy: langKey → current translated value (editable). */
 	private final Map<String, String> workingEntries = new LinkedHashMap<>();
-	
-	/** langKey → attribute name on the item (for labeling). */
+
+	/** langKey → attribute name on the item (for labeling; blank in standalone mode). */
 	private final Map<String, String> keyToAttrName = new LinkedHashMap<>();
-	
+
 	/** langKey → the JTextArea the user edits. */
 	private final Map<String, JTextArea> keyToEditor = new LinkedHashMap<>();
-	
+
 	private final JPanel fieldsPanel;
-	
+
 	public LangEdit(MainWindow w) {
 		super(w);
 		fieldsPanel = new JPanel();
@@ -56,40 +87,73 @@ public class LangEdit extends BaseEditPage {
 		fieldsPanel.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 		initUI();
 	}
-	
-	private static String emptyPreviewHtml() {
-		return "<html><body style='background:#181825;color:#6c6f85;" + "font-family:sans-serif;padding:12px;'>" + "<i>" + getLocalText("ui_lang_edit_empty_preview") + "</i></body></html>";
+
+	// ── Public entry-points ───────────────────────────────────────────────────
+
+	/**
+	 * Enter <em>standalone mode</em>: edit a single lang entry that has no
+	 * connected {@link ModItem}.  Clears any previously loaded item.
+	 *
+	 * <p>Called by {@link #refresh(Object...)} when the navigation argument is a
+	 * {@link StandaloneEntry} rather than a {@link ModItem}.
+	 */
+	public void setStandaloneEntry(StandaloneEntry entry) {
+		this.currentItem = null;
+		this.standaloneEntry = entry;
+		this.hasChanges = false;
+		rebuildFields();
+		updatePreview();
+		updateStatus();
 	}
-	
+
+	// ── BaseEditPage wiring ───────────────────────────────────────────────────
+
+	@Override
+	public void refresh(Object... input) {
+		refreshModSelector();
+		if (input.length > 0) {
+			if (input[0] instanceof ModItem item) {
+				standaloneEntry = null;       // leave item mode
+				setCurrentItem(item);
+			} else if (input[0] instanceof StandaloneEntry se) {
+				setStandaloneEntry(se);       // enter standalone mode
+			} else {
+				window.navigate(MainWindow.Page.HOME);
+			}
+		} else {
+			window.navigate(MainWindow.Page.HOME);
+		}
+	}
+
 	@Override
 	protected String getPageTitle() {
 		return "ui_localization_edit";
 	}
-	
+
 	@Override
 	protected String getFormPanelTitle() {
 		return getLocalText("ui_localization_entries");
 	}
-	
+
 	@Override
 	protected String getPreviewTitle() {
 		return getLocalText("ui_live_preview");
 	}
-	
+
 	@Override
 	protected JPanel buildRightActions() {
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		panel.setOpaque(false);
-		
+
 		refreshLangSelector();
 		styleCombo(langSelector);
 		langSelector.setPreferredSize(new Dimension(130, 28));
 		langSelector.addActionListener(e -> rebuildFields());
-		
+
 		styleCombo(modSelector);
 		modSelector.setPreferredSize(new Dimension(200, 28));
 		modSelector.setToolTipText(getLocalText("ui_mod_source_tip"));
-		
+
 		panel.add(muted("ui_lang"));
 		panel.add(langSelector);
 		panel.add(Box.createHorizontalStrut(8));
@@ -98,12 +162,12 @@ public class LangEdit extends BaseEditPage {
 		panel.add(primaryBtn("ui_add_to_mod", e -> addEntriesToSelectedMod()));
 		return panel;
 	}
-	
+
 	@Override
 	protected JPanel buildFormPanel() {
 		return fieldsPanel;
 	}
-	
+
 	@Override
 	protected JPanel buildActionButtons() {
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -112,96 +176,129 @@ public class LangEdit extends BaseEditPage {
 		buttons.add(getDangerButton("ui_back", e -> navigateBack()));
 		return buttons;
 	}
-	
+
 	@Override
 	protected void onItemSet(ModItem item) {
+		standaloneEntry = null;       // ensure standalone state is cleared
 		refreshLangSelector();
 		rebuildFields();
-		
+
 		if (previewPane.getClientProperty("langEditListenerInstalled") == null) {
 			previewPane.addMouseListener(mouseClicked(currentItem));
 			previewPane.putClientProperty("langEditListenerInstalled", Boolean.TRUE);
 		}
 		previewPane.setComponentPopupMenu(buildItemPopupMenu(() -> currentItem, true, false));
 	}
-	
+
 	@Override
 	protected void updatePreview() {
-		if (currentItem == null || workingEntries.isEmpty()) {
+		boolean standalone = standaloneEntry != null;
+		boolean itemMode   = currentItem != null;
+
+		if (!standalone && !itemMode || workingEntries.isEmpty()) {
 			previewPane.setText(emptyPreviewHtml());
 			return;
 		}
-		
+
+		// Flush editor state before rendering.
 		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
-		
+
 		var lang = getSelectedLang().orElseGet(Singleton.getRegistry().userConfig::getLanguage);
-		
+
 		var html = new StringBuilder();
-		html.append("<html><body style='background:#181825;color:#cdd6f4;" + "font-family:sans-serif;padding:12px;margin:0;'>");
-		
-		// ── Item header (reuse shared renderer) ──────────────────────────────
-		
-		html.append("<b style='color:#89b4fa;font-size:13px;'>").append(currentItem.getId().escHtml()).append("</b><br/>");
-		
+		html.append("<html><body style='background:#181825;color:#cdd6f4;"
+				+ "font-family:sans-serif;padding:12px;margin:0;'>");
+
+		if (standalone) {
+			// Standalone header — no item, just the lang key.
+			html.append("<b style='color:#89b4fa;font-size:13px;'>")
+					.append(standaloneEntry.langKey().escHtml())
+					.append("</b><br/>");
+			html.append("<span style='color:#6c6f85;font-size:9px;"
+					+ "text-transform:uppercase;letter-spacing:0.5px;'>"
+					+ "✦ ").append(getLocalText("ui_standalone_entry")).append("</span>");
+		} else {
+			html.append("<b style='color:#89b4fa;font-size:13px;'>")
+					.append(currentItem.getId().escHtml())
+					.append("</b><br/>");
+		}
+
 		html.append("<hr style='border-color:#313244;margin:10px 0;'/>");
-		html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;" + "letter-spacing:0.5px;'>").append(getLocalText("ui_language")).append(": ").append(lang.getDisplayName().escHtml()).append("</span><br/><br/>");
-		
+		html.append("<span style='color:#6c6f85;font-size:9px;text-transform:uppercase;"
+						+ "letter-spacing:0.5px;'>")
+				.append(getLocalText("ui_language")).append(": ")
+				.append(lang.getDisplayName().escHtml())
+				.append("</span><br/><br/>");
+
 		for (var entry : workingEntries.entrySet()) {
 			final String attrName = keyToAttrName.getOrDefault(entry.getKey(), "");
-			html.append("<div style='margin-bottom:10px;background:#1e1e2e;" + "border-left:3px solid #cba6f7;padding:8px 10px;border-radius:3px;'>");
-			if (! attrName.isBlank())
-				html.append("<span style='color:#cba6f7;font-size:9px;" + "text-transform:uppercase;letter-spacing:0.5px;'>").append(attrName.escHtml()).append("</span><br/>");
-			html.append("<span style='color:#6c6f85;font-size:10px;font-family:monospace;'>").append(entry.getKey().escHtml()).append("</span><br/>");
-			html.append("<span style='color:#cdd6f4;font-size:12px;'>").append(entry.getValue().escHtml()).append("</span>");
+			html.append("<div style='margin-bottom:10px;background:#1e1e2e;"
+					+ "border-left:3px solid #cba6f7;padding:8px 10px;border-radius:3px;'>");
+			if (!attrName.isBlank())
+				html.append("<span style='color:#cba6f7;font-size:9px;"
+								+ "text-transform:uppercase;letter-spacing:0.5px;'>")
+						.append(attrName.escHtml()).append("</span><br/>");
+			html.append("<span style='color:#6c6f85;font-size:10px;font-family:monospace;'>")
+					.append(entry.getKey().escHtml()).append("</span><br/>");
+			html.append("<span style='color:#cdd6f4;font-size:12px;'>")
+					.append(entry.getValue().escHtml()).append("</span>");
 			html.append("</div>");
 		}
 		html.append("</body></html>");
 		previewPane.setText(html.toString());
 		previewPane.setCaretPosition(0);
 	}
-	
+
 	@Override
 	protected void navigateBack() {
 		if (confirmDiscard())
 			window.navigate(MainWindow.Page.ITEMS);
 	}
-	
+
+	// ── Field building ────────────────────────────────────────────────────────
+
 	/**
-	 * Walk the current item's lang attributes, resolve each key, and build
-	 * one card per entry with a VERTICAL layout:
-	 *   attribute-name label
-	 *   lang key (monospace, clickable copy)
-	 *   text area for the translation
+	 * Walk the current item's lang attributes (item mode) or use the single
+	 * standalone key (standalone mode), then build one card per entry.
 	 */
 	private void rebuildFields() {
 		fieldsPanel.removeAll();
 		keyToEditor.clear();
 		workingEntries.clear();
 		keyToAttrName.clear();
-		
-		if (currentItem == null) {
+
+		boolean standalone = standaloneEntry != null;
+		boolean itemMode   = currentItem != null;
+
+		if (!standalone && !itemMode) {
 			fieldsPanel.revalidate();
 			fieldsPanel.repaint();
 			return;
 		}
-		
-		var lang = getSelectedLang().orElseGet(Singleton.getRegistry().userConfig::getLanguage);
-		var local = window.getRegistry().localService;
-		var baseGame = Singleton.getGame();
-		
-		for (var attr : currentItem.getLangAttributes()) {
-			var langKey = attr.getValue().trim();
-			if (langKey.isBlank())
-				continue;
-			
-			var translated = local.resolve(baseGame, lang, langKey);
-			if (translated == null)
-				translated = getLocalText("ui_translation_not_found");
-			
-			workingEntries.put(langKey, translated);
-			keyToAttrName.put(langKey, attr.getName());
+
+		if (standalone) {
+			// ── Standalone mode ──────────────────────────────────────────────
+			workingEntries.put(standaloneEntry.langKey(), standaloneEntry.value());
+			keyToAttrName.put(standaloneEntry.langKey(), "");
+		} else {
+			// ── Item mode ────────────────────────────────────────────────────
+			var lang  = getSelectedLang().orElseGet(Singleton.getRegistry().userConfig::getLanguage);
+			var local = window.getRegistry().localService;
+			var baseGame = Singleton.getGame();
+
+			for (var attr : currentItem.getLangAttributes()) {
+				var langKey = attr.getValue().trim();
+				if (langKey.isBlank()) continue;
+
+				var translated = local.resolve(baseGame, lang, langKey);
+				if (translated == null)
+					translated = getLocalText("ui_translation_not_found");
+
+				workingEntries.put(langKey, translated);
+				keyToAttrName.put(langKey, attr.getName());
+			}
 		}
-		
+
 		if (workingEntries.isEmpty()) {
 			var empty = muted("ui_local_not_found");
 			empty.setBorder(BorderFactory.createEmptyBorder(24, 0, 0, 0));
@@ -212,28 +309,27 @@ public class LangEdit extends BaseEditPage {
 			updatePreview();
 			return;
 		}
-		
+
 		for (var entry : workingEntries.entrySet()) {
-			final String langKey = entry.getKey();
+			final String langKey  = entry.getKey();
 			final String attrName = keyToAttrName.get(langKey);
 			fieldsPanel.add(buildEntryCard(langKey, attrName, entry.getValue()));
 			fieldsPanel.add(Box.createVerticalStrut(4));
 		}
-		
+
 		fieldsPanel.add(Box.createVerticalGlue());
-		
 		fieldsPanel.revalidate();
 		fieldsPanel.repaint();
 		updatePreview();
 	}
-	
+
 	/**
 	 * Builds a single card for one localization entry.
 	 *
 	 * <pre>
 	 *  ┌─ card ──────────────────────────────────────┐
 	 *  │  ATTRIBUTE_NAME                             │  ← muted, 9px
-	 *  │  lang.key.here                    [C Copy]  │  ← monospace accent, clickable
+	 *  │  lang.key.here                    [⎘ Copy]  │  ← monospace accent, clickable
 	 *  │  ┌─────────────────────────────────────┐    │
 	 *  │  │  textarea (editable translation)    │    │
 	 *  │  └─────────────────────────────────────┘    │
@@ -241,15 +337,16 @@ public class LangEdit extends BaseEditPage {
 	 * </pre>
 	 */
 	private JPanel buildEntryCard(String langKey, String attrName, String value) {
-		
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(new Color(0x1e1e2e));
-		card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x313244), 1), BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+		card.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(new Color(0x313244), 1),
+				BorderFactory.createEmptyBorder(10, 12, 10, 12)));
 		card.setAlignmentX(Component.LEFT_ALIGNMENT);
 		card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		
-		if (attrName != null && ! attrName.isBlank()) {
+
+		if (attrName != null && !attrName.isBlank()) {
 			JLabel attrLabel = new JLabel(attrName);
 			attrLabel.setForeground(new Color(0xcba6f7));
 			attrLabel.setFont(new Font("Roboto", Font.BOLD, 9));
@@ -257,12 +354,12 @@ public class LangEdit extends BaseEditPage {
 			card.add(attrLabel);
 			card.add(Box.createVerticalStrut(4));
 		}
-		
+
 		JPanel keyRow = new JPanel(new BorderLayout(6, 0));
 		keyRow.setOpaque(false);
 		keyRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 		keyRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-		
+
 		JLabel keyLabel = new JLabel(langKey);
 		keyLabel.setForeground(MainWindow.ACCENT);
 		keyLabel.setFont(new Font("Roboto Mono", Font.PLAIN, 11));
@@ -275,13 +372,13 @@ public class LangEdit extends BaseEditPage {
 				window.snackbar.show("ui_copied_key", BarManager.Type.INFO, langKey);
 			}
 		});
-		
+
 		JButton copyBtn = makeCopyButton(langKey);
 		keyRow.add(keyLabel, BorderLayout.CENTER);
 		keyRow.add(copyBtn, BorderLayout.EAST);
 		card.add(keyRow);
 		card.add(Box.createVerticalStrut(6));
-		
+
 		JTextArea ta = new JTextArea(value);
 		ta.setRows(3);
 		ta.setBackground(new Color(0x313244));
@@ -290,25 +387,16 @@ public class LangEdit extends BaseEditPage {
 		ta.setFont(new Font("Roboto", Font.PLAIN, 12));
 		ta.setLineWrap(true);
 		ta.setWrapStyleWord(true);
-		ta.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0x45475a)), BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+		ta.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(new Color(0x45475a)),
+				BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 		ta.getDocument().addDocumentListener(new DocumentListener() {
-			public void insertUpdate(DocumentEvent e) {
-				markChanged();
-				updatePreview();
-			}
-			
-			public void removeUpdate(DocumentEvent e) {
-				markChanged();
-				updatePreview();
-			}
-			
-			public void changedUpdate(DocumentEvent e) {
-				markChanged();
-				updatePreview();
-			}
+			public void insertUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
+			public void removeUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
+			public void changedUpdate(DocumentEvent e) { markChanged(); updatePreview(); }
 		});
 		keyToEditor.put(langKey, ta);
-		
+
 		JScrollPane taSp = new JScrollPane(ta);
 		taSp.setAlignmentX(Component.LEFT_ALIGNMENT);
 		taSp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
@@ -316,10 +404,10 @@ public class LangEdit extends BaseEditPage {
 		taSp.setBackground(MainWindow.SURFACE);
 		taSp.setBorder(BorderFactory.createEmptyBorder());
 		card.add(taSp);
-		
+
 		return card;
 	}
-	
+
 	private JButton makeCopyButton(String langKey) {
 		JButton b = new JButton("⎘");
 		b.setPreferredSize(new Dimension(28, 22));
@@ -336,18 +424,19 @@ public class LangEdit extends BaseEditPage {
 		});
 		return b;
 	}
-	
+
+	// ── Save / Add ────────────────────────────────────────────────────────────
+
 	/**
 	 * Flush all in-editor translations to the selected mod's lang map and mark clean.
 	 *
-	 * <p>The item's {@link com.nukuhack.modforge.backend.model.Attribute.StringAttribute}
-	 * values hold <em>lang keys</em> (e.g. {@code "ui.sword.name"}), not the translated
-	 * text — so there is nothing to write back onto the item itself.  The editable
-	 * content (the resolved translations) lives in {@code workingEntries} and must be
-	 * committed to the mod's localization map via {@code mod.addLocal(...)}.
+	 * <p>In <em>item mode</em> the item's attributes hold lang <em>keys</em>, not
+	 * translated text, so nothing is written back onto the item itself.
+	 * In <em>standalone mode</em> the same applies — only the mod's localisation
+	 * map is updated.
 	 */
 	private void saveChanges() {
-		if (currentItem == null) {
+		if (standaloneEntry == null && currentItem == null) {
 			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
 			return;
 		}
@@ -361,24 +450,23 @@ public class LangEdit extends BaseEditPage {
 			window.snackbar.show("ui_unknown_language", BarManager.Type.INFO);
 			return;
 		}
-		
-		// Flush editor widgets → workingEntries
+
 		keyToEditor.forEach((key, ta) -> workingEntries.put(key, ta.getText()));
-		
+
 		if (workingEntries.isEmpty()) {
 			window.snackbar.show("ui_no_entries_to_add", BarManager.Type.INFO);
 			return;
 		}
-		
+
 		targetMod.get().addLocal(lang.get(), new HashMap<>(workingEntries));
 		hasChanges = false;
 		updatePreview();
 		updateStatus();
 		window.snackbar.show("ui_item_changes_saved", BarManager.Type.SUCCESS);
 	}
-	
+
 	private void addEntriesToSelectedMod() {
-		if (currentItem == null) {
+		if (standaloneEntry == null && currentItem == null) {
 			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
 			return;
 		}
@@ -387,7 +475,7 @@ public class LangEdit extends BaseEditPage {
 			window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 			return;
 		}
-		var mod = targetMod.get();
+		var mod  = targetMod.get();
 		var lang = getSelectedLang();
 		if (lang.isEmpty()) {
 			window.snackbar.show("ui_unknown_language", BarManager.Type.INFO);
@@ -402,5 +490,13 @@ public class LangEdit extends BaseEditPage {
 		hasChanges = false;
 		updateStatus();
 		window.snackbar.show("ui_entries_added", BarManager.Type.SUCCESS, workingEntries.size());
+	}
+
+	// ── Helpers ───────────────────────────────────────────────────────────────
+
+	private static String emptyPreviewHtml() {
+		return "<html><body style='background:#181825;color:#6c6f85;"
+				+ "font-family:sans-serif;padding:12px;'>"
+				+ "<i>" + getLocalText("ui_lang_edit_empty_preview") + "</i></body></html>";
 	}
 }
