@@ -239,7 +239,7 @@ public class MainWindow extends JFrame {
 		current = page;
 		cardLayout.show(pageHolder, page.name());
 		
-		page.instance.refresh(current, input);
+		Page.instance.refresh(current, input);
 		
 		snackbar.show("ui_navigate_page", BarManager.Type.INFO, getLocalText(page.getDisplayName()));
 	}
@@ -255,33 +255,5 @@ public class MainWindow extends JFrame {
 			}
 			return false;
 		});
-	}
-	
-	@Getter
-	public enum Page {
-		HOME("ui_home", HomePage.class),
-		MODS("ui_mods", ModsPage.class),
-		MOD_EDIT("ui_mod_edit", ModEditPage.class),
-		ITEMS("ui_items", ItemsPage.class),
-		STORM("ui_storm", StormPage.class),
-		ITEM_EDIT("ui_item_edit", ItemEdit.class),
-		LANG_EDIT("ui_localization_edit", LangEdit.class),
-		SETTINGS("ui_settings", SettingsPage.class),
-		LANG("ui_localization", LangPage.class),
-		ARCHIVE("ui_archive_title", ArchivePage.class),
-		CONVERT("ui_image_convert", ConvertPage.class),
-		KCD_CONVERTER("ui_kcd_title", KCDConverterPage.class),
-		;
-		
-		private final String displayName;
-		private final Class<? extends BasePage> pageClass;
-		@Setter
-		private BasePage instance;
-		
-		Page(String displayName, Class<? extends BasePage> pageClass) {
-			this.displayName = displayName;
-			this.pageClass = pageClass;
-		}
-		
 	}
 }

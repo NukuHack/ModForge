@@ -3,6 +3,7 @@ package com.nukuhack.modforge.frontend.pages;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import com.nukuhack.util.IOUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -169,7 +170,7 @@ public class ArchivePage extends BasePage {
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         bottom.setOpaque(false);
-        bottom.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.HOME)));
+        bottom.add(primaryBtn("ui_back", e -> window.navigate(Page.HOME)));
         add(bottom, BorderLayout.SOUTH);
     }
 

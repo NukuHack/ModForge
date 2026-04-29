@@ -9,6 +9,7 @@ import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.backend.service.StormService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -262,7 +263,7 @@ public class StormPage extends BasePage {
     }
 
     @Override
-    public void refresh(MainWindow.Page source, Object... input) {
+    public void refresh(Page source, Object... input) {
         super.refresh(source, input);
         if (input.length > 0 && input[0] instanceof Storm stormItem) {
             if (!stormItem.isStormLoaded()) {
@@ -271,7 +272,7 @@ public class StormPage extends BasePage {
             }
             currentStorm = stormItem;
         } else {
-            window.navigate(MainWindow.Page.HOME);
+            window.navigate(Page.HOME);
             return;
         }
         populateFromStorm();
@@ -307,7 +308,7 @@ public class StormPage extends BasePage {
         actions.setOpaque(false);
         actions.add(accentBtn("＋ New Rule", e -> openRuleDialog(null)));
         actions.add(ghostBtn("💾 Save to Mod", e -> saveToMod()));
-        actions.add(ghostBtn("← Back", e -> window.navigate(MainWindow.Page.ITEMS)));
+        actions.add(ghostBtn("← Back", e -> window.navigate(Page.ITEMS)));
 
         top.add(leftSide, BorderLayout.WEST);
         top.add(actions, BorderLayout.EAST);

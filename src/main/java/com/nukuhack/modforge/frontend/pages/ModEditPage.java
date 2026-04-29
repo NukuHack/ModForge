@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.service.ConfigService;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import com.nukuhack.util.IOUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,17 +52,17 @@ public class ModEditPage extends BasePage {
 		bottomBar.add(primaryBtn("ui_mod_export", e -> exportMod()));
 		bottomBar.add(primaryBtn("ui_mod_delete", e -> deleteMod()));
 		bottomBar.add(primaryBtn("ui_open_folder", e -> openFolder()));
-		bottomBar.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.MODS)));
+		bottomBar.add(primaryBtn("ui_back", e -> window.navigate(Page.MODS)));
 		add(bottomBar, BorderLayout.SOUTH);
 	}
 
 	@Override
-	public void refresh(MainWindow.Page source, Object... input) {
+	public void refresh(Page source, Object... input) {
 		super.refresh(source, input);
 		if (input.length > 0 && input[0] instanceof ModData mod)
 			this.refreshFieldData(mod);
 		else
-			window.navigate(MainWindow.Page.HOME);
+			window.navigate(Page.HOME);
 	}
 	
 	private JPanel buildForm() {
@@ -326,7 +327,7 @@ public class ModEditPage extends BasePage {
 				}
 				
 				ModService.modCollection.remove(currentMod);
-				window.navigate(MainWindow.Page.MODS);
+				window.navigate(Page.MODS);
 			} catch (Exception e) {
 				window.snackbar.show("ui_delete_failed", BarManager.Type.ERROR, e.getMessage());
 			}

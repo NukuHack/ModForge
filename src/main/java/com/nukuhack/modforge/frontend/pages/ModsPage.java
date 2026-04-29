@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,7 +32,7 @@ public class ModsPage extends BasePage {
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		actions.setOpaque(false);
 		actions.add(primaryBtn("ui_mod_new", e -> createNewMod()));
-		actions.add(primaryBtn("ui_refresh", e -> w.navigate(MainWindow.Page.MODS, (Object) null)));
+		actions.add(primaryBtn("ui_refresh", e -> w.navigate(Page.MODS, (Object) null)));
 		actions.add(primaryBtn("ui_mod_import", e -> importMod()));
 		top.add(actions, BorderLayout.EAST);
 		
@@ -51,7 +52,7 @@ public class ModsPage extends BasePage {
 				if (e.getClickCount() == 2) {
 					var selected = modList.getSelectedValue();
 					if (selected != null) {
-						window.navigate(MainWindow.Page.MOD_EDIT, selected);
+						window.navigate(Page.MOD_EDIT, selected);
 					}
 				}
 			}
@@ -69,7 +70,7 @@ public class ModsPage extends BasePage {
 	}
 
 	@Override
-	public void refresh(MainWindow.Page source, Object... input) {
+	public void refresh(Page source, Object... input) {
 		super.refresh(source, input);
 
 		listModel.clear();
@@ -85,7 +86,7 @@ public class ModsPage extends BasePage {
 
 		if (ModService.modCollection.stream().anyMatch(mod -> mod.getId().equals(modId))) {
 			log.warn("createNewMod: mod ID '{}' already exists.", modId);
-			window.navigate(MainWindow.Page.MOD_EDIT, new ModData());
+			window.navigate(Page.MOD_EDIT, new ModData());
 			return;
 		}
 		var m = new ModData(
@@ -97,7 +98,7 @@ public class ModsPage extends BasePage {
 		log.info("Mod {} created.", modId);
 
 		m.setSupportsGameVersions(Set.of("1.0", "1.1", "1.2"));
-		window.navigate(MainWindow.Page.MOD_EDIT, m);
+		window.navigate(Page.MOD_EDIT, m);
 	}
 	
 	private void importMod() {
@@ -121,7 +122,7 @@ public class ModsPage extends BasePage {
 		
 		ModService.modCollection.add(mod);
 
-		window.navigate(MainWindow.Page.MODS, (Object) null);
+		window.navigate(Page.MODS, (Object) null);
 		window.snackbar.show("ui_mod_imported", BarManager.Type.SUCCESS, mod.getName());
 	}
 	

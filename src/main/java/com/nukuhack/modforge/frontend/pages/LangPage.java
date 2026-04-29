@@ -5,6 +5,7 @@ import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
@@ -167,7 +168,7 @@ public class LangPage extends BasePage {
     }
 
     @Override
-    public void refresh(MainWindow.Page source, Object... input) {
+    public void refresh(Page source, Object... input) {
         super.refresh(source, input);
 
         refreshModSelector();
@@ -441,10 +442,10 @@ public class LangPage extends BasePage {
         if (entry == null) return;
         if (entry.item != null) {
             // Item-linked: open the full item-based editor (existing behaviour).
-            window.navigate(MainWindow.Page.LANG_EDIT, entry.item);
+            window.navigate(Page.LANG_EDIT, entry.item);
         } else {
             // Standalone entry: open LangEdit in standalone mode.
-            window.navigate(MainWindow.Page.LANG_EDIT,
+            window.navigate(Page.LANG_EDIT,
                     LangEdit.StandaloneEntry.of(entry.langKey, entry.value));
         }
     }
@@ -506,7 +507,7 @@ public class LangPage extends BasePage {
         var editItem = new JMenuItem(getLocalText("ui_edit_item"));
         editItem.addActionListener(e -> {
             if (selectedEntry != null && selectedEntry.item != null)
-                window.navigate(MainWindow.Page.ITEM_EDIT, selectedEntry.item);
+                window.navigate(Page.ITEM_EDIT, selectedEntry.item);
         });
 
         // "Edit Lang" is always enabled — works for standalone entries too.

@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.ItemType;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,7 +87,7 @@ public class ItemsPage extends BasePage {
 	}
 
 	@Override
-	public void refresh(MainWindow.Page source, Object... input) {
+	public void refresh(Page source, Object... input) {
 		super.refresh(source, input);
 		
 		refreshModSelector();

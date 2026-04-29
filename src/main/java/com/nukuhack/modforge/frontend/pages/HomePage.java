@@ -2,6 +2,7 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 
 import javax.swing.*;
 import java.awt.*;
@@ -51,9 +52,9 @@ public class HomePage extends BasePage {
 
         var but = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         but.setOpaque(false);
-        but.add(primaryBtn("ui_open_mods", e -> w.navigate(MainWindow.Page.MODS)));
-        but.add(primaryBtn("ui_open_items", e -> w.navigate(MainWindow.Page.ITEMS)));
-        but.add(primaryBtn("ui_settings", e -> w.navigate(MainWindow.Page.SETTINGS)));
+        but.add(primaryBtn("ui_open_mods", e -> w.navigate(Page.MODS)));
+        but.add(primaryBtn("ui_open_items", e -> w.navigate(Page.ITEMS)));
+        but.add(primaryBtn("ui_settings", e -> w.navigate(Page.SETTINGS)));
         but.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JButton openGameDirBtn = primaryBtn("ui_open_game_dir", e -> Util.openDirectory(this, this.window.getRegistry().userConfig.getGameDir()));

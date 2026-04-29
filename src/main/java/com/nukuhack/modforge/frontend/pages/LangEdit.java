@@ -5,6 +5,7 @@ import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
@@ -93,8 +94,6 @@ public class LangEdit extends BaseEditPage {
 	/**
 	 * Enter <em>standalone mode</em>: edit a single lang entry that has no
 	 * connected {@link ModItem}.  Clears any previously loaded item.
-	 *
-	 * <p>Called by {@link #refresh(Object...)} when the navigation argument is a
 	 * {@link StandaloneEntry} rather than a {@link ModItem}.
 	 */
 	public void setStandaloneEntry(StandaloneEntry entry) {
@@ -109,7 +108,7 @@ public class LangEdit extends BaseEditPage {
 	// ── BaseEditPage wiring ───────────────────────────────────────────────────
 
 	@Override
-	public void refresh(MainWindow.Page source, Object... input) {
+	public void refresh(Page source, Object... input) {
 		super.refresh(source, input);
 		refreshModSelector();
 		if (input.length > 0) {
@@ -119,10 +118,10 @@ public class LangEdit extends BaseEditPage {
 			} else if (input[0] instanceof StandaloneEntry se) {
 				setStandaloneEntry(se);       // enter standalone mode
 			} else {
-				window.navigate(MainWindow.Page.HOME);
+				window.navigate(Page.HOME);
 			}
 		} else {
-			window.navigate(MainWindow.Page.HOME);
+			window.navigate(Page.HOME);
 		}
 	}
 
@@ -253,7 +252,7 @@ public class LangEdit extends BaseEditPage {
 	@Override
 	protected void navigateBack() {
 		if (confirmDiscard())
-			window.navigate(MainWindow.Page.ITEMS);
+			window.navigate(Page.ITEMS);
 	}
 
 	// ── Field building ────────────────────────────────────────────────────────

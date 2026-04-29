@@ -9,6 +9,7 @@ import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.backend.service.ModItemBuilder;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -127,7 +128,7 @@ public class ItemEdit extends BaseEditPage {
 	@Override
 	protected void navigateBack() {
 		if (confirmDiscard())
-			window.navigate(MainWindow.Page.ITEMS);
+			window.navigate(Page.ITEMS);
 	}
 
 	private void buildAttributeEditor() {

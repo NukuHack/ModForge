@@ -2,6 +2,7 @@ package com.nukuhack.modforge.frontend.pages;
 
 import com.nukuhack.modforge.backend.model.ModItem;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -126,13 +127,13 @@ public abstract class BaseEditPage extends BasePage {
     }
 
     @Override
-    public void refresh(MainWindow.Page source, Object... input) {
+    public void refresh(Page source, Object... input) {
         super.refresh(source, input);
         refreshModSelector();
         if (input.length > 0 && input[0] instanceof ModItem item)
             setCurrentItem(item);
         else
-            window.navigate(MainWindow.Page.HOME);
+            window.navigate(Page.HOME);
     }
 
     protected void markChanged() {

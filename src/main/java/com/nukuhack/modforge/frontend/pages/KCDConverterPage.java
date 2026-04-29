@@ -5,6 +5,7 @@ import com.nukuhack.image.ImageConverter;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -149,7 +150,7 @@ public class KCDConverterPage extends BasePage {
 	private JPanel buildBottom() {
 		JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		bar.setOpaque(false);
-		bar.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.HOME)));
+		bar.add(primaryBtn("ui_back", e -> window.navigate(Page.HOME)));
 		return bar;
 	}
 	

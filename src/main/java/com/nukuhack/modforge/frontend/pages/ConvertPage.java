@@ -4,6 +4,7 @@ import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.service.IconService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -116,7 +117,7 @@ public class ConvertPage extends BasePage {
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         bottom.setOpaque(false);
-        bottom.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.HOME)));
+        bottom.add(primaryBtn("ui_back", e -> window.navigate(Page.HOME)));
         add(bottom, BorderLayout.SOUTH);
     }
 

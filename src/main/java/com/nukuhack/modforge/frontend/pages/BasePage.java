@@ -10,6 +10,7 @@ import com.nukuhack.modforge.backend.service.ModItemBuilder;
 import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
+import com.nukuhack.modforge.frontend.Page;
 import lombok.experimental.ExtensionMethod;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +31,7 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 @ExtensionMethod({Util.class})
 public abstract class BasePage extends JPanel {
 
-    protected MainWindow.Page sourcePage = MainWindow.Page.HOME;
+    protected Page sourcePage = Page.HOME;
     private static final String[] DEPTH_ACCENTS = {"#89b4fa", "#cba6f7", "#89dceb", "#a6e3a1", "#f9e2af",};
     protected final MainWindow window;
     protected final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -428,9 +429,9 @@ public abstract class BasePage extends JPanel {
                 if (item == null)
                     return;
                 if (item instanceof Storm stormItem)
-                    window.navigate(MainWindow.Page.STORM, stormItem);
+                    window.navigate(Page.STORM, stormItem);
                 else
-                    window.navigate(MainWindow.Page.ITEM_EDIT, item);
+                    window.navigate(Page.ITEM_EDIT, item);
             });
             menu.add(editItem);
 
@@ -448,7 +449,7 @@ public abstract class BasePage extends JPanel {
             editLang.addActionListener(e -> {
                 var item = itemSupplier.get();
                 if (item != null)
-                    window.navigate(MainWindow.Page.LANG_EDIT, item);
+                    window.navigate(Page.LANG_EDIT, item);
             });
             menu.add(editLang);
         }
@@ -530,7 +531,7 @@ public abstract class BasePage extends JPanel {
         dialog.setVisible(true);
     }
 
-    public void refresh(MainWindow.Page source, Object... input) {
+    public void refresh(Page source, Object... input) {
         sourcePage = source;
     }
     protected void navigateBack() {
