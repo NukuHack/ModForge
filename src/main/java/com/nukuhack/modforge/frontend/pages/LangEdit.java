@@ -28,31 +28,17 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
  * <ol>
  *   <li><b>Item mode</b> — launched via {@code setCurrentItem(ModItem)}.
  *       Loads every lang attribute that belongs to the item.
- *       This is the existing behaviour.</li>
+ *       This is the existing behavior.</li>
  *   <li><b>Standalone mode</b> — launched via {@code setStandaloneEntry(StandaloneEntry)}.
  *       Edits a single lang key that has no connected ModItem
  *       (e.g. a bare entry found on the LangPage list).</li>
  * </ol>
  *
  * The two modes are mutually exclusive; switching to one clears the other.
- *
- * <h3>Layout per entry (vertical, generous space)</h3>
- * <pre>
- *   ┌──────────────────────────────────────┐
- *   │ ATTRIBUTE NAME (muted label)         │
- *   │ lang.key.monospace  [copy]           │
- *   │ ┌────────────────────────────────┐   │
- *   │ │  editable text area            │   │
- *   │ └────────────────────────────────┘   │
- *   │ ──────────────────────────────────── │
- *   └──────────────────────────────────────┘
- * </pre>
  */
 @Slf4j
 @ExtensionMethod({Util.class})
 public class LangEdit extends BaseEditPage {
-
-	// ── Mode tracking ─────────────────────────────────────────────────────────
 
 	/**
 	 * Carries a single lang key + its current translation for standalone mode.
@@ -66,8 +52,6 @@ public class LangEdit extends BaseEditPage {
 
 	/** Non-null while in standalone mode; null in item mode. */
 	private StandaloneEntry standaloneEntry = null;
-
-	// ── Shared state ──────────────────────────────────────────────────────────
 
 	/** Working copy: langKey → current translated value (editable). */
 	private final Map<String, String> workingEntries = new LinkedHashMap<>();
@@ -89,8 +73,6 @@ public class LangEdit extends BaseEditPage {
 		initUI();
 	}
 
-	// ── Public entry-points ───────────────────────────────────────────────────
-
 	/**
 	 * Enter <em>standalone mode</em>: edit a single lang entry that has no
 	 * connected {@link ModItem}.  Clears any previously loaded item.
@@ -104,8 +86,6 @@ public class LangEdit extends BaseEditPage {
 		updatePreview();
 		updateStatus();
 	}
-
-	// ── BaseEditPage wiring ───────────────────────────────────────────────────
 
 	@Override
 	public void refresh(Page source, Object... input) {
@@ -178,7 +158,7 @@ public class LangEdit extends BaseEditPage {
 
 	@Override
 	protected void onItemSet(ModItem item) {
-		standaloneEntry = null;       // ensure standalone state is cleared
+		standaloneEntry = null;
 		refreshLangSelector();
 		rebuildFields();
 
@@ -248,8 +228,6 @@ public class LangEdit extends BaseEditPage {
 		previewPane.setCaretPosition(0);
 	}
 
-	// ── Field building ────────────────────────────────────────────────────────
-
 	/**
 	 * Walk the current item's lang attributes (item mode) or use the single
 	 * standalone key (standalone mode), then build one card per entry.
@@ -270,11 +248,9 @@ public class LangEdit extends BaseEditPage {
 		}
 
 		if (standalone) {
-			// ── Standalone mode ──────────────────────────────────────────────
 			workingEntries.put(standaloneEntry.langKey(), standaloneEntry.value());
 			keyToAttrName.put(standaloneEntry.langKey(), "");
 		} else {
-			// ── Item mode ────────────────────────────────────────────────────
 			var lang  = getSelectedLang().orElseGet(Singleton.getRegistry().userConfig::getLanguage);
 			var local = window.getRegistry().localService;
 			var baseGame = Singleton.getGame();
@@ -318,16 +294,6 @@ public class LangEdit extends BaseEditPage {
 
 	/**
 	 * Builds a single card for one localization entry.
-	 *
-	 * <pre>
-	 *  ┌─ card ──────────────────────────────────────┐
-	 *  │  ATTRIBUTE_NAME                             │  ← muted, 9px
-	 *  │  lang.key.here                    [⎘ Copy]  │  ← monospace accent, clickable
-	 *  │  ┌─────────────────────────────────────┐    │
-	 *  │  │  textarea (editable translation)    │    │
-	 *  │  └─────────────────────────────────────┘    │
-	 *  └─────────────────────────────────────────────┘
-	 * </pre>
 	 */
 	private JPanel buildEntryCard(String langKey, String attrName, String value) {
 		JPanel card = new JPanel();
@@ -418,8 +384,6 @@ public class LangEdit extends BaseEditPage {
 		return b;
 	}
 
-	// ── Save / Add ────────────────────────────────────────────────────────────
-
 	/**
 	 * Flush all in-editor translations to the selected mod's lang map and mark clean.
 	 *
@@ -463,7 +427,7 @@ public class LangEdit extends BaseEditPage {
 			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
 			return;
 		}
-		final var targetMod = getSelectedMod();
+		var targetMod = getSelectedMod();
 		if (targetMod.isEmpty()) {
 			window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 			return;
@@ -484,8 +448,6 @@ public class LangEdit extends BaseEditPage {
 		updateStatus();
 		window.snackbar.show("ui_entries_added", BarManager.Type.SUCCESS, workingEntries.size());
 	}
-
-	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private static String emptyPreviewHtml() {
 		return "<html><body style='background:#181825;color:#6c6f85;"

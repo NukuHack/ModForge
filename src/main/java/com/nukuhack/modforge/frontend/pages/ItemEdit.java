@@ -29,14 +29,6 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
  * Supports recursive {@link Attribute.XmlNodeAttribute} trees:
  * each XML node is rendered as a collapsible sub-panel with the same
  * label+editor layout as the parent, indented to show hierarchy.
- * <p>
- * Flat attributes:  label | editor  (GridBagLayout, 2-column)
- * XML attributes:   ▶ Tag name  [collapsible section with child attrs]
- * <p>
- * Enhanced editors:
- * - EnumAttribute      → styled combo with ordinal badge + full name
- * - BuffParamListAttr  → table editor (stat | op | value) with add/remove
- * - XmlNodeAttribute   → collapsible with inline attr-preview in header
  */
 @Slf4j
 public class ItemEdit extends BaseEditPage {
@@ -505,9 +497,6 @@ public class ItemEdit extends BaseEditPage {
 
 	/**
 	 * Renders an enum attribute as a styled combo box.
-	 * <p>
-	 * Each entry shows: [ordinal]  CONSTANT_NAME
-	 * Tooltip on each item shows the constant's ordinal and full name.
 	 * The current value is pre-selected.
 	 */
 	private JComponent buildEnumEditor(Attribute.EnumAttribute attr) {
@@ -553,7 +542,6 @@ public class ItemEdit extends BaseEditPage {
 	 * │  [+ Add param]                                       │
 	 * └──────────────────────────────────────────────────────┘
 	 * <p>
-	 * The combo shows "Name  —  description" and is searchable via editable text.
 	 * The component stored under keyPath is the wrapping JPanel itself;
 	 * {@link #extractBuffParams(JPanel)} harvests it on save.
 	 */
@@ -965,7 +953,7 @@ public class ItemEdit extends BaseEditPage {
 			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
 			return;
 		}
-		final var targetMod = getSelectedMod();
+		var targetMod = getSelectedMod();
 		if (targetMod.isEmpty()) {
 			window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
 			return;

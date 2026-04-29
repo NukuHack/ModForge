@@ -289,15 +289,13 @@ public class ModEditPage extends BasePage {
 	}
 	
 	private void exportMod() {
-		// Get data needed for background thread (copy to avoid threading issues)
 		var gameDir = window.getRegistry().userConfig.getGameDir();
 		var mod = currentMod;
 		// SwingUtilities.invokeLater(()->exportButton.setEnabled(false));
-		// Run heavy work off EDT
 		executor.submit(() -> {
 			try {
-				saveManifest(gameDir);  // Heavy?
-				ModService.exportMod(mod, gameDir);  // Heavy!
+				saveManifest(gameDir);
+				ModService.exportMod(mod, gameDir);
 				
 				// UI updates back on EDT
 				SwingUtilities.invokeLater(() -> window.snackbar.show("ui_mod_exported", BarManager.Type.SUCCESS, mod.getId() + ".pak"));

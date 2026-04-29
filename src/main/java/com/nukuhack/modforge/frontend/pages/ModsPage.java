@@ -7,6 +7,7 @@ import com.nukuhack.modforge.backend.service.ModService;
 import com.nukuhack.modforge.frontend.BarManager;
 import com.nukuhack.modforge.frontend.MainWindow;
 import com.nukuhack.modforge.frontend.Page;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,7 +16,7 @@ import java.awt.event.MouseEvent;
 import java.time.LocalDate;
 import java.util.Set;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class ModsPage extends BasePage {
 	
 	private final JList<ModData> modList;

@@ -535,7 +535,7 @@ public abstract class BasePage extends JPanel {
         sourcePage = source;
     }
     protected void refresh() {
-        this.refresh(sourcePage, (Object) null);
+        this.refresh(sourcePage);
     }
     /**
      * Navigate away from this page.  Implementations should guard with an

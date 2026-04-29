@@ -126,30 +126,5 @@ public class SettingsPage extends BasePage {
 		
 		return card;
 	}
-	
-	private void loadSettings() {
-		
-		var gameDire = userConfig.getGameDir();
-		if (! gameDire.isEmpty()) {
-			gameDir.setText(gameDire);
-			gameDir.setForeground(MainWindow.TEXT);
-		}
-		
-		var userNam = userConfig.getUserName();
-		if (! userNam.isEmpty())
-			userName.setText(userNam);
-		
-		var lang = userConfig.getLanguage().getDisplayName();
-		for (int i = 0; i < langBox.getItemCount(); i++) {
-			final var item = langBox.getItemAt(i);
-			if (lang.equals(item)) {
-				langBox.setSelectedIndex(i);
-				break;
-			}
-		}
-		
-		boolean loadData = userConfig.isAutoLoadGameData();
-		loadGameData.setSelected(loadData);
-	}
 }
 

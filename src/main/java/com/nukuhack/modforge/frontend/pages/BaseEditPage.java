@@ -45,14 +45,7 @@ public abstract class BaseEditPage extends BasePage {
 
     /**
      * Wire up the three-zone layout.  Must be called by each subclass
-     * constructor <em>after</em> its own fields are ready, e.g.:
-     * <pre>
-     *   public ItemEdit(MainWindow w) {
-     *       super(w);
-     *       attributesPanel = new JPanel(...);
-     *       initUI();
-     *   }
-     * </pre>
+     * constructor <em>after</em> its own fields are ready
      */
     protected final void initUI() {
         buildUI();
@@ -160,11 +153,7 @@ public abstract class BaseEditPage extends BasePage {
     }
 
     /**
-     * Top bar: clickable breadcrumb on the left, subclass toolbar on the right.
-     *
-     * <pre>
-     *  Items  ›  {pageTitle}  {itemId}         [right actions …]
-     * </pre>
+     * Top bar: name on the left, subclass toolbar on the right.
      */
     private JPanel buildTopBar() {
         JPanel top = new JPanel(new BorderLayout(12, 0));
@@ -173,7 +162,7 @@ public abstract class BaseEditPage extends BasePage {
         JPanel breadcrumbPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         breadcrumbPanel.setOpaque(false);
 
-        JLabel pageTitleLabel = new JLabel(MainWindow.getLocalText(getPageTitle()));
+        var pageTitleLabel = new JLabel(MainWindow.getLocalText(getPageTitle()));
         pageTitleLabel.setForeground(MainWindow.TEXT);
         pageTitleLabel.setFont(new Font("Roboto", Font.BOLD, 22));
 

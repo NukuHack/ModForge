@@ -194,8 +194,4 @@ public class ConvertPage extends BasePage {
 
         JOptionPane.showMessageDialog(this, message, getLocalText("ui_conversion_error_title"), JOptionPane.ERROR_MESSAGE);
     }
-
-
-
-
 }

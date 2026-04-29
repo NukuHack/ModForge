@@ -3,13 +3,14 @@ package com.nukuhack.modforge.frontend.pages;
 import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.frontend.MainWindow;
 import com.nukuhack.modforge.frontend.Page;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import java.awt.*;
 
 import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public class HomePage extends BasePage {
 
     public HomePage(MainWindow w) {

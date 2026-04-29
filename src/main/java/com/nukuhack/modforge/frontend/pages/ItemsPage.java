@@ -231,7 +231,7 @@ public class ItemsPage extends BasePage {
 
 		mod.getItems().remove(selectedItem);
 		window.snackbar.show("ui_item_deleted", BarManager.Type.SUCCESS, selectedItem.getId());
-		this.refresh(sourcePage, (Object) null);
+		this.refresh();
 	}
 	
 	private String getItemDisplayString(final ModItem item) {
