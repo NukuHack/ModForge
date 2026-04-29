@@ -1,10 +1,7 @@
 package com.nukuhack.modforge.backend.model;
 
 import com.nukuhack.modforge.backend.ItemType;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -19,7 +16,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class ModItem {
 
 	/**

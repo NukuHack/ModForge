@@ -61,8 +61,8 @@ public final class Attributes {
 	/**
 	 * Record the best-guess Java type for an XML attribute name
 	 */
-	private static @NonNull Class<?> inferType(final @NonNull String name, final @NonNull String value) {
-		final String lo = name.toLowerCase();
+	private static @NonNull Class<?> inferType(@NonNull String name, @NonNull String value) {
+		var lo = name.toLowerCase();
 		if (lo.endsWith("class"))
 			return String.class;
 		
@@ -94,7 +94,7 @@ public final class Attributes {
 	 * Create a typed IAttribute from a raw XML name/value pair.
 	 * Falls back to String if the type is not yet discovered.
 	 */
-	public static @NonNull Attribute create(final @NonNull String name, @NonNull String value) {
+	public static @NonNull Attribute create(@NonNull String name, @NonNull String value) {
 		if ((value = value.trim()).isEmpty())
 			return new Attribute.StringAttribute(name, "");
 		var v = value;

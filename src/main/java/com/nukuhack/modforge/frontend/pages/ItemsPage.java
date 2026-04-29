@@ -84,9 +84,10 @@ public class ItemsPage extends BasePage {
 		add(top, BorderLayout.NORTH);
 		add(buildMainContentPanel(), BorderLayout.CENTER);
 	}
-	
+
 	@Override
-	public void refresh(Object... input) {
+	public void refresh(MainWindow.Page source, Object... input) {
+		super.refresh(source, input);
 		
 		refreshModSelector();
 		refreshUnderlyingList();
@@ -201,6 +202,35 @@ public class ItemsPage extends BasePage {
 				detailPane.setCaretPosition(0);
 			}
 		});
+	}
+
+	private void deleteCurrentItem() {
+		if (selectedItem == null) {
+			window.snackbar.show("ui_no_item_selected", BarManager.Type.WARNING);
+			return;
+		}
+		final var targetMod = getSelectedMod();
+		if (targetMod.isEmpty()) {
+			window.snackbar.show("ui_select_mod_first", BarManager.Type.WARNING);
+			return;
+		}
+		var mod = targetMod.get();
+		if (!mod.containsItem(selectedItem)) {
+			window.snackbar.show("ui_item_not_in_mod", BarManager.Type.WARNING);
+			return;
+		}
+		int choice = JOptionPane.showConfirmDialog(
+				this,
+				MainWindow.getLocalText("ui_delete_item_confirm", selectedItem.getId()),
+				MainWindow.getLocalText("ui_delete_item_title"),
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.WARNING_MESSAGE
+		);
+		if (choice != JOptionPane.YES_OPTION) return;
+
+		mod.getItems().remove(selectedItem);
+		window.snackbar.show("ui_item_deleted", BarManager.Type.SUCCESS, selectedItem.getId());
+		this.refresh(sourcePage, (Object) null);
 	}
 	
 	private String getItemDisplayString(final ModItem item) {

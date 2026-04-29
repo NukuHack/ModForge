@@ -109,7 +109,8 @@ public class LangEdit extends BaseEditPage {
 	// ── BaseEditPage wiring ───────────────────────────────────────────────────
 
 	@Override
-	public void refresh(Object... input) {
+	public void refresh(MainWindow.Page source, Object... input) {
+		super.refresh(source, input);
 		refreshModSelector();
 		if (input.length > 0) {
 			if (input[0] instanceof ModItem item) {

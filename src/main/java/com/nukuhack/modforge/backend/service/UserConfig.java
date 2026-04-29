@@ -14,21 +14,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
-
+@NonNull
 public interface UserConfig {
 	
-	@NonNull
-	String getGameDir();
+	@NonNull String getGameDir();
 	
 	void setGameDir(@NonNull String gameDir);
-	
-	@NonNull
-	Language getLanguage();
+
+	@NonNull Language getLanguage();
 	
 	void setLanguage(@NonNull Language language);
 	
-	@NonNull
-	String getUserName();
+	@NonNull String getUserName();
 	
 	void setUserName(@NonNull String username);
 	

@@ -149,7 +149,7 @@ public final class Util {
         return joinP(root, DATA_DIR);
     }
 
-    public Path dataDir(Path root) {
+    public Path dataDir(@NonNull Path root) {
         return joinP(root, DATA_DIR);
     }
 
@@ -161,7 +161,7 @@ public final class Util {
      * @param modId Unique identifier for the mod
      * @return Path to the mod's localization directory
      */
-    public Path modLocalDir(String root, String modId) {
+    public Path modLocalDir(@NonNull String root, @NonNull String modId) {
         return joinP(modFolder(root, modId), LOCALIZATION_DIR);
     }
 
@@ -340,7 +340,7 @@ public final class Util {
      * @param parts Additional path segments to append
      * @return Combined Path object
      */
-    public Path joinP(Path base, String... parts) {
+    public Path joinP(@NonNull Path base, @NonNull String... parts) {
         return Path.of(base.toString(), join(parts));
     }
 
@@ -352,7 +352,7 @@ public final class Util {
      * @param outFile Destination file path
      * @throws IOException If file writing fails
      */
-    public void writeXml(String inp, Path outFile) throws IOException {
+    public void writeXml(@NonNull String inp, @NonNull Path outFile) throws IOException {
         Files.createDirectories(outFile.getParent());
         inp = removeBlankLines(inp);
         if (!inp.startsWith(XML_HEADER))
@@ -481,7 +481,7 @@ public final class Util {
      * @param entryName ZIP entry path (e.g., "folder/file.txt")
      * @return Filename without path or extension (e.g., "file")
      */
-    public String stemOf(String entryName) {
+    public @NonNull String stemOf(@NonNull String entryName) {
         var slash = entryName.lastIndexOf('/');
         var filename = slash >= 0 ? entryName.substring(slash + 1) : entryName;
         var dot = filename.lastIndexOf('.');

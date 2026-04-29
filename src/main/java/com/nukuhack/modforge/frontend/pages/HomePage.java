@@ -71,9 +71,4 @@ public class HomePage extends BasePage {
         card.add(contentPanel, cardGbc);
         add(card, gbc);
     }
-
-    @Override
-    public void refresh(Object... input) {
-
-    }
 }

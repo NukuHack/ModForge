@@ -44,69 +44,54 @@ public final class ModData {
 		return "ModData{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", description='" + description + '\'' + ", author='" + author + '\'' + ", modVersion='" + modVersion + '\'' + ", createdOn='" + createdOn + '\'' + ", modifiesLevel=" + modifiesLevel + ", supportsGameVersions=" + supportsGameVersions + ", item_size=" + items.size() + ", lang_size=" + localizations.size() + ", icon_size=" + icons.size() + '}';
 	}
 	
-	public void addItem(ModItem item) {
+	public void addItem(@NonNull ModItem item) {
 		items.add(item);
 	}
 	
-	public void setItems(Collection<ModItem> input) {
+	public void setItems(@NonNull Collection<ModItem> input) {
 		this.items.clear();
-		var duplicates = new ArrayList<ModItem>();
-		input.forEach(i -> {
-			if (log.isDebugEnabled() && this.items.contains(i)) {
-				duplicates.add(i);
-				log.debug("Duplicated item: {}", i);
-			}
-			this.items.add(i);
-		});
-		
-		if (! duplicates.isEmpty()) {
-			log.warn("Found {} duplicate IDs, lost that much items", duplicates.size());
-		}
+		this.items.addAll(input);
 	}
 	
-	public Optional<ModItem> getItem(String key) {
+	public @NonNull Optional<ModItem> getItem(@NonNull String key) {
 		return items.stream().filter(i -> i.getId().equals(key)).findAny();
 	}
 	
-	public boolean containsItem(String key) {
+	public boolean containsItem(@NonNull String key) {
 		return getItem(key).isPresent();
 	}
 	
-	public boolean containsItem(ModItem value) {
+	public boolean containsItem(@NonNull ModItem value) {
 		return items.contains(value);
 	}
 	
-	public void setConfig(Map<String, String> input) {
+	public void setConfig(@NonNull Map<String, String> input) {
 		config.clear();
 		config.putAll(input);
 	}
 	
-	public void setLocal(Map<Language, Map<String, String>> input) {
+	public void setLocal(@NonNull Map<Language, @NonNull Map<String, String>> input) {
 		localizations.clear();
 		localizations.putAll(input);
 	}
 	
-	public Map<String, String> getLang(Language language) {
+	public @NonNull Map<String, String> getLang(@NonNull Language language) {
 		return localizations.getOrDefault(language, Map.of());
 	}
 	
-	public void addLocal(Language language, Map<String, String> input) {
-		final var existing = localizations.get(language);
-		final Map<String, String> map;
-		if (existing != null)
-			map = new HashMap<>(existing);
-		else
-			map = new HashMap<>();
-		map.putAll(input);
-		localizations.put(language, map);
+	public void addLocal(@NonNull Language language, @NonNull Map<String, String> input) {
+		var existing = localizations.get(language);
+		if (existing == null)
+			existing = new HashMap<>();
+		existing.putAll(input);
 	}
 	
-	public void setIcon(Set<IconService.Icon> input) {
+	public void setIcon(@NonNull Set<IconService.Icon> input) {
 		icons.clear();
 		icons.addAll(input);
 	}
 
-	public Optional<IconService.Icon> getIcon(String key) {
+	public @NonNull Optional<IconService.Icon> getIcon(@NonNull String key) {
 		var equalRandomCase = icons.stream().filter(i -> i.path().equals(key)).findAny();
 		if (equalRandomCase.isPresent())
 			return equalRandomCase;
@@ -122,7 +107,7 @@ public final class ModData {
 		return stemLowerCase;
 	}
 	
-	public void setSupportsGameVersions(Collection<String> input) {
+	public void setSupportsGameVersions(@NonNull Collection<String> input) {
 		supportsGameVersions.clear();
 		supportsGameVersions.addAll(input);
 	}

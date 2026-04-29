@@ -30,6 +30,7 @@ import static com.nukuhack.modforge.frontend.MainWindow.getLocalText;
 @ExtensionMethod({Util.class})
 public abstract class BasePage extends JPanel {
 
+    protected MainWindow.Page sourcePage = MainWindow.Page.HOME;
     private static final String[] DEPTH_ACCENTS = {"#89b4fa", "#cba6f7", "#89dceb", "#a6e3a1", "#f9e2af",};
     protected final MainWindow window;
     protected final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -257,7 +258,7 @@ public abstract class BasePage extends JPanel {
 
             html.append("<div style='margin-left:2px;'>");
             html.append("<span style='color:#f38ba8;font-size:10px;font-family:monospace;'>⚡ ");
-            html.append(Util.escHtml(buff.getNiceName())).append("</span>");
+            html.append(Util.escHtml(buff.getValue().stream().map(Attribute.BuffParam::beautify).collect(Collectors.joining(" \n")))).append("</span>");
 
         } else if (attr instanceof Attribute.BooleanAttribute) {
 
@@ -421,7 +422,7 @@ public abstract class BasePage extends JPanel {
         menu.addSeparator();
 
         if (showEditItem) {
-            JMenuItem editItem = new JMenuItem(getLocalText("ui_edit_item"));
+            var editItem = new JMenuItem(getLocalText("ui_edit_item"));
             editItem.addActionListener(e -> {
                 var item = itemSupplier.get();
                 if (item == null)
@@ -432,10 +433,18 @@ public abstract class BasePage extends JPanel {
                     window.navigate(MainWindow.Page.ITEM_EDIT, item);
             });
             menu.add(editItem);
+
+            var addToMod = new JMenuItem(getLocalText("ui_add_to_mod"));
+            addToMod.addActionListener(e -> {
+                var item = itemSupplier.get();
+                if (item != null)
+                    showAddToModDialog(item);
+            });
+            menu.add(addToMod);
         }
 
         if (showEditLang) {
-            JMenuItem editLang = new JMenuItem(getLocalText("ui_edit_lang"));
+            var editLang = new JMenuItem(getLocalText("ui_edit_lang"));
             editLang.addActionListener(e -> {
                 var item = itemSupplier.get();
                 if (item != null)
@@ -443,14 +452,6 @@ public abstract class BasePage extends JPanel {
             });
             menu.add(editLang);
         }
-
-        JMenuItem addToMod = new JMenuItem(getLocalText("ui_add_to_mod"));
-        addToMod.addActionListener(e -> {
-            var item = itemSupplier.get();
-            if (item != null)
-                showAddToModDialog(item);
-        });
-        menu.add(addToMod);
 
         return menu;
     }
@@ -529,5 +530,14 @@ public abstract class BasePage extends JPanel {
         dialog.setVisible(true);
     }
 
-    public abstract void refresh(Object... input);
+    public void refresh(MainWindow.Page source, Object... input) {
+        sourcePage = source;
+    }
+    protected void navigateBack() {
+        if (confirmDiscard())
+            window.navigate(sourcePage);
+    }
+    protected boolean confirmDiscard() {
+        return true;
+    }
 }

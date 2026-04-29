@@ -120,11 +120,6 @@ public class ConvertPage extends BasePage {
         add(bottom, BorderLayout.SOUTH);
     }
 
-    @Override
-    public void refresh(Object... input) {
-
-    }
-
     private void styleButton(JButton b) {
         b.setBackground(new Color(0x313244));
         b.setForeground(MainWindow.ACCENT);

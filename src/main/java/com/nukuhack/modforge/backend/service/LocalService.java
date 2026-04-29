@@ -33,7 +33,7 @@ public record LocalService(UserConfig userConfig) {
 	 * Read all localisation paks from the game directory.
 	 * Returns: Language enum -> (string-key -> localized-value)
 	 */
-	public static Map<Language, Map<String, String>> loadLocalization(String root) {
+	public static @NonNull Map<Language, Map<String, String>> loadLocalization(@NonNull String root) {
 		
 		var langPaks = Util.allLocPaths(root).stream().map(LangPak::c).filter(Objects::nonNull).filter(l -> Files.exists(Path.of(l.pakPath()))).toList();
 		if (langPaks.isEmpty()) {
@@ -203,8 +203,8 @@ public record LocalService(UserConfig userConfig) {
 	 * Look up a raw localization key in the mod's strings, then the base game.
 	 * Returns {@code null} if not found in either.
 	 */
-	public String resolve(ModData mod, Language lang, String key) {
-		if (key == null || (key = key.trim()).isEmpty())
+	public String resolve(@NonNull ModData mod, @NonNull Language lang, @NonNull String key) {
+		if ((key = key.trim()).isEmpty())
 			return null;
 		var game = Singleton.getGame();
 		

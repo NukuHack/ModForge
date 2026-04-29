@@ -161,7 +161,7 @@ public class TreeBuilder<M extends ModItem> extends ModItemBuilder.GeneralBuilde
 	 * child elements are recursively parsed into {@link XmlNodeAttribute}s.
 	 */
 	@Override
-	public ModItem handle(final @NonNull Element element) {
+	public ModItem handle(@NonNull Element element) {
 		try {
 			if (cons == null)
 				return ModItemBuilder.fallbackBuilder.handle(element);

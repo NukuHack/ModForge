@@ -344,7 +344,6 @@ class IconServiceTest extends BaseServiceTest {
 		@DisplayName("convertImages on a blank path logs a warning and does not throw")
 		void blankPathIsHandledGracefully() {
 			assertDoesNotThrow(() -> IconService.convertImages("", true));
-			assertDoesNotThrow(() -> IconService.convertImages(null, true));
 		}
 
 		@Test
@@ -566,12 +565,6 @@ class IconServiceTest extends BaseServiceTest {
 		}
 
 		@Test
-		@DisplayName("returns null for a null item")
-		void returnsNullForNullItem() {
-			assertNull(IconService.getIcon(null, testMod), "null item must return null");
-		}
-
-		@Test
 		@DisplayName("icon_id='0' triggers fallback resolution without throwing")
 		void fallbackIconIdZeroDoesNotThrow() {
 			ModItem item = itemWithIconId("0");
@@ -593,9 +586,8 @@ class IconServiceTest extends BaseServiceTest {
 		}
 
 		@Test
-		@DisplayName("hasIcon returns false for null / blank icon id")
+		@DisplayName("hasIcon returns false for blank icon id")
 		void hasIconReturnsFalseForBlankId() {
-			assertFalse(IconService.hasIcon(null, testMod));
 			assertFalse(IconService.hasIcon("", testMod));
 			assertFalse(IconService.hasIcon("  ", testMod));
 		}

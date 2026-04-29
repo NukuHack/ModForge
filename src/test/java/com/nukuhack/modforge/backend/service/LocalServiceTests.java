@@ -104,13 +104,6 @@ class LocalServiceTests extends BaseServiceTest {
 	}
 	
 	@Test
-	@DisplayName("loadLocalization: returns empty map when game dir is null")
-	void loadLocalizationNullDir() {
-		var result = LocalService.loadLocalization(null);
-		assertTrue(result.isEmpty());
-	}
-	
-	@Test
 	@DisplayName("loadLocalization: loads English_xml.pak resource")
 	void loadLocalizationFromPak() throws IOException {
 		var locDir = tmp.resolve("Localization");

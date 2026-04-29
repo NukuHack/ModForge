@@ -81,10 +81,10 @@ public enum ItemEntry {
 	PERK_EXCLUSIVITY(I.PerkExclusivity.class, "perk2perk_exclusivity",  "first_perk_id", true),
 	PERK_SCRIPT(I.PerkScript.class, "perk_script", "perk_id", true),
 	PERK_BUFF_OVERRIDE(I.PerkBuffOverride.class, "perk_buff_override", "perk_id", true),
-	PERK(I.Perk.class, "perk", true),
-	BUFF(I.Buff.class, "buff", true),
 	RPG_PARAM(I.RpgParam.class, "rpg_param", "rpg_param_key", true),
 	PERK_BUFF(I.PerkBuff.class, "perk_buff", "perk_id", true),
+	PERK(I.Perk.class, "perk", true),
+	BUFF(I.Buff.class, "buff", true),
 	ITEM_TAG(I.ItemTag.class, "item_tag", "item_tag_name"),
 	ITEM_UI_SOUND(I.ItemUiSound.class, "item_ui_sound", "item_ui_sound_name"),
 	PICKABLE_AREA_DESC(I.PickableAreaDesc.class, "pickable_area_desc", "id"),
@@ -168,9 +168,6 @@ public enum ItemEntry {
 	ItemEntry(Class<? extends ModItem> clazz) {
 		this(clazz, Util.convertCase(clazz.getSimpleName()));
 	}
-	ItemEntry(Class<? extends ModItem> clazz, boolean showInDisplay) {
-		this(clazz, Util.convertCase(clazz.getSimpleName()), showInDisplay);
-	}
 	ItemEntry(Class<? extends ModItem> clazz, String fileName) {
 		this(clazz, fileName, fileName+"_id");
 	}
@@ -184,12 +181,12 @@ public enum ItemEntry {
 		this(clazz, idKey, fileName, fileName, fileName+"s", showInDisplay);
 	}
 	
-	public static ItemEntry forClass(Class<? extends ModItem> clazz) {
+	public static @NonNull ItemEntry forClass(@NonNull Class<? extends ModItem> clazz) {
 		return BY_CLASS.get(clazz);
 	}
 	
 	/** A predicate that accepts any {@link ModItem} whose runtime class is {@link #clazz}. */
-	public Predicate<ModItem> matcher() {
+	public @NonNull Predicate<ModItem> matcher() {
 		return clazz::isInstance;
 	}
 	
@@ -198,20 +195,19 @@ public enum ItemEntry {
 	 * (e.g. {@code "MeleeWeapon"} → {@code "Melee Weapon"},
 	 *  {@code "NPCTool"} → {@code "NPC Tool"}).
 	 */
-	public String displayName() {
+	public @NonNull String displayName() {
 		var s = clazz.getSimpleName();
 		s = s.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", " ");
 		return s.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2");
 	}
 	
-	public String getVersion() {
+	public @NonNull String getVersion() {
 		if (parentName.equals("ItemClasses"))
 			return "8";
 		return "1";
 	}
 
-
-	public static ItemEntry to(@NonNull ModItem item) {
+	public static @NonNull ItemEntry to(@NonNull ModItem item) {
 		return ItemEntry.forClass(item.getClass());
 	}
 }

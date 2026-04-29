@@ -36,7 +36,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		this(r.userConfig, r.configService, r.localService, r.itemService, r.iconService);
 	}
 
-	public static ModData parseModDescription(Document doc) {
+	public static @NonNull ModData parseModDescription(Document doc) {
 		final var m = new ModData(
 				textOf(doc, "modid"),
 				textOf(doc, "name"),
@@ -56,14 +56,14 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		return m;
 	}
 
-	public static String textOf(Document doc, String tag) {
+	public static @NonNull String textOf(@NonNull Document doc, @NonNull String tag) {
 		var nl = doc.getElementsByTagName(tag);
 		return nl.getLength() > 0 ? nl.item(0).getTextContent().trim() : "";
 	}
 
-	private static void appendText(Document doc, Element parent, String tag, String text) {
+	private static void appendText(@NonNull Document doc, @NonNull Element parent, @NonNull String tag, @NonNull String text) {
 		var el = doc.createElement(tag);
-		el.setTextContent(text == null ? "" : text);
+		el.setTextContent(text);
 		parent.appendChild(el);
 	}
 
@@ -72,7 +72,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 	 * @param mod     The mod description
 	 * @return boolean - succeed
 	 */
-	public static boolean writeModAsXml(String gameDir, ModData mod) {
+	public static boolean writeModAsXml(@NonNull String gameDir, @NonNull ModData mod) {
 		var rootPath = Util.modFolder(gameDir, mod.getId());
 		var manifest = Path.of(rootPath, "mod.manifest");
 		try {
@@ -134,7 +134,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		}
 	}
 
-	public static ModData loadMod(Path modPath) {
+	public static ModData loadMod(@NonNull Path modPath) {
 		var mod = loadModManifest(modPath);
 
 		if (mod == null)
@@ -271,7 +271,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		success.get();
 	}
 
-	public static ModData createFromPath(Path modPath) {
+	public static ModData createFromPath(@NonNull Path modPath) {
 		var dir = modPath.getFileName();
 		var m = new ModData();
 		if (dir == null) {
@@ -284,7 +284,7 @@ public record ModService(UserConfig userConfig, ConfigService configService, Loc
 		return m;
 	}
 
-	public static ModData loadModManifest(Path modPath) {
+	public static ModData loadModManifest(@NonNull Path modPath) {
 		var manifest = modPath.resolve("mod.manifest");
 
 		if (!Files.exists(manifest)) {

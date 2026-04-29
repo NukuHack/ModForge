@@ -450,8 +450,9 @@ public final class StormService {
         var xmlAttrs = el.getAttributes();
         for (int i = 0; i < xmlAttrs.getLength(); i++) {
             var a = (Attr) xmlAttrs.item(i);
-            if (a.getName() != null)
-                map.put(a.getName(), a.getValue());
+            var name = a.getName();
+            if (name != null)
+                map.put(name, a.getValue());
         }
         return map;
     }

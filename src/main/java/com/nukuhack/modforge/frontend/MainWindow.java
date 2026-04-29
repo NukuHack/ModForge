@@ -239,7 +239,7 @@ public class MainWindow extends JFrame {
 		current = page;
 		cardLayout.show(pageHolder, page.name());
 		
-		page.instance.refresh(input);
+		page.instance.refresh(current, input);
 		
 		snackbar.show("ui_navigate_page", BarManager.Type.INFO, getLocalText(page.getDisplayName()));
 	}

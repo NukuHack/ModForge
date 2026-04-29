@@ -6,6 +6,7 @@ import com.nukuhack.modforge.backend.ItemEntry;
 import com.nukuhack.modforge.backend.ItemType;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.ModItem;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -247,7 +248,7 @@ public record ItemService(UserConfig userConfig) {
 		Util.writeXml(xml, outFile.toPath());
 	}
 	
-	private static Stream<ModItem> extractItemsFromPak(Path pakFile) {
+	private static @NonNull Stream<ModItem> extractItemsFromPak(@NonNull Path pakFile) {
 		var items = new HashSet<ModItem>();
 		try (var zf = new ZipFile(pakFile.toFile())) {
 			for (var entry : zf.stream().filter(ItemType::excludeNonEndpoints).toList()) {
@@ -264,7 +265,7 @@ public record ItemService(UserConfig userConfig) {
 		return items.stream();
 	}
 	
-	static void readItemsFromXml(InputStream is, String sourcePath, Set<ModItem> sink) {
+	static void readItemsFromXml(@NonNull InputStream is, @NonNull String sourcePath, @NonNull Set<ModItem> sink) {
 		var doc = parseXml(is);
 		if (doc == null) {
 			log.debug("Parse failed for : {}", sourcePath);
@@ -316,7 +317,7 @@ public record ItemService(UserConfig userConfig) {
 	/**
 	 * Exclude PAKs that don't contain item/table data.
 	 */
-	private static Predicate<Path> excludeNonDataPaks() {
+	private static @NonNull Predicate<Path> excludeNonDataPaks() {
 		return p -> {
 			if (! Files.isRegularFile(p))
 				return false;
@@ -332,7 +333,7 @@ public record ItemService(UserConfig userConfig) {
 	 * Load mod items from all PAK files in the mod's Data folder.
 	 * Processes PAK files and their XML entries in parallel for maximum throughput.
 	 */
-	public static Set<ModItem> loadItems(Path modPath) {
+	public static @NonNull Set<ModItem> loadItems(@NonNull Path modPath) {
 		if (! Files.exists(modPath)) {
 			log.warn("PAK directory does not exist: {}", modPath);
 			return Set.of();

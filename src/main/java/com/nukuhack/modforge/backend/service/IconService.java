@@ -32,7 +32,7 @@ public record IconService(UserConfig userConfig) {
 	 * Scan a single PAK file for DDS textures under {@value #TEXTURES_ROOT} and
 	 * add them to {@code target}. Returns the number of entries indexed.
 	 */
-	static Set<Icon> indexDdsFromPak(String pakPath) {
+	static @NonNull Set<Icon> indexDdsFromPak(@NonNull String pakPath) {
 		var pakFile = Path.of(pakPath);
 		var pak = pakFile.getFileName().toString();
 		
@@ -93,8 +93,8 @@ public record IconService(UserConfig userConfig) {
 	 * @param toPng     {@code true}  → DDS → PNG conversion
 	 *                  {@code false} → PNG → DDS conversion
 	 */
-	public static void convertImages(String inputPath, boolean toPng) {
-		if (inputPath == null || inputPath.isBlank()) {
+	public static void convertImages(@NonNull String inputPath, boolean toPng) {
+		if (inputPath.isBlank()) {
 			log.warn("convertImages: null or blank input path – nothing to do.");
 			return;
 		}
@@ -168,10 +168,10 @@ public record IconService(UserConfig userConfig) {
 	 * Backs up any pre-existing output file before overwriting.
 	 */
 	private static void convertSingleFile(Path src, Path outputDir, boolean toPng) {
-		final String srcName = src.getFileName().toString();
-		final String srcLower = srcName.toLowerCase(Locale.ROOT);
-		final String srcExt = toPng ? ".dds" : ".png";
-		final String dstExt = toPng ? ".png" : ".dds";
+		var srcName = src.getFileName().toString();
+		var srcLower = srcName.toLowerCase(Locale.ROOT);
+		var srcExt = toPng ? ".dds" : ".png";
+		var dstExt = toPng ? ".png" : ".dds";
 		
 		if (! srcLower.endsWith(srcExt))
 			return;
@@ -183,16 +183,16 @@ public record IconService(UserConfig userConfig) {
 			backupIfExists(dstPath);
 			if (toPng) {
 				
-				final byte[] ddsBytes = Files.readAllBytes(src);
-				final BufferedImage img = convertToImage(ddsBytes);
+				var ddsBytes = Files.readAllBytes(src);
+				var img = convertToImage(ddsBytes);
 				ImageIO.write(img, "png", dstPath.toFile());
 				log.info("DDS→PNG: {} → {}", src, dstPath);
 			} else {
 				
-				final BufferedImage img = ImageIO.read(src.toFile());
+				var img = ImageIO.read(src.toFile());
 				if (img == null)
 					throw new IOException("ImageIO could not read PNG: " + src);
-				final byte[] ddsBytes = DDSUtil.encodeBC7(img);
+				var ddsBytes = DDSUtil.encodeBC7(img);
 				Files.write(dstPath, ddsBytes);
 				log.info("PNG→DDS: {} → {}", src, dstPath);
 			}
@@ -241,7 +241,7 @@ public record IconService(UserConfig userConfig) {
 	 * <p/>
 	 * Call this from ModService.fillCollection() after the mod's items are loaded.
 	 */
-	public static Set<Icon> loadModIcons(Path modPath) {
+	public static @NonNull Set<Icon> loadModIcons(@NonNull Path modPath) {
 		if (! Files.exists(modPath)) {
 			log.warn("PAK directory does not exist: {}", modPath);
 			return Set.of();
@@ -268,7 +268,7 @@ public record IconService(UserConfig userConfig) {
 	/**
 	 * Exclude PAKs that don't contain icon data.
 	 */
-	private static Predicate<Path> excludeNonIconPaks() {
+	private static @NonNull Predicate<Path> excludeNonIconPaks() {
 		return p -> {
 			if (! Files.isRegularFile(p))
 				return false;
@@ -285,16 +285,13 @@ public record IconService(UserConfig userConfig) {
 	 * @param mod  The mod that owns the item (maybe {@code Singleton.INSTANCE.game()}).
 	 * @return the image.
 	 */
-	public static BufferedImage getIcon(ModItem item, ModData mod) {
-		if (item == null)
+	public static BufferedImage getIcon(@NonNull ModItem item, ModData mod) {
+		var iconAttr = item.getAttributes().stream().filter(a -> a.getName().equals("icon_id")).findFirst();
+		
+		if (iconAttr.isEmpty())
 			return null;
 		
-		var iconAttr = item.getAttributes().stream().filter(a -> a.getName().equals("icon_id")).findFirst().orElse(null);
-		
-		if (iconAttr == null)
-			return null;
-		
-		var rawValue = iconAttr.getValue().toString();
+		var rawValue = iconAttr.get().getValue().toString();
 		
 		var useFallback = rawValue.equals("0") || rawValue.equals("replaceme");
 		
@@ -338,8 +335,8 @@ public record IconService(UserConfig userConfig) {
 	/**
 	 * Return true if the named icon exists in the mod's index or the base-game index.
 	 */
-	public static boolean hasIcon(String iconId, ModData mod) {
-		if (iconId == null || iconId.isBlank())
+	public static boolean hasIcon(@NonNull String iconId, @NonNull ModData mod) {
+		if (iconId.isBlank())
 			return false;
 		var key = iconId.toLowerCase(Locale.ROOT);
 		return mod != Singleton.getGame() && mod.getIcon(key).isPresent();

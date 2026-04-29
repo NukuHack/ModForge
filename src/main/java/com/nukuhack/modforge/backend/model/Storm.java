@@ -179,10 +179,11 @@ public class Storm extends ModItem {
      * @param operations Parsed operation trees (recursively nested
      *                   {@link Attribute.XmlNode}s).  Never {@code null}.
      */
+    @NonNull
     public record StormRule(
-            @NonNull Attribute.XmlNode attrs,
-            @NonNull List<Attribute.XmlNode> selectors,
-            @NonNull List<Attribute.XmlNode> operations
+            Attribute.XmlNode attrs,
+            List<Attribute.XmlNode> selectors,
+            List<Attribute.XmlNode> operations
     ) {
 
         /**

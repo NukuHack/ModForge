@@ -262,7 +262,8 @@ public class StormPage extends BasePage {
     }
 
     @Override
-    public void refresh(Object... input) {
+    public void refresh(MainWindow.Page source, Object... input) {
+        super.refresh(source, input);
         if (input.length > 0 && input[0] instanceof Storm stormItem) {
             if (!stormItem.isStormLoaded()) {
                 window.snackbar.show("Storm data not parsed yet", BarManager.Type.WARNING);

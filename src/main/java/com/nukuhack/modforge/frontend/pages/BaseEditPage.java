@@ -117,10 +117,6 @@ public abstract class BaseEditPage extends BasePage {
      */
     protected abstract void navigateBack();
 
-    /**
-     * Store the item and trigger a full UI refresh.
-     * Called directly or via {@link #refresh(Object...)}.
-     */
     public final void setCurrentItem(ModItem item) {
         this.currentItem = item;
         this.hasChanges = false;
@@ -130,7 +126,8 @@ public abstract class BaseEditPage extends BasePage {
     }
 
     @Override
-    public void refresh(Object... input) {
+    public void refresh(MainWindow.Page source, Object... input) {
+        super.refresh(source, input);
         refreshModSelector();
         if (input.length > 0 && input[0] instanceof ModItem item)
             setCurrentItem(item);

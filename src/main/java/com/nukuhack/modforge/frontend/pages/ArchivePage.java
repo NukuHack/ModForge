@@ -198,11 +198,6 @@ public class ArchivePage extends BasePage {
         b.setPreferredSize(new Dimension(160, 32));
     }
 
-    @Override
-    public void refresh(Object... input) {
-
-    }
-
     private void toggleMode() {
         decompressMode = !decompressMode;
 

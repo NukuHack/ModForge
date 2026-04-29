@@ -1,9 +1,7 @@
 package com.nukuhack.modforge.backend.model;
 
 import com.nukuhack.modforge.backend.model.E.MathOperation;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -29,7 +27,7 @@ public interface Attribute<T> {
 	@Getter
 	@Slf4j
 	@NonNull
-	@RequiredArgsConstructor
+	@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 	abstract class BaseAttribute<T> implements Attribute<T> {
 		protected final String name;
 		protected final T value;
@@ -77,7 +75,7 @@ public interface Attribute<T> {
 	@Slf4j
 	@NonNull
 	class BooleanAttribute extends BaseAttribute<Boolean> {
-		public BooleanAttribute(@NonNull String name, @NonNull Boolean value) {
+		public BooleanAttribute(String name, Boolean value) {
 			super(name, value);
 		}
 		
@@ -100,7 +98,7 @@ public interface Attribute<T> {
 	@Slf4j
 	@NonNull
 	class DoubleAttribute extends BaseAttribute<Double> {
-		public DoubleAttribute(@NonNull String name, @NonNull Double value) {
+		public DoubleAttribute(String name, Double value) {
 			super(name, value);
 		}
 		
@@ -132,7 +130,7 @@ public interface Attribute<T> {
 		@NonNull
 		private final Class<? extends Enum<?>> enumType;
 		
-		public EnumAttribute(@NonNull String name, @NonNull Enum<?> value) {
+		public EnumAttribute(String name, Enum<?> value) {
 			super(name, value);
 			this.enumType = value.getDeclaringClass();
 		}
@@ -156,7 +154,7 @@ public interface Attribute<T> {
 	@Slf4j
 	@NonNull
 	class ListAttribute<M> extends BaseAttribute<List<M>> {
-		public ListAttribute(@NonNull String name, @NonNull List<M> value) {
+		public ListAttribute(String name, List<M> value) {
 			super(name, value);
 		}
 
@@ -181,7 +179,7 @@ public interface Attribute<T> {
 	@Slf4j
 	@NonNull
 	class BuffParamListAttribute extends ListAttribute<BuffParam> {
-		public BuffParamListAttribute(@NonNull String name, @NonNull List<BuffParam> value) {
+		public BuffParamListAttribute(String name, List<BuffParam> value) {
 			super(name, value);
 		}
 		
@@ -203,16 +201,12 @@ public interface Attribute<T> {
 		public @NonNull String serialize() {
 			return String.join(",", value.stream().map(BuffParam::serialize).toList());
 		}
-		
-		public @NonNull String getNiceName() {
-			return value.stream().map(BuffParam::beautify).collect(Collectors.joining(", "));
-		}
 	}
 	
 	@Slf4j
 	@NonNull
 	class StringAttribute extends BaseAttribute<String> {
-		public StringAttribute(@NonNull String name, @NonNull String value) {
+		public StringAttribute(String name, String value) {
 			super(name, value);
 		}
 		
@@ -235,7 +229,7 @@ public interface Attribute<T> {
 	@Slf4j
 	@NonNull
 	class UUIDAttribute extends BaseAttribute<UUID> {
-		public UUIDAttribute(@NonNull String name, @NonNull UUID value) {
+		public UUIDAttribute(String name, UUID value) {
 			super(name, value);
 		}
 		
@@ -258,7 +252,7 @@ public interface Attribute<T> {
 	@Slf4j
 	@NonNull
 	class XmlNodeAttribute extends BaseAttribute<XmlNode> {
-		public XmlNodeAttribute(@NonNull String name, @NonNull XmlNode value) {
+		public XmlNodeAttribute(String name, XmlNode value) {
 			super(name, value);
 		}
 		

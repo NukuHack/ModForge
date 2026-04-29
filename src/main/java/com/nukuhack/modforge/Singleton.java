@@ -47,7 +47,7 @@ public class Singleton {
 	 * Thread-local XMLInputFactory — one pre-configured instance per thread,
 	 * avoids repeated factory construction and carries the entity-size fix.
 	 */
-	public static final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
+	public final ThreadLocal<XMLInputFactory> XML_FACTORY = ThreadLocal.withInitial(() -> {
 		var f = XMLInputFactory.newInstance();
 		f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
 		f.setProperty(XMLInputFactory.IS_VALIDATING, false);
@@ -59,7 +59,7 @@ public class Singleton {
 		return f;
 	});
 
-	public static final ThreadLocal<DocumentBuilder> DOC_BUILDER = ThreadLocal.withInitial(() -> {
+	public final ThreadLocal<DocumentBuilder> DOC_BUILDER = ThreadLocal.withInitial(() -> {
 		try {
 			var f = DocumentBuilderFactory.newInstance();
 			f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);

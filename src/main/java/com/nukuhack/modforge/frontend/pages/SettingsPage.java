@@ -42,11 +42,6 @@ public class SettingsPage extends BasePage {
 		return l;
 	}
 	
-	@Override
-	public void refresh(Object... input) {
-		loadSettings();
-	}
-	
 	private JPanel createSettingsCard(MainWindow w) {
 		GridBagConstraints gc = new GridBagConstraints();
 		gc.insets = new Insets(8, 6, 8, 6);

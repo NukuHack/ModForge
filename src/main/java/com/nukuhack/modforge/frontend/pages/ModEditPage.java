@@ -54,9 +54,10 @@ public class ModEditPage extends BasePage {
 		bottomBar.add(primaryBtn("ui_back", e -> window.navigate(MainWindow.Page.MODS)));
 		add(bottomBar, BorderLayout.SOUTH);
 	}
-	
+
 	@Override
-	public void refresh(Object... input) {
+	public void refresh(MainWindow.Page source, Object... input) {
+		super.refresh(source, input);
 		if (input.length > 0 && input[0] instanceof ModData mod)
 			this.refreshFieldData(mod);
 		else

@@ -55,7 +55,7 @@ public final class JsonIO {
      * Convenience: write a list of objects as a JSON array (empty list writes "[]").
      */
     public static boolean write(Path target, List<JsonObject> items) {
-        JsonArray arr = new JsonArray();
+        var arr = new JsonArray();
         if (items != null) items.forEach(arr::add);
         return write(target, arr);
     }

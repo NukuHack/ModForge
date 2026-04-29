@@ -167,7 +167,9 @@ public class LangPage extends BasePage {
     }
 
     @Override
-    public void refresh(Object... input) {
+    public void refresh(MainWindow.Page source, Object... input) {
+        super.refresh(source, input);
+
         refreshModSelector();
         refreshLangSelector();
         refreshAll();

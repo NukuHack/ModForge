@@ -41,11 +41,6 @@ public class KCDConverterPage extends BasePage {
 		add(buildBottom(), BorderLayout.SOUTH);
 	}
 	
-	@Override
-	public void refresh(Object... input) {
-	
-	}
-	
 	private JPanel buildCenter() {
 		JPanel outer = new JPanel(new BorderLayout(0, 12));
 		outer.setOpaque(false);

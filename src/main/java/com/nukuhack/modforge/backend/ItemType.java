@@ -50,7 +50,7 @@ public final class ItemType {
 	}
 	
 	/** Item selector dropdown filter – used by the Item page (frontend). */
-	public static boolean excludeNonEndpoints(final @NonNull ZipEntry ze) {
+	public static boolean excludeNonEndpoints(@NonNull ZipEntry ze) {
 		if (ze.isDirectory())
 			return false;
 		var name = ze.getName().toLowerCase().replace('\\', '/');
@@ -82,7 +82,7 @@ public final class ItemType {
 	}
 	
 	/** The XML attribute name used as the primary ID for a given item class. */
-	public static @NonNull String getIdKey(Class<? extends ModItem> clazz) {
+	public static @NonNull String getIdKey(@NonNull Class<? extends ModItem> clazz) {
 		return ID_KEYS.getOrDefault(clazz, "Id");
 	}
 	
