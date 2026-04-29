@@ -1,6 +1,7 @@
 package com.nukuhack.modforge.frontend;
 
 import com.nukuhack.modforge.Singleton;
+import com.nukuhack.modforge.Util;
 import com.nukuhack.modforge.backend.ModData;
 import com.nukuhack.modforge.backend.model.E;
 import com.nukuhack.modforge.backend.service.ServiceRegistry;
@@ -126,13 +127,12 @@ public class MainWindow extends JFrame {
 	}
 	
 	private void initializePages() {
-		for (Page page : Page.values()) {
+		for (var page : Page.values()) {
 			try {
-				BasePage pageInstance = page.getPageClass().getDeclaredConstructor(MainWindow.class).newInstance(this);
-				page.setInstance(pageInstance);
-				pageHolder.add(pageInstance, page.name());
+				page.createInstance(this);
+				pageHolder.add(page.getInstance(), page.name());
 			} catch (Exception e) {
-				log.warn("Failed to create page: {}", page.name(), e);
+				log.warn("Failed to create page: {}", page.name(), Util.limitStackTrace(e, 15));
 			}
 		}
 	}
@@ -187,8 +187,8 @@ public class MainWindow extends JFrame {
 		
 		side.add(Box.createVerticalStrut(8));
 		
-		for (Page page : new Page[] { Page.HOME, Page.MODS, Page.ITEMS, Page.LANG, Page.ARCHIVE, Page.CONVERT, Page.KCD_CONVERTER }) {
-			side.add(navBtn(page.getDisplayName(), e -> navigate(page, new ModData())));
+		for (var page : Page.sidebarPages()) {
+			side.add(navBtn(page.getDisplayName(), e -> navigate(page)));
 		}
 		
 		side.add(Box.createVerticalGlue());
@@ -234,12 +234,11 @@ public class MainWindow extends JFrame {
 	}
 	
 	public void navigate(Page page, Object... input) {
-		if (current != null && current == page)
+		if (page == null || current == page)
 			return;
+		page.getInstance().refresh(current, input);
 		current = page;
 		cardLayout.show(pageHolder, page.name());
-		
-		Page.instance.refresh(current, input);
 		
 		snackbar.show("ui_navigate_page", BarManager.Type.INFO, getLocalText(page.getDisplayName()));
 	}

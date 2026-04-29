@@ -170,7 +170,7 @@ public class ArchivePage extends BasePage {
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         bottom.setOpaque(false);
-        bottom.add(primaryBtn("ui_back", e -> window.navigate(Page.HOME)));
+        bottom.add(primaryBtn("ui_back", e -> navigateBack()));
         add(bottom, BorderLayout.SOUTH);
     }
 

@@ -32,7 +32,7 @@ public class ModsPage extends BasePage {
 		JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		actions.setOpaque(false);
 		actions.add(primaryBtn("ui_mod_new", e -> createNewMod()));
-		actions.add(primaryBtn("ui_refresh", e -> w.navigate(Page.MODS, (Object) null)));
+		actions.add(primaryBtn("ui_refresh", e -> refresh()));
 		actions.add(primaryBtn("ui_mod_import", e -> importMod()));
 		top.add(actions, BorderLayout.EAST);
 		
@@ -122,7 +122,7 @@ public class ModsPage extends BasePage {
 		
 		ModService.modCollection.add(mod);
 
-		window.navigate(Page.MODS, (Object) null);
+		refresh();
 		window.snackbar.show("ui_mod_imported", BarManager.Type.SUCCESS, mod.getName());
 	}
 	

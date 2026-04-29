@@ -111,17 +111,16 @@ public class LangEdit extends BaseEditPage {
 	public void refresh(Page source, Object... input) {
 		super.refresh(source, input);
 		refreshModSelector();
-		if (input.length > 0) {
-			if (input[0] instanceof ModItem item) {
-				standaloneEntry = null;       // leave item mode
-				setCurrentItem(item);
-			} else if (input[0] instanceof StandaloneEntry se) {
-				setStandaloneEntry(se);       // enter standalone mode
-			} else {
-				window.navigate(Page.HOME);
-			}
+		if (input.length == 0)
+			navigateBack();
+
+		if (input[0] instanceof ModItem item) {
+			standaloneEntry = null;       // leave item mode
+			setCurrentItem(item);
+		} else if (input[0] instanceof StandaloneEntry se) {
+			setStandaloneEntry(se);       // enter standalone mode
 		} else {
-			window.navigate(Page.HOME);
+			navigateBack();
 		}
 	}
 
@@ -247,12 +246,6 @@ public class LangEdit extends BaseEditPage {
 		html.append("</body></html>");
 		previewPane.setText(html.toString());
 		previewPane.setCaretPosition(0);
-	}
-
-	@Override
-	protected void navigateBack() {
-		if (confirmDiscard())
-			window.navigate(Page.ITEMS);
 	}
 
 	// ── Field building ────────────────────────────────────────────────────────

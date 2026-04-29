@@ -534,6 +534,13 @@ public abstract class BasePage extends JPanel {
     public void refresh(Page source, Object... input) {
         sourcePage = source;
     }
+    protected void refresh() {
+        this.refresh(sourcePage, (Object) null);
+    }
+    /**
+     * Navigate away from this page.  Implementations should guard with an
+     * unsaved-changes dialog when {@code hasChanges} is true.
+     */
     protected void navigateBack() {
         if (confirmDiscard())
             window.navigate(sourcePage);

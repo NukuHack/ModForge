@@ -150,7 +150,7 @@ public class KCDConverterPage extends BasePage {
 	private JPanel buildBottom() {
 		JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		bar.setOpaque(false);
-		bar.add(primaryBtn("ui_back", e -> window.navigate(Page.HOME)));
+		bar.add(primaryBtn("ui_back", e -> navigateBack()));
 		return bar;
 	}
 	

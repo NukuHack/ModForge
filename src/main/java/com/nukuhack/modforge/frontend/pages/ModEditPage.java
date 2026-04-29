@@ -52,7 +52,7 @@ public class ModEditPage extends BasePage {
 		bottomBar.add(primaryBtn("ui_mod_export", e -> exportMod()));
 		bottomBar.add(primaryBtn("ui_mod_delete", e -> deleteMod()));
 		bottomBar.add(primaryBtn("ui_open_folder", e -> openFolder()));
-		bottomBar.add(primaryBtn("ui_back", e -> window.navigate(Page.MODS)));
+		bottomBar.add(primaryBtn("ui_back", e -> navigateBack()));
 		add(bottomBar, BorderLayout.SOUTH);
 	}
 
@@ -62,7 +62,7 @@ public class ModEditPage extends BasePage {
 		if (input.length > 0 && input[0] instanceof ModData mod)
 			this.refreshFieldData(mod);
 		else
-			window.navigate(Page.HOME);
+			navigateBack();
 	}
 	
 	private JPanel buildForm() {
@@ -327,7 +327,7 @@ public class ModEditPage extends BasePage {
 				}
 				
 				ModService.modCollection.remove(currentMod);
-				window.navigate(Page.MODS);
+				navigateBack();
 			} catch (Exception e) {
 				window.snackbar.show("ui_delete_failed", BarManager.Type.ERROR, e.getMessage());
 			}

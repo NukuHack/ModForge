@@ -445,8 +445,7 @@ public class LangPage extends BasePage {
             window.navigate(Page.LANG_EDIT, entry.item);
         } else {
             // Standalone entry: open LangEdit in standalone mode.
-            window.navigate(Page.LANG_EDIT,
-                    LangEdit.StandaloneEntry.of(entry.langKey, entry.value));
+            window.navigate(Page.LANG_EDIT, LangEdit.StandaloneEntry.of(entry.langKey, entry.value));
         }
     }
 

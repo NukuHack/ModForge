@@ -25,17 +25,6 @@ import java.awt.event.MouseEvent;
  * ├─────────────────────────────────────────────────────────┤
  * │  [status label]                  [action buttons]       │  ← buildBottomBar()
  * └─────────────────────────────────────────────────────────┘
- * <p>
- * Subclasses override:
- * • getPageTitle()          – static label next to "Items ›"
- * • buildRightActions()     – toolbar widgets (selectors, buttons, …)
- * • buildFormPanel()        – the scrollable left-hand form
- * • getFormPanelTitle()     – titled-border text over the form
- * • getPreviewTitle()       – titled-border text over the preview
- * • buildActionButtons()    – buttons in the bottom-right cluster
- * • onItemSet(ModItem)      – hook called after setCurrentItem()
- * • updatePreview()         – regenerate the HTML in previewPane
- * • navigateBack()          – where "Back" goes (with unsaved-changes guard)
  * =============================================================================
  */
 @Slf4j
@@ -112,12 +101,6 @@ public abstract class BaseEditPage extends BasePage {
      */
     protected abstract void updatePreview();
 
-    /**
-     * Navigate away from this page.  Implementations should guard with an
-     * unsaved-changes dialog when {@code hasChanges} is true.
-     */
-    protected abstract void navigateBack();
-
     public final void setCurrentItem(ModItem item) {
         this.currentItem = item;
         this.hasChanges = false;
@@ -133,7 +116,7 @@ public abstract class BaseEditPage extends BasePage {
         if (input.length > 0 && input[0] instanceof ModItem item)
             setCurrentItem(item);
         else
-            window.navigate(Page.HOME);
+            navigateBack();
     }
 
     protected void markChanged() {
@@ -190,23 +173,10 @@ public abstract class BaseEditPage extends BasePage {
         JPanel breadcrumbPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         breadcrumbPanel.setOpaque(false);
 
-        JLabel base = new JLabel(MainWindow.getLocalText("ui_items") + "  ›  ");
-        base.setForeground(MainWindow.ACCENT);
-        base.setFont(new Font("Roboto", Font.BOLD, 22));
-        base.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        base.setToolTipText(MainWindow.getLocalText("ui_back_to_items"));
-        base.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                navigateBack();
-            }
-        });
-
         JLabel pageTitleLabel = new JLabel(MainWindow.getLocalText(getPageTitle()));
         pageTitleLabel.setForeground(MainWindow.TEXT);
         pageTitleLabel.setFont(new Font("Roboto", Font.BOLD, 22));
 
-        breadcrumbPanel.add(base);
         breadcrumbPanel.add(pageTitleLabel);
 
         top.add(breadcrumbPanel, BorderLayout.WEST);

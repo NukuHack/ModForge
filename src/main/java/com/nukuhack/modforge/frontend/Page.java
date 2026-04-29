@@ -3,6 +3,7 @@ package com.nukuhack.modforge.frontend;
 import com.nukuhack.modforge.frontend.pages.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -38,9 +39,12 @@ public enum Page {
     private final String displayName;
     private final Class<? extends BasePage> pageClass;
 
-    /** Set once during {@link MainWindow#initializePages()}. */
-    @Setter
-    static BasePage instance;
+    Page(String displayName, Class<? extends BasePage> pageClass) {
+        this.displayName = displayName;
+        this.pageClass = pageClass;
+    }
+
+    private BasePage instance = null;
 
     /** Convenience: does this page require a {@link com.nukuhack.modforge.backend.model.ModItem} argument? */
     public boolean isEditPage() {
@@ -50,5 +54,12 @@ public enum Page {
     /** Pages shown in the sidebar navigation. */
     public static Page[] sidebarPages() {
         return new Page[]{ HOME, MODS, ITEMS, LANG, ARCHIVE, CONVERT, KCD_CONVERTER };
+    }
+
+    /** Called once during init. */
+    public void createInstance(MainWindow w) throws Exception {
+        if (instance != null)
+            throw new UnsupportedOperationException("Already called before");
+        instance = pageClass.getDeclaredConstructor(MainWindow.class).newInstance(w);;
     }
 }

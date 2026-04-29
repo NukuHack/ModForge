@@ -125,12 +125,6 @@ public class ItemEdit extends BaseEditPage {
 		previewPane.setCaretPosition(0);
 	}
 
-	@Override
-	protected void navigateBack() {
-		if (confirmDiscard())
-			window.navigate(Page.ITEMS);
-	}
-
 	private void buildAttributeEditor() {
 		attributesPanel.removeAll();
 		attributeComponents.clear();

@@ -272,7 +272,7 @@ public class StormPage extends BasePage {
             }
             currentStorm = stormItem;
         } else {
-            window.navigate(Page.HOME);
+            navigateBack();
             return;
         }
         populateFromStorm();
@@ -308,7 +308,7 @@ public class StormPage extends BasePage {
         actions.setOpaque(false);
         actions.add(accentBtn("＋ New Rule", e -> openRuleDialog(null)));
         actions.add(ghostBtn("💾 Save to Mod", e -> saveToMod()));
-        actions.add(ghostBtn("← Back", e -> window.navigate(Page.ITEMS)));
+        actions.add(ghostBtn("← Back", e -> navigateBack()));
 
         top.add(leftSide, BorderLayout.WEST);
         top.add(actions, BorderLayout.EAST);
