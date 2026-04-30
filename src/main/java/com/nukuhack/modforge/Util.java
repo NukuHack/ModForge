@@ -42,22 +42,13 @@ public final class Util {
      */
     public final String os = System.getProperty("os.name").toLowerCase();
 
-    public final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+    public final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"us-ascii\"?>";
     public final String STORM_HEADER = "<!DOCTYPE storm SYSTEM \"storm.dtd\">";
 
     /**
      * Username cross-platform
      */
     public final String username;
-    /**
-     * Main game tables PAK file containing game data tables
-     */
-    public final String TABLES = "Tables.pak";
-
-    /**
-     * Storm engine PAK file containing core engine resources
-     */
-    public final String STORM = "Storm.pak";
     /**
      * Standard compression/archive format extension for game files
      */
@@ -70,10 +61,6 @@ public final class Util {
      * Icons and UI graphics PAK file
      */
     public final String ICONS = "IPL_GameData.pak";
-    /**
-     * Directory name for localization/language files
-     */
-    public final String LOCALIZATION_DIR = "Localization";
 
     /**
      * Suffix added to language names for localization PAK files (e.g., "en_xml")
@@ -84,13 +71,9 @@ public final class Util {
      */
     public final String DATA_DIR = "Data";
     /**
-     * Directory containing game libraries/dependencies
+     * Directory name for localization/language files
      */
-    public final String LIBS_DIR = "Libs";
-    /**
-     * Directory containing game table definitions
-     */
-    public final String TABLES_DIR = "Tables";
+    public final String LOCALIZATION_DIR = "Localization";
     /**
      * Root directory for all mod installations
      */
@@ -354,7 +337,7 @@ public final class Util {
      */
     public void writeXml(@NonNull String inp, @NonNull Path outFile) throws IOException {
         Files.createDirectories(outFile.getParent());
-        inp = removeBlankLines(inp);
+        inp = removeBlankLines(inp).replaceAll("\"/>", "\" />");
         if (!inp.startsWith(XML_HEADER))
             inp = XML_HEADER + "\n" + inp;
 

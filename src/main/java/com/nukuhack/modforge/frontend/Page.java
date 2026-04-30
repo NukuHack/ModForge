@@ -8,14 +8,7 @@ import lombok.Setter;
 
 /**
  * Enum of all navigable pages in the application.
- *
- * <p>Extracted from {@link MainWindow} so that any class can import just this
- * enum without pulling in the entire window.  {@link MainWindow} re-exports it
- * as a type alias for backwards-compat:
- * <pre>
- *   public static final class Page extends AppPage {} // not needed — just use AppPage
- * </pre>
- *
+ * <p/>
  * Navigation is always performed through {@link MainWindow#navigate(Page, Object...)}.
  */
 @Getter

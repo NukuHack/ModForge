@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public abstract class ModItem {
 
 	/**
-	 * Attribute names (checked case-insensitively) whose values are
+	 * Attribute names whose values are
 	 * localization keys rather than raw display strings.
 	 */
 	public static final Set<String> LANG_ATTR_HINTS = Set.of(
@@ -41,16 +41,12 @@ public abstract class ModItem {
 	@Getter
 	private String path;
 
-	// ── ID key ────────────────────────────────────────────────────────────────
-
 	/**
 	 * Returns the XML element mapping key for this item's concrete type.
 	 */
 	public @NonNull String getIdKey() {
 		return ItemType.getIdKey(this.getClass());
 	}
-
-	// ── Path helpers ──────────────────────────────────────────────────────────
 
 	/**
 	 * Returns the prefix portion of the path (everything before the first
@@ -93,8 +89,6 @@ public abstract class ModItem {
 		path = getPathWithoutPrefix();
 	}
 
-	// ── Attribute accessors ───────────────────────────────────────────────────
-
 	/** Returns an unmodifiable view of all attributes. */
 	public @NonNull List<Attribute> getAttributes() {
 		return Collections.unmodifiableList(attributes);
@@ -129,8 +123,6 @@ public abstract class ModItem {
 		var lo = name.toLowerCase(Locale.ROOT);
 		attributes.removeIf(a -> a.getName().toLowerCase(Locale.ROOT).equals(lo));
 	}
-
-	// ── Attribute queries ─────────────────────────────────────────────────────
 
 	/**
 	 * Returns the first attribute whose name (case-insensitive) <em>contains</em>

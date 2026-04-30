@@ -212,21 +212,19 @@ public record ItemService(UserConfig userConfig) {
 	 * c) null / blank                        – newly created item
 	 */
 	private static void writeModItem(String gameDir, ModData mod, ModItem item) throws Exception {
-		File outFile;
 		var group = ItemEntry.to(item);
+        var useHandler = ModItemBuilder.HANDLER_MAP.containsKey(group.parentName);
+        var outFile = getOutputFile(gameDir, item, mod, useHandler);
+        Files.createDirectories(outFile.toPath().getParent());
 		final Document doc;
-		String doctype;
+		final String doctype;
 		
-		if (ModItemBuilder.HANDLER_MAP.get(group.parentName) != null) {
-			outFile = getOutputFile(gameDir, item, mod, true);
-			Files.createDirectories(outFile.toPath().getParent());
+		if (useHandler) {
 			doc = Singleton.DOC_BUILDER.get().newDocument();
 			var el = ModItemBuilder.create(doc, item);
 			el.ifPresent(doc::appendChild);
 			doctype = Util.STORM_HEADER + "\n";
 		} else {
-			outFile = getOutputFile(gameDir, item, mod, false);
-			Files.createDirectories(outFile.toPath().getParent());
 			doc = makeDocument(outFile, item, group);
 			doctype = null;
 		}
@@ -238,6 +236,7 @@ public record ItemService(UserConfig userConfig) {
 		var tf = TransformerFactory.newInstance().newTransformer();
 		tf.setOutputProperty(OutputKeys.INDENT, "yes");
 		tf.setOutputProperty("{http://xml.apache.org/xalan}indent-amount", "2");
+		tf.setOutputProperty(OutputKeys.ENCODING, "US-ASCII");
 		
 		tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 		
